@@ -60,6 +60,7 @@ php artisan about
 php artisan test
 npm install
 npm run build
+composer format:test
 ```
 
 ## Testing

@@ -323,6 +323,32 @@
                     />
                 </div>
             </section>
+
+            <section class="rounded-admin-card border border-admin-border bg-admin-surface p-admin-card shadow-admin-card">
+                <h2 class="text-lg font-semibold text-admin-text">Import progress panel</h2>
+
+                <div class="mt-4">
+                    <x-admin.import-progress-panel
+                        source-name="Vendor feed"
+                        category-name="Coffee machines"
+                        status="running"
+                        :steps="[
+                            ['key' => 'raw', 'label' => 'Raw import', 'status' => 'completed'],
+                            ['key' => 'mapping', 'label' => 'Mapping', 'status' => 'completed'],
+                            ['key' => 'normalization', 'label' => 'Normalization', 'status' => 'current'],
+                            ['key' => 'media', 'label' => 'Media download', 'status' => 'pending'],
+                            ['key' => 'review', 'label' => 'Review', 'status' => 'pending'],
+                        ]"
+                        :stats="[
+                            ['label' => 'raw products', 'value' => 120],
+                            ['label' => 'normalized', 'value' => 84],
+                            ['label' => 'needs review', 'value' => 18],
+                            ['label' => 'errors', 'value' => 4],
+                            ['label' => 'media failed', 'value' => 2],
+                        ]"
+                    />
+                </div>
+            </section>
         </section>
     </main>
 @endsection

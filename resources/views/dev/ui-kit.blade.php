@@ -66,6 +66,17 @@
                     <x-admin.status-badge label="Small" variant="success" size="sm" />
                 </div>
             </section>
+
+            <section class="rounded-admin-card border border-admin-border bg-admin-surface p-admin-card shadow-admin-card">
+                <h2 class="text-lg font-semibold text-admin-text">Quality warning badges</h2>
+
+                <div class="mt-4 flex flex-wrap items-center gap-admin-field">
+                    <x-admin.quality-warning-badge label="Optional metadata missing" level="low" count="3" />
+                    <x-admin.quality-warning-badge label="Required attributes missing" level="medium" count="12" />
+                    <x-admin.quality-warning-badge label="Mapping conflicts" level="high" count="5" />
+                    <x-admin.quality-warning-badge label="Media failures" level="critical" count="2" />
+                </div>
+            </section>
         </section>
     </main>
 @endsection

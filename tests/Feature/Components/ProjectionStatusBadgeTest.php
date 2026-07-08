@@ -10,17 +10,18 @@ class ProjectionStatusBadgeTest extends TestCase
     public function test_projection_status_badge_renders_supported_statuses(): void
     {
         foreach ([
-            'synced' => 'Synced',
-            'stale' => 'Stale',
-            'syncing' => 'Syncing',
-            'failed' => 'Failed',
-            'missing' => 'Missing',
-        ] as $status => $label) {
+            'synced' => ['label' => 'Synced', 'class' => 'bg-admin-success-soft'],
+            'stale' => ['label' => 'Stale', 'class' => 'bg-admin-warning-soft'],
+            'syncing' => ['label' => 'Syncing', 'class' => 'bg-admin-info-soft'],
+            'failed' => ['label' => 'Failed', 'class' => 'bg-admin-danger-soft'],
+            'missing' => ['label' => 'Missing', 'class' => 'bg-admin-surface-muted'],
+        ] as $status => $expected) {
             $html = Blade::render(
                 '<x-admin.projection-status-badge status="'.$status.'" />'
             );
 
-            $this->assertStringContainsString($label, $html);
+            $this->assertStringContainsString($expected['label'], $html);
+            $this->assertStringContainsString($expected['class'], $html);
             $this->assertStringContainsString('data-admin-projection-status="'.$status.'"', $html);
         }
     }
@@ -41,7 +42,7 @@ class ProjectionStatusBadgeTest extends TestCase
     {
         $html = Blade::render('<x-admin.projection-status-badge status="syncing" />');
 
-        $this->assertStringContainsString('bg-admin-info', $html);
+        $this->assertStringContainsString('h-2 w-2 rounded-full bg-admin-info', $html);
         $this->assertStringContainsString('aria-hidden="true"', $html);
     }
 }

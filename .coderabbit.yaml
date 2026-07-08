@@ -1,0 +1,22 @@
+# CodeRabbit — opt in only for internal release/* and hotfix/* PRs.
+# Automatic reviews are disabled by default. CodeRabbit starts only when this
+# repository's label workflow applies the release/hotfix label to an internal PR
+# whose source branch starts with release/ or hotfix/.
+
+language: en
+
+reviews:
+  profile: chill
+  auto_review:
+    enabled: false
+    labels:
+      - "release"
+      - "hotfix"
+    drafts: false
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: false
+
+chat:
+  auto_reply: true

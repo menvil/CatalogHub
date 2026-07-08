@@ -53,6 +53,19 @@
                     </div>
                 </div>
             </section>
+
+            <section class="rounded-admin-card border border-admin-border bg-admin-surface p-admin-card shadow-admin-card">
+                <h2 class="text-lg font-semibold text-admin-text">Status badges</h2>
+
+                <div class="mt-4 flex flex-wrap items-center gap-admin-field">
+                    <x-admin.status-badge label="Completed" variant="success" />
+                    <x-admin.status-badge label="Needs Review" variant="warning" />
+                    <x-admin.status-badge label="Failed" variant="danger" />
+                    <x-admin.status-badge label="Queued" variant="info" />
+                    <x-admin.status-badge label="Draft" variant="neutral" />
+                    <x-admin.status-badge label="Small" variant="success" size="sm" />
+                </div>
+            </section>
         </section>
     </main>
 @endsection

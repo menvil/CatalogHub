@@ -1,0 +1,23 @@
+# Cubic.dev — only review release/* and hotfix/* PRs.
+# Cubic supports ignore filters. We ignore the normal non-release/non-hotfix
+# source branch patterns so review traffic is limited to release/* and hotfix/*
+# branches in this repository's GitFlow.
+version: 1
+
+reviews:
+  ignore:
+    head_branches:
+      - "feature/*"
+      - "bugfix/*"
+      - "chore/*"
+      - "docs/*"
+      - "fix/*"
+      - "refactor/*"
+      - "spike/*"
+      - "test/*"
+      - "experiment/*"
+      - "wip/*"
+      - "tmp/*"
+      - "draft/*"
+      - "develop"
+      - "main"

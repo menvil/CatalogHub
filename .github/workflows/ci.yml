@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - develop
+  push:
+    branches:
+      - develop
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: cataloghub
+          POSTGRES_USER: cataloghub
+          POSTGRES_PASSWORD: cataloghub
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U cataloghub -d cataloghub"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_pgsql, redis
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 23
+          cache: npm
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Prepare application
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+
+      - name: Run PostgreSQL migration smoke check
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: cataloghub
+          DB_USERNAME: cataloghub
+          DB_PASSWORD: cataloghub
+        run: php artisan migrate:fresh --force
+
+      - name: Build frontend assets
+        run: npm run build
+
+      - name: Run Composer test command
+        run: composer test
+
+      - name: Run Laravel tests
+        run: php artisan test
+
+      - name: Run Pint
+        run: vendor/bin/pint --test
+
+      - name: Run PHPStan
+        run: vendor/bin/phpstan analyse

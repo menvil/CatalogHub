@@ -212,6 +212,29 @@
                     />
                 </div>
             </section>
+
+            <section class="rounded-admin-card border border-admin-border bg-admin-surface p-admin-card shadow-admin-card">
+                <h2 class="text-lg font-semibold text-admin-text">Diff viewer</h2>
+
+                <div class="mt-4 grid gap-admin-field lg:grid-cols-2">
+                    <x-admin.diff-viewer
+                        field-label="Refresh rate"
+                        before-label="Imported"
+                        before-value="60 Hz"
+                        after-label="Canonical"
+                        after-value="120 Hz"
+                    />
+
+                    <x-admin.diff-viewer
+                        field-label="Raw attributes"
+                        variant="side-by-side"
+                        before-label="Before"
+                        before-value='{"power":"100 W","display":"27 inch"}'
+                        after-label="After"
+                        after-value='{"power":"120 W","display":"27 inch"}'
+                    />
+                </div>
+            </section>
         </section>
     </main>
 @endsection

@@ -260,6 +260,24 @@
                     />
                 </div>
             </section>
+
+            <section class="rounded-admin-card border border-admin-border bg-admin-surface p-admin-card shadow-admin-card">
+                <h2 class="text-lg font-semibold text-admin-text">Unit value input</h2>
+
+                <div class="mt-4 max-w-xl">
+                    <x-admin.unit-value-input
+                        label="Power"
+                        value="100"
+                        unit="w"
+                        :available-units="[
+                            ['value' => 'w', 'label' => 'W'],
+                            ['value' => 'kw', 'label' => 'kW'],
+                            ['value' => 'hp', 'label' => 'HP'],
+                        ]"
+                        canonical-preview="100 W"
+                    />
+                </div>
+            </section>
         </section>
     </main>
 @endsection

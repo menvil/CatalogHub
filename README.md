@@ -56,6 +56,8 @@ php artisan schedule:work
 php artisan --version
 php artisan about
 php artisan test
+npm install
+npm run build
 ```
 
 ## First Admin User

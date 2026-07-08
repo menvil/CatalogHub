@@ -25,6 +25,13 @@ php artisan migrate:fresh
 php artisan db:show
 ```
 
+Redis is configured for cache infrastructure and future queues/locks.
+
+```bash
+docker compose up -d redis
+php artisan tinker --execute="Cache::store('redis')->put('health', 'ok', 60); dump(Cache::store('redis')->get('health'));"
+```
+
 ## Verification
 
 ```bash

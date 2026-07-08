@@ -1,15 +1,14 @@
-# CodeRabbit — only auto-review release/* and hotfix/* PRs.
-# Strategy: auto-review runs only on PRs carrying the "release" or "hotfix" label.
-# Labels are applied automatically by .github/workflows/label-review-bot-prs.yml
-# when the PR source branch starts with release/ or hotfix/.
-# Manual trigger is still available via @coderabbitai review.
+# CodeRabbit — opt in only for internal release/* and hotfix/* PRs.
+# Automatic reviews are disabled by default. CodeRabbit starts only when this
+# repository's label workflow applies the release/hotfix label to an internal PR
+# whose source branch starts with release/ or hotfix/.
 
 language: en
 
 reviews:
   profile: chill
   auto_review:
-    enabled: true
+    enabled: false
     labels:
       - "release"
       - "hotfix"

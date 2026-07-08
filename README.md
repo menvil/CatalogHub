@@ -74,6 +74,10 @@ composer test
 
 The default PHPUnit suite is isolated from local infrastructure through `phpunit.xml`: database `sqlite/:memory:`, cache `array`, queue `sync`, and mail `array`.
 
+## CI
+
+GitHub Actions runs Composer install, npm install, a PostgreSQL migration smoke check, `composer test`, `php artisan test`, Pint, PHPStan, and `npm run build` for pull requests and pushes to `develop`.
+
 ## First Admin User
 
 Create the first admin user through Filament:

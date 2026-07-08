@@ -16,6 +16,9 @@ use Illuminate\Notifications\Notifiable;
 
 #[Fillable(['name', 'email', 'password', 'role'])]
 #[Hidden(['password', 'remember_token'])]
+/**
+ * @property UserRole $role
+ */
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
@@ -42,36 +45,51 @@ class User extends Authenticatable implements FilamentUser
 
     public function isSuperAdmin(): bool
     {
-        return $this->role === UserRole::SuperAdmin;
+        return $this->userRole() === UserRole::SuperAdmin;
     }
 
     public function isCentralAdmin(): bool
     {
-        return $this->role === UserRole::CentralAdmin;
+        return $this->userRole() === UserRole::CentralAdmin;
     }
 
     public function isCatalogEditor(): bool
     {
-        return $this->role === UserRole::CatalogEditor;
+        return $this->userRole() === UserRole::CatalogEditor;
     }
 
     public function isSiteAdmin(): bool
     {
-        return $this->role === UserRole::SiteAdmin;
+        return $this->userRole() === UserRole::SiteAdmin;
     }
 
     public function isTranslator(): bool
     {
-        return $this->role === UserRole::Translator;
+        return $this->userRole() === UserRole::Translator;
     }
 
     public function isModerator(): bool
     {
-        return $this->role === UserRole::Moderator;
+        return $this->userRole() === UserRole::Moderator;
     }
 
     public function hasCatalogHubPermission(string $permission): bool
     {
-        return app(PermissionMatrix::class)->allows($this->role, $permission);
+        return app(PermissionMatrix::class)->allows($this->userRole(), $permission);
+    }
+
+    private function userRole(): UserRole
+    {
+        $role = $this->getAttribute('role');
+
+        if ($role instanceof UserRole) {
+            return $role;
+        }
+
+        if (is_string($role)) {
+            return UserRole::from($role);
+        }
+
+        return UserRole::default();
     }
 }

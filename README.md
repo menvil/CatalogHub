@@ -61,6 +61,7 @@ php artisan test
 npm install
 npm run build
 composer format:test
+composer analyse
 ```
 
 ## Testing

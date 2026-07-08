@@ -89,6 +89,18 @@
                     <x-admin.translation-status-badge status="outdated" locale="es" />
                 </div>
             </section>
+
+            <section class="rounded-admin-card border border-admin-border bg-admin-surface p-admin-card shadow-admin-card">
+                <h2 class="text-lg font-semibold text-admin-text">Projection status badges</h2>
+
+                <div class="mt-4 flex flex-wrap items-center gap-admin-field">
+                    <x-admin.projection-status-badge status="synced" last-updated="2m ago" />
+                    <x-admin.projection-status-badge status="stale" last-updated="1d ago" />
+                    <x-admin.projection-status-badge status="syncing" />
+                    <x-admin.projection-status-badge status="failed" />
+                    <x-admin.projection-status-badge status="missing" />
+                </div>
+            </section>
         </section>
     </main>
 @endsection

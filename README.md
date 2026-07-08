@@ -62,6 +62,10 @@ npm install
 npm run build
 ```
 
+## Testing
+
+The default test suite is isolated from local infrastructure through `phpunit.xml`: database `sqlite/:memory:`, cache `array`, queue `sync`, and mail `array`.
+
 ## First Admin User
 
 Create the first admin user through Filament:

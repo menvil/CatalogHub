@@ -10,8 +10,19 @@ Laravel monolith for Central Catalog and localized portal projections.
 composer install
 cp .env.example .env
 php artisan key:generate
+docker compose up -d postgres
 php artisan migrate
 php artisan serve
+```
+
+## Local Infrastructure
+
+PostgreSQL is the primary application database.
+
+```bash
+docker compose up -d postgres
+php artisan migrate:fresh
+php artisan db:show
 ```
 
 ## Verification

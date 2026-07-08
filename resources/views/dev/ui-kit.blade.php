@@ -126,6 +126,26 @@
                     />
                 </div>
             </section>
+
+            <section class="rounded-admin-card border border-admin-border bg-admin-surface p-admin-card shadow-admin-card">
+                <h2 class="text-lg font-semibold text-admin-text">Admin cards</h2>
+
+                <div class="mt-4 grid gap-admin-field lg:grid-cols-2">
+                    <x-admin.card title="Catalog quality" description="Reusable card shell for dashboard and form sections.">
+                        <x-slot:actions>
+                            <button type="button" disabled class="rounded-admin-input border border-admin-border px-3 py-2 text-sm font-medium text-admin-muted">
+                                Action
+                            </button>
+                        </x-slot:actions>
+
+                        <p class="text-sm text-admin-muted">Card content uses the shared admin surface, radius and shadow tokens.</p>
+                    </x-admin.card>
+
+                    <x-admin.card title="Danger section" description="Used for destructive or high-risk admin actions." variant="danger">
+                        <p class="text-sm text-admin-danger">This is a shell only; action behavior is wired later.</p>
+                    </x-admin.card>
+                </div>
+            </section>
         </section>
     </main>
 @endsection

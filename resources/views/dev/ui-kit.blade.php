@@ -349,6 +349,27 @@
                     />
                 </div>
             </section>
+
+            <section class="rounded-admin-card border border-admin-border bg-admin-surface p-admin-card shadow-admin-card">
+                <h2 class="text-lg font-semibold text-admin-text">Conflict review card</h2>
+
+                <div class="mt-4">
+                    <x-admin.conflict-review-card
+                        title="Refresh rate conflict"
+                        entity-label="Demo product"
+                        field-label="refresh_rate"
+                        source-a="Vendor feed"
+                        source-b="Central override"
+                        value-a="60 Hz"
+                        value-b="120 Hz"
+                        severity="high"
+                        :actions="[
+                            ['label' => 'Accept vendor'],
+                            ['label' => 'Keep override'],
+                        ]"
+                    />
+                </div>
+            </section>
         </section>
     </main>
 @endsection

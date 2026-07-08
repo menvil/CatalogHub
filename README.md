@@ -57,3 +57,11 @@ php artisan --version
 php artisan about
 php artisan test
 ```
+
+## First Admin User
+
+Create the first admin user through Filament:
+
+```bash
+php artisan filament:make-user --panel=admin
+```

@@ -235,6 +235,31 @@
                     />
                 </div>
             </section>
+
+            <section class="rounded-admin-card border border-admin-border bg-admin-surface p-admin-card shadow-admin-card">
+                <h2 class="text-lg font-semibold text-admin-text">Localized field editor</h2>
+
+                <div class="mt-4">
+                    <x-admin.localized-field-editor
+                        field-name="Product title"
+                        :locales="[
+                            ['code' => 'en', 'label' => 'English'],
+                            ['code' => 'bg', 'label' => 'Bulgarian'],
+                            ['code' => 'de', 'label' => 'German'],
+                        ]"
+                        :values="[
+                            'en' => 'Coffee machine',
+                            'bg' => '',
+                            'de' => 'Kaffeemaschine',
+                        ]"
+                        :statuses="[
+                            'en' => 'approved',
+                            'bg' => 'missing',
+                            'de' => 'machine',
+                        ]"
+                    />
+                </div>
+            </section>
         </section>
     </main>
 @endsection

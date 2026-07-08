@@ -32,6 +32,12 @@ docker compose up -d redis
 php artisan tinker --execute="Cache::store('redis')->put('health', 'ok', 60); dump(Cache::store('redis')->get('health'));"
 ```
 
+Laravel queues use Redis for local infrastructure. Run a worker with:
+
+```bash
+php artisan queue:work
+```
+
 ## Verification
 
 ```bash

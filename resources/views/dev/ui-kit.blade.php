@@ -162,6 +162,24 @@
                     />
                 </div>
             </section>
+
+            <section class="rounded-admin-card border border-admin-border bg-admin-surface p-admin-card shadow-admin-card">
+                <h2 class="text-lg font-semibold text-admin-text">Drawer</h2>
+
+                <div class="relative mt-4 h-64 overflow-hidden rounded-admin-card border border-admin-border bg-admin-surface-muted">
+                    <x-admin.drawer title="Change request detail" size="sm" :backdrop="false" :contained="true">
+                        <p class="text-sm text-admin-muted">
+                            Side panels can host previews, review details and workflow actions without depending on domain models.
+                        </p>
+
+                        <x-slot:footer>
+                            <button type="button" disabled class="rounded-admin-input bg-admin-primary px-3 py-2 text-sm font-medium text-white opacity-60">
+                                Placeholder action
+                            </button>
+                        </x-slot:footer>
+                    </x-admin.drawer>
+                </div>
+            </section>
         </section>
     </main>
 @endsection

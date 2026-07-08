@@ -370,6 +370,29 @@
                     />
                 </div>
             </section>
+
+            <section class="rounded-admin-card border border-admin-border bg-admin-surface p-admin-card shadow-admin-card">
+                <h2 class="text-lg font-semibold text-admin-text">Change request card</h2>
+
+                <div class="mt-4">
+                    <x-admin.change-request-card
+                        request-title="Correct product title"
+                        requester-label="Site editor"
+                        source-site-label="DE portal"
+                        entity-label="Demo product"
+                        field-label="title"
+                        current-value="Coffee maker"
+                        proposed-value="Espresso machine"
+                        status="pending"
+                        submitted-at="2026-07-08"
+                        :actions="[
+                            ['label' => 'Approve'],
+                            ['label' => 'Reject'],
+                            ['label' => 'Needs info'],
+                        ]"
+                    />
+                </div>
+            </section>
         </section>
     </main>
 @endsection

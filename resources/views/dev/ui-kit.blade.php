@@ -278,6 +278,34 @@
                     />
                 </div>
             </section>
+
+            <section class="rounded-admin-card border border-admin-border bg-admin-surface p-admin-card shadow-admin-card">
+                <h2 class="text-lg font-semibold text-admin-text">Attribute value editor</h2>
+
+                <div class="mt-4 grid gap-admin-field lg:grid-cols-2">
+                    <x-admin.attribute-value-editor
+                        attribute-label="Refresh rate"
+                        attribute-code="refresh_rate"
+                        data-type="number"
+                        raw-value="120hz"
+                        normalized-value="120"
+                        confidence="86"
+                        source-label="Importer"
+                    />
+
+                    <x-admin.attribute-value-editor
+                        attribute-label="Power"
+                        attribute-code="power"
+                        data-type="unit"
+                        raw-value="100 watts"
+                        normalized-value="100"
+                        :unit-options="[
+                            ['value' => 'w', 'label' => 'W'],
+                            ['value' => 'kw', 'label' => 'kW'],
+                        ]"
+                    />
+                </div>
+            </section>
         </section>
     </main>
 @endsection

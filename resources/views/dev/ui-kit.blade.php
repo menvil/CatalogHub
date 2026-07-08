@@ -306,6 +306,23 @@
                     />
                 </div>
             </section>
+
+            <section class="rounded-admin-card border border-admin-border bg-admin-surface p-admin-card shadow-admin-card">
+                <h2 class="text-lg font-semibold text-admin-text">Media picker</h2>
+
+                <div class="mt-4 grid gap-admin-field lg:grid-cols-2">
+                    <x-admin.media-picker empty-title="No product media" empty-description="Upload behavior is implemented in Phase 8." />
+
+                    <x-admin.media-picker
+                        mode="multiple"
+                        :accepted-types="['image/png', 'image/jpeg']"
+                        :selected-items="[
+                            ['name' => 'Main image', 'type' => 'image/png'],
+                            ['name' => 'Gallery image', 'type' => 'image/jpeg'],
+                        ]"
+                    />
+                </div>
+            </section>
         </section>
     </main>
 @endsection

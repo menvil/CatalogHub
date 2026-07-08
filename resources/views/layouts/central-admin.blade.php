@@ -25,7 +25,7 @@
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="min-h-screen bg-admin-background font-sans text-admin-text antialiased">
+    <body class="min-h-screen overflow-x-hidden bg-admin-background font-sans text-admin-text antialiased">
         <div class="min-h-screen lg:flex" data-admin-layout="central">
             <x-admin.sidebar
                 context="central"

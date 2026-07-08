@@ -195,6 +195,23 @@
                     />
                 </div>
             </section>
+
+            <section class="rounded-admin-card border border-admin-border bg-admin-surface p-admin-card shadow-admin-card">
+                <h2 class="text-lg font-semibold text-admin-text">Stepper wizard</h2>
+
+                <div class="mt-4">
+                    <x-admin.stepper-wizard
+                        current-step="normalization"
+                        :steps="[
+                            ['key' => 'raw', 'label' => 'Raw import', 'status' => 'completed'],
+                            ['key' => 'mapping', 'label' => 'Mapping', 'status' => 'completed'],
+                            ['key' => 'normalization', 'label' => 'Normalization', 'status' => 'current'],
+                            ['key' => 'review', 'label' => 'Review', 'status' => 'pending'],
+                            ['key' => 'publish', 'label' => 'Publish', 'status' => 'pending'],
+                        ]"
+                    />
+                </div>
+            </section>
         </section>
     </main>
 @endsection

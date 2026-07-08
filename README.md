@@ -38,6 +38,18 @@ Laravel queues use Redis for local infrastructure. Run a worker with:
 php artisan queue:work
 ```
 
+Laravel scheduler is enabled through the standard Artisan entrypoint. Production or local process managers should run:
+
+```bash
+* * * * * cd /path-to-app && php artisan schedule:run >> /dev/null 2>&1
+```
+
+For local foreground execution:
+
+```bash
+php artisan schedule:work
+```
+
 ## Verification
 
 ```bash

@@ -180,6 +180,21 @@
                     </x-admin.drawer>
                 </div>
             </section>
+
+            <section class="rounded-admin-card border border-admin-border bg-admin-surface p-admin-card shadow-admin-card">
+                <h2 class="text-lg font-semibold text-admin-text">Confirmation modal</h2>
+
+                <div class="relative mt-4 h-72 overflow-hidden rounded-admin-card border border-admin-border bg-admin-surface-muted">
+                    <x-admin.confirmation-modal
+                        title="Reject import draft"
+                        message="This confirms the review decision for the selected draft shell."
+                        confirm-label="Reject draft"
+                        cancel-label="Keep reviewing"
+                        variant="danger"
+                        :contained="true"
+                    />
+                </div>
+            </section>
         </section>
     </main>
 @endsection

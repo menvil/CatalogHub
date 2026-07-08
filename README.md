@@ -50,6 +50,8 @@ For local foreground execution:
 php artisan schedule:work
 ```
 
+Filesystem disks are configured for media, imports, exports, and backups through Laravel Storage. Use disk names and relative paths instead of hardcoded upload paths.
+
 ## Verification
 
 ```bash

@@ -146,6 +146,22 @@
                     </x-admin.card>
                 </div>
             </section>
+
+            <section class="rounded-admin-card border border-admin-border bg-admin-surface p-admin-card shadow-admin-card">
+                <h2 class="text-lg font-semibold text-admin-text">Admin tabs</h2>
+
+                <div class="mt-4">
+                    <x-admin.tabs
+                        active="specs"
+                        :items="[
+                            ['key' => 'overview', 'label' => 'Overview'],
+                            ['key' => 'specs', 'label' => 'Specs', 'count' => 18],
+                            ['key' => 'media', 'label' => 'Media', 'count' => 6],
+                            ['key' => 'translations', 'label' => 'Translations', 'count' => 4],
+                        ]"
+                    />
+                </div>
+            </section>
         </section>
     </main>
 @endsection

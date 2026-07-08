@@ -101,6 +101,31 @@
                     <x-admin.projection-status-badge status="missing" />
                 </div>
             </section>
+
+            <section class="rounded-admin-card border border-admin-border bg-admin-surface p-admin-card shadow-admin-card">
+                <h2 class="text-lg font-semibold text-admin-text">Empty states</h2>
+
+                <div class="mt-4 grid gap-admin-field lg:grid-cols-2">
+                    <x-admin.empty-state
+                        title="No imports yet"
+                        description="Import workflows will connect to this shell in a later phase."
+                        icon="0"
+                    >
+                        <x-slot:action>
+                            <button type="button" disabled class="rounded-admin-input bg-admin-primary px-3 py-2 text-sm font-medium text-white opacity-60">
+                                Import placeholder
+                            </button>
+                        </x-slot:action>
+                    </x-admin.empty-state>
+
+                    <x-admin.empty-state
+                        title="No stale projections"
+                        description="Projection checks can reuse the warning variant without reading projection tables."
+                        icon="!"
+                        variant="warning"
+                    />
+                </div>
+            </section>
         </section>
     </main>
 @endsection

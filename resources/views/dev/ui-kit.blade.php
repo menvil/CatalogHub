@@ -77,6 +77,18 @@
                     <x-admin.quality-warning-badge label="Media failures" level="critical" count="2" />
                 </div>
             </section>
+
+            <section class="rounded-admin-card border border-admin-border bg-admin-surface p-admin-card shadow-admin-card">
+                <h2 class="text-lg font-semibold text-admin-text">Translation status badges</h2>
+
+                <div class="mt-4 flex flex-wrap items-center gap-admin-field">
+                    <x-admin.translation-status-badge status="missing" locale="en" />
+                    <x-admin.translation-status-badge status="machine" locale="de" />
+                    <x-admin.translation-status-badge status="reviewed" locale="fr" />
+                    <x-admin.translation-status-badge status="approved" locale="bg" />
+                    <x-admin.translation-status-badge status="outdated" locale="es" />
+                </div>
+            </section>
         </section>
     </main>
 @endsection

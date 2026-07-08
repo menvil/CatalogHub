@@ -65,6 +65,9 @@ jobs:
           DB_PASSWORD: cataloghub
         run: php artisan migrate:fresh --force
 
+      - name: Build frontend assets
+        run: npm run build
+
       - name: Run Composer test command
         run: composer test
 
@@ -76,6 +79,3 @@ jobs:
 
       - name: Run PHPStan
         run: vendor/bin/phpstan analyse
-
-      - name: Build frontend assets
-        run: npm run build

@@ -137,5 +137,23 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400">No preview available until sections are added.</p>
             @endforelse
         </section>
+
+        <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <div class="mb-4">
+                <h3 class="text-lg font-semibold tracking-normal text-gray-950 dark:text-white">Schema issues</h3>
+            </div>
+
+            @forelse ($this->getSchemaIssues() as $issue)
+                <div class="flex flex-col gap-1 border-t border-gray-200 py-3 first:border-t-0 first:pt-0 last:pb-0 dark:border-gray-800 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <p class="font-medium text-gray-950 dark:text-white">{{ $issue->message }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $issue->code }}</p>
+                    </div>
+                    <span class="w-fit rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-200">{{ $issue->severity }}</span>
+                </div>
+            @empty
+                <p class="text-sm text-gray-500 dark:text-gray-400">No schema issues detected.</p>
+            @endforelse
+        </section>
     </div>
 </x-filament-panels::page>

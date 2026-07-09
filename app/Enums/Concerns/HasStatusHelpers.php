@@ -4,6 +4,8 @@ namespace App\Enums\Concerns;
 
 trait HasStatusHelpers
 {
+    abstract public function color(): string;
+
     /**
      * @return array<string, string>
      */

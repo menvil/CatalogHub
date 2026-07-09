@@ -125,7 +125,7 @@ final class CentralProductResource extends Resource
                     ->placeholder('None'),
                 TextEntry::make('variants_count')
                     ->label('Variants')
-                    ->state(fn (CentralProduct $record): int => (int) ($record->variants_count ?? $record->variants()->count())),
+                    ->state(fn (CentralProduct $record): int => $record->variants()->count()),
                 TextEntry::make('created_at')
                     ->dateTime(),
                 TextEntry::make('updated_at')

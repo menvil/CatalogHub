@@ -13,6 +13,7 @@ use App\Actions\CategorySchema\UpdateAttributeOptionAction;
 use App\Actions\CategorySchema\UpdateAttributeSectionAction;
 use App\Filament\Resources\CentralCategoryResource;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Services\CategorySchema\CategorySchemaPreviewBuilder;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -50,6 +51,14 @@ final class CategorySchemaBuilder extends Page
             'attributeSections' => fn ($query) => $query->ordered(),
             'attributeSections.attributes' => fn ($query) => $query->ordered(),
         ]);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function getSchemaPreview(): array
+    {
+        return app(CategorySchemaPreviewBuilder::class)->build($this->getCategory());
     }
 
     /**

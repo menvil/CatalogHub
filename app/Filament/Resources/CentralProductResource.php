@@ -2,10 +2,12 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\CentralProductStatus;
 use App\Filament\Resources\CentralProductResource\Pages;
 use App\Models\CentralCatalog\CentralProduct;
 use BackedEnum;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -39,6 +41,10 @@ final class CentralProductResource extends Resource
                     ->required()
                     ->maxLength(255)
                     ->unique(ignoreRecord: true),
+                Select::make('status')
+                    ->required()
+                    ->options(self::statusOptions())
+                    ->default(CentralProductStatus::default()->value),
             ]);
     }
 
@@ -54,6 +60,9 @@ final class CentralProductResource extends Resource
                     ->sortable(),
                 TextColumn::make('slug')
                     ->searchable()
+                    ->sortable(),
+                TextColumn::make('status')
+                    ->badge()
                     ->sortable(),
                 TextColumn::make('updated_at')
                     ->dateTime()
@@ -71,5 +80,17 @@ final class CentralProductResource extends Resource
             'create' => Pages\CreateCentralProduct::route('/create'),
             'edit' => Pages\EditCentralProduct::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function statusOptions(): array
+    {
+        return collect(CentralProductStatus::cases())
+            ->mapWithKeys(fn (CentralProductStatus $status): array => [
+                $status->value => str($status->value)->headline()->toString(),
+            ])
+            ->all();
     }
 }

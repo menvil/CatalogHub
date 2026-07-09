@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\CentralProductStatus;
 use App\Models\CentralCatalog\CentralProduct;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -22,6 +23,7 @@ class CentralProductFactory extends Factory
             'name' => str($name)->headline()->toString(),
             'model' => $model,
             'slug' => Str::slug($name.' '.$model),
+            'status' => CentralProductStatus::default(),
         ];
     }
 }

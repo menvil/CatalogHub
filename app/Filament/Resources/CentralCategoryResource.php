@@ -6,6 +6,7 @@ use App\Filament\Resources\CentralCategoryResource\Pages;
 use App\Models\CentralCatalog\CentralCategory;
 use BackedEnum;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -30,6 +31,11 @@ final class CentralCategoryResource extends Resource
     {
         return $schema
             ->components([
+                Select::make('parent_id')
+                    ->label('Parent category')
+                    ->relationship('parent', 'name')
+                    ->searchable()
+                    ->preload(),
                 TextInput::make('name')
                     ->required()
                     ->maxLength(255),
@@ -51,6 +57,9 @@ final class CentralCategoryResource extends Resource
             ->columns([
                 TextColumn::make('name')
                     ->searchable()
+                    ->sortable(),
+                TextColumn::make('parent.name')
+                    ->label('Parent')
                     ->sortable(),
                 TextColumn::make('slug')
                     ->searchable()

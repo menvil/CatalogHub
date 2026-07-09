@@ -11,6 +11,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property AttributeDataType $data_type
+ * @property int $options_count
+ */
 #[Fillable([
     'central_category_id',
     'attribute_section_id',

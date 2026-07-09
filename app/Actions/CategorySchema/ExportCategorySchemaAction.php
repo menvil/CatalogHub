@@ -2,6 +2,9 @@
 
 namespace App\Actions\CategorySchema;
 
+use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\AttributeOption;
+use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
 
 final class ExportCategorySchemaAction
@@ -24,7 +27,7 @@ final class ExportCategorySchemaAction
                 'schema_status' => $category->schema_status->value,
             ],
             'sections' => $category->attributeSections
-                ->map(fn ($section): array => [
+                ->map(fn (AttributeSection $section): array => [
                     'code' => $section->code,
                     'name' => $section->name,
                     'position' => $section->position,
@@ -32,7 +35,7 @@ final class ExportCategorySchemaAction
                     'is_collapsible' => $section->is_collapsible,
                     'is_visible' => $section->is_visible,
                     'attributes' => $section->attributes
-                        ->map(fn ($attribute): array => [
+                        ->map(fn (AttributeDefinition $attribute): array => [
                             'code' => $attribute->code,
                             'name' => $attribute->name,
                             'data_type' => $attribute->data_type->value,
@@ -48,7 +51,7 @@ final class ExportCategorySchemaAction
                                 'searchable' => $attribute->is_searchable,
                             ],
                             'options' => $attribute->options
-                                ->map(fn ($option): array => [
+                                ->map(fn (AttributeOption $option): array => [
                                     'code' => $option->code,
                                     'label' => $option->label,
                                     'position' => $option->position,

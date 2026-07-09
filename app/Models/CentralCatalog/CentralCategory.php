@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property CentralCategoryStatus $status
+ * @property CategorySchemaStatus $schema_status
  */
 #[Fillable(['parent_id', 'name', 'slug', 'status', 'schema_status', 'position'])]
 final class CentralCategory extends Model
@@ -88,7 +89,11 @@ final class CentralCategory extends Model
         $descendantIds = [];
         $parentIds = [$this->getKey()];
 
-        while ($parentIds !== []) {
+        while (true) {
+            if ($parentIds === []) {
+                break;
+            }
+
             $childIds = self::query()
                 ->whereIn('parent_id', $parentIds)
                 ->pluck($this->getKeyName())

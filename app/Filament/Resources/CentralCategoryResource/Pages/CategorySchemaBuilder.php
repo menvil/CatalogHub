@@ -2,11 +2,14 @@
 
 namespace App\Filament\Resources\CentralCategoryResource\Pages;
 
-use App\Actions\CategorySchema\CreateAttributeSectionAction;
 use App\Actions\CategorySchema\CreateAttributeDefinitionAction;
+use App\Actions\CategorySchema\CreateAttributeOptionAction;
+use App\Actions\CategorySchema\CreateAttributeSectionAction;
+use App\Actions\CategorySchema\DeleteAttributeOptionAction;
 use App\Actions\CategorySchema\DeleteAttributeSectionAction;
 use App\Actions\CategorySchema\MoveAttributeDefinitionAction;
 use App\Actions\CategorySchema\UpdateAttributeDefinitionAction;
+use App\Actions\CategorySchema\UpdateAttributeOptionAction;
 use App\Actions\CategorySchema\UpdateAttributeSectionAction;
 use App\Filament\Resources\CentralCategoryResource;
 use App\Models\CentralCatalog\CentralCategory;
@@ -93,6 +96,35 @@ final class CategorySchemaBuilder extends Page
         $targetSection = $category->attributeSections()->findOrFail($targetSectionId);
 
         $action->handle($attribute, $targetSection, $position);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function createOption(int $attributeId, array $data, CreateAttributeOptionAction $action): void
+    {
+        $attribute = $this->getCategory()->attributeDefinitions()->findOrFail($attributeId);
+
+        $action->handle($attribute, $data);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function updateOption(int $attributeId, int $optionId, array $data, UpdateAttributeOptionAction $action): void
+    {
+        $attribute = $this->getCategory()->attributeDefinitions()->findOrFail($attributeId);
+        $option = $attribute->options()->findOrFail($optionId);
+
+        $action->handle($option, $data);
+    }
+
+    public function deleteOption(int $attributeId, int $optionId, DeleteAttributeOptionAction $action): void
+    {
+        $attribute = $this->getCategory()->attributeDefinitions()->findOrFail($attributeId);
+        $option = $attribute->options()->findOrFail($optionId);
+
+        $action->handle($option);
     }
 
     protected function getHeaderActions(): array

@@ -2,6 +2,7 @@
 
 namespace App\Models\CentralCatalog;
 
+use App\Enums\AttributeDataType;
 use Database\Factories\AttributeDefinitionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -41,6 +42,7 @@ final class AttributeDefinition extends Model
     protected function casts(): array
     {
         return [
+            'data_type' => AttributeDataType::class,
             'position' => 'integer',
             'is_required' => 'boolean',
             'is_filterable' => 'boolean',

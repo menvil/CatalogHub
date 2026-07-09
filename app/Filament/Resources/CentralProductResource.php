@@ -32,6 +32,11 @@ final class CentralProductResource extends Resource
     {
         return $schema
             ->components([
+                Select::make('central_brand_id')
+                    ->label('Brand')
+                    ->relationship('brand', 'name')
+                    ->searchable()
+                    ->preload(),
                 TextInput::make('name')
                     ->required()
                     ->maxLength(255),
@@ -54,6 +59,9 @@ final class CentralProductResource extends Resource
             ->columns([
                 TextColumn::make('name')
                     ->searchable()
+                    ->sortable(),
+                TextColumn::make('brand.name')
+                    ->label('Brand')
                     ->sortable(),
                 TextColumn::make('model')
                     ->searchable()

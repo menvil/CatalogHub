@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\CentralCategoryResource\Pages;
 
 use App\Actions\CategorySchema\CreateAttributeSectionAction;
+use App\Actions\CategorySchema\UpdateAttributeSectionAction;
 use App\Filament\Resources\CentralCategoryResource;
 use App\Models\CentralCatalog\CentralCategory;
 use Filament\Actions\Action;
@@ -42,6 +43,16 @@ final class CategorySchemaBuilder extends Page
             'attributeSections' => fn ($query) => $query->ordered(),
             'attributeSections.attributes' => fn ($query) => $query->ordered(),
         ]);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function updateSection(int $sectionId, array $data, UpdateAttributeSectionAction $action): void
+    {
+        $section = $this->getCategory()->attributeSections()->findOrFail($sectionId);
+
+        $action->handle($section, $data);
     }
 
     protected function getHeaderActions(): array

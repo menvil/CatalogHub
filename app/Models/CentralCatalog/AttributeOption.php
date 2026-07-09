@@ -4,6 +4,7 @@ namespace App\Models\CentralCatalog;
 
 use Database\Factories\AttributeOptionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,6 +34,15 @@ final class AttributeOption extends Model
             'position' => 'integer',
             'is_visible' => 'boolean',
         ];
+    }
+
+    /**
+     * @param Builder<AttributeOption> $query
+     * @return Builder<AttributeOption>
+     */
+    public function scopeOrdered(Builder $query): Builder
+    {
+        return $query->orderBy('position')->orderBy($this->getKeyName());
     }
 
     /**

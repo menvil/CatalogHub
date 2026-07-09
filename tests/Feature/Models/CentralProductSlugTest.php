@@ -4,6 +4,7 @@ namespace Tests\Feature\Models;
 
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralProduct;
+use App\Observers\CentralProductObserver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -63,7 +64,7 @@ class CentralProductSlugTest extends TestCase
     public function test_generates_central_product_slug_with_brand_prefix(): void
     {
         $brand = CentralBrand::factory()->create([
-            'name' => 'LG',
+            'name' => 'LG Electronics',
             'slug' => 'lg',
         ]);
 
@@ -74,7 +75,7 @@ class CentralProductSlugTest extends TestCase
             'slug' => null,
         ]);
 
-        $this->assertSame('lg-ultragear-27gp850-b', $product->slug);
+        $this->assertSame('lg-electronics-ultragear-27gp850-b', $product->slug);
     }
 
     public function test_regenerates_slug_with_current_brand_when_loaded_brand_is_stale(): void
@@ -133,12 +134,17 @@ class CentralProductSlugTest extends TestCase
             $product->slug = 'collision-slug';
         });
 
-        $product = CentralProduct::factory()->create([
-            'name' => 'Collision Slug',
-            'model' => null,
-            'slug' => null,
-        ]);
+        try {
+            $product = CentralProduct::factory()->create([
+                'name' => 'Collision Slug',
+                'model' => null,
+                'slug' => null,
+            ]);
 
-        $this->assertSame('collision-slug-2', $product->slug);
+            $this->assertSame('collision-slug-2', $product->slug);
+        } finally {
+            CentralProduct::flushEventListeners();
+            CentralProduct::observe(CentralProductObserver::class);
+        }
     }
 }

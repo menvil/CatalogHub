@@ -14,12 +14,15 @@ return new class extends Migration
                 ->after('central_brand_id')
                 ->constrained('central_categories')
                 ->nullOnDelete();
+
+            $table->index('central_category_id');
         });
     }
 
     public function down(): void
     {
         Schema::table('central_products', function (Blueprint $table): void {
+            $table->dropIndex(['central_category_id']);
             $table->dropConstrainedForeignId('central_category_id');
         });
     }

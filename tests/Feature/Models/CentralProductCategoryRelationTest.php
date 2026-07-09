@@ -17,6 +17,15 @@ class CentralProductCategoryRelationTest extends TestCase
         $this->assertTrue(Schema::hasColumn('central_products', 'central_category_id'));
     }
 
+    public function test_central_products_have_central_category_id_index(): void
+    {
+        $indexes = collect(Schema::getIndexes('central_products'));
+
+        $this->assertTrue($indexes->contains(
+            fn (array $index): bool => $index['columns'] === ['central_category_id']
+        ));
+    }
+
     public function test_product_belongs_to_central_category(): void
     {
         $category = CentralCategory::factory()->create();

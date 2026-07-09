@@ -4,12 +4,12 @@ namespace App\Models\CentralCatalog;
 
 use App\Enums\CentralProductStatus;
 use Database\Factories\CentralProductFactory;
-use Illuminate\Database\QueryException;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\QueryException;
 
 /**
  * @property CentralProductStatus $status
@@ -36,7 +36,7 @@ final class CentralProduct extends Model
         ];
     }
 
-    public function save(array $options = [])
+    public function save(array $options = []): bool
     {
         $shouldRetryGeneratedSlug = ! $this->exists && blank($this->getAttribute('slug'));
 

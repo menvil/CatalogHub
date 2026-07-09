@@ -19,7 +19,6 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class CentralProductResource extends Resource
@@ -54,7 +53,7 @@ final class CentralProductResource extends Resource
                 TextInput::make('model')
                     ->maxLength(255),
                 TextInput::make('slug')
-                    ->required()
+                    ->nullable()
                     ->maxLength(255)
                     ->unique(ignoreRecord: true),
                 Select::make('status')
@@ -144,8 +143,4 @@ final class CentralProductResource extends Resource
         ];
     }
 
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()->withCount('variants');
-    }
 }

@@ -152,7 +152,7 @@
                         <p class="font-medium text-gray-950 dark:text-white">{{ $issue->message }}</p>
                         <p class="text-xs text-gray-500 dark:text-gray-400">{{ $issue->code }}</p>
                     </div>
-                    <span class="w-fit rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-200">{{ $issue->severity }}</span>
+                    <span class="w-fit rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-200">{{ $issue->severity->value }}</span>
                 </div>
             @empty
                 <p class="text-sm text-gray-500 dark:text-gray-400">No schema issues detected.</p>

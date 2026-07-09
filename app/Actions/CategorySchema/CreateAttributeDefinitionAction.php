@@ -2,41 +2,22 @@
 
 namespace App\Actions\CategorySchema;
 
-use App\Enums\AttributeDataType;
+use App\Actions\CategorySchema\Concerns\ValidatesAttributeDefinitionData;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeSection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 
 final class CreateAttributeDefinitionAction
 {
+    use ValidatesAttributeDefinitionData;
+
     /**
      * @param  array<string, mixed>  $data
      */
     public function handle(AttributeSection $section, array $data): AttributeDefinition
     {
-        $validated = Validator::make($data, [
-            'name' => ['required', 'string', 'max:255'],
-            'code' => [
-                'required',
-                'string',
-                'max:255',
-                'regex:/\A[a-z][a-z0-9_]*\z/',
-                Rule::unique('attribute_definitions', 'code')
-                    ->where('central_category_id', $section->central_category_id),
-            ],
-            'data_type' => ['required', Rule::enum(AttributeDataType::class)],
-            'dimension' => ['nullable', 'string', 'max:255'],
-            'canonical_unit' => ['nullable', 'string', 'max:255'],
-            'position' => ['nullable', 'integer', 'min:0', 'max:'.AttributeDefinition::MAX_POSITION],
-            'is_required' => ['nullable', 'boolean'],
-            'is_filterable' => ['nullable', 'boolean'],
-            'is_sortable' => ['nullable', 'boolean'],
-            'is_comparable' => ['nullable', 'boolean'],
-            'is_visible' => ['nullable', 'boolean'],
-            'is_searchable' => ['nullable', 'boolean'],
-        ])->validate();
+        $validated = Validator::make($data, $this->validationRules($section->central_category_id))->validate();
 
         return DB::transaction(function () use ($section, $validated): AttributeDefinition {
             $section->newQuery()->whereKey($section->getKey())->lockForUpdate()->firstOrFail();

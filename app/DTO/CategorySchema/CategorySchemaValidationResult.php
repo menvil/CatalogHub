@@ -2,6 +2,8 @@
 
 namespace App\DTO\CategorySchema;
 
+use App\Enums\CategorySchemaIssueSeverity;
+
 final class CategorySchemaValidationResult
 {
     /**
@@ -26,12 +28,16 @@ final class CategorySchemaValidationResult
 
     public function hasErrors(): bool
     {
-        return collect($this->issues)->contains(fn (CategorySchemaIssue $issue): bool => $issue->severity === 'error');
+        return collect($this->issues)->contains(
+            fn (CategorySchemaIssue $issue): bool => $issue->severity === CategorySchemaIssueSeverity::Error,
+        );
     }
 
     public function hasWarnings(): bool
     {
-        return collect($this->issues)->contains(fn (CategorySchemaIssue $issue): bool => $issue->severity === 'warning');
+        return collect($this->issues)->contains(
+            fn (CategorySchemaIssue $issue): bool => $issue->severity === CategorySchemaIssueSeverity::Warning,
+        );
     }
 
     public function hasIssueCode(string $code): bool

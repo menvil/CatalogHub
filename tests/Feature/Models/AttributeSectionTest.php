@@ -41,5 +41,13 @@ class AttributeSectionTest extends TestCase
 
         $this->assertTrue($section->is_collapsible);
         $this->assertTrue($section->is_visible);
+
+        $hiddenSection = AttributeSection::factory()->create([
+            'is_collapsible' => 0,
+            'is_visible' => 0,
+        ]);
+
+        $this->assertFalse($hiddenSection->is_collapsible);
+        $this->assertFalse($hiddenSection->is_visible);
     }
 }

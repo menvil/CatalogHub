@@ -8,6 +8,7 @@ use App\Actions\CategorySchema\MarkCategorySchemaReviewedAction;
 use App\Enums\AttributeDataType;
 use App\Enums\CategorySchemaStatus;
 use App\Exceptions\CategorySchema\CannotApproveCategorySchemaException;
+use App\Exceptions\CategorySchema\CannotTransitionCategorySchemaStatusException;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\CentralCategory;
@@ -84,5 +85,27 @@ class CategorySchemaStatusActionsTest extends TestCase
         app(ArchiveCategorySchemaAction::class)->handle($category);
 
         $this->assertSame(CategorySchemaStatus::Archived, $category->fresh()->schema_status);
+    }
+
+    public function test_does_not_mark_non_draft_schema_reviewed(): void
+    {
+        $category = CentralCategory::factory()->create([
+            'schema_status' => CategorySchemaStatus::Approved,
+        ]);
+
+        $this->expectException(CannotTransitionCategorySchemaStatusException::class);
+
+        app(MarkCategorySchemaReviewedAction::class)->handle($category);
+    }
+
+    public function test_does_not_archive_non_approved_schema(): void
+    {
+        $category = CentralCategory::factory()->create([
+            'schema_status' => CategorySchemaStatus::Draft,
+        ]);
+
+        $this->expectException(CannotTransitionCategorySchemaStatusException::class);
+
+        app(ArchiveCategorySchemaAction::class)->handle($category);
     }
 }

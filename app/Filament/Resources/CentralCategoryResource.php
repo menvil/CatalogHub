@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Enums\CentralCategoryStatus;
+use App\Enums\CategorySchemaStatus;
 use App\Filament\Resources\CentralCategoryResource\Pages;
 use App\Models\CentralCatalog\CentralCategory;
 use BackedEnum;
@@ -57,6 +58,11 @@ final class CentralCategoryResource extends Resource
                     ->required()
                     ->options(CentralCategoryStatus::options())
                     ->default(CentralCategoryStatus::default()->value),
+                Select::make('schema_status')
+                    ->label('Schema status')
+                    ->required()
+                    ->options(CategorySchemaStatus::options())
+                    ->default(CategorySchemaStatus::default()->value),
                 TextInput::make('position')
                     ->required()
                     ->integer()
@@ -81,6 +87,11 @@ final class CentralCategoryResource extends Resource
                 TextColumn::make('status')
                     ->badge()
                     ->color(fn (CentralCategoryStatus|string|null $state): string => CentralCategoryStatus::colorFor($state))
+                    ->sortable(),
+                TextColumn::make('schema_status')
+                    ->label('Schema')
+                    ->badge()
+                    ->color(fn (CategorySchemaStatus|string|null $state): string => CategorySchemaStatus::colorFor($state))
                     ->sortable(),
                 TextColumn::make('position')
                     ->sortable(),

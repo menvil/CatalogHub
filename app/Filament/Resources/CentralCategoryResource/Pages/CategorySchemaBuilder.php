@@ -2,12 +2,15 @@
 
 namespace App\Filament\Resources\CentralCategoryResource\Pages;
 
+use App\Actions\CategorySchema\ApproveCategorySchemaAction;
+use App\Actions\CategorySchema\ArchiveCategorySchemaAction;
 use App\Actions\CategorySchema\CreateAttributeDefinitionAction;
 use App\Actions\CategorySchema\CreateAttributeOptionAction;
 use App\Actions\CategorySchema\CreateAttributeSectionAction;
 use App\Actions\CategorySchema\DeleteAttributeOptionAction;
 use App\Actions\CategorySchema\DeleteAttributeSectionAction;
 use App\Actions\CategorySchema\MoveAttributeDefinitionAction;
+use App\Actions\CategorySchema\MarkCategorySchemaReviewedAction;
 use App\Actions\CategorySchema\UpdateAttributeDefinitionAction;
 use App\Actions\CategorySchema\UpdateAttributeOptionAction;
 use App\Actions\CategorySchema\UpdateAttributeSectionAction;
@@ -143,6 +146,21 @@ final class CategorySchemaBuilder extends Page
         $option = $attribute->options()->findOrFail($optionId);
 
         $action->handle($option);
+    }
+
+    public function markReviewed(MarkCategorySchemaReviewedAction $action): void
+    {
+        $action->handle($this->getCategory());
+    }
+
+    public function approveSchema(ApproveCategorySchemaAction $action): void
+    {
+        $action->handle($this->getCategory());
+    }
+
+    public function archiveSchema(ArchiveCategorySchemaAction $action): void
+    {
+        $action->handle($this->getCategory());
     }
 
     protected function getHeaderActions(): array

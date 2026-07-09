@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\CentralCategoryStatus;
 use App\Enums\CategorySchemaStatus;
+use App\Enums\CentralCategoryStatus;
 use App\Filament\Resources\CentralCategoryResource\Pages;
 use App\Models\CentralCatalog\CentralCategory;
 use BackedEnum;
@@ -103,7 +103,7 @@ final class CentralCategoryResource extends Resource
                 Action::make('schema')
                     ->label('Schema')
                     ->icon(Heroicon::OutlinedAdjustmentsHorizontal)
-                    ->url(fn (CentralCategory $record): string => static::getUrl('schema', ['record' => $record])),
+                    ->url(fn (CentralCategory $record): string => self::getUrl('schema', ['record' => $record])),
                 EditAction::make(),
             ]);
     }
@@ -117,5 +117,4 @@ final class CentralCategoryResource extends Resource
             'schema' => Pages\CategorySchemaBuilder::route('/{record}/schema'),
         ];
     }
-
 }

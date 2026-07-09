@@ -2,6 +2,8 @@
 
 namespace App\Services\CategorySchema;
 
+use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
 
 final class CategorySchemaPreviewBuilder
@@ -24,14 +26,14 @@ final class CategorySchemaPreviewBuilder
         ]);
 
         return $category->attributeSections
-            ->map(fn ($section): array => [
+            ->map(fn (AttributeSection $section): array => [
                 'section' => $section->name,
                 'code' => $section->code,
                 'position' => $section->position,
                 'display_style' => $section->display_style,
                 'is_visible' => $section->is_visible,
                 'attributes' => $section->attributes
-                    ->map(fn ($attribute): array => [
+                    ->map(fn (AttributeDefinition $attribute): array => [
                         'name' => $attribute->name,
                         'code' => $attribute->code,
                         'data_type' => $attribute->data_type->value,

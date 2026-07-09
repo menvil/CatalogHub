@@ -50,7 +50,7 @@ final class CloneCategorySchemaAction
                 }
 
                 $sectionMap[$section->getKey()]->update([
-                    'parent_id' => $sectionMap[$section->parent_id]?->getKey(),
+                    'parent_id' => $sectionMap[$section->parent_id]->getKey(),
                 ]);
             }
 

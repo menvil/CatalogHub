@@ -98,7 +98,7 @@ class CentralProductSlugTest extends TestCase
 
         $product->load('brand');
         $product->central_brand_id = $newBrand->id;
-        $product->slug = null;
+        $product->setAttribute('slug', null);
         $product->save();
 
         $this->assertSame('new-brand-monitor', $product->slug);

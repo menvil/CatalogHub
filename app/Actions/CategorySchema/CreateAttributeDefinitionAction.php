@@ -11,7 +11,7 @@ use Illuminate\Validation\Rule;
 final class CreateAttributeDefinitionAction
 {
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function handle(AttributeSection $section, array $data): AttributeDefinition
     {

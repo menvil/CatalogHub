@@ -9,7 +9,7 @@ use Illuminate\Validation\Rule;
 final class UpdateAttributeSectionAction
 {
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function handle(AttributeSection $section, array $data): AttributeSection
     {

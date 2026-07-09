@@ -142,5 +142,4 @@ final class CentralProductResource extends Resource
             'edit' => Pages\EditCentralProduct::route('/{record}/edit'),
         ];
     }
-
 }

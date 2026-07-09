@@ -5,7 +5,7 @@ namespace App\DTO\CategorySchema;
 final class CategorySchemaValidationResult
 {
     /**
-     * @param list<CategorySchemaIssue> $issues
+     * @param  list<CategorySchemaIssue>  $issues
      */
     public function __construct(
         private array $issues = [],

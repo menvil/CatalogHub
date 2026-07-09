@@ -2,9 +2,8 @@
 
 namespace App\Models\CentralCatalog;
 
-use App\Enums\CentralCategoryStatus;
 use App\Enums\CategorySchemaStatus;
-use App\Models\CentralCatalog\AttributeSection;
+use App\Enums\CentralCategoryStatus;
 use Database\Factories\CentralCategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property CentralCategoryStatus $status
+ * @property CategorySchemaStatus $schema_status
  */
 #[Fillable(['parent_id', 'name', 'slug', 'status', 'schema_status', 'position'])]
 final class CentralCategory extends Model
@@ -89,7 +89,7 @@ final class CentralCategory extends Model
         $descendantIds = [];
         $parentIds = [$this->getKey()];
 
-        while ($parentIds !== []) {
+        while (true) {
             $childIds = self::query()
                 ->whereIn('parent_id', $parentIds)
                 ->pluck($this->getKeyName())

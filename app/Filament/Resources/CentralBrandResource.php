@@ -77,5 +77,4 @@ final class CentralBrandResource extends Resource
             'edit' => Pages\EditCentralBrand::route('/{record}/edit'),
         ];
     }
-
 }

@@ -48,4 +48,12 @@ final class CentralCategory extends Model
     {
         return $this->hasMany(self::class, 'parent_id');
     }
+
+    /**
+     * @return HasMany<CentralProduct, $this>
+     */
+    public function products(): HasMany
+    {
+        return $this->hasMany(CentralProduct::class, 'central_category_id');
+    }
 }

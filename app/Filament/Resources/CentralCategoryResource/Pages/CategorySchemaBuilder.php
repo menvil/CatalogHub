@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\CentralCategoryResource\Pages;
 
 use App\Actions\CategorySchema\CreateAttributeSectionAction;
+use App\Actions\CategorySchema\CreateAttributeDefinitionAction;
 use App\Actions\CategorySchema\DeleteAttributeSectionAction;
 use App\Actions\CategorySchema\UpdateAttributeSectionAction;
 use App\Filament\Resources\CentralCategoryResource;
@@ -61,6 +62,16 @@ final class CategorySchemaBuilder extends Page
         $section = $this->getCategory()->attributeSections()->findOrFail($sectionId);
 
         $action->handle($section);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function createAttribute(int $sectionId, array $data, CreateAttributeDefinitionAction $action): void
+    {
+        $section = $this->getCategory()->attributeSections()->findOrFail($sectionId);
+
+        $action->handle($section, $data);
     }
 
     protected function getHeaderActions(): array

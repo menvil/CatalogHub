@@ -81,6 +81,42 @@ final class AttributeDefinition extends Model
     }
 
     /**
+     * @param Builder<AttributeDefinition> $query
+     * @return Builder<AttributeDefinition>
+     */
+    public function scopeRequired(Builder $query): Builder
+    {
+        return $query->where('is_required', true);
+    }
+
+    /**
+     * @param Builder<AttributeDefinition> $query
+     * @return Builder<AttributeDefinition>
+     */
+    public function scopeFilterable(Builder $query): Builder
+    {
+        return $query->where('is_filterable', true);
+    }
+
+    /**
+     * @param Builder<AttributeDefinition> $query
+     * @return Builder<AttributeDefinition>
+     */
+    public function scopeSortable(Builder $query): Builder
+    {
+        return $query->where('is_sortable', true);
+    }
+
+    /**
+     * @param Builder<AttributeDefinition> $query
+     * @return Builder<AttributeDefinition>
+     */
+    public function scopeComparable(Builder $query): Builder
+    {
+        return $query->where('is_comparable', true);
+    }
+
+    /**
      * @return BelongsTo<CentralCategory, $this>
      */
     public function category(): BelongsTo

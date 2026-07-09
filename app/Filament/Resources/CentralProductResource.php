@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Actions\CentralCatalog\ArchiveCentralProductAction;
+use App\Actions\CentralCatalog\RestoreCentralProductAction;
 use App\Enums\CentralProductStatus;
 use App\Filament\Resources\CentralProductResource\Pages;
 use App\Models\CentralCatalog\CentralProduct;
@@ -96,6 +97,11 @@ final class CentralProductResource extends Resource
                     ->requiresConfirmation()
                     ->visible(fn (CentralProduct $record): bool => $record->status !== CentralProductStatus::Archived)
                     ->action(fn (CentralProduct $record): CentralProduct => app(ArchiveCentralProductAction::class)->handle($record)),
+                Action::make('restore')
+                    ->color('gray')
+                    ->requiresConfirmation()
+                    ->visible(fn (CentralProduct $record): bool => $record->status === CentralProductStatus::Archived)
+                    ->action(fn (CentralProduct $record): CentralProduct => app(RestoreCentralProductAction::class)->handle($record)),
             ]);
     }
 

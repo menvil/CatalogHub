@@ -1,0 +1,76 @@
+<?php
+
+namespace App\Models\CentralCatalog;
+
+use Database\Factories\AttributeDefinitionFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+#[Fillable([
+    'central_category_id',
+    'attribute_section_id',
+    'code',
+    'name',
+    'data_type',
+    'dimension',
+    'canonical_unit',
+    'position',
+    'is_required',
+    'is_filterable',
+    'is_sortable',
+    'is_comparable',
+    'is_visible',
+    'is_searchable',
+])]
+final class AttributeDefinition extends Model
+{
+    /** @use HasFactory<AttributeDefinitionFactory> */
+    use HasFactory;
+
+    protected $table = 'attribute_definitions';
+
+    protected static function newFactory(): AttributeDefinitionFactory
+    {
+        return AttributeDefinitionFactory::new();
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'position' => 'integer',
+            'is_required' => 'boolean',
+            'is_filterable' => 'boolean',
+            'is_sortable' => 'boolean',
+            'is_comparable' => 'boolean',
+            'is_visible' => 'boolean',
+            'is_searchable' => 'boolean',
+        ];
+    }
+
+    /**
+     * @return BelongsTo<CentralCategory, $this>
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(CentralCategory::class, 'central_category_id');
+    }
+
+    /**
+     * @return BelongsTo<AttributeSection, $this>
+     */
+    public function section(): BelongsTo
+    {
+        return $this->belongsTo(AttributeSection::class, 'attribute_section_id');
+    }
+
+    /**
+     * @return HasMany<AttributeOption, $this>
+     */
+    public function options(): HasMany
+    {
+        return $this->hasMany(AttributeOption::class, 'attribute_definition_id');
+    }
+}

@@ -63,6 +63,24 @@ final class AttributeDefinition extends Model
     }
 
     /**
+     * @param Builder<AttributeDefinition> $query
+     * @return Builder<AttributeDefinition>
+     */
+    public function scopeVisible(Builder $query): Builder
+    {
+        return $query->where('is_visible', true);
+    }
+
+    /**
+     * @param Builder<AttributeDefinition> $query
+     * @return Builder<AttributeDefinition>
+     */
+    public function scopeSearchable(Builder $query): Builder
+    {
+        return $query->where('is_searchable', true);
+    }
+
+    /**
      * @return BelongsTo<CentralCategory, $this>
      */
     public function category(): BelongsTo

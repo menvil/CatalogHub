@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['central_brand_id', 'central_category_id', 'name', 'model', 'slug', 'status'])]
 /**
@@ -46,5 +47,13 @@ final class CentralProduct extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(CentralCategory::class, 'central_category_id');
+    }
+
+    /**
+     * @return HasMany<CentralProductVariant, $this>
+     */
+    public function variants(): HasMany
+    {
+        return $this->hasMany(CentralProductVariant::class, 'central_product_id');
     }
 }

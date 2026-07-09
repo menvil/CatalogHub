@@ -2,14 +2,18 @@
 
 namespace App\Models\CentralCatalog;
 
+use App\Enums\CentralCategoryStatus;
 use Database\Factories\CentralCategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['parent_id', 'name', 'slug', 'position'])]
+#[Fillable(['parent_id', 'name', 'slug', 'status', 'position'])]
+/**
+ * @property CentralCategoryStatus $status
+ */
 final class CentralCategory extends Model
 {
     /** @use HasFactory<CentralCategoryFactory> */
@@ -20,6 +24,13 @@ final class CentralCategory extends Model
     protected static function newFactory(): CentralCategoryFactory
     {
         return CentralCategoryFactory::new();
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'status' => CentralCategoryStatus::class,
+        ];
     }
 
     /**

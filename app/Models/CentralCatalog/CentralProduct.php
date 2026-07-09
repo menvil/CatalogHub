@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['central_brand_id', 'name', 'model', 'slug', 'status'])]
+#[Fillable(['central_brand_id', 'central_category_id', 'name', 'model', 'slug', 'status'])]
 /**
  * @property CentralProductStatus $status
  */
@@ -38,5 +38,13 @@ final class CentralProduct extends Model
     public function brand(): BelongsTo
     {
         return $this->belongsTo(CentralBrand::class, 'central_brand_id');
+    }
+
+    /**
+     * @return BelongsTo<CentralCategory, $this>
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(CentralCategory::class, 'central_category_id');
     }
 }

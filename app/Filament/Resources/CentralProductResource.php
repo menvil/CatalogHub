@@ -37,6 +37,11 @@ final class CentralProductResource extends Resource
                     ->relationship('brand', 'name')
                     ->searchable()
                     ->preload(),
+                Select::make('central_category_id')
+                    ->label('Category')
+                    ->relationship('category', 'name')
+                    ->searchable()
+                    ->preload(),
                 TextInput::make('name')
                     ->required()
                     ->maxLength(255),
@@ -62,6 +67,9 @@ final class CentralProductResource extends Resource
                     ->sortable(),
                 TextColumn::make('brand.name')
                     ->label('Brand')
+                    ->sortable(),
+                TextColumn::make('category.name')
+                    ->label('Category')
                     ->sortable(),
                 TextColumn::make('model')
                     ->searchable()

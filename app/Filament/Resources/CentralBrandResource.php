@@ -41,7 +41,7 @@ final class CentralBrandResource extends Resource
                     ->unique(ignoreRecord: true),
                 Select::make('status')
                     ->required()
-                    ->options(self::statusOptions())
+                    ->options(CentralBrandStatus::options())
                     ->default(CentralBrandStatus::default()->value),
             ]);
     }
@@ -58,6 +58,7 @@ final class CentralBrandResource extends Resource
                     ->sortable(),
                 TextColumn::make('status')
                     ->badge()
+                    ->color(fn (CentralBrandStatus|string|null $state): string => CentralBrandStatus::colorFor($state))
                     ->sortable(),
                 TextColumn::make('updated_at')
                     ->dateTime()
@@ -77,15 +78,4 @@ final class CentralBrandResource extends Resource
         ];
     }
 
-    /**
-     * @return array<string, string>
-     */
-    private static function statusOptions(): array
-    {
-        return collect(CentralBrandStatus::cases())
-            ->mapWithKeys(fn (CentralBrandStatus $status): array => [
-                $status->value => str($status->value)->headline()->toString(),
-            ])
-            ->all();
-    }
 }

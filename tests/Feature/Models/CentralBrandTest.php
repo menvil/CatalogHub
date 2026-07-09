@@ -31,4 +31,21 @@ class CentralBrandTest extends TestCase
 
         $this->assertSame(CentralBrandStatus::Draft, $brand->status);
     }
+
+    public function test_central_brand_status_defaults_to_draft(): void
+    {
+        CentralBrand::query()->create([
+            'name' => 'LG',
+            'slug' => 'lg',
+        ]);
+
+        $this->assertSame(CentralBrandStatus::Draft, CentralBrand::first()->status);
+    }
+
+    public function test_central_brand_factory_generates_unique_slugs(): void
+    {
+        $brands = CentralBrand::factory()->count(25)->create();
+
+        $this->assertCount(25, $brands->pluck('slug')->unique());
+    }
 }

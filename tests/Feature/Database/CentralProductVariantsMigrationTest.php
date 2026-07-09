@@ -61,4 +61,26 @@ class CentralProductVariantsMigrationTest extends TestCase
             'sku' => 'SKU-256-BLK',
         ]);
     }
+
+    public function test_central_product_variants_are_deleted_when_product_is_deleted(): void
+    {
+        $product = CentralProduct::factory()->create();
+
+        DB::table('central_product_variants')->insert([
+            'central_product_id' => $product->id,
+            'name' => '256GB Black',
+            'sku' => 'SKU-256-BLK',
+            'status' => 'draft',
+            'position' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $product->delete();
+
+        $this->assertDatabaseMissing('central_product_variants', [
+            'central_product_id' => $product->id,
+            'sku' => 'SKU-256-BLK',
+        ]);
+    }
 }

@@ -13,8 +13,7 @@ return new class extends Migration
                 ->nullable()
                 ->after('id')
                 ->constrained('central_categories')
-                ->nullOnDelete()
-                ->index();
+                ->nullOnDelete();
         });
     }
 

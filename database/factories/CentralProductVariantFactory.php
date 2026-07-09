@@ -18,7 +18,7 @@ class CentralProductVariantFactory extends Factory
     {
         return [
             'central_product_id' => CentralProduct::factory(),
-            'name' => fake()->boolean(80) ? fake()->words(2, true) : null,
+            'name' => fake()->boolean(80) ? str(fake()->words(2, true))->headline()->toString() : null,
             'sku' => fake()->boolean(80) ? fake()->unique()->bothify('SKU-####-??') : null,
             'status' => CentralProductVariantStatus::default(),
             'position' => 0,

@@ -4,22 +4,25 @@ namespace App\Models\CentralCatalog;
 
 use App\Enums\CentralProductStatus;
 use Database\Factories\CentralProductFactory;
+use Illuminate\Database\QueryException;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['central_brand_id', 'central_category_id', 'name', 'model', 'slug', 'status'])]
 /**
  * @property CentralProductStatus $status
  */
+#[Fillable(['central_brand_id', 'central_category_id', 'name', 'model', 'slug', 'status'])]
 final class CentralProduct extends Model
 {
     /** @use HasFactory<CentralProductFactory> */
     use HasFactory;
 
     protected $table = 'central_products';
+
+    private const MAX_GENERATED_SLUG_SAVE_ATTEMPTS = 3;
 
     protected static function newFactory(): CentralProductFactory
     {
@@ -31,6 +34,29 @@ final class CentralProduct extends Model
         return [
             'status' => CentralProductStatus::class,
         ];
+    }
+
+    public function save(array $options = [])
+    {
+        $shouldRetryGeneratedSlug = ! $this->exists && blank($this->getAttribute('slug'));
+
+        for ($attempt = 1; $attempt <= self::MAX_GENERATED_SLUG_SAVE_ATTEMPTS; $attempt++) {
+            try {
+                return parent::save($options);
+            } catch (QueryException $exception) {
+                if (
+                    ! $shouldRetryGeneratedSlug ||
+                    ! $this->isSlugUniqueConstraintViolation($exception) ||
+                    $attempt === self::MAX_GENERATED_SLUG_SAVE_ATTEMPTS
+                ) {
+                    throw $exception;
+                }
+
+                $this->setAttribute('slug', null);
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -55,5 +81,15 @@ final class CentralProduct extends Model
     public function variants(): HasMany
     {
         return $this->hasMany(CentralProductVariant::class, 'central_product_id');
+    }
+
+    private function isSlugUniqueConstraintViolation(QueryException $exception): bool
+    {
+        $sqlState = (string) ($exception->errorInfo[0] ?? '');
+        $message = $exception->getMessage();
+
+        return in_array($sqlState, ['23000', '23505'], strict: true)
+            && str_contains($message, 'central_products')
+            && str_contains($message, 'slug');
     }
 }

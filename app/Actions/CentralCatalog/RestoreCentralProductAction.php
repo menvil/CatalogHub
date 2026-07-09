@@ -10,12 +10,12 @@ final class RestoreCentralProductAction
     public function handle(CentralProduct $product): CentralProduct
     {
         if ($product->status !== CentralProductStatus::Archived) {
-            return $product->refresh();
+            return $product;
         }
 
         $product->forceFill([
             'status' => CentralProductStatus::Draft,
-        ])->save();
+        ])->saveOrFail();
 
         return $product->refresh();
     }

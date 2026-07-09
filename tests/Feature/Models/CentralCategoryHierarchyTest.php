@@ -40,4 +40,20 @@ class CentralCategoryHierarchyTest extends TestCase
 
         $this->assertNull($child->fresh()->parent_id);
     }
+
+    public function test_central_category_tracks_descendant_ids(): void
+    {
+        $parent = CentralCategory::factory()->create();
+        $child = CentralCategory::factory()->create([
+            'parent_id' => $parent->id,
+        ]);
+        $grandchild = CentralCategory::factory()->create([
+            'parent_id' => $child->id,
+        ]);
+
+        $this->assertEqualsCanonicalizing(
+            [$child->id, $grandchild->id],
+            $parent->descendantIds(),
+        );
+    }
 }

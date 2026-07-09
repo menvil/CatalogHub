@@ -9,10 +9,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['central_product_id', 'name', 'sku', 'status', 'position'])]
 /**
  * @property CentralProductVariantStatus $status
  */
+#[Fillable(['central_product_id', 'name', 'sku', 'status', 'position'])]
 final class CentralProductVariant extends Model
 {
     /** @use HasFactory<CentralProductVariantFactory> */

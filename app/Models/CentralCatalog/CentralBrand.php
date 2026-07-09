@@ -9,10 +9,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'slug', 'status'])]
 /**
  * @property CentralBrandStatus $status
  */
+#[Fillable(['name', 'slug', 'status'])]
 final class CentralBrand extends Model
 {
     /** @use HasFactory<CentralBrandFactory> */

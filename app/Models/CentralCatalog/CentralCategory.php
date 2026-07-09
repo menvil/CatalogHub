@@ -10,10 +10,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['parent_id', 'name', 'slug', 'status', 'position'])]
 /**
  * @property CentralCategoryStatus $status
  */
+#[Fillable(['parent_id', 'name', 'slug', 'status', 'position'])]
 final class CentralCategory extends Model
 {
     /** @use HasFactory<CentralCategoryFactory> */
@@ -29,6 +29,7 @@ final class CentralCategory extends Model
     protected function casts(): array
     {
         return [
+            'position' => 'integer',
             'status' => CentralCategoryStatus::class,
         ];
     }
@@ -55,5 +56,37 @@ final class CentralCategory extends Model
     public function products(): HasMany
     {
         return $this->hasMany(CentralProduct::class, 'central_category_id');
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function descendantIds(): array
+    {
+        if (! $this->exists) {
+            return [];
+        }
+
+        $descendantIds = [];
+        $parentIds = [$this->getKey()];
+
+        while ($parentIds !== []) {
+            $childIds = self::query()
+                ->whereIn('parent_id', $parentIds)
+                ->pluck($this->getKeyName())
+                ->map(fn (mixed $id): int => (int) $id)
+                ->all();
+
+            $childIds = array_values(array_diff($childIds, $descendantIds));
+
+            if ($childIds === []) {
+                break;
+            }
+
+            $descendantIds = array_values(array_unique([...$descendantIds, ...$childIds]));
+            $parentIds = $childIds;
+        }
+
+        return $descendantIds;
     }
 }

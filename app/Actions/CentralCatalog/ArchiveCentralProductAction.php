@@ -11,7 +11,7 @@ final class ArchiveCentralProductAction
     {
         $product->forceFill([
             'status' => CentralProductStatus::Archived,
-        ])->save();
+        ])->saveOrFail();
 
         return $product->refresh();
     }

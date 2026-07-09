@@ -17,10 +17,11 @@ class CentralBrandFactory extends Factory
     public function definition(): array
     {
         $name = fake()->unique()->company();
+        $slug = Str::slug($name).'-'.fake()->unique()->numerify('####');
 
         return [
             'name' => $name,
-            'slug' => Str::slug($name),
+            'slug' => $slug,
             'status' => CentralBrandStatus::default(),
         ];
     }

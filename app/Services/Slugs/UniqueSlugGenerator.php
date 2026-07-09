@@ -10,14 +10,15 @@ final class UniqueSlugGenerator
     /**
      * @param class-string<Model> $modelClass
      */
-    public function generate(string $source, string $modelClass, string $column = 'slug', ?Model $ignore = null): string
+    public function generate(string $source, string $modelClass, string $column = 'slug', ?Model $ignore = null, int $maxLength = 255): string
     {
-        $baseSlug = Str::slug($source) ?: 'item';
+        $baseSlug = $this->truncateSlug(Str::slug($source) ?: 'item', $maxLength);
         $slug = $baseSlug;
         $suffix = 2;
 
         while ($this->exists($modelClass, $column, $slug, $ignore)) {
-            $slug = "{$baseSlug}-{$suffix}";
+            $suffixText = "-{$suffix}";
+            $slug = $this->truncateSlug($baseSlug, $maxLength - strlen($suffixText)).$suffixText;
             $suffix++;
         }
 
@@ -36,5 +37,10 @@ final class UniqueSlugGenerator
         }
 
         return $query->exists();
+    }
+
+    private function truncateSlug(string $slug, int $maxLength): string
+    {
+        return Str::limit($slug, max(1, $maxLength), '');
     }
 }

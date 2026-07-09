@@ -19,6 +19,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class CentralProductResource extends Resource
@@ -58,7 +59,7 @@ final class CentralProductResource extends Resource
                     ->unique(ignoreRecord: true),
                 Select::make('status')
                     ->required()
-                    ->options(self::statusOptions())
+                    ->options(CentralProductStatus::options())
                     ->default(CentralProductStatus::default()->value),
             ]);
     }
@@ -84,6 +85,7 @@ final class CentralProductResource extends Resource
                     ->sortable(),
                 TextColumn::make('status')
                     ->badge()
+                    ->color(fn (CentralProductStatus|string|null $state): string => CentralProductStatus::colorFor($state))
                     ->sortable(),
                 TextColumn::make('updated_at')
                     ->dateTime()
@@ -114,7 +116,8 @@ final class CentralProductResource extends Resource
                     ->placeholder('None'),
                 TextEntry::make('slug'),
                 TextEntry::make('status')
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (CentralProductStatus|string|null $state): string => CentralProductStatus::colorFor($state)),
                 TextEntry::make('brand.name')
                     ->label('Brand')
                     ->placeholder('None'),
@@ -123,7 +126,7 @@ final class CentralProductResource extends Resource
                     ->placeholder('None'),
                 TextEntry::make('variants_count')
                     ->label('Variants')
-                    ->state(fn (CentralProduct $record): int => $record->variants()->count()),
+                    ->state(fn (CentralProduct $record): int => (int) ($record->variants_count ?? $record->variants()->count())),
                 TextEntry::make('created_at')
                     ->dateTime(),
                 TextEntry::make('updated_at')
@@ -141,15 +144,8 @@ final class CentralProductResource extends Resource
         ];
     }
 
-    /**
-     * @return array<string, string>
-     */
-    private static function statusOptions(): array
+    public static function getEloquentQuery(): Builder
     {
-        return collect(CentralProductStatus::cases())
-            ->mapWithKeys(fn (CentralProductStatus $status): array => [
-                $status->value => str($status->value)->headline()->toString(),
-            ])
-            ->all();
+        return parent::getEloquentQuery()->withCount('variants');
     }
 }

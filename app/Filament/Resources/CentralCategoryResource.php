@@ -14,6 +14,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class CentralCategoryResource extends Resource
@@ -34,7 +35,14 @@ final class CentralCategoryResource extends Resource
             ->components([
                 Select::make('parent_id')
                     ->label('Parent category')
-                    ->relationship('parent', 'name')
+                    ->relationship(
+                        'parent',
+                        'name',
+                        modifyQueryUsing: fn (Builder $query, ?CentralCategory $record): Builder => $record?->exists
+                            ? $query->whereNotIn('id', $record->descendantIds())
+                            : $query,
+                        ignoreRecord: true,
+                    )
                     ->searchable()
                     ->preload(),
                 TextInput::make('name')
@@ -46,7 +54,7 @@ final class CentralCategoryResource extends Resource
                     ->unique(ignoreRecord: true),
                 Select::make('status')
                     ->required()
-                    ->options(self::statusOptions())
+                    ->options(CentralCategoryStatus::options())
                     ->default(CentralCategoryStatus::default()->value),
                 TextInput::make('position')
                     ->required()
@@ -71,6 +79,7 @@ final class CentralCategoryResource extends Resource
                     ->sortable(),
                 TextColumn::make('status')
                     ->badge()
+                    ->color(fn (CentralCategoryStatus|string|null $state): string => CentralCategoryStatus::colorFor($state))
                     ->sortable(),
                 TextColumn::make('position')
                     ->sortable(),
@@ -92,15 +101,4 @@ final class CentralCategoryResource extends Resource
         ];
     }
 
-    /**
-     * @return array<string, string>
-     */
-    private static function statusOptions(): array
-    {
-        return collect(CentralCategoryStatus::cases())
-            ->mapWithKeys(fn (CentralCategoryStatus $status): array => [
-                $status->value => str($status->value)->headline()->toString(),
-            ])
-            ->all();
-    }
 }

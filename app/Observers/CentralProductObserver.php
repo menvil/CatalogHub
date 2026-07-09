@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Services\Slugs\UniqueSlugGenerator;
 
@@ -27,9 +28,27 @@ final class CentralProductObserver
     private function slugSource(CentralProduct $product): string
     {
         return collect([
-            $product->brand?->name,
+            $this->brandName($product),
             $product->name,
             $product->model,
         ])->filter()->implode(' ');
+    }
+
+    private function brandName(CentralProduct $product): ?string
+    {
+        $brandId = $product->central_brand_id;
+
+        if (blank($brandId)) {
+            return null;
+        }
+
+        if (
+            $product->relationLoaded('brand') &&
+            $product->brand?->getKey() === $brandId
+        ) {
+            return $product->brand->name;
+        }
+
+        return CentralBrand::query()->whereKey($brandId)->value('name');
     }
 }

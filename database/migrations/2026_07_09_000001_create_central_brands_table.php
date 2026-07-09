@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('slug')->unique();
-            $table->string('status')->default('active')->index();
+            $table->string('status')->default('draft')->index();
             $table->timestamps();
         });
     }

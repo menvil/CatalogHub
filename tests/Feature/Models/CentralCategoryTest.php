@@ -28,4 +28,13 @@ class CentralCategoryTest extends TestCase
 
         $this->assertSame(0, $category->position);
     }
+
+    public function test_central_category_position_casts_to_integer(): void
+    {
+        $category = CentralCategory::factory()->create([
+            'position' => '7',
+        ]);
+
+        $this->assertSame(7, $category->position);
+    }
 }

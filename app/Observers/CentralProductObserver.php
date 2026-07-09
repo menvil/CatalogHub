@@ -27,6 +27,7 @@ final class CentralProductObserver
     private function slugSource(CentralProduct $product): string
     {
         return collect([
+            $product->brand?->name,
             $product->name,
             $product->model,
         ])->filter()->implode(' ');

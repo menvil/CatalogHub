@@ -7,6 +7,7 @@ use Database\Factories\CentralBrandFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['name', 'slug', 'status'])]
 /**
@@ -29,5 +30,13 @@ final class CentralBrand extends Model
         return [
             'status' => CentralBrandStatus::class,
         ];
+    }
+
+    /**
+     * @return HasMany<CentralProduct, $this>
+     */
+    public function products(): HasMany
+    {
+        return $this->hasMany(CentralProduct::class, 'central_brand_id');
     }
 }

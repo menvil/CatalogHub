@@ -90,10 +90,6 @@ final class CentralCategory extends Model
         $parentIds = [$this->getKey()];
 
         while (true) {
-            if ($parentIds === []) {
-                break;
-            }
-
             $childIds = self::query()
                 ->whereIn('parent_id', $parentIds)
                 ->pluck($this->getKeyName())

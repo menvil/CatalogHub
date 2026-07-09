@@ -2,10 +2,12 @@
 
 namespace App\Filament\Resources;
 
+use App\Actions\CentralCatalog\ArchiveCentralProductAction;
 use App\Enums\CentralProductStatus;
 use App\Filament\Resources\CentralProductResource\Pages;
 use App\Models\CentralCatalog\CentralProduct;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
@@ -89,6 +91,11 @@ final class CentralProductResource extends Resource
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
+                Action::make('archive')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->visible(fn (CentralProduct $record): bool => $record->status !== CentralProductStatus::Archived)
+                    ->action(fn (CentralProduct $record): CentralProduct => app(ArchiveCentralProductAction::class)->handle($record)),
             ]);
     }
 

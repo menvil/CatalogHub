@@ -24,6 +24,8 @@
     --color-admin-danger-soft: #fee2e2;
     --color-admin-info: #0369a1;
     --color-admin-info-soft: #e0f2fe;
+    --color-admin-outdated: #7e22ce;
+    --color-admin-outdated-soft: #f3e8ff;
 
     --spacing-admin-page: 1.5rem;
     --spacing-admin-card: 1rem;

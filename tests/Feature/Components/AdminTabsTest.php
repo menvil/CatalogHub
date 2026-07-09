@@ -26,6 +26,8 @@ class AdminTabsTest extends TestCase
         $this->assertStringContainsString('Media', $html);
         $this->assertStringContainsString('12', $html);
         $this->assertStringContainsString('aria-selected="true"', $html);
+        $this->assertStringContainsString('tabindex="0"', $html);
+        $this->assertStringContainsString('tabindex="-1"', $html);
         $this->assertStringContainsString('border-admin-primary text-admin-primary', $html);
     }
 
@@ -44,5 +46,21 @@ class AdminTabsTest extends TestCase
         $this->assertStringContainsString('&lt;Unsafe&gt;', $html);
         $this->assertStringContainsString('&lt;3&gt;', $html);
         $this->assertStringNotContainsString('<Unsafe>', $html);
+    }
+
+    public function test_admin_tabs_reject_unsafe_urls(): void
+    {
+        $items = [
+            ['key' => 'unsafe', 'label' => 'Unsafe', 'url' => 'javascript:alert(1)'],
+            ['key' => 'root', 'label' => 'Root', 'url' => '/admin'],
+            ['key' => 'external', 'label' => 'External', 'url' => 'https://example.com'],
+        ];
+
+        $html = Blade::render('<x-admin.tabs :items="$items" active="unsafe" />', ['items' => $items]);
+
+        $this->assertStringContainsString('href="#"', $html);
+        $this->assertStringContainsString('href="/admin"', $html);
+        $this->assertStringContainsString('href="https://example.com"', $html);
+        $this->assertStringNotContainsString('javascript:alert(1)', $html);
     }
 }

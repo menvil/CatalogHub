@@ -12,6 +12,31 @@
 
 @php
     $fieldId = 'attribute-'.(\Illuminate\Support\Str::slug($attributeCode ?? $attributeLabel) ?: 'value');
+    $formatValue = function ($value): string {
+        if (is_null($value)) {
+            return '';
+        }
+
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+
+        if (is_array($value) || is_object($value)) {
+            return json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '';
+        }
+
+        return (string) $value;
+    };
+    $normalizedDisplay = is_null($normalizedValue) ? 'Not normalized in Phase 2' : $formatValue($normalizedValue);
+    $firstUnitOption = $unitOptions[0] ?? null;
+    $selectedUnitValue = is_array($firstUnitOption) ? ($firstUnitOption['value'] ?? $firstUnitOption['code'] ?? null) : $firstUnitOption;
+    $selectedUnitLabel = is_array($firstUnitOption) ? ($firstUnitOption['label'] ?? $selectedUnitValue) : (is_null($firstUnitOption) ? null : strtoupper((string) $firstUnitOption));
+    $unitCanonicalPreview = is_null($normalizedValue)
+        ? null
+        : trim($normalizedDisplay.' '.($selectedUnitLabel ?? ''));
+    $booleanValue = filter_var($normalizedValue, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    $booleanValue = is_null($booleanValue) ? (bool) $normalizedValue : $booleanValue;
+    $normalizedOptionValues = collect(\Illuminate\Support\Arr::wrap($normalizedValue))->map(fn ($value) => (string) $value)->all();
 @endphp
 
 <section
@@ -54,7 +79,7 @@
         <div class="rounded-admin-input border border-admin-border bg-admin-surface-muted p-3">
             <p class="text-sm font-semibold text-admin-text">Normalized preview</p>
             <p class="mt-2 min-h-10 rounded-admin-input border border-admin-border bg-admin-surface px-3 py-2 text-sm text-admin-text">
-                {{ $normalizedValue ?: 'Not normalized in Phase 2' }}
+                {{ $normalizedDisplay }}
             </p>
         </div>
     </div>
@@ -64,13 +89,13 @@
             <x-admin.unit-value-input
                 label="Canonical unit value"
                 :value="$normalizedValue"
-                :unit="$unitOptions[0]['value'] ?? $unitOptions[0] ?? null"
+                :unit="$selectedUnitValue"
                 :available-units="$unitOptions"
-                :canonical-preview="$normalizedValue"
+                :canonical-preview="$unitCanonicalPreview"
             />
         @elseif ($dataType === 'boolean')
             <label class="inline-flex items-center gap-2 text-sm font-medium text-admin-text">
-                <input type="checkbox" class="rounded-admin-input border-admin-border text-admin-primary focus:ring-admin-primary" @checked((bool) $normalizedValue)>
+                <input type="checkbox" class="rounded-admin-input border-admin-border text-admin-primary focus:ring-admin-primary" @checked($booleanValue)>
                 Boolean value placeholder
             </label>
         @elseif ($dataType === 'enum' || $dataType === 'multi_enum')
@@ -85,7 +110,7 @@
                         $optionValue = is_array($option) ? ($option['value'] ?? $option['label'] ?? '') : (string) $option;
                         $optionLabel = is_array($option) ? ($option['label'] ?? $optionValue) : (string) $option;
                     @endphp
-                    <option value="{{ $optionValue }}">{{ $optionLabel }}</option>
+                    <option value="{{ $optionValue }}" @selected(in_array((string) $optionValue, $normalizedOptionValues, true))>{{ $optionLabel }}</option>
                 @endforeach
             </select>
         @elseif ($dataType === 'number')

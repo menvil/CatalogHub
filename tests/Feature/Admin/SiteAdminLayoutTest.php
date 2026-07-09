@@ -44,10 +44,12 @@ class SiteAdminLayoutTest extends TestCase
             'Leads',
             'Content',
             'Polls',
-            'Settings',
         ] as $label) {
             $this->assertStringContainsString($label, $html);
         }
+
+        $this->assertMatchesRegularExpression('/>\s*Settings\s*<\/span>/', $html);
+        $this->assertStringNotContainsString('href="#"', $html);
     }
 
     public function test_site_admin_layout_renders_active_nav_breadcrumbs_and_page_actions(): void

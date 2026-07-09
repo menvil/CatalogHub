@@ -11,7 +11,7 @@ class StepperWizardTest extends TestCase
     {
         $steps = [
             ['key' => 'raw', 'label' => 'Raw import', 'status' => 'completed'],
-            ['key' => 'mapping', 'label' => 'Mapping', 'status' => 'current'],
+            ['key' => 'mapping', 'label' => 'Mapping'],
             ['key' => 'review', 'label' => 'Review', 'status' => 'pending'],
         ];
 
@@ -26,6 +26,7 @@ class StepperWizardTest extends TestCase
         $this->assertStringContainsString('Review', $html);
         $this->assertStringContainsString('data-admin-step-status="completed"', $html);
         $this->assertStringContainsString('data-admin-step-status="current"', $html);
+        $this->assertStringContainsString('aria-current="step"', $html);
         $this->assertStringContainsString('bg-admin-primary text-white', $html);
     }
 
@@ -45,6 +46,22 @@ class StepperWizardTest extends TestCase
         $this->assertStringContainsString('Two files failed', $html);
         $this->assertStringContainsString('data-admin-step-status="error"', $html);
         $this->assertStringContainsString('bg-admin-danger text-white', $html);
+        $this->assertStringContainsString('h-8 w-px bg-admin-border', Blade::render(
+            '<x-admin.stepper-wizard :steps="$steps" orientation="vertical" />',
+            ['steps' => [
+                ['key' => 'one', 'label' => 'One'],
+                ['key' => 'two', 'label' => 'Two'],
+            ]]
+        ));
+    }
+
+    public function test_stepper_wizard_merges_custom_inline_style_with_step_count(): void
+    {
+        $html = Blade::render('<x-admin.stepper-wizard :steps="$steps" style="color: red" />', [
+            'steps' => [['key' => 'one', 'label' => 'One']],
+        ]);
+
+        $this->assertStringContainsString('style="color: red; --step-count: 1"', $html);
     }
 
     public function test_stepper_wizard_escapes_step_labels(): void

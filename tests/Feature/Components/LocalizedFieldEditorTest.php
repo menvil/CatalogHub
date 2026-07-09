@@ -22,7 +22,10 @@ class LocalizedFieldEditorTest extends TestCase
         );
 
         $this->assertStringContainsString('data-admin-localized-field-editor="tabs"', $html);
-        $this->assertStringContainsString('role="tablist"', $html);
+        $this->assertStringNotContainsString('role="tablist"', $html);
+        $this->assertStringNotContainsString('role="tab"', $html);
+        $this->assertStringNotContainsString('aria-selected=', $html);
+        $this->assertStringContainsString('data-admin-locale-summary="en"', $html);
         $this->assertStringContainsString('Product title', $html);
         $this->assertStringContainsString('English', $html);
         $this->assertStringContainsString('Bulgarian', $html);

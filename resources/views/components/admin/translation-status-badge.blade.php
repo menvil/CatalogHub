@@ -10,7 +10,7 @@
         'machine' => 'bg-admin-info-soft text-admin-info ring-admin-info/25',
         'reviewed' => 'bg-admin-warning-soft text-admin-warning ring-admin-warning/25',
         'approved' => 'bg-admin-success-soft text-admin-success ring-admin-success/20',
-        'outdated' => 'bg-purple-100 text-purple-800 ring-purple-300',
+        'outdated' => 'bg-admin-outdated-soft text-admin-outdated ring-admin-outdated/25',
     ];
 
     $statusLabels = [

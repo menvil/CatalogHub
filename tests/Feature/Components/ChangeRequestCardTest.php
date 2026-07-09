@@ -24,10 +24,10 @@ class ChangeRequestCardTest extends TestCase
         $this->assertStringContainsString('Site editor', $html);
         $this->assertStringContainsString('DE portal', $html);
         $this->assertStringContainsString('Product #123', $html);
-        $this->assertStringContainsString('title', $html);
+        $this->assertMatchesRegularExpression('/<h3[^>]*>\s*title\s*<\/h3>/', $html);
         $this->assertStringContainsString('Old title', $html);
         $this->assertStringContainsString('New title', $html);
-        $this->assertStringContainsString('pending', $html);
+        $this->assertStringContainsString('Pending', $html);
         $this->assertStringContainsString('2026-07-08', $html);
         $this->assertStringContainsString('Approve', $html);
         $this->assertStringContainsString('Reject', $html);
@@ -36,12 +36,17 @@ class ChangeRequestCardTest extends TestCase
     public function test_change_request_card_maps_status_variants(): void
     {
         $approved = Blade::render('<x-admin.change-request-card request-title="Request" requester-label="User" entity-label="Entity" field-label="field" current-value="A" proposed-value="B" status="approved" />');
+        $merged = Blade::render('<x-admin.change-request-card request-title="Request" requester-label="User" entity-label="Entity" field-label="field" current-value="A" proposed-value="B" status="merged" />');
         $rejected = Blade::render('<x-admin.change-request-card request-title="Request" requester-label="User" entity-label="Entity" field-label="field" current-value="A" proposed-value="B" status="rejected" />');
         $needsInfo = Blade::render('<x-admin.change-request-card request-title="Request" requester-label="User" entity-label="Entity" field-label="field" current-value="A" proposed-value="B" status="needs_info" />');
+        $pending = Blade::render('<x-admin.change-request-card request-title="Request" requester-label="User" entity-label="Entity" field-label="field" current-value="A" proposed-value="B" status="pending" />');
 
         $this->assertStringContainsString('data-admin-status-badge="success"', $approved);
+        $this->assertStringContainsString('data-admin-status-badge="success"', $merged);
         $this->assertStringContainsString('data-admin-status-badge="danger"', $rejected);
         $this->assertStringContainsString('data-admin-status-badge="warning"', $needsInfo);
+        $this->assertStringContainsString('Needs Info', $needsInfo);
+        $this->assertStringContainsString('data-admin-status-badge="info"', $pending);
     }
 
     public function test_change_request_card_escapes_values(): void

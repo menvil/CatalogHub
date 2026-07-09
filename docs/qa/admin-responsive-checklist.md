@@ -40,8 +40,10 @@ Record screenshots manually for:
 - `docs/qa/screenshots/admin-central-375.png`
 - `docs/qa/screenshots/admin-central-768.png`
 - `docs/qa/screenshots/admin-central-1280.png`
+- `docs/qa/screenshots/admin-central-1440.png`
 - `docs/qa/screenshots/admin-site-375.png`
 - `docs/qa/screenshots/admin-site-768.png`
 - `docs/qa/screenshots/admin-site-1280.png`
+- `docs/qa/screenshots/admin-site-1440.png`
 
 Screenshots are optional in Phase 2, but this checklist is required before building domain screens on top of the layouts.

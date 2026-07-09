@@ -31,8 +31,8 @@ class TranslationStatusBadgeTest extends TestCase
             '<x-admin.translation-status-badge status="outdated" locale="bg" label="<Needs review>" />'
         );
 
-        $this->assertStringContainsString('bg', $html);
-        $this->assertStringContainsString('bg-purple-100', $html);
+        $this->assertMatchesRegularExpression('/<span[^>]*>\s*bg\s*<\/span>/', $html);
+        $this->assertStringContainsString('bg-admin-outdated-soft', $html);
         $this->assertStringContainsString('&lt;Needs review&gt;', $html);
         $this->assertStringNotContainsString('<Needs review>', $html);
     }

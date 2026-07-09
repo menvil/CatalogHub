@@ -18,11 +18,12 @@
         'needs_info' => 'warning',
         default => 'info',
     };
+    $statusLabel = \Illuminate\Support\Str::of($status)->replace('_', ' ')->title()->toString();
 @endphp
 
 <x-admin.card :title="$requestTitle" :description="$entityLabel" data-admin-change-request-card>
     <x-slot:actions>
-        <x-admin.status-badge :label="$status" :variant="$statusVariant" />
+        <x-admin.status-badge :label="$statusLabel" :variant="$statusVariant" />
     </x-slot:actions>
 
     <div class="mb-4 grid gap-admin-field md:grid-cols-3">
@@ -51,13 +52,5 @@
         variant="side-by-side"
     />
 
-    @if (count($actions) > 0)
-        <div class="mt-4 flex flex-wrap gap-admin-field">
-            @foreach ($actions as $action)
-                <button type="button" disabled class="rounded-admin-input border border-admin-border bg-admin-surface px-3 py-2 text-sm font-medium text-admin-muted">
-                    {{ $action['label'] ?? $action }}
-                </button>
-            @endforeach
-        </div>
-    @endif
+    <x-admin.action-buttons :actions="$actions" />
 </x-admin.card>

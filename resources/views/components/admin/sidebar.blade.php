@@ -25,19 +25,34 @@
             @php
                 $label = $item['label'] ?? '';
                 $isActive = $activeNav === $label || $activeNav === ($item['key'] ?? null);
+                $url = $item['url'] ?? null;
             @endphp
 
-            <a
-                href="{{ $item['url'] ?? '#' }}"
-                @if ($isActive) aria-current="page" @endif
-                class="@class([
-                    'whitespace-nowrap rounded-admin-input px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary',
-                    'bg-admin-primary-soft text-admin-primary' => $isActive,
-                    'text-admin-muted hover:bg-admin-surface-muted hover:text-admin-text' => ! $isActive,
-                ])"
-            >
-                {{ $label }}
-            </a>
+            @if ($url)
+                <a
+                    href="{{ $url }}"
+                    @if ($isActive) aria-current="page" @endif
+                    @class([
+                        'whitespace-nowrap rounded-admin-input px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary',
+                        'bg-admin-primary-soft text-admin-primary' => $isActive,
+                        'text-admin-muted hover:bg-admin-surface-muted hover:text-admin-text' => ! $isActive,
+                    ])"
+                >
+                    {{ $label }}
+                </a>
+            @else
+                <span
+                    @if ($isActive) aria-current="page" @endif
+                    aria-disabled="true"
+                    @class([
+                        'whitespace-nowrap rounded-admin-input px-3 py-2 text-sm font-medium',
+                        'bg-admin-primary-soft text-admin-primary' => $isActive,
+                        'text-admin-muted' => ! $isActive,
+                    ])"
+                >
+                    {{ $label }}
+                </span>
+            @endif
         @endforeach
     </nav>
 </aside>

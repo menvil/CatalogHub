@@ -6,6 +6,14 @@
     'stats' => [],
 ])
 
+@php
+    $statusVariant = match ($status) {
+        'failed', 'error' => 'danger',
+        'completed' => 'success',
+        default => 'info',
+    };
+@endphp
+
 <section
     {{ $attributes->class('rounded-admin-card border border-admin-border bg-admin-surface p-admin-card shadow-admin-card') }}
     data-admin-import-progress-panel
@@ -20,7 +28,7 @@
             @endif
         </div>
 
-        <x-admin.status-badge :label="$status" variant="{{ $status === 'failed' ? 'danger' : ($status === 'completed' ? 'success' : 'info') }}" />
+        <x-admin.status-badge :label="$status" :variant="$statusVariant" />
     </div>
 
     <div class="mt-5">

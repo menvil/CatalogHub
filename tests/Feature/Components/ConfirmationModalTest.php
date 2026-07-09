@@ -27,7 +27,8 @@ class ConfirmationModalTest extends TestCase
         $this->assertStringContainsString('Delete media', $html);
         $this->assertStringContainsString('This action cannot be undone.', $html);
         $this->assertStringContainsString('Additional context', $html);
-        $this->assertStringContainsString('Delete', $html);
+        $this->assertStringContainsString('data-admin-modal-confirm', $html);
+        $this->assertMatchesRegularExpression('/data-admin-modal-confirm[^>]*>\s*Delete\s*<\/button>/s', $html);
         $this->assertStringContainsString('Keep media', $html);
         $this->assertStringContainsString('bg-admin-danger', $html);
     }
@@ -38,7 +39,7 @@ class ConfirmationModalTest extends TestCase
             '<x-admin.confirmation-modal title="Run sync" message="Queue a sync job." variant="warning" :open="false" :contained="true" />'
         );
 
-        $this->assertStringContainsString('absolute', $html);
+        $this->assertMatchesRegularExpression('/<div\s+[^>]*class="[^"]*absolute[^"]*"[^>]*data-admin-modal/s', $html);
         $this->assertStringContainsString('hidden', $html);
         $this->assertStringContainsString('data-admin-modal-open="false"', $html);
         $this->assertStringContainsString('bg-admin-warning', $html);
@@ -55,5 +56,20 @@ class ConfirmationModalTest extends TestCase
         $this->assertStringContainsString('&lt;Yes&gt;', $html);
         $this->assertStringContainsString('&lt;No&gt;', $html);
         $this->assertStringNotContainsString('<Danger>', $html);
+    }
+
+    public function test_confirmation_modal_generates_unique_accessibility_ids(): void
+    {
+        $html = Blade::render(<<<'BLADE'
+            <x-admin.confirmation-modal title="First" message="One" />
+            <x-admin.confirmation-modal title="Second" message="Two" />
+        BLADE);
+
+        preg_match_all('/aria-labelledby="([^"]+)"/', $html, $labelMatches);
+        preg_match_all('/aria-describedby="([^"]+)"/', $html, $descriptionMatches);
+
+        $this->assertCount(2, array_unique($labelMatches[1]));
+        $this->assertCount(2, array_unique($descriptionMatches[1]));
+        $this->assertStringContainsString('data-admin-modal-confirm', $html);
     }
 }

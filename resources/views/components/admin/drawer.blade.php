@@ -22,6 +22,7 @@
 
     $positionClass = $positionClasses[$position] ?? $positionClasses['right'];
     $sizeClass = $sizeClasses[$size] ?? $sizeClasses['md'];
+    $drawerTitleId = 'admin-drawer-title-'.\Illuminate\Support\Str::random(8);
 @endphp
 
 <div
@@ -33,6 +34,7 @@
     ]) }}
     data-admin-drawer
     data-admin-drawer-open="{{ $open ? 'true' : 'false' }}"
+    data-admin-drawer-contained="{{ $contained ? 'true' : 'false' }}"
 >
     @if ($backdrop)
         <button
@@ -47,10 +49,10 @@
         class="absolute top-0 flex h-full w-full {{ $sizeClass }} {{ $positionClass }} flex-col border-admin-border bg-admin-surface shadow-admin-floating"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="admin-drawer-title"
+        aria-labelledby="{{ $drawerTitleId }}"
     >
         <header class="flex items-start justify-between gap-admin-field border-b border-admin-border p-admin-card">
-            <h2 id="admin-drawer-title" class="text-base font-semibold text-admin-text">{{ $title }}</h2>
+            <h2 id="{{ $drawerTitleId }}" class="text-base font-semibold text-admin-text">{{ $title }}</h2>
 
             <button
                 type="button"
@@ -66,16 +68,18 @@
             {{ $slot }}
         </div>
 
-        @isset($footer)
+        @if (isset($footer) || isset($actions))
             <footer class="border-t border-admin-border p-admin-card">
-                {{ $footer }}
-            </footer>
-        @endisset
+                @isset($footer)
+                    {{ $footer }}
+                @endisset
 
-        @isset($actions)
-            <footer class="border-t border-admin-border p-admin-card">
-                {{ $actions }}
+                @isset($actions)
+                    <div @class(['mt-admin-field' => isset($footer)])>
+                        {{ $actions }}
+                    </div>
+                @endisset
             </footer>
-        @endisset
+        @endif
     </aside>
 </div>

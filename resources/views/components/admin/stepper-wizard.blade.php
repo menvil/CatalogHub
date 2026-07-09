@@ -25,15 +25,16 @@
     ];
 
     $isVertical = $orientation === 'vertical';
+    $stepperStyle = trim(rtrim((string) $attributes->get('style'), ';').'; --step-count: '.max(count($steps), 1).';', '; ');
 @endphp
 
 <ol
-    {{ $attributes->class([
+    {{ $attributes->except('style')->class([
         'grid gap-admin-field',
         'md:grid-cols-[repeat(var(--step-count),minmax(0,1fr))]' => ! $isVertical,
         'grid-cols-1' => $isVertical,
     ]) }}
-    style="--step-count: {{ max(count($steps), 1) }}"
+    style="{{ $stepperStyle }}"
     data-admin-stepper="{{ $orientation }}"
 >
     @foreach ($steps as $index => $step)
@@ -44,8 +45,8 @@
             $classes = $statusClasses[$status] ?? $statusClasses['pending'];
         @endphp
 
-        <li class="flex gap-admin-field {{ $isVertical ? '' : 'md:flex-col' }}" data-admin-step-status="{{ $status }}">
-            <div class="flex items-center gap-admin-field">
+        <li class="flex gap-admin-field {{ $isVertical ? '' : 'md:flex-col' }}" data-admin-step-status="{{ $status }}" @if ($status === 'current') aria-current="step" @endif>
+            <div class="flex {{ $isVertical ? 'flex-col items-center' : 'items-center' }} gap-admin-field">
                 <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-admin-badge text-sm font-semibold ring-2 ring-inset {{ $classes['marker'] }}">
                     @if ($status === 'completed')
                         ✓
@@ -57,7 +58,11 @@
                 </span>
 
                 @if (! $loop->last)
-                    <span class="hidden h-px flex-1 bg-admin-border md:block" aria-hidden="true"></span>
+                    @if ($isVertical)
+                        <span class="h-8 w-px bg-admin-border" aria-hidden="true"></span>
+                    @else
+                        <span class="hidden h-px flex-1 bg-admin-border md:block" aria-hidden="true"></span>
+                    @endif
                 @endif
             </div>
 

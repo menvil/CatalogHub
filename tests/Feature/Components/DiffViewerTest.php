@@ -53,4 +53,18 @@ class DiffViewerTest extends TestCase
         $this->assertStringContainsString('&lt;new&gt;', $html);
         $this->assertStringNotContainsString('<old>', $html);
     }
+
+    public function test_diff_viewer_preserves_false_and_serializes_arrays(): void
+    {
+        $falseDiff = Blade::render('<x-admin.diff-viewer :before-value="false" :after-value="true" />');
+        $arrayDiff = Blade::render('<x-admin.diff-viewer :before-value="$before" :after-value="$after" />', [
+            'before' => ['enabled' => false],
+            'after' => ['enabled' => true],
+        ]);
+
+        $this->assertStringContainsString('false', $falseDiff);
+        $this->assertStringContainsString('true', $falseDiff);
+        $this->assertStringContainsString('&quot;enabled&quot;: false', $arrayDiff);
+        $this->assertStringContainsString('&quot;enabled&quot;: true', $arrayDiff);
+    }
 }

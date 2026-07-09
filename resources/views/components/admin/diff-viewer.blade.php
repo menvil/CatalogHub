@@ -8,8 +8,24 @@
 ])
 
 @php
-    $beforeText = is_null($beforeValue) ? '' : (string) $beforeValue;
-    $afterText = is_null($afterValue) ? '' : (string) $afterValue;
+    $normalizeDiffValue = function ($value): string {
+        if (is_null($value)) {
+            return '';
+        }
+
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+
+        if (is_array($value) || is_object($value)) {
+            return json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '';
+        }
+
+        return (string) $value;
+    };
+
+    $beforeText = $normalizeDiffValue($beforeValue);
+    $afterText = $normalizeDiffValue($afterValue);
 
     $state = match (true) {
         $beforeText === '' && $afterText !== '' => 'added',

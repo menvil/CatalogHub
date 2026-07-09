@@ -20,6 +20,7 @@ class AdminDrawerTest extends TestCase
         BLADE);
 
         $this->assertStringContainsString('data-admin-drawer', $html);
+        $this->assertStringContainsString('data-admin-drawer-contained="false"', $html);
         $this->assertStringContainsString('role="dialog"', $html);
         $this->assertStringContainsString('aria-modal="true"', $html);
         $this->assertStringContainsString('Product preview', $html);
@@ -57,5 +58,18 @@ class AdminDrawerTest extends TestCase
 
         $this->assertStringContainsString('absolute', $html);
         $this->assertStringContainsString('Save', $html);
+    }
+
+    public function test_admin_drawer_generates_unique_title_ids_for_multiple_instances(): void
+    {
+        $html = Blade::render(<<<'BLADE'
+            <x-admin.drawer title="First">One</x-admin.drawer>
+            <x-admin.drawer title="Second">Two</x-admin.drawer>
+        BLADE);
+
+        preg_match_all('/aria-labelledby="([^"]+)"/', $html, $matches);
+
+        $this->assertCount(2, array_unique($matches[1]));
+        $this->assertStringNotContainsString('id="admin-drawer-title"', $html);
     }
 }

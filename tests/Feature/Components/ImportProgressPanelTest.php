@@ -40,9 +40,11 @@ class ImportProgressPanelTest extends TestCase
     public function test_import_progress_panel_maps_failed_and_completed_status_variants(): void
     {
         $failed = Blade::render('<x-admin.import-progress-panel source-name="Feed" status="failed" />');
+        $error = Blade::render('<x-admin.import-progress-panel source-name="Feed" status="error" />');
         $completed = Blade::render('<x-admin.import-progress-panel source-name="Feed" status="completed" />');
 
         $this->assertStringContainsString('data-admin-status-badge="danger"', $failed);
+        $this->assertStringContainsString('data-admin-status-badge="danger"', $error);
         $this->assertStringContainsString('data-admin-status-badge="success"', $completed);
     }
 

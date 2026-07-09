@@ -23,6 +23,8 @@ class CentralAdminLayoutTest extends TestCase
         $this->assertStringContainsString('Notifications', $html);
         $this->assertStringContainsString('Profile', $html);
         $this->assertStringContainsString('Central admin slot content', $html);
+        $this->assertStringContainsString('<title>Catalog quality - ', $html);
+        $this->assertStringNotContainsString('href="#"', $html);
 
         foreach ([
             'Dashboard',

@@ -50,7 +50,14 @@
                     <article class="overflow-hidden rounded-admin-card border border-admin-border bg-admin-surface-muted">
                         <div class="flex aspect-video items-center justify-center bg-admin-text text-sm font-semibold text-white">
                             @if ($url)
-                                <img src="{{ $url }}" alt="{{ $name }}" class="h-full w-full object-cover">
+                                <img
+                                    src="{{ $url }}"
+                                    alt="{{ $name }}"
+                                    loading="lazy"
+                                    onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');"
+                                    class="h-full w-full object-cover"
+                                >
+                                <span class="hidden">{{ strtoupper(substr($type, 0, 1)) }}</span>
                             @else
                                 {{ strtoupper(substr($type, 0, 1)) }}
                             @endif

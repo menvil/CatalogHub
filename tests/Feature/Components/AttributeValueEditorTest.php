@@ -56,5 +56,27 @@ class AttributeValueEditorTest extends TestCase
         $this->assertStringContainsString('&lt;Raw&gt;', $html);
         $this->assertStringContainsString('&lt;Normalized&gt;', $html);
         $this->assertStringNotContainsString('<Label>', $html);
+        $this->assertStringNotContainsString('<Raw>', $html);
+        $this->assertStringNotContainsString('<Normalized>', $html);
+    }
+
+    public function test_attribute_value_editor_preserves_zero_false_and_selected_options(): void
+    {
+        $zero = Blade::render('<x-admin.attribute-value-editor attribute-label="Weight" data-type="number" normalized-value="0" />');
+        $false = Blade::render('<x-admin.attribute-value-editor attribute-label="Portable" data-type="boolean" normalized-value="false" />');
+        $enum = Blade::render(
+            '<x-admin.attribute-value-editor attribute-label="Energy class" data-type="enum" normalized-value="B" :options="$options" />',
+            ['options' => ['A', 'B']]
+        );
+        $unit = Blade::render(
+            '<x-admin.attribute-value-editor attribute-label="Power" data-type="unit" normalized-value="100" :unit-options="$unitOptions" />',
+            ['unitOptions' => [['value' => 'w', 'label' => 'W']]]
+        );
+
+        $this->assertMatchesRegularExpression('/>\s*0\s*<\/p>/', $zero);
+        $this->assertStringNotContainsString('Not normalized in Phase 2', $zero);
+        $this->assertStringNotContainsString('checked', $false);
+        $this->assertStringContainsString('value="B" selected', $enum);
+        $this->assertStringContainsString('100 W', $unit);
     }
 }

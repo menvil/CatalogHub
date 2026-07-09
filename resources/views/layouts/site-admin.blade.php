@@ -14,6 +14,7 @@
         ['key' => 'polls', 'label' => 'Polls'],
         ['key' => 'settings', 'label' => 'Settings'],
     ];
+    $documentTitle = trim($__env->yieldContent('pageTitle', $pageTitle ?? $title ?? 'Site Admin'));
 @endphp
 
 <!DOCTYPE html>
@@ -22,7 +23,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>{{ $title ?? 'Site Admin' }} - {{ config('app.name', 'CatalogHub') }}</title>
+        <title>{{ $title ?? $documentTitle }} - {{ config('app.name', 'CatalogHub') }}</title>
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>

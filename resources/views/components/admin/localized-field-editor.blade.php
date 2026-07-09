@@ -35,26 +35,24 @@
     </div>
 
     @if ($isTabs)
-        <div class="mt-4 flex gap-1 overflow-x-auto border-b border-admin-border" role="tablist" aria-label="{{ $fieldName }} locales">
+        <div class="mt-4 flex gap-1 overflow-x-auto border-b border-admin-border" aria-label="{{ $fieldName }} locales">
             @foreach ($normalizedLocales as $index => $locale)
                 @php
                     $status = $statuses[$locale['code']] ?? 'missing';
                     $isActive = $index === 0;
                 @endphp
 
-                <button
-                    type="button"
-                    role="tab"
-                    aria-selected="{{ $isActive ? 'true' : 'false' }}"
-                    class="@class([
+                <span
+                    @class([
                         'flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium',
                         'border-admin-primary text-admin-primary' => $isActive,
                         'border-transparent text-admin-muted' => ! $isActive,
                     ])"
+                    data-admin-locale-summary="{{ $locale['code'] }}"
                 >
                     <span>{{ $locale['label'] }}</span>
                     <x-admin.translation-status-badge :status="$status" :locale="$locale['code']" />
-                </button>
+                </span>
             @endforeach
         </div>
     @endif

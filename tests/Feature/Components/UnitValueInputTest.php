@@ -25,7 +25,7 @@ class UnitValueInputTest extends TestCase
         $this->assertStringContainsString('<select', $html);
         $this->assertStringContainsString('W', $html);
         $this->assertStringContainsString('kW', $html);
-        $this->assertStringContainsString('selected', $html);
+        $this->assertStringContainsString('value="w" selected', $html);
         $this->assertStringContainsString('Canonical preview:', $html);
         $this->assertStringContainsString('100 W', $html);
     }
@@ -45,6 +45,21 @@ class UnitValueInputTest extends TestCase
         $this->assertStringContainsString('Not calculated in Phase 2', $html);
     }
 
+    public function test_unit_value_input_preserves_zero_preview_and_generates_unique_ids(): void
+    {
+        $html = Blade::render(<<<'BLADE'
+            <x-admin.unit-value-input canonical-preview="0" />
+            <x-admin.unit-value-input canonical-preview="0.0" />
+        BLADE);
+
+        preg_match_all('/id="(unit-value-value-[^"]+)"/', $html, $matches);
+
+        $this->assertCount(4, $matches[1]);
+        $this->assertCount(4, array_unique($matches[1]));
+        $this->assertStringContainsString('>0</span>', $html);
+        $this->assertStringContainsString('>0.0</span>', $html);
+    }
+
     public function test_unit_value_input_escapes_labels_and_errors(): void
     {
         $availableUnits = [['value' => '<w>', 'label' => '<Watt>']];
@@ -55,6 +70,7 @@ class UnitValueInputTest extends TestCase
         );
 
         $this->assertStringContainsString('&lt;Power&gt;', $html);
+        $this->assertStringContainsString('&lt;w&gt;', $html);
         $this->assertStringContainsString('&lt;Watt&gt;', $html);
         $this->assertStringContainsString('&lt;Invalid&gt;', $html);
         $this->assertStringNotContainsString('<Power>', $html);

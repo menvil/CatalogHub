@@ -38,6 +38,8 @@ class MediaPickerTest extends TestCase
         $this->assertStringContainsString('image/png, image/jpeg', $html);
         $this->assertStringContainsString('Main image', $html);
         $this->assertStringContainsString('/demo/main.png', $html);
+        $this->assertStringContainsString('loading="lazy"', $html);
+        $this->assertStringContainsString('onerror=', $html);
         $this->assertStringContainsString('Spec sheet', $html);
     }
 

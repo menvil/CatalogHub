@@ -12,19 +12,25 @@
     $variantClasses = [
         'default' => [
             'icon' => 'bg-admin-primary-soft text-admin-primary ring-admin-primary/20',
+            'symbol' => '?',
             'confirm' => 'bg-admin-primary text-white hover:bg-blue-700',
         ],
         'warning' => [
             'icon' => 'bg-admin-warning-soft text-admin-warning ring-admin-warning/25',
+            'symbol' => '!',
             'confirm' => 'bg-admin-warning text-white hover:bg-amber-700',
         ],
         'danger' => [
             'icon' => 'bg-admin-danger-soft text-admin-danger ring-admin-danger/25',
+            'symbol' => '!',
             'confirm' => 'bg-admin-danger text-white hover:bg-red-800',
         ],
     ];
 
     $classes = $variantClasses[$variant] ?? $variantClasses['default'];
+    $modalBaseId = 'admin-confirmation-modal-'.\Illuminate\Support\Str::random(8);
+    $modalTitleId = $modalBaseId.'-title';
+    $modalMessageId = $modalBaseId.'-message';
 @endphp
 
 <div
@@ -48,18 +54,18 @@
         class="relative w-full max-w-lg rounded-admin-modal border border-admin-border bg-admin-surface shadow-admin-modal"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="admin-confirmation-modal-title"
-        aria-describedby="admin-confirmation-modal-message"
+        aria-labelledby="{{ $modalTitleId }}"
+        aria-describedby="{{ $modalMessageId }}"
     >
         <div class="p-6">
             <div class="flex gap-admin-card">
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-admin-badge ring-1 ring-inset {{ $classes['icon'] }}" aria-hidden="true">
-                    !
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-admin-badge text-sm font-bold ring-1 ring-inset {{ $classes['icon'] }}" aria-hidden="true">
+                    {{ $classes['symbol'] }}
                 </div>
 
                 <div class="min-w-0 flex-1">
-                    <h2 id="admin-confirmation-modal-title" class="text-lg font-semibold text-admin-text">{{ $title }}</h2>
-                    <p id="admin-confirmation-modal-message" class="mt-2 text-sm text-admin-muted">{{ $message }}</p>
+                    <h2 id="{{ $modalTitleId }}" class="text-lg font-semibold text-admin-text">{{ $title }}</h2>
+                    <p id="{{ $modalMessageId }}" class="mt-2 text-sm text-admin-muted">{{ $message }}</p>
 
                     @if (trim($slot) !== '')
                         <div class="mt-4 text-sm text-admin-text">
@@ -82,6 +88,7 @@
             <button
                 type="button"
                 class="rounded-admin-input px-3 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary {{ $classes['confirm'] }}"
+                data-admin-modal-confirm
             >
                 {{ $confirmLabel }}
             </button>

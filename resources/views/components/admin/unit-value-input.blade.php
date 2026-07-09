@@ -5,10 +5,11 @@
     'label' => null,
     'canonicalPreview' => null,
     'error' => null,
+    'id' => null,
 ])
 
 @php
-    $inputId = 'unit-value-'.(\Illuminate\Support\Str::slug($label ?? 'value') ?: 'value');
+    $inputId = $id ?: 'unit-value-'.(\Illuminate\Support\Str::slug($label ?? 'value') ?: 'value').'-'.\Illuminate\Support\Str::random(6);
     $selectId = $inputId.'-unit';
 @endphp
 
@@ -50,7 +51,7 @@
 
     <div class="rounded-admin-input border border-admin-border bg-admin-surface-muted px-3 py-2 text-sm text-admin-muted">
         <span class="font-medium text-admin-text">Canonical preview:</span>
-        <span>{{ $canonicalPreview ?: 'Not calculated in Phase 2' }}</span>
+        <span>{{ is_null($canonicalPreview) ? 'Not calculated in Phase 2' : $canonicalPreview }}</span>
     </div>
 
     @if ($error)

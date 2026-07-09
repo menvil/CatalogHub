@@ -2,6 +2,7 @@
 
 namespace App\Models\CentralCatalog;
 
+use App\Enums\CategorySchemaStatus;
 use App\Enums\CentralCategoryStatus;
 use Database\Factories\CentralCategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -12,8 +13,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property CentralCategoryStatus $status
+ * @property CategorySchemaStatus $schema_status
  */
-#[Fillable(['parent_id', 'name', 'slug', 'status', 'position'])]
+#[Fillable(['parent_id', 'name', 'slug', 'status', 'schema_status', 'position'])]
 final class CentralCategory extends Model
 {
     /** @use HasFactory<CentralCategoryFactory> */
@@ -31,6 +33,7 @@ final class CentralCategory extends Model
         return [
             'position' => 'integer',
             'status' => CentralCategoryStatus::class,
+            'schema_status' => CategorySchemaStatus::class,
         ];
     }
 
@@ -59,6 +62,22 @@ final class CentralCategory extends Model
     }
 
     /**
+     * @return HasMany<AttributeSection, $this>
+     */
+    public function attributeSections(): HasMany
+    {
+        return $this->hasMany(AttributeSection::class, 'central_category_id');
+    }
+
+    /**
+     * @return HasMany<AttributeDefinition, $this>
+     */
+    public function attributeDefinitions(): HasMany
+    {
+        return $this->hasMany(AttributeDefinition::class, 'central_category_id');
+    }
+
+    /**
      * @return list<int>
      */
     public function descendantIds(): array
@@ -70,7 +89,7 @@ final class CentralCategory extends Model
         $descendantIds = [];
         $parentIds = [$this->getKey()];
 
-        while ($parentIds !== []) {
+        while (true) {
             $childIds = self::query()
                 ->whereIn('parent_id', $parentIds)
                 ->pluck($this->getKeyName())

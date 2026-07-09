@@ -2,10 +2,12 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\CategorySchemaStatus;
 use App\Enums\CentralCategoryStatus;
 use App\Filament\Resources\CentralCategoryResource\Pages;
 use App\Models\CentralCatalog\CentralCategory;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -56,6 +58,11 @@ final class CentralCategoryResource extends Resource
                     ->required()
                     ->options(CentralCategoryStatus::options())
                     ->default(CentralCategoryStatus::default()->value),
+                Select::make('schema_status')
+                    ->label('Schema status')
+                    ->required()
+                    ->options(CategorySchemaStatus::options())
+                    ->default(CategorySchemaStatus::default()->value),
                 TextInput::make('position')
                     ->required()
                     ->integer()
@@ -81,6 +88,11 @@ final class CentralCategoryResource extends Resource
                     ->badge()
                     ->color(fn (CentralCategoryStatus|string|null $state): string => CentralCategoryStatus::colorFor($state))
                     ->sortable(),
+                TextColumn::make('schema_status')
+                    ->label('Schema')
+                    ->badge()
+                    ->color(fn (CategorySchemaStatus|string|null $state): string => CategorySchemaStatus::colorFor($state))
+                    ->sortable(),
                 TextColumn::make('position')
                     ->sortable(),
                 TextColumn::make('updated_at')
@@ -88,6 +100,10 @@ final class CentralCategoryResource extends Resource
                     ->sortable(),
             ])
             ->recordActions([
+                Action::make('schema')
+                    ->label('Schema')
+                    ->icon(Heroicon::OutlinedAdjustmentsHorizontal)
+                    ->url(fn (CentralCategory $record): string => self::getUrl('schema', ['record' => $record])),
                 EditAction::make(),
             ]);
     }
@@ -98,7 +114,7 @@ final class CentralCategoryResource extends Resource
             'index' => Pages\ListCentralCategories::route('/'),
             'create' => Pages\CreateCentralCategory::route('/create'),
             'edit' => Pages\EditCentralCategory::route('/{record}/edit'),
+            'schema' => Pages\CategorySchemaBuilder::route('/{record}/schema'),
         ];
     }
-
 }

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\CentralCategoryResource\Pages;
 use App\Actions\CategorySchema\CreateAttributeSectionAction;
 use App\Actions\CategorySchema\CreateAttributeDefinitionAction;
 use App\Actions\CategorySchema\DeleteAttributeSectionAction;
+use App\Actions\CategorySchema\MoveAttributeDefinitionAction;
 use App\Actions\CategorySchema\UpdateAttributeDefinitionAction;
 use App\Actions\CategorySchema\UpdateAttributeSectionAction;
 use App\Filament\Resources\CentralCategoryResource;
@@ -83,6 +84,15 @@ final class CategorySchemaBuilder extends Page
         $attribute = $this->getCategory()->attributeDefinitions()->findOrFail($attributeId);
 
         $action->handle($attribute, $data);
+    }
+
+    public function moveAttribute(int $attributeId, int $targetSectionId, int $position, MoveAttributeDefinitionAction $action): void
+    {
+        $category = $this->getCategory();
+        $attribute = $category->attributeDefinitions()->findOrFail($attributeId);
+        $targetSection = $category->attributeSections()->findOrFail($targetSectionId);
+
+        $action->handle($attribute, $targetSection, $position);
     }
 
     protected function getHeaderActions(): array

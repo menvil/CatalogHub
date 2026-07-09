@@ -8,6 +8,7 @@ use App\Models\MeasurementUnit;
 use Database\Seeders\ImperialMeasurementUnitsSeeder;
 use Database\Seeders\MeasurementDimensionsSeeder;
 use Database\Seeders\MetricMeasurementUnitsSeeder;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -53,5 +54,33 @@ class AttributeDisplayRuleTest extends TestCase
         $this->assertTrue($rule->attributeDefinition->is($attribute));
         $this->assertTrue($rule->displayUnit->is($inch));
         $this->assertSame(1, $rule->decimals);
+    }
+
+    public function test_attribute_display_rule_scope_is_unique_when_market_and_locale_are_set(): void
+    {
+        $this->seed([MeasurementDimensionsSeeder::class, MetricMeasurementUnitsSeeder::class, ImperialMeasurementUnitsSeeder::class]);
+
+        $attribute = AttributeDefinition::factory()->create();
+        $inch = MeasurementUnit::query()->where('code', 'inch')->firstOrFail();
+
+        AttributeDisplayRule::create([
+            'attribute_definition_id' => $attribute->id,
+            'market_code' => 'US',
+            'locale' => 'en_US',
+            'display_unit_id' => $inch->id,
+            'rounding_mode' => 'half_up',
+            'suffix_style' => 'symbol',
+        ]);
+
+        $this->expectException(QueryException::class);
+
+        AttributeDisplayRule::create([
+            'attribute_definition_id' => $attribute->id,
+            'market_code' => 'US',
+            'locale' => 'en_US',
+            'display_unit_id' => $inch->id,
+            'rounding_mode' => 'half_up',
+            'suffix_style' => 'symbol',
+        ]);
     }
 }

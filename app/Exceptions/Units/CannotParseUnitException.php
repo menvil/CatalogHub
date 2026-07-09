@@ -15,4 +15,9 @@ final class CannotParseUnitException extends InvalidArgumentException
     {
         return new self("Cannot parse unknown measurement unit [{$rawUnit}].");
     }
+
+    public static function ambiguousUnit(string $rawUnit): self
+    {
+        return new self("Cannot parse ambiguous measurement unit [{$rawUnit}].");
+    }
 }

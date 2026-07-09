@@ -16,11 +16,11 @@ class MarketUnitPreferenceFactory extends Factory
 
     public function definition(): array
     {
-        $dimension = MeasurementDimension::factory();
+        $dimension = MeasurementDimension::factory()->create();
 
         return [
             'market_code' => fake()->unique()->countryCode(),
-            'dimension_id' => $dimension,
+            'dimension_id' => $dimension->id,
             'preferred_unit_id' => MeasurementUnit::factory()->for($dimension, 'dimension'),
         ];
     }

@@ -35,7 +35,7 @@ final class UnitParser
     {
         $needle = $this->normalizeAlias($rawUnit);
 
-        return $this->units()->first(function (MeasurementUnit $unit) use ($needle): bool {
+        $matches = $this->units()->filter(function (MeasurementUnit $unit) use ($needle): bool {
             foreach ($this->aliasesFor($unit) as $alias) {
                 if ($this->normalizeAlias($alias) === $needle) {
                     return true;
@@ -44,6 +44,12 @@ final class UnitParser
 
             return false;
         });
+
+        if ($matches->count() > 1) {
+            throw CannotParseUnitException::ambiguousUnit($rawUnit);
+        }
+
+        return $matches->first();
     }
 
     /**

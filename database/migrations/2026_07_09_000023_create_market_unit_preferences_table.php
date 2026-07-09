@@ -12,11 +12,14 @@ return new class extends Migration
             $table->id();
             $table->string('market_code', 16);
             $table->foreignId('dimension_id')->constrained('measurement_dimensions')->cascadeOnDelete();
-            $table->foreignId('preferred_unit_id')->constrained('measurement_units')->restrictOnDelete();
+            $table->foreignId('preferred_unit_id');
             $table->timestamps();
 
             $table->unique(['market_code', 'dimension_id']);
-            $table->index('preferred_unit_id');
+            $table->foreign(['preferred_unit_id', 'dimension_id'], 'market_pref_unit_dimension_fk')
+                ->references(['id', 'dimension_id'])
+                ->on('measurement_units')
+                ->restrictOnDelete();
         });
     }
 

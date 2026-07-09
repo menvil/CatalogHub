@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('measurement_units', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('dimension_id')->constrained('measurement_dimensions')->restrictOnDelete();
-            $table->string('code');
+            $table->string('code')->unique();
             $table->string('symbol');
             $table->string('name');
             $table->string('system')->default('metric');
@@ -23,8 +23,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 
-            $table->unique(['dimension_id', 'code']);
-            $table->index('code');
+            $table->unique(['id', 'dimension_id']);
             $table->index(['dimension_id', 'is_canonical']);
             $table->index(['is_active', 'system']);
         });

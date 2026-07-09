@@ -5,7 +5,6 @@ namespace Tests\Feature\Seeders;
 use App\Models\MeasurementUnit;
 use Database\Seeders\ImperialMeasurementUnitsSeeder;
 use Database\Seeders\MeasurementDimensionsSeeder;
-use Database\Seeders\MetricMeasurementUnitsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -16,7 +15,6 @@ class ImperialMeasurementUnitsSeederTest extends TestCase
     public function test_seeds_imperial_units_idempotently(): void
     {
         $this->seed(MeasurementDimensionsSeeder::class);
-        $this->seed(MetricMeasurementUnitsSeeder::class);
         $this->seed(ImperialMeasurementUnitsSeeder::class);
         $this->seed(ImperialMeasurementUnitsSeeder::class);
 

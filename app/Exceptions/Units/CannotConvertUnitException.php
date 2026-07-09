@@ -15,4 +15,9 @@ final class CannotConvertUnitException extends InvalidArgumentException
     {
         return new self("Cannot convert measurement unit [{$from}] to [{$to}] because their dimensions differ.");
     }
+
+    public static function invalidFactor(string $code): self
+    {
+        return new self("Cannot convert measurement unit [{$code}] because factor_to_canonical must not be zero.");
+    }
 }

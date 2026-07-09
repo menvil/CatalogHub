@@ -43,7 +43,9 @@ final class AttributeDisplayRuleResource extends Resource
                     ->searchable()
                     ->preload(),
                 TextInput::make('decimals')
-                    ->numeric(),
+                    ->integer()
+                    ->minValue(0)
+                    ->maxValue(255),
                 Select::make('rounding_mode')
                     ->required()
                     ->options([

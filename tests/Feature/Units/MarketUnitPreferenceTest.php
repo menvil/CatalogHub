@@ -8,6 +8,7 @@ use App\Models\MeasurementUnit;
 use Database\Seeders\ImperialMeasurementUnitsSeeder;
 use Database\Seeders\MeasurementDimensionsSeeder;
 use Database\Seeders\MetricMeasurementUnitsSeeder;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -47,5 +48,28 @@ class MarketUnitPreferenceTest extends TestCase
 
         $this->assertTrue($de->dimension->is($volume));
         $this->assertTrue($us->preferredUnit->is($gallon));
+    }
+
+    public function test_preferred_unit_must_match_preference_dimension(): void
+    {
+        $this->seed([MeasurementDimensionsSeeder::class, MetricMeasurementUnitsSeeder::class, ImperialMeasurementUnitsSeeder::class]);
+
+        $volume = MeasurementDimension::query()->where('code', 'volume')->firstOrFail();
+        $inch = MeasurementUnit::query()->where('code', 'inch')->firstOrFail();
+
+        $this->expectException(QueryException::class);
+
+        MarketUnitPreference::create([
+            'market_code' => 'US',
+            'dimension_id' => $volume->id,
+            'preferred_unit_id' => $inch->id,
+        ]);
+    }
+
+    public function test_factory_creates_matching_dimension_and_preferred_unit(): void
+    {
+        $preference = MarketUnitPreference::factory()->create();
+
+        $this->assertSame($preference->dimension_id, $preference->preferredUnit->dimension_id);
     }
 }

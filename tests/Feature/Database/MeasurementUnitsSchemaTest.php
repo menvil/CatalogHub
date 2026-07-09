@@ -2,6 +2,9 @@
 
 namespace Tests\Feature\Database;
 
+use App\Models\MeasurementDimension;
+use App\Models\MeasurementUnit;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -37,10 +40,29 @@ class MeasurementUnitsSchemaTest extends TestCase
 
         $this->assertTrue($indexes->contains(
             fn (array $index): bool => $index['unique'] === true
-                && $index['columns'] === ['dimension_id', 'code']
+                && $index['columns'] === ['code']
         ));
         $this->assertTrue($indexes->contains(
-            fn (array $index): bool => $index['columns'] === ['code']
+            fn (array $index): bool => $index['unique'] === true
+                && $index['columns'] === ['id', 'dimension_id']
         ));
+        $this->assertTrue($indexes->contains(
+            fn (array $index): bool => $index['columns'] === ['dimension_id', 'is_canonical']
+        ));
+        $this->assertTrue($indexes->contains(
+            fn (array $index): bool => $index['columns'] === ['is_active', 'system']
+        ));
+    }
+
+    public function test_measurement_unit_codes_are_globally_unique(): void
+    {
+        $firstDimension = MeasurementDimension::factory()->create();
+        $secondDimension = MeasurementDimension::factory()->create();
+
+        MeasurementUnit::factory()->for($firstDimension, 'dimension')->create(['code' => 'shared']);
+
+        $this->expectException(QueryException::class);
+
+        MeasurementUnit::factory()->for($secondDimension, 'dimension')->create(['code' => 'shared']);
     }
 }

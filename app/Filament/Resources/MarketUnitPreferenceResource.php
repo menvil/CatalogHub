@@ -12,10 +12,13 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Validation\Rule;
 use UnitEnum;
 
 final class MarketUnitPreferenceResource extends Resource
@@ -39,12 +42,25 @@ final class MarketUnitPreferenceResource extends Resource
                     ->relationship('dimension', 'name')
                     ->required()
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->live()
+                    ->afterStateUpdated(fn (Set $set): mixed => $set('preferred_unit_id', null)),
                 Select::make('preferred_unit_id')
-                    ->relationship('preferredUnit', 'name')
+                    ->relationship(
+                        'preferredUnit',
+                        'name',
+                        modifyQueryUsing: fn ($query, Get $get) => $query->when(
+                            $get('dimension_id'),
+                            fn ($query, mixed $dimensionId) => $query->where('dimension_id', $dimensionId),
+                        ),
+                    )
                     ->required()
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->rules([
+                        fn (Get $get) => Rule::exists('measurement_units', 'id')
+                            ->where('dimension_id', $get('dimension_id')),
+                    ]),
             ]);
     }
 

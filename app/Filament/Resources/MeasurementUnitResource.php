@@ -40,7 +40,8 @@ final class MeasurementUnitResource extends Resource
                     ->preload(),
                 TextInput::make('code')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->unique(ignoreRecord: true),
                 TextInput::make('symbol')
                     ->required()
                     ->maxLength(255),
@@ -56,6 +57,7 @@ final class MeasurementUnitResource extends Resource
                     ->default('metric'),
                 TextInput::make('factor_to_canonical')
                     ->numeric()
+                    ->rules(['not_in:0'])
                     ->required()
                     ->default(1),
                 TextInput::make('offset_to_canonical')
@@ -63,7 +65,9 @@ final class MeasurementUnitResource extends Resource
                     ->required()
                     ->default(0),
                 TextInput::make('precision_default')
-                    ->numeric()
+                    ->integer()
+                    ->minValue(0)
+                    ->maxValue(255)
                     ->required()
                     ->default(2),
                 TagsInput::make('aliases_json')

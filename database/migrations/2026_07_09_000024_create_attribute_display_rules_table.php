@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('suffix_style')->default('symbol');
             $table->timestamps();
 
-            $table->index(['attribute_definition_id', 'market_code', 'locale']);
+            $table->unique(['attribute_definition_id', 'market_code', 'locale'], 'attr_display_rules_scope_unique');
             $table->index('display_unit_id');
         });
     }

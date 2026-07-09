@@ -2,14 +2,17 @@
 
 namespace App\Services\Units;
 
-use App\Exceptions\Units\CannotConvertUnitException;
 use App\Models\MeasurementUnit;
 
 final class UnitFormatter
 {
+    public function __construct(
+        private readonly UnitResolver $unitResolver,
+    ) {}
+
     public function format(float|string $value, string|MeasurementUnit $unit, ?int $decimals = null, ?string $locale = null): string
     {
-        $resolvedUnit = $this->resolveUnit($unit);
+        $resolvedUnit = $this->unitResolver->resolve($unit);
         $precision = $decimals ?? $resolvedUnit->precision_default;
         $number = number_format((float) $value, $precision, '.', '');
 
@@ -22,21 +25,6 @@ final class UnitFormatter
         }
 
         return trim("{$number} {$resolvedUnit->symbol}");
-    }
-
-    private function resolveUnit(string|MeasurementUnit $unit): MeasurementUnit
-    {
-        if ($unit instanceof MeasurementUnit) {
-            return $unit;
-        }
-
-        $resolved = MeasurementUnit::query()->where('code', $unit)->first();
-
-        if (! $resolved instanceof MeasurementUnit) {
-            throw CannotConvertUnitException::unknownUnit($unit);
-        }
-
-        return $resolved;
     }
 
     private function trimTrailingZeros(string $number): string

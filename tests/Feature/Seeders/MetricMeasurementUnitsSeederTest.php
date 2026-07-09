@@ -18,7 +18,7 @@ class MetricMeasurementUnitsSeederTest extends TestCase
         $this->seed(MetricMeasurementUnitsSeeder::class);
         $this->seed(MetricMeasurementUnitsSeeder::class);
 
-        foreach (['millimeter', 'centimeter', 'meter', 'gram', 'kilogram', 'milliliter', 'liter', 'watt', 'kilowatt', 'celsius', 'kelvin', 'bar', 'hertz'] as $code) {
+        foreach (['millimeter', 'centimeter', 'meter', 'gram', 'kilogram', 'milliliter', 'liter', 'watt', 'kilowatt', 'celsius', 'kelvin', 'bar', 'hertz', 'kilohertz'] as $code) {
             $this->assertDatabaseHas('measurement_units', ['code' => $code]);
         }
 

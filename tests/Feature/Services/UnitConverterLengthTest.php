@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Services;
 
+use App\Models\MeasurementUnit;
 use App\Services\Units\UnitConverter;
 use Database\Seeders\ImperialMeasurementUnitsSeeder;
 use Database\Seeders\MeasurementDimensionsSeeder;
@@ -23,5 +24,16 @@ class UnitConverterLengthTest extends TestCase
         $this->assertEqualsWithDelta(1, $converter->convert(2.54, 'centimeter', 'inch'), 0.00001);
         $this->assertEqualsWithDelta(1000, $converter->convert(1, 'meter', 'millimeter'), 0.00001);
         $this->assertEqualsWithDelta(12, $converter->convert(1, 'foot', 'inch'), 0.00001);
+    }
+
+    public function test_model_instance_dimension_ids_are_compared_by_normalized_value(): void
+    {
+        $this->seed([MeasurementDimensionsSeeder::class, MetricMeasurementUnitsSeeder::class, ImperialMeasurementUnitsSeeder::class]);
+
+        $centimeter = MeasurementUnit::query()->where('code', 'centimeter')->firstOrFail();
+        $inch = MeasurementUnit::query()->where('code', 'inch')->firstOrFail();
+        $centimeter->forceFill(['dimension_id' => (string) $centimeter->dimension_id]);
+
+        $this->assertEqualsWithDelta(1, app(UnitConverter::class)->convert(2.54, $centimeter, $inch), 0.00001);
     }
 }

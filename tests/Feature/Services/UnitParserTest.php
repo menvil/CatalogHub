@@ -3,6 +3,8 @@
 namespace Tests\Feature\Services;
 
 use App\Exceptions\Units\CannotParseUnitException;
+use App\Models\MeasurementDimension;
+use App\Models\MeasurementUnit;
 use App\Services\Units\UnitParser;
 use Database\Seeders\ImperialMeasurementUnitsSeeder;
 use Database\Seeders\MeasurementDimensionsSeeder;
@@ -43,5 +45,27 @@ class UnitParserTest extends TestCase
         $this->expectException(CannotParseUnitException::class);
 
         app(UnitParser::class)->parse('10 parsecs');
+    }
+
+    public function test_invalid_value_throws_explicit_exception(): void
+    {
+        $this->expectException(CannotParseUnitException::class);
+
+        app(UnitParser::class)->parse('watts only');
+    }
+
+    public function test_ambiguous_alias_throws_explicit_exception(): void
+    {
+        $dimension = MeasurementDimension::query()->where('code', 'length')->firstOrFail();
+        MeasurementUnit::factory()->for($dimension, 'dimension')->create([
+            'code' => 'display_inch',
+            'symbol' => 'dup',
+            'name' => 'Display Inch',
+            'aliases_json' => ['in'],
+        ]);
+
+        $this->expectException(CannotParseUnitException::class);
+
+        app(UnitParser::class)->parse('10 in');
     }
 }

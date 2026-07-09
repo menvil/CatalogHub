@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Units;
 
+use App\Exceptions\Units\CannotConvertUnitException;
 use App\Models\MeasurementUnit;
 use Database\Seeders\ImperialMeasurementUnitsSeeder;
 use Database\Seeders\MeasurementDimensionsSeeder;
@@ -41,5 +42,15 @@ class MeasurementUnitConversionTest extends TestCase
         $this->assertEqualsWithDelta(0, $fahrenheit->toCanonical(32), 0.00001);
         $this->assertEqualsWithDelta(100, $fahrenheit->toCanonical(212), 0.00001);
         $this->assertEqualsWithDelta(32, $fahrenheit->fromCanonical(0), 0.00001);
+    }
+
+    public function test_from_canonical_rejects_zero_conversion_factor(): void
+    {
+        $unit = MeasurementUnit::query()->where('code', 'meter')->firstOrFail();
+        $unit->forceFill(['factor_to_canonical' => '0']);
+
+        $this->expectException(CannotConvertUnitException::class);
+
+        $unit->fromCanonical(10);
     }
 }

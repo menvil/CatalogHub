@@ -42,7 +42,8 @@ final class MeasurementDimensionResource extends Resource
                 TextInput::make('base_unit_code')
                     ->maxLength(255),
                 TextInput::make('sort_order')
-                    ->numeric()
+                    ->integer()
+                    ->minValue(0)
                     ->default(0)
                     ->required(),
                 Toggle::make('is_active')

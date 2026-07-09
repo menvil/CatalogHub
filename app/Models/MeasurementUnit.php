@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Exceptions\Units\CannotConvertUnitException;
 use Database\Factories\MeasurementUnitFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -60,7 +61,13 @@ final class MeasurementUnit extends Model
 
     public function fromCanonical(float|string $canonicalValue): float
     {
-        return ((float) $canonicalValue - (float) $this->offset_to_canonical) / (float) $this->factor_to_canonical;
+        $factor = (float) $this->factor_to_canonical;
+
+        if ($factor === 0.0) {
+            throw CannotConvertUnitException::invalidFactor($this->code);
+        }
+
+        return ((float) $canonicalValue - (float) $this->offset_to_canonical) / $factor;
     }
 
     /**

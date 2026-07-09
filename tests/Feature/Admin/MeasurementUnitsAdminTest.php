@@ -33,15 +33,22 @@ class MeasurementUnitsAdminTest extends TestCase
         $this->assertTrue(class_exists(EditMeasurementUnit::class));
     }
 
-    public function test_only_central_admins_can_access_units_resources(): void
+    public function test_admin_users_can_access_units_resources(): void
     {
         $centralAdmin = User::factory()->create(['role' => UserRole::CentralAdmin]);
+        $superAdmin = User::factory()->create(['role' => UserRole::SuperAdmin]);
         $normalUser = User::factory()->create(['role' => UserRole::CatalogEditor]);
 
         $this->actingAs($centralAdmin);
+        $this->assertTrue(MeasurementDimensionResource::canAccess());
+        $this->assertTrue(MeasurementUnitResource::canAccess());
+
+        $this->actingAs($superAdmin);
+        $this->assertTrue(MeasurementDimensionResource::canAccess());
         $this->assertTrue(MeasurementUnitResource::canAccess());
 
         $this->actingAs($normalUser);
+        $this->assertFalse(MeasurementDimensionResource::canAccess());
         $this->assertFalse(MeasurementUnitResource::canAccess());
     }
 }

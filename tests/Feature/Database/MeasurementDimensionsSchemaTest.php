@@ -33,5 +33,8 @@ class MeasurementDimensionsSchemaTest extends TestCase
         $this->assertTrue($indexes->contains(
             fn (array $index): bool => $index['unique'] === true && $index['columns'] === ['code']
         ));
+        $this->assertTrue($indexes->contains(
+            fn (array $index): bool => $index['columns'] === ['is_active', 'sort_order']
+        ));
     }
 }

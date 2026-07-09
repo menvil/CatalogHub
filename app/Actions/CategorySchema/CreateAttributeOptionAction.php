@@ -8,6 +8,7 @@ use App\Models\CentralCatalog\AttributeOption;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 final class CreateAttributeOptionAction
 {
@@ -39,6 +40,12 @@ final class CreateAttributeOptionAction
 
             $position = $validated['position']
                 ?? ((int) $attribute->options()->max('position') + 1);
+
+            if ($position > AttributeOption::MAX_POSITION) {
+                throw ValidationException::withMessages([
+                    'position' => 'The position may not be greater than '.AttributeOption::MAX_POSITION.'.',
+                ]);
+            }
 
             return AttributeOption::query()->create([
                 'attribute_definition_id' => $attribute->getKey(),

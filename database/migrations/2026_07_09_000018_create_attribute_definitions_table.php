@@ -30,7 +30,7 @@ return new class extends Migration
             $table->index(['central_category_id', 'attribute_section_id', 'position']);
             $table->index(['central_category_id', 'is_filterable']);
             $table->index(['central_category_id', 'is_comparable']);
-            $table->foreign(['attribute_section_id', 'central_category_id'])
+            $table->foreign(['attribute_section_id', 'central_category_id'], 'attr_def_section_cat_fk')
                 ->references(['id', 'central_category_id'])
                 ->on('attribute_sections')
                 ->restrictOnDelete();

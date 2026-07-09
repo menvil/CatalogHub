@@ -90,6 +90,23 @@ class AttributeOptionActionsTest extends TestCase
         ]);
     }
 
+    public function test_rejects_auto_position_above_unsigned_integer_range(): void
+    {
+        $attribute = AttributeDefinition::factory()->create([
+            'data_type' => AttributeDataType::Enum,
+        ]);
+        AttributeOption::factory()->for($attribute, 'attribute')->create([
+            'position' => AttributeOption::MAX_POSITION,
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        app(CreateAttributeOptionAction::class)->handle($attribute, [
+            'code' => 'va',
+            'label' => 'VA',
+        ]);
+    }
+
     public function test_updates_option_for_enum_attribute(): void
     {
         $attribute = AttributeDefinition::factory()->create([

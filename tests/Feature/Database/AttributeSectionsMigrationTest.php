@@ -56,4 +56,19 @@ class AttributeSectionsMigrationTest extends TestCase
             ->for($childCategory, 'category')
             ->create(['parent_id' => $parent->id]);
     }
+
+    public function test_category_deletion_removes_nested_attribute_sections(): void
+    {
+        $category = CentralCategory::factory()->create();
+        $parent = AttributeSection::factory()->for($category, 'category')->create();
+        $child = AttributeSection::factory()
+            ->for($category, 'category')
+            ->for($parent, 'parent')
+            ->create();
+
+        $category->delete();
+
+        $this->assertDatabaseMissing('attribute_sections', ['id' => $parent->id]);
+        $this->assertDatabaseMissing('attribute_sections', ['id' => $child->id]);
+    }
 }

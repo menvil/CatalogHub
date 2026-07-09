@@ -7,6 +7,7 @@ use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeSection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 final class CreateAttributeDefinitionAction
 {
@@ -24,6 +25,12 @@ final class CreateAttributeDefinitionAction
 
             $position = $validated['position']
                 ?? ((int) $section->attributes()->max('position') + 1);
+
+            if ($position > AttributeDefinition::MAX_POSITION) {
+                throw ValidationException::withMessages([
+                    'position' => 'The position may not be greater than '.AttributeDefinition::MAX_POSITION.'.',
+                ]);
+            }
 
             return AttributeDefinition::query()->create([
                 'central_category_id' => $section->central_category_id,

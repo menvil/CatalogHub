@@ -79,4 +79,21 @@ class CreateAttributeDefinitionActionTest extends TestCase
             'data_type' => AttributeDataType::Integer->value,
         ]);
     }
+
+    public function test_rejects_auto_position_above_unsigned_integer_range(): void
+    {
+        $section = AttributeSection::factory()->create();
+        AttributeDefinition::factory()
+            ->for($section->category, 'category')
+            ->for($section, 'section')
+            ->create(['position' => AttributeDefinition::MAX_POSITION]);
+
+        $this->expectException(ValidationException::class);
+
+        app(CreateAttributeDefinitionAction::class)->handle($section, [
+            'name' => 'Refresh rate',
+            'code' => 'refresh_rate',
+            'data_type' => AttributeDataType::Integer->value,
+        ]);
+    }
 }

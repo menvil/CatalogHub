@@ -23,10 +23,10 @@ return new class extends Migration
             $table->unique(['central_category_id', 'code']);
             $table->unique(['id', 'central_category_id']);
             $table->index(['central_category_id', 'position']);
-            $table->foreign(['parent_id', 'central_category_id'])
+            $table->foreign(['parent_id', 'central_category_id'], 'attr_section_parent_cat_fk')
                 ->references(['id', 'central_category_id'])
                 ->on('attribute_sections')
-                ->restrictOnDelete();
+                ->cascadeOnDelete();
         });
     }
 

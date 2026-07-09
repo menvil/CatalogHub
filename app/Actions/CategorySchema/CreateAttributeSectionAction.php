@@ -7,6 +7,7 @@ use App\Models\CentralCatalog\CentralCategory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 final class CreateAttributeSectionAction
 {
@@ -36,6 +37,12 @@ final class CreateAttributeSectionAction
 
             $position = $validated['position']
                 ?? ((int) $category->attributeSections()->max('position') + 1);
+
+            if ($position > AttributeSection::MAX_POSITION) {
+                throw ValidationException::withMessages([
+                    'position' => 'The position may not be greater than '.AttributeSection::MAX_POSITION.'.',
+                ]);
+            }
 
             return AttributeSection::query()->create([
                 'central_category_id' => $category->getKey(),

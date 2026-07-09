@@ -33,6 +33,15 @@ final class MoveAttributeDefinitionAction
                 return;
             }
 
+            if (
+                AttributeDefinition::query()
+                    ->where('attribute_section_id', $targetSection->getKey())
+                    ->where('position', AttributeDefinition::MAX_POSITION)
+                    ->exists()
+            ) {
+                throw CannotMoveAttributeDefinitionException::targetSectionPositionOverflow();
+            }
+
             AttributeDefinition::query()
                 ->where('attribute_section_id', $sourceSectionId)
                 ->where('position', '>', $oldPosition)
@@ -49,7 +58,10 @@ final class MoveAttributeDefinitionAction
             ]);
         });
 
-        return $attribute;
+        /** @var AttributeDefinition $freshAttribute */
+        $freshAttribute = $attribute->newQuery()->whereKey($attribute->getKey())->firstOrFail();
+
+        return $freshAttribute;
     }
 
     private function moveInsideSection(AttributeDefinition $attribute, int $newPosition, int $oldPosition): void

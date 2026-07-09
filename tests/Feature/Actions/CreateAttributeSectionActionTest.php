@@ -85,4 +85,19 @@ class CreateAttributeSectionActionTest extends TestCase
             'position' => AttributeSection::MAX_POSITION + 1,
         ]);
     }
+
+    public function test_rejects_auto_position_above_unsigned_integer_range(): void
+    {
+        $category = CentralCategory::factory()->create();
+        AttributeSection::factory()->for($category, 'category')->create([
+            'position' => AttributeSection::MAX_POSITION,
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        app(CreateAttributeSectionAction::class)->handle($category, [
+            'name' => 'Ports',
+            'code' => 'ports',
+        ]);
+    }
 }

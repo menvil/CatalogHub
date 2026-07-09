@@ -7,8 +7,10 @@ use App\Filament\Resources\CentralProductResource\Pages;
 use App\Models\CentralCatalog\CentralProduct;
 use BackedEnum;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -85,7 +87,34 @@ final class CentralProductResource extends Resource
                     ->sortable(),
             ])
             ->recordActions([
+                ViewAction::make(),
                 EditAction::make(),
+            ]);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                TextEntry::make('name'),
+                TextEntry::make('model')
+                    ->placeholder('None'),
+                TextEntry::make('slug'),
+                TextEntry::make('status')
+                    ->badge(),
+                TextEntry::make('brand.name')
+                    ->label('Brand')
+                    ->placeholder('None'),
+                TextEntry::make('category.name')
+                    ->label('Category')
+                    ->placeholder('None'),
+                TextEntry::make('variants_count')
+                    ->label('Variants')
+                    ->state(fn (CentralProduct $record): int => $record->variants()->count()),
+                TextEntry::make('created_at')
+                    ->dateTime(),
+                TextEntry::make('updated_at')
+                    ->dateTime(),
             ]);
     }
 
@@ -94,6 +123,7 @@ final class CentralProductResource extends Resource
         return [
             'index' => Pages\ListCentralProducts::route('/'),
             'create' => Pages\CreateCentralProduct::route('/create'),
+            'view' => Pages\ViewCentralProduct::route('/{record}'),
             'edit' => Pages\EditCentralProduct::route('/{record}/edit'),
         ];
     }

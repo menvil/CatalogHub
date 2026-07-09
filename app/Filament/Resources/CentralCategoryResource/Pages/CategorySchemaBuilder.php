@@ -10,6 +10,7 @@ use App\Actions\CategorySchema\CreateAttributeOptionAction;
 use App\Actions\CategorySchema\CreateAttributeSectionAction;
 use App\Actions\CategorySchema\DeleteAttributeOptionAction;
 use App\Actions\CategorySchema\DeleteAttributeSectionAction;
+use App\Actions\CategorySchema\ExportCategorySchemaAction;
 use App\Actions\CategorySchema\MoveAttributeDefinitionAction;
 use App\Actions\CategorySchema\MarkCategorySchemaReviewedAction;
 use App\Actions\CategorySchema\UpdateAttributeDefinitionAction;
@@ -169,6 +170,14 @@ final class CategorySchemaBuilder extends Page
         $source = CentralCategory::query()->findOrFail($sourceCategoryId);
 
         $action->handle($source, $this->getCategory());
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function exportSchema(ExportCategorySchemaAction $action): array
+    {
+        return $action->handle($this->getCategory());
     }
 
     protected function getHeaderActions(): array

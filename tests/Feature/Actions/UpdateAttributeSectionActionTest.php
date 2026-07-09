@@ -49,7 +49,10 @@ class UpdateAttributeSectionActionTest extends TestCase
             'code' => 'display',
         ]);
 
-        $this->assertSame('Display specs', $section->fresh()->name);
+        $section->refresh();
+
+        $this->assertSame('Display specs', $section->name);
+        $this->assertSame('display', $section->code);
     }
 
     public function test_rejects_duplicate_section_code_inside_category(): void
@@ -63,6 +66,19 @@ class UpdateAttributeSectionActionTest extends TestCase
         app(UpdateAttributeSectionAction::class)->handle($section, [
             'name' => 'Ports',
             'code' => 'display',
+        ]);
+    }
+
+    public function test_rejects_unsupported_display_style(): void
+    {
+        $section = AttributeSection::factory()->create();
+
+        $this->expectException(ValidationException::class);
+
+        app(UpdateAttributeSectionAction::class)->handle($section, [
+            'name' => 'Display',
+            'code' => 'display',
+            'display_style' => 'grid',
         ]);
     }
 }

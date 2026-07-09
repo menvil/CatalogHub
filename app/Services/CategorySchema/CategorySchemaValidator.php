@@ -13,9 +13,9 @@ final class CategorySchemaValidator
     {
         $result = new CategorySchemaValidationResult;
 
-        $category->load([
+        $category->loadMissing([
             'attributeSections' => fn ($query) => $query->ordered(),
-            'attributeSections.attributes' => fn ($query) => $query->ordered()->with('options'),
+            'attributeSections.attributes' => fn ($query) => $query->ordered(),
             'attributeDefinitions.options',
         ]);
 

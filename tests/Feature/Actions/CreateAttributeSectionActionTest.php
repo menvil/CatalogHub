@@ -59,4 +59,30 @@ class CreateAttributeSectionActionTest extends TestCase
             'code' => 'Display Name',
         ]);
     }
+
+    public function test_rejects_unsupported_display_style(): void
+    {
+        $category = CentralCategory::factory()->create();
+
+        $this->expectException(ValidationException::class);
+
+        app(CreateAttributeSectionAction::class)->handle($category, [
+            'name' => 'Display',
+            'code' => 'display',
+            'display_style' => 'grid',
+        ]);
+    }
+
+    public function test_rejects_position_above_unsigned_integer_range(): void
+    {
+        $category = CentralCategory::factory()->create();
+
+        $this->expectException(ValidationException::class);
+
+        app(CreateAttributeSectionAction::class)->handle($category, [
+            'name' => 'Display',
+            'code' => 'display',
+            'position' => AttributeSection::MAX_POSITION + 1,
+        ]);
+    }
 }

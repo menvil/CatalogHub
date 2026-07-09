@@ -5,6 +5,7 @@ namespace Tests\Feature\Actions;
 use App\Actions\CategorySchema\UpdateAttributeDefinitionAction;
 use App\Enums\AttributeDataType;
 use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -73,6 +74,23 @@ class UpdateAttributeDefinitionActionTest extends TestCase
             'name' => 'Height',
             'code' => 'weight',
             'data_type' => AttributeDataType::Decimal->value,
+        ]);
+    }
+
+    public function test_does_not_change_enum_attribute_with_options_to_non_option_type(): void
+    {
+        $attribute = AttributeDefinition::factory()->create([
+            'code' => 'panel_type',
+            'data_type' => AttributeDataType::Enum,
+        ]);
+        AttributeOption::factory()->for($attribute, 'attribute')->create();
+
+        $this->expectException(ValidationException::class);
+
+        app(UpdateAttributeDefinitionAction::class)->handle($attribute, [
+            'name' => 'Panel type',
+            'code' => 'panel_type',
+            'data_type' => AttributeDataType::String->value,
         ]);
     }
 }

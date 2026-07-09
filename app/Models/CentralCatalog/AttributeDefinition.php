@@ -36,6 +36,8 @@ final class AttributeDefinition extends Model
     /** @use HasFactory<AttributeDefinitionFactory> */
     use HasFactory;
 
+    public const MAX_POSITION = 4294967295;
+
     protected $table = 'attribute_definitions';
 
     protected static function newFactory(): AttributeDefinitionFactory

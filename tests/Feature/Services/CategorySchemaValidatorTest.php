@@ -37,6 +37,7 @@ class CategorySchemaValidatorTest extends TestCase
 
         $result = app(CategorySchemaValidator::class)->validate($category);
 
+        $this->assertTrue($result->hasWarnings());
         $this->assertTrue($result->hasIssueCode('enum_without_visible_options'));
     }
 
@@ -64,6 +65,8 @@ class CategorySchemaValidatorTest extends TestCase
 
         $result = app(CategorySchemaValidator::class)->validate($category);
 
+        $this->assertFalse($result->hasErrors());
+        $this->assertTrue($result->hasWarnings());
         $this->assertTrue($result->hasIssueCode('hidden_required_attribute'));
     }
 
@@ -78,6 +81,8 @@ class CategorySchemaValidatorTest extends TestCase
 
         $result = app(CategorySchemaValidator::class)->validate($category);
 
+        $this->assertFalse($result->hasErrors());
+        $this->assertTrue($result->hasWarnings());
         $this->assertTrue($result->hasIssueCode('filterable_complex_attribute'));
         $this->assertTrue($result->hasIssueCode('sortable_complex_attribute'));
     }

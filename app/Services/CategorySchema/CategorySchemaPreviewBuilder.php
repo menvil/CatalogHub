@@ -20,7 +20,7 @@ final class CategorySchemaPreviewBuilder
      */
     public function build(CentralCategory $category): array
     {
-        $category->load([
+        $category->loadMissing([
             'attributeSections' => fn ($query) => $query->ordered(),
             'attributeSections.attributes' => fn ($query) => $query->ordered()->withCount('options'),
         ]);

@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('attribute_sections', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('central_category_id')->constrained('central_categories')->cascadeOnDelete();
-            $table->foreignId('parent_id')->nullable()->constrained('attribute_sections')->nullOnDelete();
+            $table->foreignId('parent_id')->nullable();
             $table->string('code');
             $table->string('name');
             $table->unsignedInteger('position')->default(0);
@@ -21,7 +21,12 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['central_category_id', 'code']);
+            $table->unique(['id', 'central_category_id']);
             $table->index(['central_category_id', 'position']);
+            $table->foreign(['parent_id', 'central_category_id'])
+                ->references(['id', 'central_category_id'])
+                ->on('attribute_sections')
+                ->restrictOnDelete();
         });
     }
 

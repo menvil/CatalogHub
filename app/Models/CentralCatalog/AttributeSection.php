@@ -28,6 +28,10 @@ final class AttributeSection extends Model
     /** @use HasFactory<AttributeSectionFactory> */
     use HasFactory;
 
+    public const MAX_POSITION = 4294967295;
+
+    public const DISPLAY_STYLES = ['table', 'list'];
+
     protected $table = 'attribute_sections';
 
     protected static function newFactory(): AttributeSectionFactory

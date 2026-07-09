@@ -18,6 +18,7 @@ use App\Actions\CategorySchema\UpdateAttributeOptionAction;
 use App\Actions\CategorySchema\UpdateAttributeSectionAction;
 use App\DTO\CategorySchema\CategorySchemaIssue;
 use App\Filament\Resources\CentralCategoryResource;
+use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Services\CategorySchema\CategorySchemaPreviewBuilder;
 use App\Services\CategorySchema\CategorySchemaValidator;
@@ -39,6 +40,8 @@ final class CategorySchemaBuilder extends Page
 
     protected static ?string $title = 'Category Schema Builder';
 
+    private ?CentralCategory $cachedCategory = null;
+
     public function mount(int|string $record): void
     {
         $this->record = $this->resolveRecord($record);
@@ -51,10 +54,14 @@ final class CategorySchemaBuilder extends Page
 
     public function getCategory(): CentralCategory
     {
+        if ($this->cachedCategory !== null) {
+            return $this->cachedCategory;
+        }
+
         /** @var CentralCategory $category */
         $category = $this->getRecord();
 
-        return $category->load([
+        return $this->cachedCategory = $category->loadMissing([
             'attributeSections' => fn ($query) => $query->ordered(),
             'attributeSections.attributes' => fn ($query) => $query->ordered(),
         ]);
@@ -193,7 +200,7 @@ final class CategorySchemaBuilder extends Page
                         ->maxLength(255),
                     TextInput::make('code')
                         ->required()
-                        ->regex('/^[a-z][a-z0-9_]*$/')
+                        ->regex('/\A[a-z][a-z0-9_]*\z/')
                         ->maxLength(255),
                     Select::make('display_style')
                         ->required()
@@ -204,7 +211,8 @@ final class CategorySchemaBuilder extends Page
                         ->default('table'),
                     TextInput::make('position')
                         ->integer()
-                        ->minValue(0),
+                        ->minValue(0)
+                        ->maxValue(AttributeSection::MAX_POSITION),
                     Toggle::make('is_collapsible')
                         ->default(true),
                     Toggle::make('is_visible')

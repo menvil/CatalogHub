@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('attribute_definitions', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('central_category_id')->constrained('central_categories')->cascadeOnDelete();
-            $table->foreignId('attribute_section_id')->nullable()->constrained('attribute_sections')->nullOnDelete();
+            $table->foreignId('attribute_section_id')->nullable();
             $table->string('code');
             $table->string('name');
             $table->string('data_type')->default('string');
@@ -30,6 +30,10 @@ return new class extends Migration
             $table->index(['central_category_id', 'attribute_section_id', 'position']);
             $table->index(['central_category_id', 'is_filterable']);
             $table->index(['central_category_id', 'is_comparable']);
+            $table->foreign(['attribute_section_id', 'central_category_id'])
+                ->references(['id', 'central_category_id'])
+                ->on('attribute_sections')
+                ->restrictOnDelete();
         });
     }
 

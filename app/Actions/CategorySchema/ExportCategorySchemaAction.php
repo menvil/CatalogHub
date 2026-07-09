@@ -14,8 +14,9 @@ final class ExportCategorySchemaAction
      */
     public function handle(CentralCategory $category): array
     {
-        $category->load([
+        $category->loadMissing([
             'attributeSections' => fn ($query) => $query->ordered(),
+            'attributeSections.parent',
             'attributeSections.attributes' => fn ($query) => $query->ordered()->with(['options' => fn ($query) => $query->ordered()]),
         ]);
 
@@ -29,6 +30,7 @@ final class ExportCategorySchemaAction
             'sections' => $category->attributeSections
                 ->map(fn (AttributeSection $section): array => [
                     'code' => $section->code,
+                    'parent_code' => $section->parent?->code,
                     'name' => $section->name,
                     'position' => $section->position,
                     'display_style' => $section->display_style,

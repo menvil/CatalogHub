@@ -5,6 +5,7 @@ namespace App\Actions\CategorySchema;
 use App\Exceptions\CategorySchema\CannotManageAttributeOptionException;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -24,24 +25,28 @@ final class CreateAttributeOptionAction
                 'required',
                 'string',
                 'max:255',
-                'regex:/^[a-z][a-z0-9_]*$/',
+                'regex:/\A[a-z][a-z0-9_]*\z/',
                 Rule::unique('attribute_options', 'code')
                     ->where('attribute_definition_id', $attribute->getKey()),
             ],
             'label' => ['required', 'string', 'max:255'],
-            'position' => ['nullable', 'integer', 'min:0'],
+            'position' => ['nullable', 'integer', 'min:0', 'max:'.AttributeOption::MAX_POSITION],
             'is_visible' => ['nullable', 'boolean'],
         ])->validate();
 
-        $position = $validated['position']
-            ?? ((int) $attribute->options()->max('position') + 1);
+        return DB::transaction(function () use ($attribute, $validated): AttributeOption {
+            $attribute->newQuery()->whereKey($attribute->getKey())->lockForUpdate()->firstOrFail();
 
-        return AttributeOption::query()->create([
-            'attribute_definition_id' => $attribute->getKey(),
-            'code' => $validated['code'],
-            'label' => $validated['label'],
-            'position' => $position,
-            'is_visible' => $validated['is_visible'] ?? true,
-        ]);
+            $position = $validated['position']
+                ?? ((int) $attribute->options()->max('position') + 1);
+
+            return AttributeOption::query()->create([
+                'attribute_definition_id' => $attribute->getKey(),
+                'code' => $validated['code'],
+                'label' => $validated['label'],
+                'position' => $position,
+                'is_visible' => $validated['is_visible'] ?? true,
+            ]);
+        });
     }
 }

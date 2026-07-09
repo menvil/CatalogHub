@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\CentralCatalog\AttributeDefinition;
-use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -21,7 +20,7 @@ class AttributeDefinitionFactory extends Factory
 
         return [
             'central_category_id' => CentralCategory::factory(),
-            'attribute_section_id' => AttributeSection::factory(),
+            'attribute_section_id' => null,
             'code' => Str::snake($name),
             'name' => str($name)->headline()->toString(),
             'data_type' => 'string',

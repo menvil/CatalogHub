@@ -24,6 +24,8 @@ final class AttributeOption extends Model
     /** @use HasFactory<AttributeOptionFactory> */
     use HasFactory;
 
+    public const MAX_POSITION = 4294967295;
+
     protected $table = 'attribute_options';
 
     protected static function newFactory(): AttributeOptionFactory

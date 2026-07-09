@@ -76,6 +76,20 @@ class AttributeOptionActionsTest extends TestCase
         ]);
     }
 
+    public function test_rejects_invalid_option_code_format(): void
+    {
+        $attribute = AttributeDefinition::factory()->create([
+            'data_type' => AttributeDataType::Enum,
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        app(CreateAttributeOptionAction::class)->handle($attribute, [
+            'code' => "bad\n",
+            'label' => 'Bad',
+        ]);
+    }
+
     public function test_updates_option_for_enum_attribute(): void
     {
         $attribute = AttributeDefinition::factory()->create([
@@ -103,6 +117,56 @@ class AttributeOptionActionsTest extends TestCase
         $this->assertFalse($option->is_visible);
     }
 
+    public function test_allows_keeping_current_option_code(): void
+    {
+        $attribute = AttributeDefinition::factory()->create([
+            'data_type' => AttributeDataType::Enum,
+        ]);
+        $option = AttributeOption::factory()->for($attribute, 'attribute')->create(['code' => 'ips']);
+
+        app(UpdateAttributeOptionAction::class)->handle($option, [
+            'code' => 'ips',
+            'label' => 'IPS panel',
+        ]);
+
+        $option->refresh();
+
+        $this->assertSame('ips', $option->code);
+        $this->assertSame('IPS panel', $option->label);
+    }
+
+    public function test_rejects_duplicate_option_code_on_update(): void
+    {
+        $attribute = AttributeDefinition::factory()->create([
+            'data_type' => AttributeDataType::Enum,
+        ]);
+        AttributeOption::factory()->for($attribute, 'attribute')->create(['code' => 'ips']);
+        $option = AttributeOption::factory()->for($attribute, 'attribute')->create(['code' => 'va']);
+
+        $this->expectException(ValidationException::class);
+
+        app(UpdateAttributeOptionAction::class)->handle($option, [
+            'code' => 'ips',
+            'label' => 'IPS',
+        ]);
+    }
+
+    public function test_does_not_update_option_for_non_enum_attribute(): void
+    {
+        $attribute = AttributeDefinition::factory()->create([
+            'data_type' => AttributeDataType::Enum,
+        ]);
+        $option = AttributeOption::factory()->for($attribute, 'attribute')->create();
+        $attribute->update(['data_type' => AttributeDataType::Decimal]);
+
+        $this->expectException(CannotManageAttributeOptionException::class);
+
+        app(UpdateAttributeOptionAction::class)->handle($option, [
+            'code' => 'ips',
+            'label' => 'IPS',
+        ]);
+    }
+
     public function test_deletes_option_for_enum_attribute(): void
     {
         $attribute = AttributeDefinition::factory()->create([
@@ -113,6 +177,19 @@ class AttributeOptionActionsTest extends TestCase
         app(DeleteAttributeOptionAction::class)->handle($option);
 
         $this->assertDatabaseMissing('attribute_options', ['id' => $option->id]);
+    }
+
+    public function test_does_not_delete_option_for_non_enum_attribute(): void
+    {
+        $attribute = AttributeDefinition::factory()->create([
+            'data_type' => AttributeDataType::Enum,
+        ]);
+        $option = AttributeOption::factory()->for($attribute, 'attribute')->create();
+        $attribute->update(['data_type' => AttributeDataType::Decimal]);
+
+        $this->expectException(CannotManageAttributeOptionException::class);
+
+        app(DeleteAttributeOptionAction::class)->handle($option);
     }
 
     public function test_orders_attribute_options_by_position(): void

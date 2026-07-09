@@ -37,11 +37,18 @@ class AttributeDefinitionTest extends TestCase
             'is_searchable' => 1,
         ]);
 
-        $this->assertTrue($attribute->is_required);
-        $this->assertTrue($attribute->is_filterable);
-        $this->assertTrue($attribute->is_sortable);
-        $this->assertTrue($attribute->is_comparable);
-        $this->assertTrue($attribute->is_visible);
-        $this->assertTrue($attribute->is_searchable);
+        $this->assertSame(true, $attribute->is_required);
+        $this->assertSame(true, $attribute->is_filterable);
+        $this->assertSame(true, $attribute->is_sortable);
+        $this->assertSame(true, $attribute->is_comparable);
+        $this->assertSame(true, $attribute->is_visible);
+        $this->assertSame(true, $attribute->is_searchable);
+    }
+
+    public function test_attribute_definition_factory_does_not_create_mismatched_section_by_default(): void
+    {
+        $attribute = AttributeDefinition::factory()->create();
+
+        $this->assertNull($attribute->attribute_section_id);
     }
 }

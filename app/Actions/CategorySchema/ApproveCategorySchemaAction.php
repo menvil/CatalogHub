@@ -15,11 +15,17 @@ final class ApproveCategorySchemaAction
 
     public function handle(CentralCategory $category): CentralCategory
     {
+        if ($category->schema_status !== CategorySchemaStatus::Reviewed) {
+            throw CannotApproveCategorySchemaException::mustBeReviewed();
+        }
+
         if ($this->validator->validate($category)->hasErrors()) {
             throw CannotApproveCategorySchemaException::hasValidationErrors();
         }
 
-        $category->update(['schema_status' => CategorySchemaStatus::Approved]);
+        if (! $category->update(['schema_status' => CategorySchemaStatus::Approved])) {
+            throw CannotApproveCategorySchemaException::persistenceFailed();
+        }
 
         return $category;
     }

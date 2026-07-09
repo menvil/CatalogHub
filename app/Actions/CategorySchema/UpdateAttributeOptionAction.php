@@ -23,13 +23,13 @@ final class UpdateAttributeOptionAction
                 'required',
                 'string',
                 'max:255',
-                'regex:/^[a-z][a-z0-9_]*$/',
+                'regex:/\A[a-z][a-z0-9_]*\z/',
                 Rule::unique('attribute_options', 'code')
                     ->where('attribute_definition_id', $option->attribute_definition_id)
                     ->ignore($option->getKey()),
             ],
             'label' => ['required', 'string', 'max:255'],
-            'position' => ['nullable', 'integer', 'min:0'],
+            'position' => ['nullable', 'integer', 'min:0', 'max:'.AttributeOption::MAX_POSITION],
             'is_visible' => ['nullable', 'boolean'],
         ])->validate();
 

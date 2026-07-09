@@ -64,6 +64,17 @@ class CategorySchemaStatusActionsTest extends TestCase
         app(ApproveCategorySchemaAction::class)->handle($category);
     }
 
+    public function test_does_not_approve_schema_before_review(): void
+    {
+        $category = CentralCategory::factory()->create([
+            'schema_status' => CategorySchemaStatus::Draft,
+        ]);
+
+        $this->expectException(CannotApproveCategorySchemaException::class);
+
+        app(ApproveCategorySchemaAction::class)->handle($category);
+    }
+
     public function test_archives_category_schema(): void
     {
         $category = CentralCategory::factory()->create([

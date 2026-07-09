@@ -29,9 +29,17 @@ class ExportCategorySchemaActionTest extends TestCase
             'position' => 1,
             'display_style' => 'table',
         ]);
+        $childSection = AttributeSection::factory()
+            ->for($category, 'category')
+            ->for($section, 'parent')
+            ->create([
+                'code' => 'panel',
+                'name' => 'Panel',
+                'position' => 2,
+            ]);
         $attribute = AttributeDefinition::factory()
             ->for($category, 'category')
-            ->for($section, 'section')
+            ->for($childSection, 'section')
             ->create([
                 'code' => 'refresh_rate',
                 'name' => 'Refresh rate',
@@ -56,10 +64,13 @@ class ExportCategorySchemaActionTest extends TestCase
         $this->assertSame('Monitors', $export['category']['name']);
         $this->assertSame('approved', $export['category']['schema_status']);
         $this->assertSame('display', $export['sections'][0]['code']);
-        $this->assertSame('refresh_rate', $export['sections'][0]['attributes'][0]['code']);
-        $this->assertSame('integer', $export['sections'][0]['attributes'][0]['data_type']);
-        $this->assertSame('frequency', $export['sections'][0]['attributes'][0]['dimension']);
-        $this->assertTrue($export['sections'][0]['attributes'][0]['flags']['filterable']);
-        $this->assertSame('fast', $export['sections'][0]['attributes'][0]['options'][0]['code']);
+        $this->assertNull($export['sections'][0]['parent_code']);
+        $this->assertSame('panel', $export['sections'][1]['code']);
+        $this->assertSame('display', $export['sections'][1]['parent_code']);
+        $this->assertSame('refresh_rate', $export['sections'][1]['attributes'][0]['code']);
+        $this->assertSame('integer', $export['sections'][1]['attributes'][0]['data_type']);
+        $this->assertSame('frequency', $export['sections'][1]['attributes'][0]['dimension']);
+        $this->assertTrue($export['sections'][1]['attributes'][0]['flags']['filterable']);
+        $this->assertSame('fast', $export['sections'][1]['attributes'][0]['options'][0]['code']);
     }
 }

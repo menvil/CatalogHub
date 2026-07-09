@@ -4,19 +4,25 @@ namespace App\Actions\CategorySchema;
 
 use App\Exceptions\CategorySchema\CannotDeleteAttributeSectionException;
 use App\Models\CentralCatalog\AttributeSection;
+use Illuminate\Support\Facades\DB;
 
 final class DeleteAttributeSectionAction
 {
     public function handle(AttributeSection $section): void
     {
-        if ($section->attributes()->exists()) {
-            throw CannotDeleteAttributeSectionException::hasAttributes();
-        }
+        DB::transaction(function () use ($section): void {
+            /** @var AttributeSection $lockedSection */
+            $lockedSection = $section->newQuery()->whereKey($section->getKey())->lockForUpdate()->firstOrFail();
 
-        if ($section->children()->exists()) {
-            throw CannotDeleteAttributeSectionException::hasChildren();
-        }
+            if ($lockedSection->attributes()->exists()) {
+                throw CannotDeleteAttributeSectionException::hasAttributes();
+            }
 
-        $section->delete();
+            if ($lockedSection->children()->exists()) {
+                throw CannotDeleteAttributeSectionException::hasChildren();
+            }
+
+            $lockedSection->delete();
+        });
     }
 }

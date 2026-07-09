@@ -2,6 +2,9 @@
 
 namespace Tests\Feature\Database;
 
+use App\Models\CentralCatalog\AttributeSection;
+use App\Models\CentralCatalog\CentralCategory;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -39,5 +42,18 @@ class AttributeSectionsMigrationTest extends TestCase
         $this->assertTrue($indexes->contains(
             fn (array $index): bool => $index['columns'] === ['central_category_id', 'position']
         ));
+    }
+
+    public function test_attribute_section_parent_must_belong_to_same_category(): void
+    {
+        $parentCategory = CentralCategory::factory()->create();
+        $childCategory = CentralCategory::factory()->create();
+        $parent = AttributeSection::factory()->for($parentCategory, 'category')->create();
+
+        $this->expectException(QueryException::class);
+
+        AttributeSection::factory()
+            ->for($childCategory, 'category')
+            ->create(['parent_id' => $parent->id]);
     }
 }

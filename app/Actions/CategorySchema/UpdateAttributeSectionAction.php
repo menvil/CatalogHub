@@ -19,13 +19,13 @@ final class UpdateAttributeSectionAction
                 'required',
                 'string',
                 'max:255',
-                'regex:/^[a-z][a-z0-9_]*$/',
+                'regex:/\A[a-z][a-z0-9_]*\z/',
                 Rule::unique('attribute_sections', 'code')
                     ->where('central_category_id', $section->central_category_id)
                     ->ignore($section->getKey()),
             ],
-            'position' => ['nullable', 'integer', 'min:0'],
-            'display_style' => ['nullable', 'string', 'max:255'],
+            'position' => ['nullable', 'integer', 'min:0', 'max:'.AttributeSection::MAX_POSITION],
+            'display_style' => ['nullable', Rule::in(AttributeSection::DISPLAY_STYLES)],
             'is_collapsible' => ['nullable', 'boolean'],
             'is_visible' => ['nullable', 'boolean'],
         ])->validate();

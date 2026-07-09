@@ -6,6 +6,7 @@ use App\Enums\AttributeDataType;
 use App\Models\CentralCatalog\AttributeDefinition;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 final class UpdateAttributeDefinitionAction
 {
@@ -20,7 +21,7 @@ final class UpdateAttributeDefinitionAction
                 'required',
                 'string',
                 'max:255',
-                'regex:/^[a-z][a-z0-9_]*$/',
+                'regex:/\A[a-z][a-z0-9_]*\z/',
                 Rule::unique('attribute_definitions', 'code')
                     ->where('central_category_id', $attribute->central_category_id)
                     ->ignore($attribute->getKey()),
@@ -28,7 +29,7 @@ final class UpdateAttributeDefinitionAction
             'data_type' => ['required', Rule::enum(AttributeDataType::class)],
             'dimension' => ['nullable', 'string', 'max:255'],
             'canonical_unit' => ['nullable', 'string', 'max:255'],
-            'position' => ['nullable', 'integer', 'min:0'],
+            'position' => ['nullable', 'integer', 'min:0', 'max:'.AttributeDefinition::MAX_POSITION],
             'is_required' => ['nullable', 'boolean'],
             'is_filterable' => ['nullable', 'boolean'],
             'is_sortable' => ['nullable', 'boolean'],
@@ -37,10 +38,20 @@ final class UpdateAttributeDefinitionAction
             'is_searchable' => ['nullable', 'boolean'],
         ])->validate();
 
+        $dataType = $validated['data_type'] instanceof AttributeDataType
+            ? $validated['data_type']
+            : AttributeDataType::from($validated['data_type']);
+
+        if (! $dataType->allowsOptions() && $attribute->options()->exists()) {
+            throw ValidationException::withMessages([
+                'data_type' => 'Attributes with options can only use enum or multi_enum data types.',
+            ]);
+        }
+
         $attribute->update([
             'code' => $validated['code'],
             'name' => $validated['name'],
-            'data_type' => $validated['data_type'],
+            'data_type' => $dataType,
             'dimension' => $validated['dimension'] ?? null,
             'canonical_unit' => $validated['canonical_unit'] ?? null,
             'position' => $validated['position'] ?? $attribute->position,

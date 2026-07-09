@@ -54,7 +54,7 @@ final class AttributeDefinition extends Model
     }
 
     /**
-     * @param Builder<AttributeDefinition> $query
+     * @param  Builder<AttributeDefinition>  $query
      * @return Builder<AttributeDefinition>
      */
     public function scopeOrdered(Builder $query): Builder
@@ -63,7 +63,7 @@ final class AttributeDefinition extends Model
     }
 
     /**
-     * @param Builder<AttributeDefinition> $query
+     * @param  Builder<AttributeDefinition>  $query
      * @return Builder<AttributeDefinition>
      */
     public function scopeVisible(Builder $query): Builder
@@ -72,7 +72,7 @@ final class AttributeDefinition extends Model
     }
 
     /**
-     * @param Builder<AttributeDefinition> $query
+     * @param  Builder<AttributeDefinition>  $query
      * @return Builder<AttributeDefinition>
      */
     public function scopeSearchable(Builder $query): Builder
@@ -81,7 +81,7 @@ final class AttributeDefinition extends Model
     }
 
     /**
-     * @param Builder<AttributeDefinition> $query
+     * @param  Builder<AttributeDefinition>  $query
      * @return Builder<AttributeDefinition>
      */
     public function scopeRequired(Builder $query): Builder
@@ -90,7 +90,7 @@ final class AttributeDefinition extends Model
     }
 
     /**
-     * @param Builder<AttributeDefinition> $query
+     * @param  Builder<AttributeDefinition>  $query
      * @return Builder<AttributeDefinition>
      */
     public function scopeFilterable(Builder $query): Builder
@@ -99,7 +99,7 @@ final class AttributeDefinition extends Model
     }
 
     /**
-     * @param Builder<AttributeDefinition> $query
+     * @param  Builder<AttributeDefinition>  $query
      * @return Builder<AttributeDefinition>
      */
     public function scopeSortable(Builder $query): Builder
@@ -108,7 +108,7 @@ final class AttributeDefinition extends Model
     }
 
     /**
-     * @param Builder<AttributeDefinition> $query
+     * @param  Builder<AttributeDefinition>  $query
      * @return Builder<AttributeDefinition>
      */
     public function scopeComparable(Builder $query): Builder

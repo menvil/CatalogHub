@@ -10,7 +10,7 @@ use Illuminate\Validation\Rule;
 final class UpdateAttributeDefinitionAction
 {
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function handle(AttributeDefinition $attribute, array $data): AttributeDefinition
     {

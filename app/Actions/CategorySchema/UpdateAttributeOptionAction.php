@@ -10,7 +10,7 @@ use Illuminate\Validation\Rule;
 final class UpdateAttributeOptionAction
 {
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function handle(AttributeOption $option, array $data): AttributeOption
     {

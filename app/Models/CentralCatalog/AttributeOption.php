@@ -37,7 +37,7 @@ final class AttributeOption extends Model
     }
 
     /**
-     * @param Builder<AttributeOption> $query
+     * @param  Builder<AttributeOption>  $query
      * @return Builder<AttributeOption>
      */
     public function scopeOrdered(Builder $query): Builder

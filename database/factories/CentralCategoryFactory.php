@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Enums\CentralCategoryStatus;
 use App\Enums\CategorySchemaStatus;
+use App\Enums\CentralCategoryStatus;
 use App\Models\CentralCatalog\CentralCategory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;

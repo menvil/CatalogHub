@@ -2,9 +2,8 @@
 
 namespace App\Models\CentralCatalog;
 
-use App\Enums\CentralCategoryStatus;
 use App\Enums\CategorySchemaStatus;
-use App\Models\CentralCatalog\AttributeSection;
+use App\Enums\CentralCategoryStatus;
 use Database\Factories\CentralCategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

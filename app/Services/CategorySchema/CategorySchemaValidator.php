@@ -11,7 +11,7 @@ final class CategorySchemaValidator
 {
     public function validate(CentralCategory $category): CategorySchemaValidationResult
     {
-        $result = new CategorySchemaValidationResult();
+        $result = new CategorySchemaValidationResult;
 
         $category->load([
             'attributeSections' => fn ($query) => $query->ordered(),

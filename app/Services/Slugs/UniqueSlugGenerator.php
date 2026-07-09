@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 final class UniqueSlugGenerator
 {
     /**
-     * @param class-string<Model> $modelClass
+     * @param  class-string<Model>  $modelClass
      */
     public function generate(string $source, string $modelClass, string $column = 'slug', ?Model $ignore = null, int $maxLength = 255): string
     {
@@ -26,7 +26,7 @@ final class UniqueSlugGenerator
     }
 
     /**
-     * @param class-string<Model> $modelClass
+     * @param  class-string<Model>  $modelClass
      */
     private function exists(string $modelClass, string $column, string $slug, ?Model $ignore): bool
     {

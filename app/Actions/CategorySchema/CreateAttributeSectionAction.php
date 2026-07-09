@@ -10,7 +10,7 @@ use Illuminate\Validation\Rule;
 final class CreateAttributeSectionAction
 {
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function handle(CentralCategory $category, array $data): AttributeSection
     {

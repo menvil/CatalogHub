@@ -11,11 +11,12 @@ use App\Actions\CategorySchema\CreateAttributeSectionAction;
 use App\Actions\CategorySchema\DeleteAttributeOptionAction;
 use App\Actions\CategorySchema\DeleteAttributeSectionAction;
 use App\Actions\CategorySchema\ExportCategorySchemaAction;
-use App\Actions\CategorySchema\MoveAttributeDefinitionAction;
 use App\Actions\CategorySchema\MarkCategorySchemaReviewedAction;
+use App\Actions\CategorySchema\MoveAttributeDefinitionAction;
 use App\Actions\CategorySchema\UpdateAttributeDefinitionAction;
 use App\Actions\CategorySchema\UpdateAttributeOptionAction;
 use App\Actions\CategorySchema\UpdateAttributeSectionAction;
+use App\DTO\CategorySchema\CategorySchemaIssue;
 use App\Filament\Resources\CentralCategoryResource;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Services\CategorySchema\CategorySchemaPreviewBuilder;
@@ -68,7 +69,7 @@ final class CategorySchemaBuilder extends Page
     }
 
     /**
-     * @return list<\App\DTO\CategorySchema\CategorySchemaIssue>
+     * @return list<CategorySchemaIssue>
      */
     public function getSchemaIssues(): array
     {
@@ -76,7 +77,7 @@ final class CategorySchemaBuilder extends Page
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function updateSection(int $sectionId, array $data, UpdateAttributeSectionAction $action): void
     {
@@ -93,7 +94,7 @@ final class CategorySchemaBuilder extends Page
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function createAttribute(int $sectionId, array $data, CreateAttributeDefinitionAction $action): void
     {
@@ -103,7 +104,7 @@ final class CategorySchemaBuilder extends Page
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function updateAttribute(int $attributeId, array $data, UpdateAttributeDefinitionAction $action): void
     {
@@ -122,7 +123,7 @@ final class CategorySchemaBuilder extends Page
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function createOption(int $attributeId, array $data, CreateAttributeOptionAction $action): void
     {
@@ -132,7 +133,7 @@ final class CategorySchemaBuilder extends Page
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function updateOption(int $attributeId, int $optionId, array $data, UpdateAttributeOptionAction $action): void
     {

@@ -3,6 +3,7 @@
 namespace App\Models\CentralCatalog;
 
 use App\Enums\CentralCategoryStatus;
+use App\Models\CentralCatalog\AttributeSection;
 use Database\Factories\CentralCategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -56,6 +57,14 @@ final class CentralCategory extends Model
     public function products(): HasMany
     {
         return $this->hasMany(CentralProduct::class, 'central_category_id');
+    }
+
+    /**
+     * @return HasMany<AttributeSection, $this>
+     */
+    public function attributeSections(): HasMany
+    {
+        return $this->hasMany(AttributeSection::class, 'central_category_id');
     }
 
     /**

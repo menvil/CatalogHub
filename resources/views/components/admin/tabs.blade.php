@@ -35,7 +35,7 @@
                     'inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary',
                     'border-admin-primary text-admin-primary' => $isActive,
                     'border-transparent text-admin-muted hover:border-admin-border hover:text-admin-text' => ! $isActive,
-                ])"
+                ])
             >
                 <span>{{ $label }}</span>
 
@@ -44,7 +44,7 @@
                         'rounded-admin-badge px-2 py-0.5 text-xs font-semibold',
                         'bg-admin-primary-soft text-admin-primary' => $isActive,
                         'bg-admin-surface-muted text-admin-muted' => ! $isActive,
-                    ])">
+                    ])>
                         {{ $item['count'] }}
                     </span>
                 @endif

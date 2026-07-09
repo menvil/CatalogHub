@@ -30,8 +30,13 @@ export function bootAdminDrawers() {
             previousFocusByDrawer.set(drawer, document.activeElement);
         }
 
-        const focusTarget = focusableElements(drawer)[0] ?? drawer.querySelector('[role="dialog"]') ?? drawer;
-        focusTarget.setAttribute('tabindex', focusTarget.getAttribute('tabindex') ?? '-1');
+        const firstFocusable = focusableElements(drawer)[0];
+        const focusTarget = firstFocusable ?? drawer.querySelector('[role="dialog"]') ?? drawer;
+
+        if (! firstFocusable && ! focusTarget.hasAttribute('tabindex')) {
+            focusTarget.setAttribute('tabindex', '-1');
+        }
+
         focusTarget.focus({ preventScroll: true });
     };
 

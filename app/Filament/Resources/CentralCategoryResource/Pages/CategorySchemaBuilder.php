@@ -4,6 +4,7 @@ namespace App\Filament\Resources\CentralCategoryResource\Pages;
 
 use App\Actions\CategorySchema\ApproveCategorySchemaAction;
 use App\Actions\CategorySchema\ArchiveCategorySchemaAction;
+use App\Actions\CategorySchema\CloneCategorySchemaAction;
 use App\Actions\CategorySchema\CreateAttributeDefinitionAction;
 use App\Actions\CategorySchema\CreateAttributeOptionAction;
 use App\Actions\CategorySchema\CreateAttributeSectionAction;
@@ -161,6 +162,13 @@ final class CategorySchemaBuilder extends Page
     public function archiveSchema(ArchiveCategorySchemaAction $action): void
     {
         $action->handle($this->getCategory());
+    }
+
+    public function cloneSchemaFrom(int $sourceCategoryId, CloneCategorySchemaAction $action): void
+    {
+        $source = CentralCategory::query()->findOrFail($sourceCategoryId);
+
+        $action->handle($source, $this->getCategory());
     }
 
     protected function getHeaderActions(): array

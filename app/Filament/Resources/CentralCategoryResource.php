@@ -6,6 +6,7 @@ use App\Enums\CentralCategoryStatus;
 use App\Filament\Resources\CentralCategoryResource\Pages;
 use App\Models\CentralCatalog\CentralCategory;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -88,6 +89,10 @@ final class CentralCategoryResource extends Resource
                     ->sortable(),
             ])
             ->recordActions([
+                Action::make('schema')
+                    ->label('Schema')
+                    ->icon(Heroicon::OutlinedAdjustmentsHorizontal)
+                    ->url(fn (CentralCategory $record): string => static::getUrl('schema', ['record' => $record])),
                 EditAction::make(),
             ]);
     }
@@ -98,6 +103,7 @@ final class CentralCategoryResource extends Resource
             'index' => Pages\ListCentralCategories::route('/'),
             'create' => Pages\CreateCentralCategory::route('/create'),
             'edit' => Pages\EditCentralCategory::route('/{record}/edit'),
+            'schema' => Pages\CategorySchemaBuilder::route('/{record}/schema'),
         ];
     }
 

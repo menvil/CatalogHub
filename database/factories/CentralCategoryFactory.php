@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\CentralCategoryStatus;
 use App\Models\CentralCatalog\CentralCategory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -20,6 +21,7 @@ class CentralCategoryFactory extends Factory
         return [
             'name' => str($name)->headline()->toString(),
             'slug' => Str::slug($name),
+            'status' => CentralCategoryStatus::default(),
             'position' => 0,
         ];
     }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\CentralCategoryStatus;
 use App\Filament\Resources\CentralCategoryResource\Pages;
 use App\Models\CentralCatalog\CentralCategory;
 use BackedEnum;
@@ -43,6 +44,10 @@ final class CentralCategoryResource extends Resource
                     ->required()
                     ->maxLength(255)
                     ->unique(ignoreRecord: true),
+                Select::make('status')
+                    ->required()
+                    ->options(self::statusOptions())
+                    ->default(CentralCategoryStatus::default()->value),
                 TextInput::make('position')
                     ->required()
                     ->integer()
@@ -64,6 +69,9 @@ final class CentralCategoryResource extends Resource
                 TextColumn::make('slug')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('status')
+                    ->badge()
+                    ->sortable(),
                 TextColumn::make('position')
                     ->sortable(),
                 TextColumn::make('updated_at')
@@ -82,5 +90,17 @@ final class CentralCategoryResource extends Resource
             'create' => Pages\CreateCentralCategory::route('/create'),
             'edit' => Pages\EditCentralCategory::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function statusOptions(): array
+    {
+        return collect(CentralCategoryStatus::cases())
+            ->mapWithKeys(fn (CentralCategoryStatus $status): array => [
+                $status->value => str($status->value)->headline()->toString(),
+            ])
+            ->all();
     }
 }

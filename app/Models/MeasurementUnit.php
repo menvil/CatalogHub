@@ -56,7 +56,13 @@ final class MeasurementUnit extends Model
 
     public function toCanonical(float|string $value): float
     {
-        return ((float) $value * (float) $this->factor_to_canonical) + (float) $this->offset_to_canonical;
+        $factor = (float) $this->factor_to_canonical;
+
+        if ($factor === 0.0) {
+            throw CannotConvertUnitException::invalidFactor($this->code);
+        }
+
+        return ((float) $value * $factor) + (float) $this->offset_to_canonical;
     }
 
     public function fromCanonical(float|string $canonicalValue): float

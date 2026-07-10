@@ -10,6 +10,7 @@ use Database\Seeders\MeasurementDimensionsSeeder;
 use Database\Seeders\MetricMeasurementUnitsSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -82,5 +83,39 @@ class AttributeDisplayRuleTest extends TestCase
             'rounding_mode' => 'half_up',
             'suffix_style' => 'symbol',
         ]);
+    }
+
+    public function test_global_attribute_display_rule_scope_is_unique(): void
+    {
+        $attribute = AttributeDefinition::factory()->create();
+
+        DB::table('attribute_display_rules')->insert([
+            'attribute_definition_id' => $attribute->id,
+            'rounding_mode' => 'half_up',
+            'suffix_style' => 'symbol',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->expectException(QueryException::class);
+
+        DB::table('attribute_display_rules')->insert([
+            'attribute_definition_id' => $attribute->id,
+            'rounding_mode' => 'half_up',
+            'suffix_style' => 'symbol',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    public function test_blank_attribute_display_rule_scope_uses_global_sentinel(): void
+    {
+        $rule = AttributeDisplayRule::factory()->create([
+            'market_code' => null,
+            'locale' => null,
+        ]);
+
+        $this->assertSame(AttributeDisplayRule::GLOBAL_MARKET_CODE, $rule->market_code);
+        $this->assertSame(AttributeDisplayRule::GLOBAL_LOCALE, $rule->locale);
     }
 }

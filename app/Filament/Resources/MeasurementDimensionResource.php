@@ -14,6 +14,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Validation\Rule;
 use UnitEnum;
 
 final class MeasurementDimensionResource extends Resource
@@ -40,7 +41,8 @@ final class MeasurementDimensionResource extends Resource
                     ->required()
                     ->maxLength(255),
                 TextInput::make('base_unit_code')
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->rules(['nullable', Rule::exists('measurement_units', 'code')]),
                 TextInput::make('sort_order')
                     ->integer()
                     ->minValue(0)

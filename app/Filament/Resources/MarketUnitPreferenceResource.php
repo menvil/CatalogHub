@@ -19,6 +19,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Unique;
 use UnitEnum;
 
 final class MarketUnitPreferenceResource extends Resource
@@ -37,7 +38,14 @@ final class MarketUnitPreferenceResource extends Resource
             ->components([
                 TextInput::make('market_code')
                     ->required()
-                    ->maxLength(16),
+                    ->maxLength(16)
+                    ->unique(
+                        table: 'market_unit_preferences',
+                        column: 'market_code',
+                        ignoreRecord: true,
+                        modifyRuleUsing: fn (Unique $rule, Get $get): Unique => $rule
+                            ->where('dimension_id', $get('dimension_id')),
+                    ),
                 Select::make('dimension_id')
                     ->relationship('dimension', 'name')
                     ->required()

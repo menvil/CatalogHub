@@ -23,6 +23,10 @@ final class AttributeDisplayRule extends Model
     /** @use HasFactory<AttributeDisplayRuleFactory> */
     use HasFactory;
 
+    public const GLOBAL_MARKET_CODE = '__global';
+
+    public const GLOBAL_LOCALE = '__global';
+
     protected static function newFactory(): AttributeDisplayRuleFactory
     {
         return AttributeDisplayRuleFactory::new();
@@ -33,6 +37,16 @@ final class AttributeDisplayRule extends Model
         return [
             'decimals' => 'integer',
         ];
+    }
+
+    public function setMarketCodeAttribute(?string $value): void
+    {
+        $this->attributes['market_code'] = blank($value) ? self::GLOBAL_MARKET_CODE : $value;
+    }
+
+    public function setLocaleAttribute(?string $value): void
+    {
+        $this->attributes['locale'] = blank($value) ? self::GLOBAL_LOCALE : $value;
     }
 
     /**

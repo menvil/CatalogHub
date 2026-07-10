@@ -11,8 +11,8 @@ return new class extends Migration
         Schema::create('attribute_display_rules', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('attribute_definition_id')->constrained('attribute_definitions')->cascadeOnDelete();
-            $table->string('market_code', 16)->nullable();
-            $table->string('locale', 16)->nullable();
+            $table->string('market_code', 16)->default('__global');
+            $table->string('locale', 16)->default('__global');
             $table->foreignId('display_unit_id')->nullable()->constrained('measurement_units')->nullOnDelete();
             $table->unsignedTinyInteger('decimals')->nullable();
             $table->string('rounding_mode')->default('half_up');

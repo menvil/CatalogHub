@@ -53,4 +53,14 @@ class MeasurementUnitConversionTest extends TestCase
 
         $unit->fromCanonical(10);
     }
+
+    public function test_to_canonical_rejects_zero_conversion_factor(): void
+    {
+        $unit = MeasurementUnit::query()->where('code', 'meter')->firstOrFail();
+        $unit->forceFill(['factor_to_canonical' => '0']);
+
+        $this->expectException(CannotConvertUnitException::class);
+
+        $unit->toCanonical(10);
+    }
 }

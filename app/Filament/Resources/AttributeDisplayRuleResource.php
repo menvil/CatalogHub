@@ -9,10 +9,12 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Validation\Rules\Unique;
 use UnitEnum;
 
 final class AttributeDisplayRuleResource extends Resource
@@ -35,9 +37,21 @@ final class AttributeDisplayRuleResource extends Resource
                     ->searchable()
                     ->preload(),
                 TextInput::make('market_code')
+                    ->default(AttributeDisplayRule::GLOBAL_MARKET_CODE)
+                    ->required()
                     ->maxLength(16),
                 TextInput::make('locale')
-                    ->maxLength(16),
+                    ->default(AttributeDisplayRule::GLOBAL_LOCALE)
+                    ->required()
+                    ->maxLength(16)
+                    ->unique(
+                        table: 'attribute_display_rules',
+                        column: 'locale',
+                        ignoreRecord: true,
+                        modifyRuleUsing: fn (Unique $rule, Get $get): Unique => $rule
+                            ->where('attribute_definition_id', $get('attribute_definition_id'))
+                            ->where('market_code', $get('market_code') ?: AttributeDisplayRule::GLOBAL_MARKET_CODE),
+                    ),
                 Select::make('display_unit_id')
                     ->relationship('displayUnit', 'name')
                     ->searchable()

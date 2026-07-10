@@ -18,8 +18,8 @@ class AttributeDisplayRuleFactory extends Factory
     {
         return [
             'attribute_definition_id' => AttributeDefinition::factory(),
-            'market_code' => null,
-            'locale' => null,
+            'market_code' => AttributeDisplayRule::GLOBAL_MARKET_CODE,
+            'locale' => AttributeDisplayRule::GLOBAL_LOCALE,
             'display_unit_id' => MeasurementUnit::factory(),
             'decimals' => null,
             'rounding_mode' => 'half_up',

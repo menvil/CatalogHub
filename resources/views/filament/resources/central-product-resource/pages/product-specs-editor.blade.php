@@ -30,10 +30,59 @@
                 <h3 class="text-base font-semibold text-gray-950 dark:text-white">Choose a category first</h3>
                 <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Product specs are driven by the category schema.</p>
             </section>
-        @else
+        @elseif ($product->category->attributeSections->isEmpty())
             <section class="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-900">
-                <h3 class="text-base font-semibold text-gray-950 dark:text-white">Product Specs</h3>
-                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Attribute editors will appear here as the category schema is loaded.</p>
+                <h3 class="text-base font-semibold text-gray-950 dark:text-white">No attributes configured</h3>
+                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Add sections and attributes to the category schema before editing product specs.</p>
+            </section>
+        @else
+            <section class="space-y-4">
+                @foreach ($product->category->attributeSections as $section)
+                    <article class="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                        <header class="flex flex-col gap-2 border-b border-gray-200 p-5 dark:border-gray-800 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold tracking-normal text-gray-950 dark:text-white">{{ $section->name }}</h3>
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $section->code }}</p>
+                            </div>
+
+                            <span class="w-fit rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                                {{ $section->attributes->count() }} attributes
+                            </span>
+                        </header>
+
+                        @if ($section->attributes->isEmpty())
+                            <div class="p-5 text-sm text-gray-500 dark:text-gray-400">No attributes in this section yet.</div>
+                        @else
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-800">
+                                    <thead class="bg-gray-50 dark:bg-gray-950">
+                                        <tr>
+                                            <th class="px-5 py-3 text-left font-medium text-gray-600 dark:text-gray-300">Attribute</th>
+                                            <th class="px-5 py-3 text-left font-medium text-gray-600 dark:text-gray-300">Code</th>
+                                            <th class="px-5 py-3 text-left font-medium text-gray-600 dark:text-gray-300">Type</th>
+                                            <th class="px-5 py-3 text-left font-medium text-gray-600 dark:text-gray-300">Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+                                        @foreach ($section->attributes as $attribute)
+                                            @php
+                                                $existingValue = $product->attributeValues->firstWhere('attribute_definition_id', $attribute->id);
+                                            @endphp
+                                            <tr>
+                                                <td class="px-5 py-3 font-medium text-gray-950 dark:text-white">{{ $attribute->name }}</td>
+                                                <td class="px-5 py-3 text-gray-600 dark:text-gray-300">{{ $attribute->code }}</td>
+                                                <td class="px-5 py-3 text-gray-600 dark:text-gray-300">{{ $attribute->data_type->value }}</td>
+                                                <td class="px-5 py-3 text-gray-600 dark:text-gray-300">
+                                                    {{ $existingValue?->raw_value ?: 'No value yet' }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </article>
+                @endforeach
             </section>
         @endif
     </div>

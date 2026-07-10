@@ -41,7 +41,12 @@ final class ProductSpecsEditor extends Page
         /** @var CentralProduct $product */
         $product = $this->getRecord();
 
-        return $this->cachedProduct = $product->loadMissing('category');
+        return $this->cachedProduct = $product->loadMissing([
+            'category.attributeSections' => fn ($query) => $query->ordered(),
+            'category.attributeSections.attributes' => fn ($query) => $query->ordered(),
+            'category.attributeSections.attributes.options' => fn ($query) => $query->ordered(),
+            'attributeValues.attributeDefinition',
+        ]);
     }
 
     protected function getHeaderActions(): array

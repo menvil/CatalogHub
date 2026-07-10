@@ -5,8 +5,11 @@ namespace Tests\Feature\Filament;
 use App\Enums\UserRole;
 use App\Filament\Resources\CentralProductResource;
 use App\Filament\Resources\CentralProductResource\Pages\ProductSpecsEditor;
+use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
+use App\Models\CentralCatalog\CentralProductAttributeValue;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -57,5 +60,58 @@ class ProductSpecsEditorTest extends TestCase
             ->assertOk()
             ->assertSee('Choose a category first')
             ->assertSee('Uncategorized product');
+    }
+
+    public function test_product_specs_editor_displays_attributes_grouped_by_category_sections(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::CentralAdmin]);
+        $category = CentralCategory::factory()->create(['name' => 'Monitors']);
+        $display = AttributeSection::factory()->for($category, 'category')->create([
+            'name' => 'Display',
+            'code' => 'display',
+            'position' => 1,
+        ]);
+        $ports = AttributeSection::factory()->for($category, 'category')->create([
+            'name' => 'Ports',
+            'code' => 'ports',
+            'position' => 2,
+        ]);
+
+        $refreshRate = AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($display, 'section')
+            ->create([
+                'name' => 'Refresh rate',
+                'code' => 'refresh_rate',
+                'data_type' => 'decimal',
+                'position' => 1,
+            ]);
+
+        AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($ports, 'section')
+            ->create([
+                'name' => 'USB-C',
+                'code' => 'usb_c',
+                'data_type' => 'boolean',
+                'position' => 1,
+            ]);
+
+        $product = CentralProduct::factory()->for($category, 'category')->create();
+        CentralProductAttributeValue::factory()
+            ->for($product, 'product')
+            ->for($refreshRate, 'attributeDefinition')
+            ->create(['raw_value' => '165 Hz']);
+
+        $this->actingAs($admin)
+            ->get(ProductSpecsEditor::getUrl(['record' => $product]))
+            ->assertOk()
+            ->assertSee('Display')
+            ->assertSee('display')
+            ->assertSee('Refresh rate')
+            ->assertSee('refresh_rate')
+            ->assertSee('165 Hz')
+            ->assertSee('Ports')
+            ->assertSee('usb_c');
     }
 }

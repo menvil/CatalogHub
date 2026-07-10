@@ -74,6 +74,8 @@ final class ProductAttributeValueValidator
             AttributeDataType::Json => $this->validateJson($attribute, $normalized),
         };
 
+        $this->validateMetadata($attribute, $normalized);
+
         return $normalized;
     }
 
@@ -251,6 +253,30 @@ final class ProductAttributeValueValidator
     {
         if ($valueData['value_json'] !== null && ! is_array($valueData['value_json'])) {
             throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] value_json must be an array.");
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $valueData
+     */
+    private function validateMetadata(AttributeDefinition $attribute, array &$valueData): void
+    {
+        if ($valueData['confidence'] === '') {
+            $valueData['confidence'] = null;
+        }
+
+        if ($valueData['confidence'] !== null) {
+            if (! is_numeric($valueData['confidence'])) {
+                throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] confidence must be numeric.");
+            }
+
+            $confidence = (float) $valueData['confidence'];
+
+            if ($confidence < 0 || $confidence > 1) {
+                throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] confidence must be between 0 and 1.");
+            }
+
+            $valueData['confidence'] = $confidence;
         }
     }
 }

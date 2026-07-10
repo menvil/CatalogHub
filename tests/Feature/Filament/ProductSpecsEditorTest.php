@@ -397,4 +397,26 @@ class ProductSpecsEditorTest extends TestCase
             ->assertSee('Missing required attributes')
             ->assertSee('refresh_rate');
     }
+
+    public function test_product_specs_editor_shows_confidence_field(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::CentralAdmin]);
+        $category = CentralCategory::factory()->create();
+        $section = AttributeSection::factory()->for($category, 'category')->create();
+        $product = CentralProduct::factory()->for($category, 'category')->create();
+
+        AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($section, 'section')
+            ->create([
+                'code' => 'refresh_rate',
+                'data_type' => 'decimal',
+            ]);
+
+        $this->actingAs($admin)
+            ->get(ProductSpecsEditor::getUrl(['record' => $product]))
+            ->assertOk()
+            ->assertSee('Confidence')
+            ->assertSeeHtml('confidence');
+    }
 }

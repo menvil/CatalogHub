@@ -197,6 +197,18 @@
                                                                 class="mt-1 w-72 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                                                             >
                                                         </label>
+
+                                                        <label class="block">
+                                                            <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Confidence</span>
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                max="1"
+                                                                step="0.01"
+                                                                wire:model.live="values.{{ $attribute->id }}.confidence"
+                                                                class="mt-1 w-32 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                                            >
+                                                        </label>
                                                     </div>
                                                 </td>
                                             </tr>

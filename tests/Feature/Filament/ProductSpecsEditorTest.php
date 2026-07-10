@@ -374,4 +374,27 @@ class ProductSpecsEditorTest extends TestCase
             ->assertSee('0.998 kg')
             ->assertDontSee('Liter (l)');
     }
+
+    public function test_product_specs_editor_shows_missing_required_attributes_panel(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::CentralAdmin]);
+        $category = CentralCategory::factory()->create();
+        $section = AttributeSection::factory()->for($category, 'category')->create();
+        $product = CentralProduct::factory()->for($category, 'category')->create();
+
+        AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($section, 'section')
+            ->create([
+                'code' => 'refresh_rate',
+                'data_type' => 'decimal',
+                'is_required' => true,
+            ]);
+
+        $this->actingAs($admin)
+            ->get(ProductSpecsEditor::getUrl(['record' => $product]))
+            ->assertOk()
+            ->assertSee('Missing required attributes')
+            ->assertSee('refresh_rate');
+    }
 }

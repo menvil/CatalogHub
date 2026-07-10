@@ -36,6 +36,22 @@
                 <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Add sections and attributes to the category schema before editing product specs.</p>
             </section>
         @else
+            @php
+                $missingRequiredAttributes = $this->missingRequiredAttributes();
+            @endphp
+            @if ($missingRequiredAttributes !== [])
+                <section class="rounded-lg border border-warning-200 bg-warning-50 p-5 dark:border-warning-800 dark:bg-warning-950/20">
+                    <h3 class="text-base font-semibold text-warning-900 dark:text-warning-100">Missing required attributes</h3>
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        @foreach ($missingRequiredAttributes as $missingAttribute)
+                            <span class="rounded-md bg-white px-2 py-1 text-xs font-medium text-warning-800 ring-1 ring-warning-200 dark:bg-warning-950 dark:text-warning-100 dark:ring-warning-800">
+                                {{ $missingAttribute->code }}
+                            </span>
+                        @endforeach
+                    </div>
+                </section>
+            @endif
+
             <section class="space-y-4">
                 @foreach ($product->category->attributeSections as $section)
                     <article class="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">

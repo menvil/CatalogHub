@@ -6,6 +6,7 @@ use App\Filament\Resources\CentralProductResource;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
 use App\Models\CentralCatalog\CentralProduct;
+use App\Models\MeasurementDimension;
 use App\Services\ProductAttributes\CanonicalValuePreviewer;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -109,6 +110,31 @@ final class ProductSpecsEditor extends Page
     public function canonicalPreviewFor(AttributeDefinition $attribute): ?array
     {
         return app(CanonicalValuePreviewer::class)->preview($attribute, $this->values[$attribute->id] ?? []);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function unitOptionsFor(AttributeDefinition $attribute): array
+    {
+        if (blank($attribute->dimension)) {
+            return [];
+        }
+
+        $dimension = MeasurementDimension::query()
+            ->where('code', $attribute->dimension)
+            ->with(['units' => fn ($query) => $query->active()->orderBy('name')])
+            ->first();
+
+        if (! $dimension instanceof MeasurementDimension) {
+            return [];
+        }
+
+        return $dimension->units
+            ->mapWithKeys(fn ($unit): array => [
+                $unit->code => trim("{$unit->name} ({$unit->symbol})"),
+            ])
+            ->all();
     }
 
     protected function getHeaderActions(): array

@@ -6,6 +6,7 @@ use App\Filament\Resources\CentralProductResource;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
 use App\Models\CentralCatalog\CentralProduct;
+use App\Services\ProductAttributes\CanonicalValuePreviewer;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
@@ -100,6 +101,14 @@ final class ProductSpecsEditor extends Page
             'source_id' => $existingValue?->source_id,
             'source_reference' => $existingValue?->source_reference ?? [],
         ];
+    }
+
+    /**
+     * @return array{value: float|string, unit: string|null, label: string, warning: string|null}|null
+     */
+    public function canonicalPreviewFor(AttributeDefinition $attribute): ?array
+    {
+        return app(CanonicalValuePreviewer::class)->preview($attribute, $this->values[$attribute->id] ?? []);
     }
 
     protected function getHeaderActions(): array

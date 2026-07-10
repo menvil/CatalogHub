@@ -101,6 +101,20 @@
                                                             <option value="1">Yes</option>
                                                             <option value="0">No</option>
                                                         </select>
+                                                    @elseif ($attribute->data_type->value === 'enum')
+                                                        @if ($attribute->options->isEmpty())
+                                                            <span class="text-sm text-warning-700 dark:text-warning-300">No options configured for this enum attribute.</span>
+                                                        @else
+                                                            <select
+                                                                wire:model.live="values.{{ $attribute->id }}.value_enum_code"
+                                                                class="w-56 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                                            >
+                                                                <option value="">No option</option>
+                                                                @foreach ($attribute->options as $option)
+                                                                    <option value="{{ $option->code }}">{{ $option->label ?: $option->code }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        @endif
                                                     @else
                                                         <span class="text-sm text-gray-500 dark:text-gray-400">{{ $existingValue?->raw_value ?: 'No value yet' }}</span>
                                                     @endif

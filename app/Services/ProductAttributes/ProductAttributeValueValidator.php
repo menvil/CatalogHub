@@ -278,5 +278,23 @@ final class ProductAttributeValueValidator
 
             $valueData['confidence'] = $confidence;
         }
+
+        foreach (['source_type' => 50, 'source_id' => 255] as $field => $maxLength) {
+            if ($valueData[$field] === '') {
+                $valueData[$field] = null;
+            }
+
+            if ($valueData[$field] !== null && (! is_string($valueData[$field]) || mb_strlen($valueData[$field]) > $maxLength)) {
+                throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] {$field} must be a string up to {$maxLength} characters.");
+            }
+        }
+
+        if ($valueData['source_reference'] === '') {
+            $valueData['source_reference'] = null;
+        }
+
+        if ($valueData['source_reference'] !== null && ! is_array($valueData['source_reference'])) {
+            throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] source_reference must be an array.");
+        }
     }
 }

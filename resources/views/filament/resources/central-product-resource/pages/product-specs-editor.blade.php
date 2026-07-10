@@ -209,6 +209,31 @@
                                                                 class="mt-1 w-32 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                                                             >
                                                         </label>
+
+                                                        <div class="grid gap-3 md:grid-cols-2">
+                                                            <label class="block">
+                                                                <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Source type</span>
+                                                                <select
+                                                                    wire:model.live="values.{{ $attribute->id }}.source_type"
+                                                                    class="mt-1 w-44 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                                                >
+                                                                    <option value="">Unknown</option>
+                                                                    <option value="manual">Manual</option>
+                                                                    <option value="manufacturer">Manufacturer</option>
+                                                                    <option value="merchant">Merchant</option>
+                                                                    <option value="import">Import</option>
+                                                                </select>
+                                                            </label>
+
+                                                            <label class="block">
+                                                                <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Source note</span>
+                                                                <textarea
+                                                                    rows="2"
+                                                                    wire:model.live="values.{{ $attribute->id }}.source_reference.note"
+                                                                    class="mt-1 w-72 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                                                ></textarea>
+                                                            </label>
+                                                        </div>
                                                     </div>
                                                 </td>
                                             </tr>

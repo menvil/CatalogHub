@@ -419,4 +419,28 @@ class ProductSpecsEditorTest extends TestCase
             ->assertSee('Confidence')
             ->assertSeeHtml('confidence');
     }
+
+    public function test_product_specs_editor_shows_source_reference_fields(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::CentralAdmin]);
+        $category = CentralCategory::factory()->create();
+        $section = AttributeSection::factory()->for($category, 'category')->create();
+        $product = CentralProduct::factory()->for($category, 'category')->create();
+
+        AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($section, 'section')
+            ->create([
+                'code' => 'refresh_rate',
+                'data_type' => 'decimal',
+            ]);
+
+        $this->actingAs($admin)
+            ->get(ProductSpecsEditor::getUrl(['record' => $product]))
+            ->assertOk()
+            ->assertSee('Source type')
+            ->assertSee('Source note')
+            ->assertSeeHtml('source_type')
+            ->assertSeeHtml('source_reference.note');
+    }
 }

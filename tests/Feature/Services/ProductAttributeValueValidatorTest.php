@@ -136,6 +136,24 @@ class ProductAttributeValueValidatorTest extends TestCase
         ]);
     }
 
+    public function test_accepts_source_reference_metadata_for_attribute_value(): void
+    {
+        $product = $this->productWithAttribute('refresh_rate', 'decimal');
+
+        $validated = app(ProductAttributeValueValidator::class)->validate($product, [
+            'refresh_rate' => [
+                'value_number' => 165,
+                'source_type' => 'manual',
+                'source_reference' => ['note' => 'Checked manufacturer website'],
+            ],
+        ]);
+
+        $value = array_values($validated)[0];
+
+        $this->assertSame('manual', $value['source_type']);
+        $this->assertSame(['note' => 'Checked manufacturer website'], $value['source_reference']);
+    }
+
     private function productWithAttribute(string $code, string $dataType): CentralProduct
     {
         $category = CentralCategory::factory()->create();

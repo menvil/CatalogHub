@@ -10,6 +10,10 @@ final class UnitResolver
     public function resolve(string|MeasurementUnit $unit): MeasurementUnit
     {
         if ($unit instanceof MeasurementUnit) {
+            if (! $unit->is_active) {
+                throw CannotConvertUnitException::inactiveUnit($unit->code);
+            }
+
             return $unit;
         }
 

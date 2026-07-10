@@ -50,4 +50,17 @@ class UnitConverterLengthTest extends TestCase
 
         app(UnitConverter::class)->convert(1, 'inch', 'centimeter');
     }
+
+    public function test_inactive_unit_model_cannot_be_converted(): void
+    {
+        $this->seed([MeasurementDimensionsSeeder::class, MetricMeasurementUnitsSeeder::class, ImperialMeasurementUnitsSeeder::class]);
+
+        $inch = MeasurementUnit::query()->where('code', 'inch')->firstOrFail();
+        $centimeter = MeasurementUnit::query()->where('code', 'centimeter')->firstOrFail();
+        $inch->forceFill(['is_active' => false]);
+
+        $this->expectException(CannotConvertUnitException::class);
+
+        app(UnitConverter::class)->convert(1, $inch, $centimeter);
+    }
 }

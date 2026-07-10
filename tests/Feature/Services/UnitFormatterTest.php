@@ -46,4 +46,16 @@ class UnitFormatterTest extends TestCase
 
         app(UnitFormatter::class)->format(100, 'watt');
     }
+
+    public function test_inactive_unit_model_cannot_be_formatted(): void
+    {
+        $this->seed([MeasurementDimensionsSeeder::class, MetricMeasurementUnitsSeeder::class, ImperialMeasurementUnitsSeeder::class]);
+
+        $watt = MeasurementUnit::query()->where('code', 'watt')->firstOrFail();
+        $watt->forceFill(['is_active' => false]);
+
+        $this->expectException(CannotConvertUnitException::class);
+
+        app(UnitFormatter::class)->format(100, $watt);
+    }
 }

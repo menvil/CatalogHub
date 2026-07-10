@@ -93,4 +93,44 @@ class CanonicalValuePreviewerTest extends TestCase
         $this->assertSame('2.2 lb', $preview['label']);
         $this->assertNotNull($preview['warning']);
     }
+
+    public function test_previews_numeric_value_without_units(): void
+    {
+        $attribute = AttributeDefinition::factory()->create(['data_type' => 'decimal']);
+
+        $preview = app(CanonicalValuePreviewer::class)->preview($attribute, [
+            'value_number' => 165,
+        ]);
+
+        $this->assertNotNull($preview);
+        $this->assertSame(165, $preview['value']);
+        $this->assertNull($preview['unit']);
+        $this->assertSame('165', $preview['label']);
+        $this->assertNull($preview['warning']);
+    }
+
+    public function test_previews_numeric_value_with_canonical_unit_and_no_source_unit(): void
+    {
+        $dimension = MeasurementDimension::factory()->create(['code' => 'frequency']);
+        MeasurementUnit::factory()->for($dimension, 'dimension')->create([
+            'code' => 'hertz',
+            'symbol' => 'Hz',
+            'factor_to_canonical' => '1',
+            'precision_default' => 0,
+        ]);
+        $attribute = AttributeDefinition::factory()->create([
+            'data_type' => 'decimal',
+            'dimension' => 'frequency',
+            'canonical_unit' => 'hertz',
+        ]);
+
+        $preview = app(CanonicalValuePreviewer::class)->preview($attribute, [
+            'value_number' => 165,
+        ]);
+
+        $this->assertNotNull($preview);
+        $this->assertSame('hertz', $preview['unit']);
+        $this->assertSame('165 Hz', $preview['label']);
+        $this->assertNull($preview['warning']);
+    }
 }

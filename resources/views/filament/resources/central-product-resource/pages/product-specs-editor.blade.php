@@ -75,18 +75,41 @@
                                                 <td class="px-5 py-3">
                                                     <div class="space-y-3">
                                                         @if (in_array($attribute->data_type->value, ['integer', 'decimal'], true))
-                                                            <input
-                                                                type="number"
-                                                                @if ($attribute->data_type->value === 'integer') step="1" @else step="any" @endif
-                                                                wire:model.live="values.{{ $attribute->id }}.value_number"
-                                                                class="w-40 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                                                            >
+                                                            <div class="flex flex-wrap items-center gap-2">
+                                                                <input
+                                                                    type="number"
+                                                                    @if ($attribute->data_type->value === 'integer') step="1" @else step="any" @endif
+                                                                    wire:model.live="values.{{ $attribute->id }}.value_number"
+                                                                    class="w-40 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                                                >
+
+                                                                @php
+                                                                    $unitOptions = $this->unitOptionsFor($attribute);
+                                                                @endphp
+                                                                @if ($unitOptions !== [])
+                                                                    <select
+                                                                        wire:model.live="values.{{ $attribute->id }}.source_unit"
+                                                                        class="w-48 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                                                    >
+                                                                        <option value="">Source unit</option>
+                                                                        @foreach ($unitOptions as $unitCode => $unitLabel)
+                                                                            <option value="{{ $unitCode }}">{{ $unitLabel }}</option>
+                                                                        @endforeach
+                                                                    </select>
+                                                                @endif
+                                                            </div>
                                                             @php
                                                                 $canonicalPreview = $this->canonicalPreviewFor($attribute);
                                                             @endphp
                                                             @if ($canonicalPreview)
                                                                 <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                                    <span class="font-medium text-gray-700 dark:text-gray-200">Canonical:</span>
+                                                                    <span class="font-medium text-gray-700 dark:text-gray-200">
+                                                                        @if (filled($values[$attribute->id]['source_unit'] ?? null) && filled($canonicalPreview['unit']))
+                                                                            Conversion:
+                                                                        @else
+                                                                            Canonical:
+                                                                        @endif
+                                                                    </span>
                                                                     {{ $canonicalPreview['label'] }}
                                                                     @if ($canonicalPreview['warning'])
                                                                         <span class="text-warning-700 dark:text-warning-300">{{ $canonicalPreview['warning'] }}</span>

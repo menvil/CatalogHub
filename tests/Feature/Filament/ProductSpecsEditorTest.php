@@ -11,6 +11,8 @@ use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
+use App\Models\MeasurementDimension;
+use App\Models\MeasurementUnit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -311,5 +313,65 @@ class ProductSpecsEditorTest extends TestCase
             ->assertOk()
             ->assertSee('Canonical')
             ->assertSee('165');
+    }
+
+    public function test_product_specs_editor_shows_unit_conversion_preview_for_compatible_unit(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::CentralAdmin]);
+        $mass = MeasurementDimension::factory()->create(['code' => 'mass']);
+        $volume = MeasurementDimension::factory()->create(['code' => 'volume']);
+        MeasurementUnit::factory()->for($mass, 'dimension')->create([
+            'code' => 'kilogram',
+            'symbol' => 'kg',
+            'name' => 'Kilogram',
+            'factor_to_canonical' => '1',
+            'precision_default' => 3,
+            'is_canonical' => true,
+        ]);
+        MeasurementUnit::factory()->for($mass, 'dimension')->create([
+            'code' => 'pound',
+            'symbol' => 'lb',
+            'name' => 'Pound',
+            'factor_to_canonical' => '0.45359237',
+            'precision_default' => 3,
+        ]);
+        MeasurementUnit::factory()->for($volume, 'dimension')->create([
+            'code' => 'liter',
+            'symbol' => 'l',
+            'name' => 'Liter',
+            'factor_to_canonical' => '1',
+        ]);
+
+        $category = CentralCategory::factory()->create();
+        $section = AttributeSection::factory()->for($category, 'category')->create();
+        $product = CentralProduct::factory()->for($category, 'category')->create();
+        $attribute = AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($section, 'section')
+            ->create([
+                'name' => 'Weight',
+                'code' => 'weight',
+                'data_type' => 'decimal',
+                'dimension' => 'mass',
+                'canonical_unit' => 'kilogram',
+            ]);
+
+        CentralProductAttributeValue::factory()
+            ->for($product, 'product')
+            ->for($attribute, 'attributeDefinition')
+            ->create([
+                'value_type' => 'decimal',
+                'value_number' => 2.2,
+                'source_unit' => 'pound',
+            ]);
+
+        $this->actingAs($admin)
+            ->get(ProductSpecsEditor::getUrl(['record' => $product]))
+            ->assertOk()
+            ->assertSee('Pound (lb)')
+            ->assertSee('Kilogram (kg)')
+            ->assertSee('Conversion')
+            ->assertSee('0.998 kg')
+            ->assertDontSee('Liter (l)');
     }
 }

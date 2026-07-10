@@ -245,6 +245,33 @@
                     </article>
                 @endforeach
             </section>
+
+            <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                <h3 class="text-lg font-semibold tracking-normal text-gray-950 dark:text-white">Grouped Specs Preview</h3>
+
+                <div class="mt-4 space-y-4">
+                    @forelse ($this->groupedSpecsPreview() as $sectionPreview)
+                        <div class="border-t border-gray-200 pt-4 first:border-t-0 first:pt-0 dark:border-gray-800">
+                            <h4 class="font-semibold text-gray-950 dark:text-white">{{ $sectionPreview['section'] }}</h4>
+
+                            @if ($sectionPreview['attributes'] === [])
+                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">No values yet.</p>
+                            @else
+                                <dl class="mt-3 grid gap-2 md:grid-cols-2">
+                                    @foreach ($sectionPreview['attributes'] as $attributePreview)
+                                        <div class="grid grid-cols-2 gap-3 rounded-md border border-gray-200 p-3 text-sm dark:border-gray-800">
+                                            <dt class="font-medium text-gray-950 dark:text-white">{{ $attributePreview['name'] }}</dt>
+                                            <dd class="text-gray-600 dark:text-gray-300">{{ $attributePreview['value'] }}</dd>
+                                        </div>
+                                    @endforeach
+                                </dl>
+                            @endif
+                        </div>
+                    @empty
+                        <p class="text-sm text-gray-500 dark:text-gray-400">No preview available.</p>
+                    @endforelse
+                </div>
+            </section>
         @endif
     </div>
 </x-filament-panels::page>

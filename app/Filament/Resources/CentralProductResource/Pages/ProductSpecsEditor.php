@@ -8,6 +8,7 @@ use App\Models\CentralCatalog\CentralProductAttributeValue;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\MeasurementDimension;
 use App\Services\ProductAttributes\CanonicalValuePreviewer;
+use App\Services\ProductAttributes\GroupedSpecsPreviewBuilder;
 use App\Services\ProductAttributes\MissingRequiredAttributesResolver;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -144,6 +145,14 @@ final class ProductSpecsEditor extends Page
     public function missingRequiredAttributes(): array
     {
         return app(MissingRequiredAttributesResolver::class)->resolve($this->getProduct());
+    }
+
+    /**
+     * @return list<array{section: string, code: string, attributes: list<array{code: string, name: string, value: string}>}>
+     */
+    public function groupedSpecsPreview(): array
+    {
+        return app(GroupedSpecsPreviewBuilder::class)->build($this->getProduct(), $this->values);
     }
 
     protected function getHeaderActions(): array

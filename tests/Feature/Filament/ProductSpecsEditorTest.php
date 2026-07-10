@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Filament\Resources\CentralProductResource;
 use App\Filament\Resources\CentralProductResource\Pages\ProductSpecsEditor;
 use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
@@ -187,5 +188,38 @@ class ProductSpecsEditorTest extends TestCase
             ->assertSee('Yes')
             ->assertSee('No')
             ->assertSeeHtml('value_bool');
+    }
+
+    public function test_product_specs_editor_renders_select_with_attribute_options_for_enum_attribute(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::CentralAdmin]);
+        $category = CentralCategory::factory()->create();
+        $section = AttributeSection::factory()->for($category, 'category')->create();
+        $product = CentralProduct::factory()->for($category, 'category')->create();
+        $attribute = AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($section, 'section')
+            ->create([
+                'name' => 'Panel type',
+                'code' => 'panel_type',
+                'data_type' => 'enum',
+            ]);
+
+        foreach (['ips', 'va', 'oled'] as $position => $code) {
+            AttributeOption::factory()->for($attribute, 'attribute')->create([
+                'code' => $code,
+                'label' => $code,
+                'position' => $position,
+            ]);
+        }
+
+        $this->actingAs($admin)
+            ->get(ProductSpecsEditor::getUrl(['record' => $product]))
+            ->assertOk()
+            ->assertSee('panel_type')
+            ->assertSee('ips')
+            ->assertSee('va')
+            ->assertSee('oled')
+            ->assertSeeHtml('value_enum_code');
     }
 }

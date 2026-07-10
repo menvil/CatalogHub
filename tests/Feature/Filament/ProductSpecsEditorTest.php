@@ -443,4 +443,39 @@ class ProductSpecsEditorTest extends TestCase
             ->assertSeeHtml('source_type')
             ->assertSeeHtml('source_reference.note');
     }
+
+    public function test_product_specs_editor_shows_grouped_specs_preview_with_existing_values(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::CentralAdmin]);
+        $category = CentralCategory::factory()->create();
+        $section = AttributeSection::factory()->for($category, 'category')->create([
+            'name' => 'Display',
+            'code' => 'display',
+        ]);
+        $product = CentralProduct::factory()->for($category, 'category')->create();
+        $attribute = AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($section, 'section')
+            ->create([
+                'name' => 'Refresh rate',
+                'code' => 'refresh_rate',
+                'data_type' => 'decimal',
+                'canonical_unit' => 'hertz',
+            ]);
+
+        CentralProductAttributeValue::factory()->create([
+            'central_product_id' => $product->id,
+            'attribute_definition_id' => $attribute->id,
+            'value_type' => 'decimal',
+            'canonical_value' => 165,
+            'canonical_unit' => 'hertz',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(ProductSpecsEditor::getUrl(['record' => $product]))
+            ->assertOk()
+            ->assertSee('Grouped Specs Preview')
+            ->assertSee('Display')
+            ->assertSee('165');
+    }
 }

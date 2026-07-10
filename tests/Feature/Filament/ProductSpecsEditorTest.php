@@ -162,4 +162,30 @@ class ProductSpecsEditorTest extends TestCase
             ->assertSeeHtml('type="text"')
             ->assertSeeHtml('value_text');
     }
+
+    public function test_product_specs_editor_renders_boolean_control_for_boolean_attribute(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::CentralAdmin]);
+        $category = CentralCategory::factory()->create();
+        $section = AttributeSection::factory()->for($category, 'category')->create();
+        $product = CentralProduct::factory()->for($category, 'category')->create();
+
+        AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($section, 'section')
+            ->create([
+                'name' => 'Has USB-C',
+                'code' => 'has_usb_c',
+                'data_type' => 'boolean',
+            ]);
+
+        $this->actingAs($admin)
+            ->get(ProductSpecsEditor::getUrl(['record' => $product]))
+            ->assertOk()
+            ->assertSee('has_usb_c')
+            ->assertSee('Unknown')
+            ->assertSee('Yes')
+            ->assertSee('No')
+            ->assertSeeHtml('value_bool');
+    }
 }

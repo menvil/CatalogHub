@@ -73,6 +73,83 @@ class MissingRequiredAttributesResolverTest extends TestCase
         $this->assertSame([], app(MissingRequiredAttributesResolver::class)->resolve($product));
     }
 
+    public function test_enum_value_counts_as_present(): void
+    {
+        [$product, $attribute] = $this->productWithRequiredAttribute('panel_type', 'enum');
+        CentralProductAttributeValue::factory()
+            ->for($product, 'product')
+            ->for($attribute, 'attributeDefinition')
+            ->create([
+                'value_type' => 'enum',
+                'value_enum_code' => 'ips',
+            ]);
+
+        $this->assertSame([], app(MissingRequiredAttributesResolver::class)->resolve($product));
+    }
+
+    public function test_multi_enum_and_json_empty_arrays_remain_missing(): void
+    {
+        [$product, $multiEnum] = $this->productWithRequiredAttribute('ports', 'multi_enum');
+        [, $json] = $this->addRequiredAttribute($product->category, 'technical_blob', 'json');
+        CentralProductAttributeValue::factory()
+            ->for($product, 'product')
+            ->for($multiEnum, 'attributeDefinition')
+            ->create([
+                'value_type' => 'multi_enum',
+                'value_json' => [],
+            ]);
+        CentralProductAttributeValue::factory()
+            ->for($product, 'product')
+            ->for($json, 'attributeDefinition')
+            ->create([
+                'value_type' => 'json',
+                'value_json' => [],
+            ]);
+
+        $result = app(MissingRequiredAttributesResolver::class)->resolve($product);
+
+        $this->assertEqualsCanonicalizing([$multiEnum->id, $json->id], collect($result)->pluck('id')->all());
+    }
+
+    public function test_multi_enum_and_json_non_empty_arrays_count_as_present(): void
+    {
+        [$product, $multiEnum] = $this->productWithRequiredAttribute('ports', 'multi_enum');
+        [, $json] = $this->addRequiredAttribute($product->category, 'technical_blob', 'json');
+        CentralProductAttributeValue::factory()
+            ->for($product, 'product')
+            ->for($multiEnum, 'attributeDefinition')
+            ->create([
+                'value_type' => 'multi_enum',
+                'value_json' => ['hdmi'],
+            ]);
+        CentralProductAttributeValue::factory()
+            ->for($product, 'product')
+            ->for($json, 'attributeDefinition')
+            ->create([
+                'value_type' => 'json',
+                'value_json' => ['panel' => 'ips'],
+            ]);
+
+        $this->assertSame([], app(MissingRequiredAttributesResolver::class)->resolve($product));
+    }
+
+    public function test_non_required_attributes_are_excluded(): void
+    {
+        $category = CentralCategory::factory()->create();
+        $section = AttributeSection::factory()->for($category, 'category')->create();
+        $product = CentralProduct::factory()->for($category, 'category')->create();
+        AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($section, 'section')
+            ->create([
+                'code' => 'optional_refresh_rate',
+                'data_type' => 'decimal',
+                'is_required' => false,
+            ]);
+
+        $this->assertSame([], app(MissingRequiredAttributesResolver::class)->resolve($product));
+    }
+
     /**
      * @return array{CentralProduct, AttributeDefinition}
      */
@@ -91,5 +168,24 @@ class MissingRequiredAttributesResolverTest extends TestCase
             ]);
 
         return [$product, $attribute];
+    }
+
+    /**
+     * @return array{CentralProduct, AttributeDefinition}
+     */
+    private function addRequiredAttribute(CentralCategory $category, string $code, string $dataType): array
+    {
+        $section = $category->attributeSections()->first()
+            ?? AttributeSection::factory()->for($category, 'category')->create();
+        $attribute = AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($section, 'section')
+            ->create([
+                'code' => $code,
+                'data_type' => $dataType,
+                'is_required' => true,
+            ]);
+
+        return [$category->products()->firstOrFail(), $attribute];
     }
 }

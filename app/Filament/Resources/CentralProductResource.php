@@ -140,6 +140,7 @@ final class CentralProductResource extends Resource
             'create' => Pages\CreateCentralProduct::route('/create'),
             'view' => Pages\ViewCentralProduct::route('/{record}'),
             'edit' => Pages\EditCentralProduct::route('/{record}/edit'),
+            'specs' => Pages\ProductSpecsEditor::route('/{record}/specs'),
         ];
     }
 }

@@ -108,6 +108,34 @@ class ProductAttributeValueValidatorTest extends TestCase
         $this->assertSame('kilogram', $value['canonical_unit']);
     }
 
+    public function test_allows_confidence_between_zero_and_one(): void
+    {
+        $product = $this->productWithAttribute('refresh_rate', 'decimal');
+
+        $validated = app(ProductAttributeValueValidator::class)->validate($product, [
+            'refresh_rate' => [
+                'value_number' => 165,
+                'confidence' => 0.95,
+            ],
+        ]);
+
+        $this->assertSame(0.95, array_values($validated)[0]['confidence']);
+    }
+
+    public function test_rejects_confidence_greater_than_one(): void
+    {
+        $product = $this->productWithAttribute('refresh_rate', 'decimal');
+
+        $this->expectException(CannotSaveProductSpecsException::class);
+
+        app(ProductAttributeValueValidator::class)->validate($product, [
+            'refresh_rate' => [
+                'value_number' => 165,
+                'confidence' => 1.5,
+            ],
+        ]);
+    }
+
     private function productWithAttribute(string $code, string $dataType): CentralProduct
     {
         $category = CentralCategory::factory()->create();

@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\CentralProductResource\Pages;
 
 use App\Filament\Resources\CentralProductResource;
+use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\CentralProductAttributeValue;
 use App\Models\CentralCatalog\CentralProduct;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -22,9 +24,15 @@ final class ProductSpecsEditor extends Page
 
     private ?CentralProduct $cachedProduct = null;
 
+    /**
+     * @var array<int, array<string, mixed>>
+     */
+    public array $values = [];
+
     public function mount(int|string $record): void
     {
         $this->record = $this->resolveRecord($record);
+        $this->hydrateValues();
     }
 
     public function getTitle(): string
@@ -47,6 +55,51 @@ final class ProductSpecsEditor extends Page
             'category.attributeSections.attributes.options' => fn ($query) => $query->ordered(),
             'attributeValues.attributeDefinition',
         ]);
+    }
+
+    private function hydrateValues(): void
+    {
+        $product = $this->getProduct();
+
+        if (! $product->category) {
+            $this->values = [];
+
+            return;
+        }
+
+        foreach ($product->category->attributeSections as $section) {
+            foreach ($section->attributes as $attribute) {
+                $existingValue = $product->attributeValues->firstWhere('attribute_definition_id', $attribute->id);
+
+                $this->values[$attribute->id] = $this->stateForAttribute($attribute, $existingValue);
+            }
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function stateForAttribute(AttributeDefinition $attribute, ?CentralProductAttributeValue $existingValue): array
+    {
+        return [
+            'attribute_id' => $attribute->id,
+            'value_type' => $attribute->data_type->value,
+            'raw_value' => $existingValue?->raw_value,
+            'value_text' => $existingValue?->value_text,
+            'value_number' => $existingValue?->value_number,
+            'value_bool' => $existingValue?->value_bool,
+            'value_enum_code' => $existingValue?->value_enum_code,
+            'value_json' => $existingValue?->value_json ?? [],
+            'value_min' => $existingValue?->value_min,
+            'value_max' => $existingValue?->value_max,
+            'source_unit' => $existingValue?->source_unit,
+            'canonical_value' => $existingValue?->canonical_value,
+            'canonical_unit' => $existingValue?->canonical_unit,
+            'confidence' => $existingValue?->confidence,
+            'source_type' => $existingValue?->source_type,
+            'source_id' => $existingValue?->source_id,
+            'source_reference' => $existingValue?->source_reference ?? [],
+        ];
     }
 
     protected function getHeaderActions(): array

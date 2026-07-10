@@ -114,4 +114,28 @@ class ProductSpecsEditorTest extends TestCase
             ->assertSee('Ports')
             ->assertSee('usb_c');
     }
+
+    public function test_product_specs_editor_renders_numeric_input_for_numeric_attribute(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::CentralAdmin]);
+        $category = CentralCategory::factory()->create();
+        $section = AttributeSection::factory()->for($category, 'category')->create();
+        $product = CentralProduct::factory()->for($category, 'category')->create();
+
+        AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($section, 'section')
+            ->create([
+                'name' => 'Refresh rate',
+                'code' => 'refresh_rate',
+                'data_type' => 'decimal',
+            ]);
+
+        $this->actingAs($admin)
+            ->get(ProductSpecsEditor::getUrl(['record' => $product]))
+            ->assertOk()
+            ->assertSee('refresh_rate')
+            ->assertSeeHtml('type="number"')
+            ->assertSeeHtml('step="any"');
+    }
 }

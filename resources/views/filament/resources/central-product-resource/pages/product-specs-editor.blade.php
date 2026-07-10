@@ -72,8 +72,17 @@
                                                 <td class="px-5 py-3 font-medium text-gray-950 dark:text-white">{{ $attribute->name }}</td>
                                                 <td class="px-5 py-3 text-gray-600 dark:text-gray-300">{{ $attribute->code }}</td>
                                                 <td class="px-5 py-3 text-gray-600 dark:text-gray-300">{{ $attribute->data_type->value }}</td>
-                                                <td class="px-5 py-3 text-gray-600 dark:text-gray-300">
-                                                    {{ $existingValue?->raw_value ?: 'No value yet' }}
+                                                <td class="px-5 py-3">
+                                                    @if (in_array($attribute->data_type->value, ['integer', 'decimal'], true))
+                                                        <input
+                                                            type="number"
+                                                            @if ($attribute->data_type->value === 'integer') step="1" @else step="any" @endif
+                                                            wire:model.live="values.{{ $attribute->id }}.value_number"
+                                                            class="w-40 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                                        >
+                                                    @else
+                                                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ $existingValue?->raw_value ?: 'No value yet' }}</span>
+                                                    @endif
                                                 </td>
                                             </tr>
                                         @endforeach

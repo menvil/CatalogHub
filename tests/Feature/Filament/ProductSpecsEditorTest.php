@@ -279,4 +279,37 @@ class ProductSpecsEditorTest extends TestCase
             ->assertSee('Raw value')
             ->assertSeeHtml('raw_value');
     }
+
+    public function test_product_specs_editor_shows_canonical_value_preview_for_numeric_attribute(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::CentralAdmin]);
+        $category = CentralCategory::factory()->create();
+        $section = AttributeSection::factory()->for($category, 'category')->create();
+        $product = CentralProduct::factory()->for($category, 'category')->create();
+        $attribute = AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($section, 'section')
+            ->create([
+                'name' => 'Refresh rate',
+                'code' => 'refresh_rate',
+                'data_type' => 'decimal',
+                'dimension' => 'frequency',
+                'canonical_unit' => 'hertz',
+            ]);
+
+        CentralProductAttributeValue::factory()
+            ->for($product, 'product')
+            ->for($attribute, 'attributeDefinition')
+            ->create([
+                'value_type' => 'decimal',
+                'value_number' => 165,
+                'canonical_unit' => 'hertz',
+            ]);
+
+        $this->actingAs($admin)
+            ->get(ProductSpecsEditor::getUrl(['record' => $product]))
+            ->assertOk()
+            ->assertSee('Canonical')
+            ->assertSee('165');
+    }
 }

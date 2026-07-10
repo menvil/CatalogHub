@@ -81,6 +81,18 @@
                                                                 wire:model.live="values.{{ $attribute->id }}.value_number"
                                                                 class="w-40 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                                                             >
+                                                            @php
+                                                                $canonicalPreview = $this->canonicalPreviewFor($attribute);
+                                                            @endphp
+                                                            @if ($canonicalPreview)
+                                                                <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                                    <span class="font-medium text-gray-700 dark:text-gray-200">Canonical:</span>
+                                                                    {{ $canonicalPreview['label'] }}
+                                                                    @if ($canonicalPreview['warning'])
+                                                                        <span class="text-warning-700 dark:text-warning-300">{{ $canonicalPreview['warning'] }}</span>
+                                                                    @endif
+                                                                </div>
+                                                            @endif
                                                         @elseif ($attribute->data_type->value === 'string')
                                                             <input
                                                                 type="text"

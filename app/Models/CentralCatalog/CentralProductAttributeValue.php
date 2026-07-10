@@ -6,6 +6,7 @@ use Database\Factories\CentralProductAttributeValueFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'central_product_id',
@@ -51,5 +52,21 @@ final class CentralProductAttributeValue extends Model
             'canonical_value' => 'decimal:6',
             'confidence' => 'decimal:4',
         ];
+    }
+
+    /**
+     * @return BelongsTo<CentralProduct, $this>
+     */
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(CentralProduct::class, 'central_product_id');
+    }
+
+    /**
+     * @return BelongsTo<AttributeDefinition, $this>
+     */
+    public function attributeDefinition(): BelongsTo
+    {
+        return $this->belongsTo(AttributeDefinition::class, 'attribute_definition_id');
     }
 }

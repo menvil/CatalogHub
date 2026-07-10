@@ -3,6 +3,7 @@
 namespace Tests\Feature\Services;
 
 use App\Exceptions\Units\CannotConvertUnitException;
+use App\Models\MeasurementUnit;
 use App\Services\Units\UnitFormatter;
 use Database\Seeders\ImperialMeasurementUnitsSeeder;
 use Database\Seeders\MeasurementDimensionsSeeder;
@@ -31,5 +32,18 @@ class UnitFormatterTest extends TestCase
         $this->expectException(CannotConvertUnitException::class);
 
         app(UnitFormatter::class)->format(1, 'unknown_unit');
+    }
+
+    public function test_inactive_unit_code_cannot_be_formatted(): void
+    {
+        $this->seed([MeasurementDimensionsSeeder::class, MetricMeasurementUnitsSeeder::class, ImperialMeasurementUnitsSeeder::class]);
+
+        MeasurementUnit::query()
+            ->where('code', 'watt')
+            ->update(['is_active' => false]);
+
+        $this->expectException(CannotConvertUnitException::class);
+
+        app(UnitFormatter::class)->format(100, 'watt');
     }
 }

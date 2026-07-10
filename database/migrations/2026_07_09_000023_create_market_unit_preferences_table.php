@@ -16,6 +16,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['market_code', 'dimension_id']);
+            $table->index(['preferred_unit_id', 'dimension_id']);
             $table->foreign(['preferred_unit_id', 'dimension_id'], 'market_pref_unit_dimension_fk')
                 ->references(['id', 'dimension_id'])
                 ->on('measurement_units')

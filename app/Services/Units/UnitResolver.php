@@ -14,6 +14,7 @@ final class UnitResolver
         }
 
         $resolved = MeasurementUnit::query()
+            ->active()
             ->where('code', $unit)
             ->first();
 

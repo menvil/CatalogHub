@@ -30,6 +30,11 @@ class MarketUnitPreferenceTest extends TestCase
             'created_at',
             'updated_at',
         ]));
+        $indexes = collect(Schema::getIndexes('market_unit_preferences'));
+
+        $this->assertTrue($indexes->contains(
+            fn (array $index): bool => $index['columns'] === ['preferred_unit_id', 'dimension_id']
+        ));
 
         $volume = MeasurementDimension::query()->where('code', 'volume')->firstOrFail();
         $liter = MeasurementUnit::query()->where('code', 'liter')->firstOrFail();

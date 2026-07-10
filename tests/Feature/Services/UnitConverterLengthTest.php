@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Services;
 
+use App\Exceptions\Units\CannotConvertUnitException;
 use App\Models\MeasurementUnit;
 use App\Services\Units\UnitConverter;
 use Database\Seeders\ImperialMeasurementUnitsSeeder;
@@ -35,5 +36,18 @@ class UnitConverterLengthTest extends TestCase
         $centimeter->forceFill(['dimension_id' => (string) $centimeter->dimension_id]);
 
         $this->assertEqualsWithDelta(1, app(UnitConverter::class)->convert(2.54, $centimeter, $inch), 0.00001);
+    }
+
+    public function test_inactive_unit_code_cannot_be_converted(): void
+    {
+        $this->seed([MeasurementDimensionsSeeder::class, MetricMeasurementUnitsSeeder::class, ImperialMeasurementUnitsSeeder::class]);
+
+        MeasurementUnit::query()
+            ->where('code', 'inch')
+            ->update(['is_active' => false]);
+
+        $this->expectException(CannotConvertUnitException::class);
+
+        app(UnitConverter::class)->convert(1, 'inch', 'centimeter');
     }
 }

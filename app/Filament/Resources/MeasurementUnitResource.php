@@ -57,7 +57,7 @@ final class MeasurementUnitResource extends Resource
                     ->default('metric'),
                 TextInput::make('factor_to_canonical')
                     ->numeric()
-                    ->rules(['not_in:0'])
+                    ->rules(['gt:0'])
                     ->required()
                     ->default(1),
                 TextInput::make('offset_to_canonical')

@@ -80,6 +80,18 @@
                                                             wire:model.live="values.{{ $attribute->id }}.value_number"
                                                             class="w-40 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                                                         >
+                                                    @elseif ($attribute->data_type->value === 'string')
+                                                        <input
+                                                            type="text"
+                                                            wire:model.live="values.{{ $attribute->id }}.value_text"
+                                                            class="w-72 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                                        >
+                                                    @elseif ($attribute->data_type->value === 'text')
+                                                        <textarea
+                                                            wire:model.live="values.{{ $attribute->id }}.value_text"
+                                                            rows="2"
+                                                            class="w-80 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                                        ></textarea>
                                                     @else
                                                         <span class="text-sm text-gray-500 dark:text-gray-400">{{ $existingValue?->raw_value ?: 'No value yet' }}</span>
                                                     @endif

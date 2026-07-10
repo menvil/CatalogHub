@@ -6,12 +6,15 @@ use App\Filament\Resources\CentralProductResource;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
 use App\Models\CentralCatalog\CentralProduct;
+use App\Actions\ProductAttributes\SaveProductSpecsAction;
+use App\Exceptions\ProductAttributes\CannotSaveProductSpecsException;
 use App\Models\MeasurementDimension;
 use App\Services\ProductAttributes\CanonicalValuePreviewer;
 use App\Services\ProductAttributes\GroupedSpecsPreviewBuilder;
 use App\Services\ProductAttributes\MissingRequiredAttributesResolver;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Filament\Support\Icons\Heroicon;
@@ -36,7 +39,7 @@ final class ProductSpecsEditor extends Page
     public function mount(int|string $record): void
     {
         $this->record = $this->resolveRecord($record);
-        $this->hydrateValues();
+        $this->initializeValues();
     }
 
     public function getTitle(): string
@@ -61,7 +64,7 @@ final class ProductSpecsEditor extends Page
         ]);
     }
 
-    private function hydrateValues(): void
+    private function initializeValues(): void
     {
         $product = $this->getProduct();
 
@@ -162,7 +165,28 @@ final class ProductSpecsEditor extends Page
             Action::make('saveSpecs')
                 ->label('Save specs')
                 ->icon(Heroicon::OutlinedCheck)
-                ->disabled(),
+                ->action(function (): void {
+                    $this->save();
+                }),
         ];
+    }
+
+    public function save(): void
+    {
+        try {
+            app(SaveProductSpecsAction::class)->handle($this->getProduct(), $this->values);
+        } catch (CannotSaveProductSpecsException $exception) {
+            $this->addError('values', $exception->getMessage());
+
+            return;
+        }
+
+        $this->cachedProduct = null;
+        $this->initializeValues();
+
+        Notification::make()
+            ->title('Product specs saved')
+            ->success()
+            ->send();
     }
 }

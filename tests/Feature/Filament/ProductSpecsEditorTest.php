@@ -15,6 +15,7 @@ use App\Models\MeasurementDimension;
 use App\Models\MeasurementUnit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class ProductSpecsEditorTest extends TestCase
@@ -477,5 +478,33 @@ class ProductSpecsEditorTest extends TestCase
             ->assertSee('Grouped Specs Preview')
             ->assertSee('Display')
             ->assertSee('165');
+    }
+
+    public function test_product_specs_editor_saves_specs(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::CentralAdmin]);
+        $category = CentralCategory::factory()->create();
+        $section = AttributeSection::factory()->for($category, 'category')->create();
+        $product = CentralProduct::factory()->for($category, 'category')->create();
+        $attribute = AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($section, 'section')
+            ->create([
+                'code' => 'model_name',
+                'data_type' => 'string',
+            ]);
+
+        Livewire::actingAs($admin)
+            ->test(ProductSpecsEditor::class, ['record' => $product->id])
+            ->set("values.{$attribute->id}.value_text", 'LG UltraGear 27GP850-B')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('central_product_attribute_values', [
+            'central_product_id' => $product->id,
+            'attribute_definition_id' => $attribute->id,
+            'value_type' => 'string',
+            'value_text' => 'LG UltraGear 27GP850-B',
+        ]);
     }
 }

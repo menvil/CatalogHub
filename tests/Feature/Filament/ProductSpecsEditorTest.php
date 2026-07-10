@@ -222,4 +222,38 @@ class ProductSpecsEditorTest extends TestCase
             ->assertSee('oled')
             ->assertSeeHtml('value_enum_code');
     }
+
+    public function test_product_specs_editor_renders_checkbox_group_for_multi_enum_attribute(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::CentralAdmin]);
+        $category = CentralCategory::factory()->create();
+        $section = AttributeSection::factory()->for($category, 'category')->create();
+        $product = CentralProduct::factory()->for($category, 'category')->create();
+        $attribute = AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($section, 'section')
+            ->create([
+                'name' => 'Ports',
+                'code' => 'ports',
+                'data_type' => 'multi_enum',
+            ]);
+
+        foreach (['hdmi', 'displayport', 'usb_c'] as $position => $code) {
+            AttributeOption::factory()->for($attribute, 'attribute')->create([
+                'code' => $code,
+                'label' => $code,
+                'position' => $position,
+            ]);
+        }
+
+        $this->actingAs($admin)
+            ->get(ProductSpecsEditor::getUrl(['record' => $product]))
+            ->assertOk()
+            ->assertSee('ports')
+            ->assertSee('hdmi')
+            ->assertSee('displayport')
+            ->assertSee('usb_c')
+            ->assertSeeHtml('type="checkbox"')
+            ->assertSeeHtml('value_json');
+    }
 }

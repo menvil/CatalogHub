@@ -115,6 +115,24 @@
                                                                 @endforeach
                                                             </select>
                                                         @endif
+                                                    @elseif ($attribute->data_type->value === 'multi_enum')
+                                                        @if ($attribute->options->isEmpty())
+                                                            <span class="text-sm text-warning-700 dark:text-warning-300">No options configured for this multi-enum attribute.</span>
+                                                        @else
+                                                            <div class="flex flex-wrap gap-3">
+                                                                @foreach ($attribute->options as $option)
+                                                                    <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            value="{{ $option->code }}"
+                                                                            wire:model.live="values.{{ $attribute->id }}.value_json"
+                                                                            class="rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950"
+                                                                        >
+                                                                        <span>{{ $option->label ?: $option->code }}</span>
+                                                                    </label>
+                                                                @endforeach
+                                                            </div>
+                                                        @endif
                                                     @else
                                                         <span class="text-sm text-gray-500 dark:text-gray-400">{{ $existingValue?->raw_value ?: 'No value yet' }}</span>
                                                     @endif

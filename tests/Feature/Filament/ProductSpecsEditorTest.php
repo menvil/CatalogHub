@@ -138,4 +138,28 @@ class ProductSpecsEditorTest extends TestCase
             ->assertSeeHtml('type="number"')
             ->assertSeeHtml('step="any"');
     }
+
+    public function test_product_specs_editor_renders_text_input_for_string_attribute(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::CentralAdmin]);
+        $category = CentralCategory::factory()->create();
+        $section = AttributeSection::factory()->for($category, 'category')->create();
+        $product = CentralProduct::factory()->for($category, 'category')->create();
+
+        AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($section, 'section')
+            ->create([
+                'name' => 'Model name',
+                'code' => 'model_name',
+                'data_type' => 'string',
+            ]);
+
+        $this->actingAs($admin)
+            ->get(ProductSpecsEditor::getUrl(['record' => $product]))
+            ->assertOk()
+            ->assertSee('model_name')
+            ->assertSeeHtml('type="text"')
+            ->assertSeeHtml('value_text');
+    }
 }

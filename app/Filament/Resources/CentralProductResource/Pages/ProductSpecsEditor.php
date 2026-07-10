@@ -8,6 +8,7 @@ use App\Models\CentralCatalog\CentralProductAttributeValue;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\MeasurementDimension;
 use App\Services\ProductAttributes\CanonicalValuePreviewer;
+use App\Services\ProductAttributes\MissingRequiredAttributesResolver;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
@@ -135,6 +136,14 @@ final class ProductSpecsEditor extends Page
                 $unit->code => trim("{$unit->name} ({$unit->symbol})"),
             ])
             ->all();
+    }
+
+    /**
+     * @return list<AttributeDefinition>
+     */
+    public function missingRequiredAttributes(): array
+    {
+        return app(MissingRequiredAttributesResolver::class)->resolve($this->getProduct());
     }
 
     protected function getHeaderActions(): array

@@ -34,6 +34,8 @@ class CentralProductAttributeValuesSchemaTest extends TestCase
             'source_type',
             'source_id',
             'source_reference',
+            'created_at',
+            'updated_at',
         ] as $column) {
             $this->assertTrue(
                 Schema::hasColumn('central_product_attribute_values', $column),

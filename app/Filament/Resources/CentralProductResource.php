@@ -93,6 +93,10 @@ final class CentralProductResource extends Resource
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
+                Action::make('specs')
+                    ->label('Specs')
+                    ->icon(Heroicon::OutlinedListBullet)
+                    ->url(fn (CentralProduct $record): string => Pages\ProductSpecsEditor::getUrl(['record' => $record])),
                 Action::make('archive')
                     ->color('danger')
                     ->requiresConfirmation()

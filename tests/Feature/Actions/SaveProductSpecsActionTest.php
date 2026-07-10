@@ -106,6 +106,7 @@ class SaveProductSpecsActionTest extends TestCase
     public function test_invalid_payload_does_not_create_partial_rows(): void
     {
         [$product, $validAttribute, $invalidAttribute] = $this->productWithTwoAttributes();
+        $exceptionWasThrown = false;
 
         try {
             app(SaveProductSpecsAction::class)->handle($product, [
@@ -113,10 +114,39 @@ class SaveProductSpecsActionTest extends TestCase
                 $invalidAttribute->id => ['value_text' => 'fast'],
             ]);
         } catch (CannotSaveProductSpecsException) {
-            //
+            $exceptionWasThrown = true;
         }
 
+        $this->assertTrue($exceptionWasThrown);
         $this->assertDatabaseCount('central_product_attribute_values', 0);
+    }
+
+    public function test_saves_numeric_range_without_value_number(): void
+    {
+        $category = CentralCategory::factory()->create();
+        $section = AttributeSection::factory()->for($category, 'category')->create();
+        $product = CentralProduct::factory()->for($category, 'category')->create();
+        $attribute = AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($section, 'section')
+            ->create([
+                'code' => 'screen_size_range',
+                'data_type' => 'decimal',
+            ]);
+
+        app(SaveProductSpecsAction::class)->handle($product, [
+            $attribute->id => [
+                'value_min' => 24,
+                'value_max' => 32,
+            ],
+        ]);
+
+        $this->assertDatabaseHas('central_product_attribute_values', [
+            'central_product_id' => $product->id,
+            'attribute_definition_id' => $attribute->id,
+            'value_min' => 24,
+            'value_max' => 32,
+        ]);
     }
 
     /**

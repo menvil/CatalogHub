@@ -12,11 +12,18 @@ use Illuminate\Support\Collection;
 final class ProductAttributeValueValidator
 {
     /**
-     * @param  array<int|string, array<string, mixed>>  $payload
+     * @var array<string, bool>
+     */
+    private array $unitCompatibilityCache = [];
+
+    /**
+     * @param  array<int|string, mixed>  $payload
      * @return array<int, array<string, mixed>>
      */
     public function validate(CentralProduct $product, array $payload): array
     {
+        $this->unitCompatibilityCache = [];
+
         $product->loadMissing([
             'category.attributeDefinitions.options',
         ]);
@@ -34,6 +41,10 @@ final class ProductAttributeValueValidator
             }
 
             $attribute = $this->resolveAttribute($attributes, $attributeKey);
+            if (array_key_exists((int) $attribute->id, $validated)) {
+                throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] is referenced more than once.");
+            }
+
             $normalized = $this->validateAttribute($attribute, $valueData);
             $validated[(int) $attribute->id] = $normalized;
         }
@@ -64,6 +75,7 @@ final class ProductAttributeValueValidator
     private function validateAttribute(AttributeDefinition $attribute, array $valueData): array
     {
         $normalized = $this->baseValueData($attribute, $valueData);
+        $this->validateRawValue($attribute, $normalized);
 
         match ($attribute->data_type) {
             AttributeDataType::Integer, AttributeDataType::Decimal => $this->validateNumeric($attribute, $normalized),
@@ -115,9 +127,15 @@ final class ProductAttributeValueValidator
             throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] expects a numeric value.");
         }
 
-        if ($valueData['value_number'] !== null && $valueData['value_number'] !== '' && ! is_numeric($valueData['value_number'])) {
+        if ($valueData['value_number'] === '') {
+            $valueData['value_number'] = null;
+        }
+
+        if ($valueData['value_number'] !== null && ! is_numeric($valueData['value_number'])) {
             throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] value_number must be numeric.");
         }
+
+        $this->validateRange($attribute, $valueData);
 
         if ($attribute->data_type === AttributeDataType::Integer && filled($valueData['value_number']) && ! preg_match('/\A-?\d+\z/', (string) $valueData['value_number'])) {
             throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] value_number must be an integer.");
@@ -135,6 +153,10 @@ final class ProductAttributeValueValidator
             $valueData['canonical_unit'] = $attribute->canonical_unit;
         }
 
+        if (filled($attribute->canonical_unit) && filled($valueData['canonical_unit']) && $valueData['canonical_unit'] !== $attribute->canonical_unit) {
+            throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] canonical_unit must be [{$attribute->canonical_unit}].");
+        }
+
         if (blank($attribute->dimension)) {
             return;
         }
@@ -144,13 +166,11 @@ final class ProductAttributeValueValidator
                 continue;
             }
 
-            $unit = MeasurementUnit::query()
-                ->active()
-                ->where('code', $valueData[$unitField])
-                ->whereHas('dimension', fn ($query) => $query->where('code', $attribute->dimension))
-                ->first();
+            if (! is_string($valueData[$unitField])) {
+                throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] {$unitField} must be a string.");
+            }
 
-            if (! $unit instanceof MeasurementUnit) {
+            if (! $this->isUnitAllowedForDimension((string) $valueData[$unitField], (string) $attribute->dimension)) {
                 throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] {$unitField} [{$valueData[$unitField]}] is not allowed for dimension [{$attribute->dimension}].");
             }
         }
@@ -211,6 +231,11 @@ final class ProductAttributeValueValidator
             return;
         }
 
+        if (! is_string($valueData['value_enum_code']) && ! is_numeric($valueData['value_enum_code'])) {
+            throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] value_enum_code must be scalar.");
+        }
+
+        $valueData['value_enum_code'] = (string) $valueData['value_enum_code'];
         $allowedCodes = $attribute->options->pluck('code')->all();
 
         if (! in_array($valueData['value_enum_code'], $allowedCodes, true)) {
@@ -239,7 +264,14 @@ final class ProductAttributeValueValidator
 
         $allowedCodes = $attribute->options->pluck('code')->all();
 
-        foreach ($valueData['value_json'] as $optionCode) {
+        foreach ($valueData['value_json'] as $index => $optionCode) {
+            if (! is_string($optionCode) && ! is_numeric($optionCode)) {
+                throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] multi-enum option at index [{$index}] must be scalar.");
+            }
+
+            $optionCode = (string) $optionCode;
+            $valueData['value_json'][$index] = $optionCode;
+
             if (! in_array($optionCode, $allowedCodes, true)) {
                 throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] multi-enum option [{$optionCode}] is not allowed.");
             }
@@ -251,6 +283,10 @@ final class ProductAttributeValueValidator
      */
     private function validateJson(AttributeDefinition $attribute, array &$valueData): void
     {
+        if (filled($valueData['value_number']) || filled($valueData['value_text']) || $valueData['value_bool'] !== null || filled($valueData['value_enum_code'])) {
+            throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] expects a JSON value.");
+        }
+
         if ($valueData['value_json'] !== null && ! is_array($valueData['value_json'])) {
             throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] value_json must be an array.");
         }
@@ -296,5 +332,56 @@ final class ProductAttributeValueValidator
         if ($valueData['source_reference'] !== null && ! is_array($valueData['source_reference'])) {
             throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] source_reference must be an array.");
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $valueData
+     */
+    private function validateRawValue(AttributeDefinition $attribute, array &$valueData): void
+    {
+        if ($valueData['raw_value'] === '') {
+            $valueData['raw_value'] = null;
+        }
+
+        if ($valueData['raw_value'] !== null && ! is_scalar($valueData['raw_value'])) {
+            throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] raw_value must be scalar.");
+        }
+
+        $valueData['raw_value'] = $valueData['raw_value'] === null ? null : (string) $valueData['raw_value'];
+    }
+
+    /**
+     * @param  array<string, mixed>  $valueData
+     */
+    private function validateRange(AttributeDefinition $attribute, array &$valueData): void
+    {
+        foreach (['value_min', 'value_max'] as $field) {
+            if ($valueData[$field] === '') {
+                $valueData[$field] = null;
+            }
+
+            if ($valueData[$field] !== null && ! is_numeric($valueData[$field])) {
+                throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] {$field} must be numeric.");
+            }
+        }
+
+        if ($valueData['value_min'] !== null && $valueData['value_max'] !== null && (float) $valueData['value_min'] > (float) $valueData['value_max']) {
+            throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] value_min must be less than or equal to value_max.");
+        }
+    }
+
+    private function isUnitAllowedForDimension(string $unitCode, string $dimensionCode): bool
+    {
+        $cacheKey = "{$dimensionCode}:{$unitCode}";
+
+        if (array_key_exists($cacheKey, $this->unitCompatibilityCache)) {
+            return $this->unitCompatibilityCache[$cacheKey];
+        }
+
+        return $this->unitCompatibilityCache[$cacheKey] = MeasurementUnit::query()
+            ->active()
+            ->where('code', $unitCode)
+            ->whereHas('dimension', fn ($query) => $query->where('code', $dimensionCode))
+            ->exists();
     }
 }

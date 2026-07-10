@@ -260,6 +260,29 @@ class ProductSpecsEditorTest extends TestCase
             ->assertSeeHtml('value_json');
     }
 
+    public function test_product_specs_editor_renders_json_editor_for_json_attribute(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::CentralAdmin]);
+        $category = CentralCategory::factory()->create();
+        $section = AttributeSection::factory()->for($category, 'category')->create();
+        $product = CentralProduct::factory()->for($category, 'category')->create();
+
+        AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($section, 'section')
+            ->create([
+                'name' => 'Technical blob',
+                'code' => 'technical_blob',
+                'data_type' => 'json',
+            ]);
+
+        $this->actingAs($admin)
+            ->get(ProductSpecsEditor::getUrl(['record' => $product]))
+            ->assertOk()
+            ->assertSee('technical_blob')
+            ->assertSeeHtml('value_json_text');
+    }
+
     public function test_product_specs_editor_allows_editing_raw_value_for_attribute(): void
     {
         $admin = User::factory()->create(['role' => UserRole::CentralAdmin]);
@@ -506,5 +529,30 @@ class ProductSpecsEditorTest extends TestCase
             'value_type' => 'string',
             'value_text' => 'LG UltraGear 27GP850-B',
         ]);
+    }
+
+    public function test_product_specs_editor_saves_json_specs(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::CentralAdmin]);
+        $category = CentralCategory::factory()->create();
+        $section = AttributeSection::factory()->for($category, 'category')->create();
+        $product = CentralProduct::factory()->for($category, 'category')->create();
+        $attribute = AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($section, 'section')
+            ->create([
+                'code' => 'technical_blob',
+                'data_type' => 'json',
+            ]);
+
+        Livewire::actingAs($admin)
+            ->test(ProductSpecsEditor::class, ['record' => $product->id])
+            ->set("values.{$attribute->id}.value_json_text", '{"panel":"ips"}')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $value = CentralProductAttributeValue::query()->where('attribute_definition_id', $attribute->id)->firstOrFail();
+
+        $this->assertSame(['panel' => 'ips'], $value->value_json);
     }
 }

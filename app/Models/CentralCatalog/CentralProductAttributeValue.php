@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use InvalidArgumentException;
 
 #[Fillable([
     'central_product_id',
@@ -40,6 +41,14 @@ final class CentralProductAttributeValue extends Model
         return CentralProductAttributeValueFactory::new();
     }
 
+    protected static function booted(): void
+    {
+        self::saving(function (self $value): void {
+            $value->normalizeTypedColumns();
+            $value->validateConfidence();
+        });
+    }
+
     protected function casts(): array
     {
         return [
@@ -68,5 +77,75 @@ final class CentralProductAttributeValue extends Model
     public function attributeDefinition(): BelongsTo
     {
         return $this->belongsTo(AttributeDefinition::class, 'attribute_definition_id');
+    }
+
+    private function normalizeTypedColumns(): void
+    {
+        match ($this->value_type) {
+            'integer', 'decimal' => $this->fill([
+                'value_text' => null,
+                'value_bool' => null,
+                'value_enum_code' => null,
+                'value_json' => null,
+            ]),
+            'string', 'text' => $this->fill([
+                'value_number' => null,
+                'value_bool' => null,
+                'value_enum_code' => null,
+                'value_json' => null,
+                'value_min' => null,
+                'value_max' => null,
+                'source_unit' => null,
+                'canonical_value' => null,
+                'canonical_unit' => null,
+            ]),
+            'boolean' => $this->fill([
+                'value_text' => null,
+                'value_number' => null,
+                'value_enum_code' => null,
+                'value_json' => null,
+                'value_min' => null,
+                'value_max' => null,
+                'source_unit' => null,
+                'canonical_value' => null,
+                'canonical_unit' => null,
+            ]),
+            'enum' => $this->fill([
+                'value_text' => null,
+                'value_number' => null,
+                'value_bool' => null,
+                'value_json' => null,
+                'value_min' => null,
+                'value_max' => null,
+                'source_unit' => null,
+                'canonical_value' => null,
+                'canonical_unit' => null,
+            ]),
+            'multi_enum', 'json' => $this->fill([
+                'value_text' => null,
+                'value_number' => null,
+                'value_bool' => null,
+                'value_enum_code' => null,
+                'value_min' => null,
+                'value_max' => null,
+                'source_unit' => null,
+                'canonical_value' => null,
+                'canonical_unit' => null,
+            ]),
+            default => null,
+        };
+    }
+
+    private function validateConfidence(): void
+    {
+        if ($this->confidence === null) {
+            return;
+        }
+
+        $confidence = (float) $this->confidence;
+
+        if ($confidence < 0 || $confidence > 1) {
+            throw new InvalidArgumentException('Attribute value confidence must be between 0 and 1.');
+        }
     }
 }

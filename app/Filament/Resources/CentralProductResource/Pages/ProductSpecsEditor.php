@@ -36,6 +36,11 @@ final class ProductSpecsEditor extends Page
      */
     public array $values = [];
 
+    /**
+     * @var array<string, array<string, string>>
+     */
+    private array $unitOptionsByDimension = [];
+
     public function mount(int|string $record): void
     {
         $this->record = $this->resolveRecord($record);
@@ -96,7 +101,8 @@ final class ProductSpecsEditor extends Page
             'value_number' => $existingValue?->value_number,
             'value_bool' => $existingValue?->value_bool,
             'value_enum_code' => $existingValue?->value_enum_code,
-            'value_json' => $existingValue?->value_json ?? [],
+            'value_json' => $existingValue instanceof CentralProductAttributeValue ? ($existingValue->value_json ?? []) : [],
+            'value_json_text' => $existingValue?->value_json ? json_encode($existingValue->value_json) : '',
             'value_min' => $existingValue?->value_min,
             'value_max' => $existingValue?->value_max,
             'source_unit' => $existingValue?->source_unit,
@@ -105,7 +111,7 @@ final class ProductSpecsEditor extends Page
             'confidence' => $existingValue?->confidence,
             'source_type' => $existingValue?->source_type,
             'source_id' => $existingValue?->source_id,
-            'source_reference' => $existingValue?->source_reference ?? [],
+            'source_reference' => $existingValue instanceof CentralProductAttributeValue ? ($existingValue->source_reference ?? []) : [],
         ];
     }
 
@@ -126,16 +132,22 @@ final class ProductSpecsEditor extends Page
             return [];
         }
 
+        $dimensionCode = (string) $attribute->dimension;
+
+        if (array_key_exists($dimensionCode, $this->unitOptionsByDimension)) {
+            return $this->unitOptionsByDimension[$dimensionCode];
+        }
+
         $dimension = MeasurementDimension::query()
-            ->where('code', $attribute->dimension)
+            ->where('code', $dimensionCode)
             ->with(['units' => fn ($query) => $query->active()->orderBy('name')])
             ->first();
 
         if (! $dimension instanceof MeasurementDimension) {
-            return [];
+            return $this->unitOptionsByDimension[$dimensionCode] = [];
         }
 
-        return $dimension->units
+        return $this->unitOptionsByDimension[$dimensionCode] = $dimension->units
             ->mapWithKeys(fn ($unit): array => [
                 $unit->code => trim("{$unit->name} ({$unit->symbol})"),
             ])
@@ -147,7 +159,7 @@ final class ProductSpecsEditor extends Page
      */
     public function missingRequiredAttributes(): array
     {
-        return app(MissingRequiredAttributesResolver::class)->resolve($this->getProduct());
+        return app(MissingRequiredAttributesResolver::class)->resolve($this->getProduct(), $this->values);
     }
 
     /**
@@ -174,19 +186,60 @@ final class ProductSpecsEditor extends Page
     public function save(): void
     {
         try {
-            app(SaveProductSpecsAction::class)->handle($this->getProduct(), $this->values);
+            app(SaveProductSpecsAction::class)->handle($this->getProduct(), $this->payloadForSave());
         } catch (CannotSaveProductSpecsException $exception) {
             $this->addError('values', $exception->getMessage());
+            Notification::make()
+                ->title('Could not save product specs')
+                ->body($exception->getMessage())
+                ->danger()
+                ->send();
 
             return;
         }
 
         $this->cachedProduct = null;
+        if ($this->record instanceof CentralProduct) {
+            $this->record->unsetRelation('attributeValues');
+        }
+
         $this->initializeValues();
 
         Notification::make()
             ->title('Product specs saved')
             ->success()
             ->send();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function payloadForSave(): array
+    {
+        $payload = $this->values;
+
+        foreach ($payload as $attributeId => $valueData) {
+            if (($valueData['value_type'] ?? null) !== 'json') {
+                continue;
+            }
+
+            $jsonText = $valueData['value_json_text'] ?? '';
+
+            if (blank($jsonText)) {
+                $payload[$attributeId]['value_json'] = null;
+
+                continue;
+            }
+
+            $decoded = json_decode((string) $jsonText, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decoded)) {
+                throw CannotSaveProductSpecsException::because("Attribute [{$attributeId}] value_json must be valid JSON object or array.");
+            }
+
+            $payload[$attributeId]['value_json'] = $decoded;
+        }
+
+        return $payload;
     }
 }

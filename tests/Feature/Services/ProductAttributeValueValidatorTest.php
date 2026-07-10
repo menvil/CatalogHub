@@ -29,6 +29,19 @@ class ProductAttributeValueValidatorTest extends TestCase
         ]);
     }
 
+    public function test_rejects_duplicate_attribute_references(): void
+    {
+        $product = $this->productWithAttribute('refresh_rate', 'decimal');
+        $attribute = $product->category->attributeDefinitions()->firstOrFail();
+
+        $this->expectException(CannotSaveProductSpecsException::class);
+
+        app(ProductAttributeValueValidator::class)->validate($product, [
+            $attribute->id => ['value_number' => 165],
+            'refresh_rate' => ['value_number' => 144],
+        ]);
+    }
+
     public function test_accepts_text_value_for_string_attribute(): void
     {
         $product = $this->productWithAttribute('model_name', 'string');
@@ -73,6 +86,28 @@ class ProductAttributeValueValidatorTest extends TestCase
         ]);
     }
 
+    public function test_rejects_non_scalar_enum_option(): void
+    {
+        [$product] = $this->productWithEnumAttribute('panel_type', 'enum', ['ips']);
+
+        $this->expectException(CannotSaveProductSpecsException::class);
+
+        app(ProductAttributeValueValidator::class)->validate($product, [
+            'panel_type' => ['value_enum_code' => ['ips']],
+        ]);
+    }
+
+    public function test_rejects_non_scalar_multi_enum_option(): void
+    {
+        [$product] = $this->productWithEnumAttribute('ports', 'multi_enum', ['hdmi']);
+
+        $this->expectException(CannotSaveProductSpecsException::class);
+
+        app(ProductAttributeValueValidator::class)->validate($product, [
+            'ports' => ['value_json' => [['hdmi']]],
+        ]);
+    }
+
     public function test_rejects_source_unit_from_different_dimension(): void
     {
         $product = $this->productWithNumericAttribute('weight', 'mass', 'kilogram');
@@ -106,6 +141,61 @@ class ProductAttributeValueValidatorTest extends TestCase
 
         $this->assertSame('pound', $value['source_unit']);
         $this->assertSame('kilogram', $value['canonical_unit']);
+    }
+
+    public function test_rejects_canonical_unit_override_when_attribute_defines_one(): void
+    {
+        $product = $this->productWithNumericAttribute('weight', 'mass', 'kilogram');
+        $this->createUnit('mass', 'kilogram', 'kg');
+        $this->createUnit('mass', 'pound', 'lb', '0.45359237');
+
+        $this->expectException(CannotSaveProductSpecsException::class);
+
+        app(ProductAttributeValueValidator::class)->validate($product, [
+            'weight' => [
+                'value_number' => 2.2,
+                'canonical_unit' => 'pound',
+            ],
+        ]);
+    }
+
+    public function test_rejects_non_string_units(): void
+    {
+        $product = $this->productWithNumericAttribute('weight', 'mass', 'kilogram');
+
+        $this->expectException(CannotSaveProductSpecsException::class);
+
+        app(ProductAttributeValueValidator::class)->validate($product, [
+            'weight' => [
+                'value_number' => 2.2,
+                'source_unit' => ['pound'],
+            ],
+        ]);
+    }
+
+    public function test_rejects_invalid_numeric_range(): void
+    {
+        $product = $this->productWithAttribute('screen_size_range', 'decimal');
+
+        $this->expectException(CannotSaveProductSpecsException::class);
+
+        app(ProductAttributeValueValidator::class)->validate($product, [
+            'screen_size_range' => [
+                'value_min' => 32,
+                'value_max' => 24,
+            ],
+        ]);
+    }
+
+    public function test_normalizes_empty_numeric_value_to_null(): void
+    {
+        $product = $this->productWithAttribute('refresh_rate', 'decimal');
+
+        $validated = app(ProductAttributeValueValidator::class)->validate($product, [
+            'refresh_rate' => ['value_number' => ''],
+        ]);
+
+        $this->assertNull(array_values($validated)[0]['value_number']);
     }
 
     public function test_allows_confidence_between_zero_and_one(): void
@@ -152,6 +242,34 @@ class ProductAttributeValueValidatorTest extends TestCase
 
         $this->assertSame('manual', $value['source_type']);
         $this->assertSame(['note' => 'Checked manufacturer website'], $value['source_reference']);
+    }
+
+    public function test_rejects_non_scalar_raw_value(): void
+    {
+        $product = $this->productWithAttribute('refresh_rate', 'decimal');
+
+        $this->expectException(CannotSaveProductSpecsException::class);
+
+        app(ProductAttributeValueValidator::class)->validate($product, [
+            'refresh_rate' => [
+                'value_number' => 165,
+                'raw_value' => ['165 Hz'],
+            ],
+        ]);
+    }
+
+    public function test_rejects_contaminated_json_attribute_value(): void
+    {
+        $product = $this->productWithAttribute('technical_blob', 'json');
+
+        $this->expectException(CannotSaveProductSpecsException::class);
+
+        app(ProductAttributeValueValidator::class)->validate($product, [
+            'technical_blob' => [
+                'value_text' => 'not-json',
+                'value_json' => ['ok' => true],
+            ],
+        ]);
     }
 
     private function productWithAttribute(string $code, string $dataType): CentralProduct

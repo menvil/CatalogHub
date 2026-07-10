@@ -47,8 +47,8 @@ final class CanonicalValuePreviewer
             } catch (CannotConvertUnitException $exception) {
                 return [
                     'value' => $value,
-                    'unit' => $canonicalUnit,
-                    'label' => (string) $value,
+                    'unit' => $sourceUnit,
+                    'label' => $this->format($value, $sourceUnit),
                     'warning' => $exception->getMessage(),
                 ];
             }

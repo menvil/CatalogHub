@@ -8,6 +8,8 @@ use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
+use App\Models\MeasurementDimension;
+use App\Models\MeasurementUnit;
 use App\Services\ProductAttributes\ProductAttributeValueValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -71,6 +73,41 @@ class ProductAttributeValueValidatorTest extends TestCase
         ]);
     }
 
+    public function test_rejects_source_unit_from_different_dimension(): void
+    {
+        $product = $this->productWithNumericAttribute('weight', 'mass', 'kilogram');
+        $this->createUnit('mass', 'kilogram', 'kg');
+        $this->createUnit('volume', 'liter', 'l');
+
+        $this->expectException(CannotSaveProductSpecsException::class);
+
+        app(ProductAttributeValueValidator::class)->validate($product, [
+            'weight' => [
+                'value_number' => 10,
+                'source_unit' => 'liter',
+            ],
+        ]);
+    }
+
+    public function test_allows_source_unit_from_same_dimension(): void
+    {
+        $product = $this->productWithNumericAttribute('weight', 'mass', 'kilogram');
+        $this->createUnit('mass', 'kilogram', 'kg');
+        $this->createUnit('mass', 'pound', 'lb', '0.45359237');
+
+        $validated = app(ProductAttributeValueValidator::class)->validate($product, [
+            'weight' => [
+                'value_number' => 2.2,
+                'source_unit' => 'pound',
+            ],
+        ]);
+
+        $value = array_values($validated)[0];
+
+        $this->assertSame('pound', $value['source_unit']);
+        $this->assertSame('kilogram', $value['canonical_unit']);
+    }
+
     private function productWithAttribute(string $code, string $dataType): CentralProduct
     {
         $category = CentralCategory::factory()->create();
@@ -86,6 +123,45 @@ class ProductAttributeValueValidatorTest extends TestCase
             ]);
 
         return $product;
+    }
+
+    private function productWithNumericAttribute(string $code, string $dimension, string $canonicalUnit): CentralProduct
+    {
+        $category = CentralCategory::factory()->create();
+        $section = AttributeSection::factory()->for($category, 'category')->create();
+        $product = CentralProduct::factory()->for($category, 'category')->create();
+
+        AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($section, 'section')
+            ->create([
+                'code' => $code,
+                'data_type' => 'decimal',
+                'dimension' => $dimension,
+                'canonical_unit' => $canonicalUnit,
+            ]);
+
+        return $product;
+    }
+
+    private function createUnit(string $dimensionCode, string $unitCode, string $symbol, string $factor = '1'): void
+    {
+        $dimension = MeasurementDimension::query()->firstOrCreate(
+            ['code' => $dimensionCode],
+            [
+                'name' => str($dimensionCode)->headline()->toString(),
+                'base_unit_code' => null,
+                'sort_order' => 0,
+                'is_active' => true,
+            ],
+        );
+
+        MeasurementUnit::factory()->for($dimension, 'dimension')->create([
+            'code' => $unitCode,
+            'symbol' => $symbol,
+            'factor_to_canonical' => $factor,
+            'is_active' => true,
+        ]);
     }
 
     /**

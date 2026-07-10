@@ -6,6 +6,7 @@ use App\Enums\AttributeDataType;
 use App\Exceptions\ProductAttributes\CannotSaveProductSpecsException;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\CentralProduct;
+use App\Models\MeasurementUnit;
 use Illuminate\Support\Collection;
 
 final class ProductAttributeValueValidator
@@ -118,6 +119,38 @@ final class ProductAttributeValueValidator
 
         if ($attribute->data_type === AttributeDataType::Integer && filled($valueData['value_number']) && ! preg_match('/\A-?\d+\z/', (string) $valueData['value_number'])) {
             throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] value_number must be an integer.");
+        }
+
+        $this->validateNumericUnits($attribute, $valueData);
+    }
+
+    /**
+     * @param  array<string, mixed>  $valueData
+     */
+    private function validateNumericUnits(AttributeDefinition $attribute, array &$valueData): void
+    {
+        if (filled($attribute->canonical_unit) && blank($valueData['canonical_unit'])) {
+            $valueData['canonical_unit'] = $attribute->canonical_unit;
+        }
+
+        if (blank($attribute->dimension)) {
+            return;
+        }
+
+        foreach (['source_unit', 'canonical_unit'] as $unitField) {
+            if (blank($valueData[$unitField])) {
+                continue;
+            }
+
+            $unit = MeasurementUnit::query()
+                ->active()
+                ->where('code', $valueData[$unitField])
+                ->whereHas('dimension', fn ($query) => $query->where('code', $attribute->dimension))
+                ->first();
+
+            if (! $unit instanceof MeasurementUnit) {
+                throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] {$unitField} [{$valueData[$unitField]}] is not allowed for dimension [{$attribute->dimension}].");
+            }
         }
     }
 

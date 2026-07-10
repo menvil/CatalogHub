@@ -256,4 +256,27 @@ class ProductSpecsEditorTest extends TestCase
             ->assertSeeHtml('type="checkbox"')
             ->assertSeeHtml('value_json');
     }
+
+    public function test_product_specs_editor_allows_editing_raw_value_for_attribute(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::CentralAdmin]);
+        $category = CentralCategory::factory()->create();
+        $section = AttributeSection::factory()->for($category, 'category')->create();
+        $product = CentralProduct::factory()->for($category, 'category')->create();
+
+        AttributeDefinition::factory()
+            ->for($category, 'category')
+            ->for($section, 'section')
+            ->create([
+                'name' => 'Refresh rate',
+                'code' => 'refresh_rate',
+                'data_type' => 'decimal',
+            ]);
+
+        $this->actingAs($admin)
+            ->get(ProductSpecsEditor::getUrl(['record' => $product]))
+            ->assertOk()
+            ->assertSee('Raw value')
+            ->assertSeeHtml('raw_value');
+    }
 }

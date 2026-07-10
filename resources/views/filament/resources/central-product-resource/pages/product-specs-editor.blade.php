@@ -73,69 +73,80 @@
                                                 <td class="px-5 py-3 text-gray-600 dark:text-gray-300">{{ $attribute->code }}</td>
                                                 <td class="px-5 py-3 text-gray-600 dark:text-gray-300">{{ $attribute->data_type->value }}</td>
                                                 <td class="px-5 py-3">
-                                                    @if (in_array($attribute->data_type->value, ['integer', 'decimal'], true))
-                                                        <input
-                                                            type="number"
-                                                            @if ($attribute->data_type->value === 'integer') step="1" @else step="any" @endif
-                                                            wire:model.live="values.{{ $attribute->id }}.value_number"
-                                                            class="w-40 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                                                        >
-                                                    @elseif ($attribute->data_type->value === 'string')
-                                                        <input
-                                                            type="text"
-                                                            wire:model.live="values.{{ $attribute->id }}.value_text"
-                                                            class="w-72 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                                                        >
-                                                    @elseif ($attribute->data_type->value === 'text')
-                                                        <textarea
-                                                            wire:model.live="values.{{ $attribute->id }}.value_text"
-                                                            rows="2"
-                                                            class="w-80 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                                                        ></textarea>
-                                                    @elseif ($attribute->data_type->value === 'boolean')
-                                                        <select
-                                                            wire:model.live="values.{{ $attribute->id }}.value_bool"
-                                                            class="w-40 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                                                        >
-                                                            <option value="">Unknown</option>
-                                                            <option value="1">Yes</option>
-                                                            <option value="0">No</option>
-                                                        </select>
-                                                    @elseif ($attribute->data_type->value === 'enum')
-                                                        @if ($attribute->options->isEmpty())
-                                                            <span class="text-sm text-warning-700 dark:text-warning-300">No options configured for this enum attribute.</span>
-                                                        @else
-                                                            <select
-                                                                wire:model.live="values.{{ $attribute->id }}.value_enum_code"
-                                                                class="w-56 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                                    <div class="space-y-3">
+                                                        @if (in_array($attribute->data_type->value, ['integer', 'decimal'], true))
+                                                            <input
+                                                                type="number"
+                                                                @if ($attribute->data_type->value === 'integer') step="1" @else step="any" @endif
+                                                                wire:model.live="values.{{ $attribute->id }}.value_number"
+                                                                class="w-40 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                                                             >
-                                                                <option value="">No option</option>
-                                                                @foreach ($attribute->options as $option)
-                                                                    <option value="{{ $option->code }}">{{ $option->label ?: $option->code }}</option>
-                                                                @endforeach
+                                                        @elseif ($attribute->data_type->value === 'string')
+                                                            <input
+                                                                type="text"
+                                                                wire:model.live="values.{{ $attribute->id }}.value_text"
+                                                                class="w-72 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                                            >
+                                                        @elseif ($attribute->data_type->value === 'text')
+                                                            <textarea
+                                                                wire:model.live="values.{{ $attribute->id }}.value_text"
+                                                                rows="2"
+                                                                class="w-80 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                                            ></textarea>
+                                                        @elseif ($attribute->data_type->value === 'boolean')
+                                                            <select
+                                                                wire:model.live="values.{{ $attribute->id }}.value_bool"
+                                                                class="w-40 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                                            >
+                                                                <option value="">Unknown</option>
+                                                                <option value="1">Yes</option>
+                                                                <option value="0">No</option>
                                                             </select>
-                                                        @endif
-                                                    @elseif ($attribute->data_type->value === 'multi_enum')
-                                                        @if ($attribute->options->isEmpty())
-                                                            <span class="text-sm text-warning-700 dark:text-warning-300">No options configured for this multi-enum attribute.</span>
+                                                        @elseif ($attribute->data_type->value === 'enum')
+                                                            @if ($attribute->options->isEmpty())
+                                                                <span class="text-sm text-warning-700 dark:text-warning-300">No options configured for this enum attribute.</span>
+                                                            @else
+                                                                <select
+                                                                    wire:model.live="values.{{ $attribute->id }}.value_enum_code"
+                                                                    class="w-56 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                                                >
+                                                                    <option value="">No option</option>
+                                                                    @foreach ($attribute->options as $option)
+                                                                        <option value="{{ $option->code }}">{{ $option->label ?: $option->code }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                            @endif
+                                                        @elseif ($attribute->data_type->value === 'multi_enum')
+                                                            @if ($attribute->options->isEmpty())
+                                                                <span class="text-sm text-warning-700 dark:text-warning-300">No options configured for this multi-enum attribute.</span>
+                                                            @else
+                                                                <div class="flex flex-wrap gap-3">
+                                                                    @foreach ($attribute->options as $option)
+                                                                        <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                value="{{ $option->code }}"
+                                                                                wire:model.live="values.{{ $attribute->id }}.value_json"
+                                                                                class="rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950"
+                                                                            >
+                                                                            <span>{{ $option->label ?: $option->code }}</span>
+                                                                        </label>
+                                                                    @endforeach
+                                                                </div>
+                                                            @endif
                                                         @else
-                                                            <div class="flex flex-wrap gap-3">
-                                                                @foreach ($attribute->options as $option)
-                                                                    <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
-                                                                        <input
-                                                                            type="checkbox"
-                                                                            value="{{ $option->code }}"
-                                                                            wire:model.live="values.{{ $attribute->id }}.value_json"
-                                                                            class="rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950"
-                                                                        >
-                                                                        <span>{{ $option->label ?: $option->code }}</span>
-                                                                    </label>
-                                                                @endforeach
-                                                            </div>
+                                                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ $existingValue?->raw_value ?: 'No value yet' }}</span>
                                                         @endif
-                                                    @else
-                                                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ $existingValue?->raw_value ?: 'No value yet' }}</span>
-                                                    @endif
+
+                                                        <label class="block">
+                                                            <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Raw value</span>
+                                                            <input
+                                                                type="text"
+                                                                wire:model.live="values.{{ $attribute->id }}.raw_value"
+                                                                class="mt-1 w-72 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                                            >
+                                                        </label>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         @endforeach

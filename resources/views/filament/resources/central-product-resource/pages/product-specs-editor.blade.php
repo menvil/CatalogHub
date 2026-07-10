@@ -95,7 +95,7 @@
                                                                 <input
                                                                     type="number"
                                                                     @if ($attribute->data_type->value === 'integer') step="1" @else step="any" @endif
-                                                                    wire:model.live="values.{{ $attribute->id }}.value_number"
+                                                                    wire:model.debounce.300ms="values.{{ $attribute->id }}.value_number"
                                                                     class="w-40 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                                                                 >
 
@@ -104,7 +104,7 @@
                                                                 @endphp
                                                                 @if ($unitOptions !== [])
                                                                     <select
-                                                                        wire:model.live="values.{{ $attribute->id }}.source_unit"
+                                                                        wire:model="values.{{ $attribute->id }}.source_unit"
                                                                         class="w-48 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                                                                     >
                                                                         <option value="">Source unit</option>
@@ -135,18 +135,18 @@
                                                         @elseif ($attribute->data_type->value === 'string')
                                                             <input
                                                                 type="text"
-                                                                wire:model.live="values.{{ $attribute->id }}.value_text"
+                                                                wire:model="values.{{ $attribute->id }}.value_text"
                                                                 class="w-72 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                                                             >
                                                         @elseif ($attribute->data_type->value === 'text')
                                                             <textarea
-                                                                wire:model.live="values.{{ $attribute->id }}.value_text"
+                                                                wire:model="values.{{ $attribute->id }}.value_text"
                                                                 rows="2"
                                                                 class="w-80 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                                                             ></textarea>
                                                         @elseif ($attribute->data_type->value === 'boolean')
                                                             <select
-                                                                wire:model.live="values.{{ $attribute->id }}.value_bool"
+                                                                wire:model="values.{{ $attribute->id }}.value_bool"
                                                                 class="w-40 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                                                             >
                                                                 <option value="">Unknown</option>
@@ -158,7 +158,7 @@
                                                                 <span class="text-sm text-warning-700 dark:text-warning-300">No options configured for this enum attribute.</span>
                                                             @else
                                                                 <select
-                                                                    wire:model.live="values.{{ $attribute->id }}.value_enum_code"
+                                                                    wire:model="values.{{ $attribute->id }}.value_enum_code"
                                                                     class="w-56 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                                                                 >
                                                                     <option value="">No option</option>
@@ -177,7 +177,7 @@
                                                                             <input
                                                                                 type="checkbox"
                                                                                 value="{{ $option->code }}"
-                                                                                wire:model.live="values.{{ $attribute->id }}.value_json"
+                                                                                wire:model="values.{{ $attribute->id }}.value_json"
                                                                                 class="rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950"
                                                                             >
                                                                             <span>{{ $option->label ?: $option->code }}</span>
@@ -185,6 +185,12 @@
                                                                     @endforeach
                                                                 </div>
                                                             @endif
+                                                        @elseif ($attribute->data_type->value === 'json')
+                                                            <textarea
+                                                                wire:model="values.{{ $attribute->id }}.value_json_text"
+                                                                rows="4"
+                                                                class="w-80 rounded-md border-gray-300 font-mono text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                                            ></textarea>
                                                         @else
                                                             <span class="text-sm text-gray-500 dark:text-gray-400">{{ $existingValue?->raw_value ?: 'No value yet' }}</span>
                                                         @endif
@@ -193,7 +199,7 @@
                                                             <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Raw value</span>
                                                             <input
                                                                 type="text"
-                                                                wire:model.live="values.{{ $attribute->id }}.raw_value"
+                                                                wire:model="values.{{ $attribute->id }}.raw_value"
                                                                 class="mt-1 w-72 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                                                             >
                                                         </label>
@@ -205,7 +211,7 @@
                                                                 min="0"
                                                                 max="1"
                                                                 step="0.01"
-                                                                wire:model.live="values.{{ $attribute->id }}.confidence"
+                                                                wire:model="values.{{ $attribute->id }}.confidence"
                                                                 class="mt-1 w-32 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                                                             >
                                                         </label>
@@ -214,7 +220,7 @@
                                                             <label class="block">
                                                                 <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Source type</span>
                                                                 <select
-                                                                    wire:model.live="values.{{ $attribute->id }}.source_type"
+                                                                    wire:model="values.{{ $attribute->id }}.source_type"
                                                                     class="mt-1 w-44 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                                                                 >
                                                                     <option value="">Unknown</option>
@@ -229,7 +235,7 @@
                                                                 <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Source note</span>
                                                                 <textarea
                                                                     rows="2"
-                                                                    wire:model.live="values.{{ $attribute->id }}.source_reference.note"
+                                                                    wire:model="values.{{ $attribute->id }}.source_reference.note"
                                                                     class="mt-1 w-72 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                                                                 ></textarea>
                                                             </label>

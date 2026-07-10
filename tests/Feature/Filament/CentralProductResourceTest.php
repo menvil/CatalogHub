@@ -6,6 +6,7 @@ use App\Filament\Resources\CentralProductResource;
 use App\Filament\Resources\CentralProductResource\Pages\CreateCentralProduct;
 use App\Filament\Resources\CentralProductResource\Pages\EditCentralProduct;
 use App\Filament\Resources\CentralProductResource\Pages\ListCentralProducts;
+use App\Filament\Resources\CentralProductResource\Pages\ProductSpecsEditor;
 use App\Filament\Resources\CentralProductResource\Pages\ViewCentralProduct;
 use App\Models\CentralCatalog\CentralProduct;
 use Tests\TestCase;
@@ -26,9 +27,11 @@ class CentralProductResourceTest extends TestCase
         $this->assertArrayHasKey('create', $pages);
         $this->assertArrayHasKey('view', $pages);
         $this->assertArrayHasKey('edit', $pages);
+        $this->assertArrayHasKey('specs', $pages);
         $this->assertTrue(class_exists(ListCentralProducts::class));
         $this->assertTrue(class_exists(CreateCentralProduct::class));
         $this->assertTrue(class_exists(ViewCentralProduct::class));
         $this->assertTrue(class_exists(EditCentralProduct::class));
+        $this->assertTrue(class_exists(ProductSpecsEditor::class));
     }
 }

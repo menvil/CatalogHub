@@ -7,11 +7,13 @@ use App\Exceptions\Units\CannotConvertUnitException;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
+use App\Services\Units\UnitConverter;
 use App\Services\Units\UnitFormatter;
 
 final class GroupedSpecsPreviewBuilder
 {
     public function __construct(
+        private readonly UnitConverter $unitConverter,
         private readonly UnitFormatter $unitFormatter,
     ) {}
 
@@ -75,10 +77,11 @@ final class GroupedSpecsPreviewBuilder
 
         return [
             'value_text' => $value->value_text,
-            'value_number' => $value->canonical_value ?? $value->value_number,
+            'value_number' => $value->value_number,
             'value_bool' => $value->value_bool,
             'value_enum_code' => $value->value_enum_code,
             'value_json' => $value->value_json,
+            'canonical_value' => $value->canonical_value,
             'canonical_unit' => $value->canonical_unit,
             'source_unit' => $value->source_unit,
         ];
@@ -104,13 +107,26 @@ final class GroupedSpecsPreviewBuilder
      */
     private function formatNumeric(AttributeDefinition $attribute, array $valueState): ?string
     {
-        $value = $valueState['canonical_value'] ?? $valueState['value_number'] ?? null;
+        $value = $valueState['canonical_value'] ?? null;
+        $unit = filled($valueState['canonical_unit'] ?? null)
+            ? (string) $valueState['canonical_unit']
+            : ($attribute->canonical_unit ?: null);
+
+        if (blank($value) && filled($valueState['value_number'] ?? null)) {
+            $value = $valueState['value_number'];
+
+            if (filled($valueState['source_unit'] ?? null) && filled($unit)) {
+                try {
+                    $value = $this->unitConverter->convert($value, (string) $valueState['source_unit'], (string) $unit);
+                } catch (CannotConvertUnitException) {
+                    $unit = $valueState['source_unit'];
+                }
+            }
+        }
 
         if ($value === null || $value === '') {
             return null;
         }
-
-        $unit = $valueState['canonical_unit'] ?? $attribute->canonical_unit ?? null;
 
         if (blank($unit)) {
             return (string) $value;
@@ -128,11 +144,13 @@ final class GroupedSpecsPreviewBuilder
      */
     private function formatBoolean(array $valueState): ?string
     {
-        if (($valueState['value_bool'] ?? null) === null || ($valueState['value_bool'] ?? null) === '') {
+        if (! array_key_exists('value_bool', $valueState) || $valueState['value_bool'] === null || $valueState['value_bool'] === '') {
             return null;
         }
 
-        return filter_var($valueState['value_bool'], FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ? 'Yes' : 'No';
+        $value = filter_var($valueState['value_bool'], FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
+
+        return $value === null ? null : ($value ? 'Yes' : 'No');
     }
 
     /**
@@ -144,8 +162,9 @@ final class GroupedSpecsPreviewBuilder
             return null;
         }
 
-        return $attribute->options->firstWhere('code', $valueState['value_enum_code'])?->label
-            ?? (string) $valueState['value_enum_code'];
+        $option = $attribute->options->firstWhere('code', $valueState['value_enum_code']);
+
+        return $option === null ? (string) $valueState['value_enum_code'] : $option->label;
     }
 
     /**
@@ -158,7 +177,11 @@ final class GroupedSpecsPreviewBuilder
         }
 
         return collect($valueState['value_json'])
-            ->map(fn (string $code): string => $attribute->options->firstWhere('code', $code)?->label ?? $code)
+            ->map(function (string $code) use ($attribute): string {
+                $option = $attribute->options->firstWhere('code', $code);
+
+                return $option === null ? $code : $option->label;
+            })
             ->implode(', ');
     }
 }

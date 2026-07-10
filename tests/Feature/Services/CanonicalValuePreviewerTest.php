@@ -44,4 +44,53 @@ class CanonicalValuePreviewerTest extends TestCase
         $this->assertSame('liter', $preview['unit']);
         $this->assertSame('4.921 l', $preview['label']);
     }
+
+    public function test_returns_null_for_non_numeric_attribute(): void
+    {
+        $attribute = AttributeDefinition::factory()->create(['data_type' => 'string']);
+
+        $this->assertNull(app(CanonicalValuePreviewer::class)->preview($attribute, [
+            'value_text' => 'LG',
+        ]));
+    }
+
+    public function test_returns_null_for_empty_numeric_value(): void
+    {
+        $attribute = AttributeDefinition::factory()->create(['data_type' => 'decimal']);
+
+        $this->assertNull(app(CanonicalValuePreviewer::class)->preview($attribute, [
+            'value_number' => '',
+        ]));
+    }
+
+    public function test_returns_warning_with_source_unit_when_conversion_fails(): void
+    {
+        $volume = MeasurementDimension::factory()->create(['code' => 'volume']);
+        $mass = MeasurementDimension::factory()->create(['code' => 'mass']);
+        MeasurementUnit::factory()->for($volume, 'dimension')->create([
+            'code' => 'liter',
+            'symbol' => 'l',
+            'factor_to_canonical' => '1',
+        ]);
+        MeasurementUnit::factory()->for($mass, 'dimension')->create([
+            'code' => 'pound',
+            'symbol' => 'lb',
+            'factor_to_canonical' => '0.45359237',
+        ]);
+        $attribute = AttributeDefinition::factory()->create([
+            'data_type' => 'decimal',
+            'dimension' => 'volume',
+            'canonical_unit' => 'liter',
+        ]);
+
+        $preview = app(CanonicalValuePreviewer::class)->preview($attribute, [
+            'value_number' => 2.2,
+            'source_unit' => 'pound',
+        ]);
+
+        $this->assertNotNull($preview);
+        $this->assertSame('pound', $preview['unit']);
+        $this->assertSame('2.2 lb', $preview['label']);
+        $this->assertNotNull($preview['warning']);
+    }
 }

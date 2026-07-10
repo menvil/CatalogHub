@@ -41,10 +41,42 @@ class MissingRequiredAttributesResolverTest extends TestCase
         $this->assertSame([], $result);
     }
 
+    public function test_boolean_false_counts_as_present(): void
+    {
+        [$product, $attribute] = $this->productWithRequiredAttribute('has_usb_c', 'boolean');
+        CentralProductAttributeValue::factory()
+            ->for($product, 'product')
+            ->for($attribute, 'attributeDefinition')
+            ->create([
+                'value_type' => 'boolean',
+                'value_bool' => false,
+            ]);
+
+        $this->assertSame([], app(MissingRequiredAttributesResolver::class)->resolve($product));
+    }
+
+    public function test_live_state_counts_as_present_before_save(): void
+    {
+        [$product, $attribute] = $this->productWithRequiredAttribute('refresh_rate');
+
+        $result = app(MissingRequiredAttributesResolver::class)->resolve($product, [
+            $attribute->id => ['value_number' => 165],
+        ]);
+
+        $this->assertSame([], $result);
+    }
+
+    public function test_returns_empty_for_product_without_category(): void
+    {
+        $product = CentralProduct::factory()->create();
+
+        $this->assertSame([], app(MissingRequiredAttributesResolver::class)->resolve($product));
+    }
+
     /**
      * @return array{CentralProduct, AttributeDefinition}
      */
-    private function productWithRequiredAttribute(string $code): array
+    private function productWithRequiredAttribute(string $code, string $dataType = 'decimal'): array
     {
         $category = CentralCategory::factory()->create();
         $section = AttributeSection::factory()->for($category, 'category')->create();
@@ -54,7 +86,7 @@ class MissingRequiredAttributesResolverTest extends TestCase
             ->for($section, 'section')
             ->create([
                 'code' => $code,
-                'data_type' => 'decimal',
+                'data_type' => $dataType,
                 'is_required' => true,
             ]);
 

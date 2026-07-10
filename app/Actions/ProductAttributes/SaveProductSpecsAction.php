@@ -51,7 +51,9 @@ final class SaveProductSpecsAction
     private function isEmptyValue(array $valueData): bool
     {
         return match ($valueData['value_type']) {
-            AttributeDataType::Integer->value, AttributeDataType::Decimal->value => blank($valueData['value_number']),
+            AttributeDataType::Integer->value, AttributeDataType::Decimal->value => blank($valueData['value_number'])
+                && blank($valueData['value_min'])
+                && blank($valueData['value_max']),
             AttributeDataType::String->value, AttributeDataType::Text->value => blank($valueData['value_text']),
             AttributeDataType::Boolean->value => $valueData['value_bool'] === null || $valueData['value_bool'] === '',
             AttributeDataType::Enum->value => blank($valueData['value_enum_code']),
@@ -122,6 +124,6 @@ final class SaveProductSpecsAction
 
     private function blankToNull(mixed $value): mixed
     {
-        return $value === '' ? null : $value;
+        return is_string($value) && blank($value) ? null : $value;
     }
 }

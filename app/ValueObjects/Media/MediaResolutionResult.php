@@ -8,7 +8,7 @@ use App\Models\MediaAssignment;
 final readonly class MediaResolutionResult
 {
     /**
-     * @param list<string> $fallbackChain
+     * @param  list<string>  $fallbackChain
      */
     public function __construct(
         public ?MediaAsset $asset,

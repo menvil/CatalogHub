@@ -9,6 +9,7 @@ use App\Observers\CentralProductObserver;
 use App\Services\Imports\AttributeNormalizer;
 use App\Services\Imports\ImportService;
 use App\Services\Imports\Normalizers\BooleanNormalizer;
+use App\Services\Imports\Normalizers\NumberNormalizer;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -30,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
             AttributeNormalizer::class,
             fn ($app): AttributeNormalizer => new AttributeNormalizer([
                 $app->make(BooleanNormalizer::class),
+                $app->make(NumberNormalizer::class),
             ])
         );
     }

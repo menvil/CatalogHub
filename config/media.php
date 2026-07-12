@@ -5,9 +5,9 @@ return [
     'placeholder_url' => env('MEDIA_PLACEHOLDER_URL', '/images/media-placeholder.svg'),
     'dispatch_variants_on_upload' => env('MEDIA_DISPATCH_VARIANTS_ON_UPLOAD', false),
     'allowed_upload_mimes' => ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
-    'max_upload_width' => 8000,
-    'max_upload_height' => 8000,
-    'max_upload_pixels' => 24_000_000,
+    'max_upload_width' => (int) env('MEDIA_MAX_UPLOAD_WIDTH', 8000),
+    'max_upload_height' => (int) env('MEDIA_MAX_UPLOAD_HEIGHT', 8000),
+    'max_upload_pixels' => (int) env('MEDIA_MAX_UPLOAD_PIXELS', 24_000_000),
     'variants' => [
         'thumbnail' => [
             'width' => 160,

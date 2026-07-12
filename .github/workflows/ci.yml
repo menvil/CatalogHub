@@ -71,11 +71,8 @@ jobs:
       - name: Run Composer test command
         run: composer test
 
-      - name: Run Laravel tests
-        run: php artisan test
-
       - name: Run Pint
         run: vendor/bin/pint --test
 
       - name: Run PHPStan
-        run: vendor/bin/phpstan analyse
+        run: php -d memory_limit=1G vendor/bin/phpstan analyse

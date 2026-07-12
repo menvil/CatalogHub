@@ -83,6 +83,14 @@ final class CentralProduct extends Model
         return $this->hasMany(CentralProductVariant::class, 'central_product_id');
     }
 
+    /**
+     * @return HasMany<CentralProductAttributeValue, $this>
+     */
+    public function attributeValues(): HasMany
+    {
+        return $this->hasMany(CentralProductAttributeValue::class, 'central_product_id');
+    }
+
     private function isSlugUniqueConstraintViolation(QueryException $exception): bool
     {
         $sqlState = (string) ($exception->errorInfo[0] ?? '');

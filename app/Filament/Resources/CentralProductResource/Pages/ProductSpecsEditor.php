@@ -1,0 +1,245 @@
+<?php
+
+namespace App\Filament\Resources\CentralProductResource\Pages;
+
+use App\Actions\ProductAttributes\SaveProductSpecsAction;
+use App\Exceptions\ProductAttributes\CannotSaveProductSpecsException;
+use App\Filament\Resources\CentralProductResource;
+use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\CentralProduct;
+use App\Models\CentralCatalog\CentralProductAttributeValue;
+use App\Models\MeasurementDimension;
+use App\Services\ProductAttributes\CanonicalValuePreviewer;
+use App\Services\ProductAttributes\GroupedSpecsPreviewBuilder;
+use App\Services\ProductAttributes\MissingRequiredAttributesResolver;
+use Filament\Actions\Action;
+use Filament\Actions\EditAction;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\Concerns\InteractsWithRecord;
+use Filament\Resources\Pages\Page;
+use Filament\Support\Icons\Heroicon;
+
+final class ProductSpecsEditor extends Page
+{
+    use InteractsWithRecord;
+
+    protected static string $resource = CentralProductResource::class;
+
+    protected string $view = 'filament.resources.central-product-resource.pages.product-specs-editor';
+
+    protected static ?string $title = 'Product Specs';
+
+    private ?CentralProduct $cachedProduct = null;
+
+    /**
+     * @var array<int, array<string, mixed>>
+     */
+    public array $values = [];
+
+    /**
+     * @var array<string, array<string, string>>
+     */
+    private array $unitOptionsByDimension = [];
+
+    public function mount(int|string $record): void
+    {
+        $this->record = $this->resolveRecord($record);
+        $this->initializeValues();
+    }
+
+    public function getTitle(): string
+    {
+        return 'Product Specs';
+    }
+
+    public function getProduct(): CentralProduct
+    {
+        if ($this->cachedProduct !== null) {
+            return $this->cachedProduct;
+        }
+
+        /** @var CentralProduct $product */
+        $product = $this->getRecord();
+
+        return $this->cachedProduct = $product->loadMissing([
+            'category.attributeSections' => fn ($query) => $query->ordered(),
+            'category.attributeSections.attributes' => fn ($query) => $query->ordered(),
+            'category.attributeSections.attributes.options' => fn ($query) => $query->ordered(),
+            'attributeValues.attributeDefinition',
+        ]);
+    }
+
+    private function initializeValues(): void
+    {
+        $product = $this->getProduct();
+
+        if (! $product->category) {
+            $this->values = [];
+
+            return;
+        }
+
+        foreach ($product->category->attributeSections as $section) {
+            foreach ($section->attributes as $attribute) {
+                $existingValue = $product->attributeValues->firstWhere('attribute_definition_id', $attribute->id);
+
+                $this->values[$attribute->id] = $this->stateForAttribute($attribute, $existingValue);
+            }
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function stateForAttribute(AttributeDefinition $attribute, ?CentralProductAttributeValue $existingValue): array
+    {
+        return [
+            'attribute_id' => $attribute->id,
+            'value_type' => $attribute->data_type->value,
+            'raw_value' => $existingValue?->raw_value,
+            'value_text' => $existingValue?->value_text,
+            'value_number' => $existingValue?->value_number,
+            'value_bool' => $existingValue?->value_bool,
+            'value_enum_code' => $existingValue?->value_enum_code,
+            'value_json' => $existingValue instanceof CentralProductAttributeValue ? ($existingValue->value_json ?? []) : [],
+            'value_json_text' => $existingValue?->value_json ? json_encode($existingValue->value_json) : '',
+            'value_min' => $existingValue?->value_min,
+            'value_max' => $existingValue?->value_max,
+            'source_unit' => $existingValue?->source_unit,
+            'canonical_value' => $existingValue?->canonical_value,
+            'canonical_unit' => $existingValue?->canonical_unit,
+            'confidence' => $existingValue?->confidence,
+            'source_type' => $existingValue?->source_type,
+            'source_id' => $existingValue?->source_id,
+            'source_reference' => $existingValue instanceof CentralProductAttributeValue ? ($existingValue->source_reference ?? []) : [],
+        ];
+    }
+
+    /**
+     * @return array{value: float|string, unit: string|null, label: string, warning: string|null}|null
+     */
+    public function canonicalPreviewFor(AttributeDefinition $attribute): ?array
+    {
+        return app(CanonicalValuePreviewer::class)->preview($attribute, $this->values[$attribute->id] ?? []);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function unitOptionsFor(AttributeDefinition $attribute): array
+    {
+        if (blank($attribute->dimension)) {
+            return [];
+        }
+
+        $dimensionCode = (string) $attribute->dimension;
+
+        if (array_key_exists($dimensionCode, $this->unitOptionsByDimension)) {
+            return $this->unitOptionsByDimension[$dimensionCode];
+        }
+
+        $dimension = MeasurementDimension::query()
+            ->where('code', $dimensionCode)
+            ->with(['units' => fn ($query) => $query->active()->orderBy('name')])
+            ->first();
+
+        if (! $dimension instanceof MeasurementDimension) {
+            return $this->unitOptionsByDimension[$dimensionCode] = [];
+        }
+
+        return $this->unitOptionsByDimension[$dimensionCode] = $dimension->units
+            ->mapWithKeys(fn ($unit): array => [
+                $unit->code => trim("{$unit->name} ({$unit->symbol})"),
+            ])
+            ->all();
+    }
+
+    /**
+     * @return list<AttributeDefinition>
+     */
+    public function missingRequiredAttributes(): array
+    {
+        return app(MissingRequiredAttributesResolver::class)->resolve($this->getProduct(), $this->values);
+    }
+
+    /**
+     * @return list<array{section: string, code: string, attributes: list<array{code: string, name: string, value: string}>}>
+     */
+    public function groupedSpecsPreview(): array
+    {
+        return app(GroupedSpecsPreviewBuilder::class)->build($this->getProduct(), $this->values);
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            EditAction::make(),
+            Action::make('saveSpecs')
+                ->label('Save specs')
+                ->icon(Heroicon::OutlinedCheck)
+                ->action(function (): void {
+                    $this->save();
+                }),
+        ];
+    }
+
+    public function save(): void
+    {
+        try {
+            app(SaveProductSpecsAction::class)->handle($this->getProduct(), $this->payloadForSave());
+        } catch (CannotSaveProductSpecsException $exception) {
+            $this->addError('values', $exception->getMessage());
+            Notification::make()
+                ->title('Could not save product specs')
+                ->body($exception->getMessage())
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        $this->cachedProduct = null;
+        if ($this->record instanceof CentralProduct) {
+            $this->record->unsetRelation('attributeValues');
+        }
+
+        $this->initializeValues();
+
+        Notification::make()
+            ->title('Product specs saved')
+            ->success()
+            ->send();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function payloadForSave(): array
+    {
+        $payload = $this->values;
+
+        foreach ($payload as $attributeId => $valueData) {
+            if (($valueData['value_type'] ?? null) !== 'json') {
+                continue;
+            }
+
+            $jsonText = $valueData['value_json_text'] ?? '';
+
+            if (blank($jsonText)) {
+                $payload[$attributeId]['value_json'] = null;
+
+                continue;
+            }
+
+            $decoded = json_decode((string) $jsonText, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decoded)) {
+                throw CannotSaveProductSpecsException::because("Attribute [{$attributeId}] value_json must be valid JSON object or array.");
+            }
+
+            $payload[$attributeId]['value_json'] = $decoded;
+        }
+
+        return $payload;
+    }
+}

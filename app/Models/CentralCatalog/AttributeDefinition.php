@@ -145,4 +145,12 @@ final class AttributeDefinition extends Model
     {
         return $this->hasMany(AttributeOption::class, 'attribute_definition_id');
     }
+
+    /**
+     * @return HasMany<CentralProductAttributeValue, $this>
+     */
+    public function productValues(): HasMany
+    {
+        return $this->hasMany(CentralProductAttributeValue::class, 'attribute_definition_id');
+    }
 }

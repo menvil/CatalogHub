@@ -13,6 +13,10 @@ final class GenerateMediaVariantsJob implements ShouldQueue
 {
     use Queueable;
 
+    public int $timeout = 120;
+
+    public int $tries = 1;
+
     public function __construct(public int $mediaAssetId) {}
 
     public function handle(): void
@@ -72,7 +76,7 @@ final class GenerateMediaVariantsJob implements ShouldQueue
                     'format' => $format,
                     'file_size' => $disk->size($path),
                     'quality' => (int) $config['quality'],
-                    'transform_hash' => sha1(json_encode($config, JSON_THROW_ON_ERROR)),
+                    'transform_hash' => hash('sha256', json_encode($config, JSON_THROW_ON_ERROR)),
                     'status' => 'ready',
                 ]
             );

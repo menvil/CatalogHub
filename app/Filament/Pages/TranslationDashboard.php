@@ -20,6 +20,11 @@ final class TranslationDashboard extends Page
 
     protected string $view = 'filament.pages.translation-dashboard';
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasCatalogHubPermission('translations.manage') === true;
+    }
+
     /**
      * @return array<string, mixed>
      */

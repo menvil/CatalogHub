@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Enums\UserRole;
+use App\Filament\Pages\TranslationDashboard;
 use App\Models\Locale;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -31,5 +32,17 @@ class TranslationDashboardTest extends TestCase
         $this->actingAs($moderator)
             ->get(route('central.translations.dashboard'))
             ->assertForbidden();
+    }
+
+    public function test_filament_translation_dashboard_requires_translation_permission(): void
+    {
+        $moderator = User::factory()->create(['role' => UserRole::Moderator]);
+        $admin = User::factory()->centralAdmin()->create();
+
+        $this->actingAs($moderator);
+        $this->assertFalse(TranslationDashboard::canAccess());
+
+        $this->actingAs($admin);
+        $this->assertTrue(TranslationDashboard::canAccess());
     }
 }

@@ -93,4 +93,17 @@ class ProductMediaManagerTest extends TestCase
             ->assertSee('main.jpg')
             ->assertSee('alt="main.jpg"', false);
     }
+
+    public function test_rejects_array_preview_filters(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        $product = CentralProduct::factory()->create();
+
+        $this->actingAs($admin)
+            ->get(route('central.products.media', [
+                'product' => $product,
+                'preview_site_id' => ['1', '2'],
+            ]))
+            ->assertSessionHasErrors('preview_site_id');
+    }
 }

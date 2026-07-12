@@ -10,6 +10,7 @@ use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\MeasurementUnit;
 use App\Services\Translations\TranslationSourceHashService;
+use App\Services\Translations\TranslationStatsService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -23,7 +24,7 @@ final readonly class DetectOutdatedTranslationsAction
     {
         $currentHash = $this->hashFor($entity);
 
-        return match (true) {
+        $updated = match (true) {
             $entity instanceof CentralProduct,
             $entity instanceof CentralCategory,
             $entity instanceof AttributeDefinition,
@@ -32,6 +33,12 @@ final readonly class DetectOutdatedTranslationsAction
             $entity instanceof MeasurementUnit => $this->markRelationOutdated($entity->translations(), $currentHash),
             default => throw new \InvalidArgumentException('Unsupported translatable entity: '.$entity::class),
         };
+
+        if ($updated > 0) {
+            TranslationStatsService::forgetDashboardCache();
+        }
+
+        return $updated;
     }
 
     private function hashFor(Model $entity): string

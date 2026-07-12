@@ -22,8 +22,9 @@ final class TranslationCompletenessService
     /**
      * @return array<string, mixed>
      */
-    public function forLocale(string $locale): array
+    public function forLocale(string $locale, ?array $sourceCounts = null): array
     {
+        $sourceCounts ??= $this->sourceCounts();
         $byEntity = [];
         $totalRequired = 0;
         $totalApproved = 0;
@@ -31,7 +32,7 @@ final class TranslationCompletenessService
         $totalOutdated = 0;
 
         foreach ($this->configs() as $config) {
-            $required = $config['source']::query()->count();
+            $required = (int) ($sourceCounts[$config['key']] ?? 0);
             $statusCounts = $config['translation']::query()
                 ->selectRaw('status, count(*) as aggregate')
                 ->where('locale', $locale)
@@ -75,14 +76,30 @@ final class TranslationCompletenessService
      */
     public function allActiveLocales(): array
     {
+        $sourceCounts = $this->sourceCounts();
+
         return Locale::query()
             ->active()
             ->orderByDesc('is_default')
             ->orderBy('position')
             ->orderBy('code')
             ->pluck('code')
-            ->map(fn (string $code): array => $this->forLocale($code))
+            ->map(fn (string $code): array => $this->forLocale($code, $sourceCounts))
             ->all();
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function sourceCounts(): array
+    {
+        $counts = [];
+
+        foreach ($this->configs() as $config) {
+            $counts[$config['key']] = $config['source']::query()->count();
+        }
+
+        return $counts;
     }
 
     /**

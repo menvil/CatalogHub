@@ -6,6 +6,7 @@ use App\Enums\TranslationStatus;
 use App\Enums\UserRole;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Locale;
+use App\Models\Translations\ProductTranslation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -92,5 +93,34 @@ class ProductTranslationEditorTest extends TestCase
             ])
             ->assertRedirect(route('central.products.translations.edit', [$product, $locale]))
             ->assertSessionHasErrors(['name', 'status']);
+    }
+
+    public function test_preserves_existing_approved_status_when_resaving_approved_translation(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        $product = CentralProduct::factory()->create();
+        $locale = Locale::factory()->create(['code' => 'de-DE']);
+
+        ProductTranslation::factory()->create([
+            'product_id' => $product->id,
+            'locale_id' => $locale->id,
+            'locale' => 'de-DE',
+            'name' => 'Approved Name',
+            'status' => TranslationStatus::Approved,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('central.products.translations.save', [$product, $locale]), [
+                'name' => 'Approved Name Edited',
+                'status' => TranslationStatus::Approved->value,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('product_translations', [
+            'product_id' => $product->id,
+            'locale' => 'de-DE',
+            'name' => 'Approved Name Edited',
+            'status' => TranslationStatus::Approved->value,
+        ]);
     }
 }

@@ -21,15 +21,23 @@ use Illuminate\Database\Eloquent\Model;
 
 final class TranslationResolver
 {
+    /**
+     * @var array<string, list<string>>
+     */
+    private array $candidateLocalesCache = [];
+
     public function resolve(Model $entity, string $field, string $locale): ResolvedTranslation
     {
         $config = $this->configFor($entity);
+        $candidateLocales = $this->candidateLocales($locale);
+        $translations = $config['translation']::query()
+            ->where($config['foreign_key'], $entity->getKey())
+            ->whereIn('locale', $candidateLocales)
+            ->get()
+            ->keyBy(fn (Model $translation): string => (string) $translation->getAttribute('locale'));
 
-        foreach ($this->candidateLocales($locale) as $candidate) {
-            $translation = $config['translation']::query()
-                ->where($config['foreign_key'], $entity->getKey())
-                ->where('locale', $candidate)
-                ->first();
+        foreach ($candidateLocales as $candidate) {
+            $translation = $translations->get($candidate);
 
             if ($translation instanceof Model && filled($translation->getAttribute($field))) {
                 return new ResolvedTranslation(
@@ -64,6 +72,10 @@ final class TranslationResolver
      */
     private function candidateLocales(string $locale): array
     {
+        if (isset($this->candidateLocalesCache[$locale])) {
+            return $this->candidateLocalesCache[$locale];
+        }
+
         $candidates = [$locale];
         $language = str($locale)->before('-')->toString();
 
@@ -89,7 +101,7 @@ final class TranslationResolver
             $candidates[] = $defaultLocale;
         }
 
-        return array_values(array_unique($candidates));
+        return $this->candidateLocalesCache[$locale] = array_values(array_unique($candidates));
     }
 
     /**

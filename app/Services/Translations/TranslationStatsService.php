@@ -10,15 +10,35 @@ use App\Models\Translations\AttributeTranslation;
 use App\Models\Translations\CategoryTranslation;
 use App\Models\Translations\ProductTranslation;
 use App\Models\Translations\UnitTranslation;
+use Illuminate\Support\Facades\Cache;
 
 final readonly class TranslationStatsService
 {
+    private const DASHBOARD_CACHE_KEY = 'translations.dashboard.stats';
+
     public function __construct(private TranslationCompletenessService $completeness) {}
 
     /**
      * @return array<string, mixed>
      */
     public function dashboard(): array
+    {
+        return Cache::remember(
+            self::DASHBOARD_CACHE_KEY,
+            now()->addSeconds(60),
+            fn (): array => $this->uncachedDashboard(),
+        );
+    }
+
+    public static function forgetDashboardCache(): void
+    {
+        Cache::forget(self::DASHBOARD_CACHE_KEY);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function uncachedDashboard(): array
     {
         $coverageByLocale = $this->completeness->allActiveLocales();
 

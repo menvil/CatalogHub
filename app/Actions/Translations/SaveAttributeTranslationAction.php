@@ -7,6 +7,7 @@ use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\Locale;
 use App\Models\Translations\AttributeTranslation;
 use App\Services\Translations\TranslationSourceHashService;
+use App\Services\Translations\TranslationStatsService;
 
 final readonly class SaveAttributeTranslationAction
 {
@@ -27,6 +28,7 @@ final readonly class SaveAttributeTranslationAction
         );
 
         $translation->forceFill(['source_hash' => $this->hashService->forAttribute($attribute)])->save();
+        TranslationStatsService::forgetDashboardCache();
 
         return $translation;
     }

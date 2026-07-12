@@ -20,7 +20,7 @@ class MediaAssetTest extends TestCase
 
         $this->assertTrue($asset->exists);
         $this->assertSame('image', $asset->type);
-        $this->assertNotNull($asset->uuid);
+        $this->assertNotSame('', $asset->uuid);
     }
 
     public function test_has_media_relationships(): void

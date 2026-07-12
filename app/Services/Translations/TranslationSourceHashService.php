@@ -32,7 +32,7 @@ final class TranslationSourceHashService
         return $this->hash([
             'code' => $attribute->code,
             'name' => $attribute->name,
-            'data_type' => $attribute->data_type?->value ?? $attribute->data_type,
+            'data_type' => $attribute->data_type->value,
         ]);
     }
 

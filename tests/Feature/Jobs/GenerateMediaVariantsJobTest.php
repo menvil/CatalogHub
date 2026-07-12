@@ -19,7 +19,7 @@ class GenerateMediaVariantsJobTest extends TestCase
         $asset = MediaAsset::factory()->create();
         $job = new GenerateMediaVariantsJob($asset->id);
 
-        $this->assertTrue(method_exists($job, 'handle'));
+        $this->assertSame($asset->id, $job->mediaAssetId);
     }
 
     public function test_generates_configured_image_variants(): void
@@ -40,12 +40,18 @@ class GenerateMediaVariantsJobTest extends TestCase
             Storage::disk($variant->disk)->assertExists($variant->path);
         }
 
-        $this->assertSame(160, $asset->variants()->where('variant_type', 'thumbnail')->first()?->width);
-        $this->assertLessThanOrEqual(640, $asset->variants()->where('variant_type', 'card')->first()?->width);
-        $this->assertLessThanOrEqual(1200, $asset->variants()->where('variant_type', 'gallery')->first()?->width);
-        $this->assertSame(1600, $asset->variants()->where('variant_type', 'hero')->first()?->width);
-        $this->assertSame(1200, $asset->variants()->where('variant_type', 'og')->first()?->width);
-        $this->assertSame(630, $asset->variants()->where('variant_type', 'og')->first()?->height);
+        $thumbnail = $asset->variants()->where('variant_type', 'thumbnail')->firstOrFail();
+        $card = $asset->variants()->where('variant_type', 'card')->firstOrFail();
+        $gallery = $asset->variants()->where('variant_type', 'gallery')->firstOrFail();
+        $hero = $asset->variants()->where('variant_type', 'hero')->firstOrFail();
+        $og = $asset->variants()->where('variant_type', 'og')->firstOrFail();
+
+        $this->assertSame(160, $thumbnail->width);
+        $this->assertLessThanOrEqual(640, $card->width);
+        $this->assertLessThanOrEqual(1200, $gallery->width);
+        $this->assertSame(1600, $hero->width);
+        $this->assertSame(1200, $og->width);
+        $this->assertSame(630, $og->height);
     }
 
     public function test_failed_generation_marks_variant_failure_status(): void
@@ -58,6 +64,6 @@ class GenerateMediaVariantsJobTest extends TestCase
 
         (new GenerateMediaVariantsJob($asset->id))->handle();
 
-        $this->assertSame('failed', $asset->variants()->where('variant_type', 'thumbnail')->first()?->status);
+        $this->assertSame('failed', $asset->variants()->where('variant_type', 'thumbnail')->firstOrFail()->status);
     }
 }

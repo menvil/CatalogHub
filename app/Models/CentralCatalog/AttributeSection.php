@@ -2,6 +2,7 @@
 
 namespace App\Models\CentralCatalog;
 
+use App\Models\Translations\AttributeSectionTranslation;
 use Database\Factories\AttributeSectionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -87,5 +88,13 @@ final class AttributeSection extends Model
     public function attributes(): HasMany
     {
         return $this->hasMany(AttributeDefinition::class, 'attribute_section_id');
+    }
+
+    /**
+     * @return HasMany<AttributeSectionTranslation, $this>
+     */
+    public function translations(): HasMany
+    {
+        return $this->hasMany(AttributeSectionTranslation::class, 'attribute_section_id');
     }
 }

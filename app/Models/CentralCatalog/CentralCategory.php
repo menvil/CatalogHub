@@ -4,6 +4,7 @@ namespace App\Models\CentralCatalog;
 
 use App\Enums\CategorySchemaStatus;
 use App\Enums\CentralCategoryStatus;
+use App\Models\Translations\CategoryTranslation;
 use Database\Factories\CentralCategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -75,6 +76,14 @@ final class CentralCategory extends Model
     public function attributeDefinitions(): HasMany
     {
         return $this->hasMany(AttributeDefinition::class, 'central_category_id');
+    }
+
+    /**
+     * @return HasMany<CategoryTranslation, $this>
+     */
+    public function translations(): HasMany
+    {
+        return $this->hasMany(CategoryTranslation::class, 'category_id');
     }
 
     /**

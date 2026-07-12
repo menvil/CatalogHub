@@ -3,6 +3,7 @@
 namespace App\Models\CentralCatalog;
 
 use App\Enums\CentralProductStatus;
+use App\Models\Translations\ProductTranslation;
 use Database\Factories\CentralProductFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -89,6 +90,14 @@ final class CentralProduct extends Model
     public function attributeValues(): HasMany
     {
         return $this->hasMany(CentralProductAttributeValue::class, 'central_product_id');
+    }
+
+    /**
+     * @return HasMany<ProductTranslation, $this>
+     */
+    public function translations(): HasMany
+    {
+        return $this->hasMany(ProductTranslation::class, 'product_id');
     }
 
     private function isSlugUniqueConstraintViolation(QueryException $exception): bool

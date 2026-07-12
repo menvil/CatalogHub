@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Importers\SerializedPhpProductImporter;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\User;
 use App\Observers\CentralProductObserver;
+use App\Services\Imports\ImportService;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -15,7 +17,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(
+            ImportService::class,
+            fn ($app): ImportService => new ImportService([
+                $app->make(SerializedPhpProductImporter::class),
+            ])
+        );
     }
 
     /**

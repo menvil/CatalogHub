@@ -44,7 +44,7 @@ final class MissingTranslationsQuery
                 $query->whereRaw("{$column} like ? escape '\\'", ["%{$escapedSearch}%"]);
             }
 
-            foreach ($query->get() as $entity) {
+            foreach ($query->lazy() as $entity) {
                 $existingLocales = $entity->translations->pluck('locale');
 
                 foreach ($locales as $activeLocale) {

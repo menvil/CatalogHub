@@ -6,6 +6,8 @@ use App\Contracts\Imports\ProductImporterInterface;
 use App\Models\Imports\ImportBatch;
 use App\Models\Imports\ImportSource;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use RuntimeException;
 use Throwable;
 
@@ -32,6 +34,7 @@ final readonly class ImportService
 
         try {
             $batch->markStarted();
+            $this->storeOriginalArtifact($batch, $artifact);
             $this->resolveImporter($source)->import($batch, $artifact, $options);
             $batch->markFinished();
         } catch (Throwable $exception) {
@@ -59,5 +62,42 @@ final readonly class ImportService
         return $artifact instanceof UploadedFile
             ? $artifact->getClientOriginalName()
             : basename($artifact);
+    }
+
+    private function storeOriginalArtifact(ImportBatch $batch, UploadedFile|string $artifact): void
+    {
+        $sourcePath = $artifact instanceof UploadedFile ? $artifact->getRealPath() : $artifact;
+        $contents = $sourcePath !== false ? file_get_contents($sourcePath) : false;
+
+        if ($contents === false) {
+            throw new RuntimeException('The original import artifact could not be read.');
+        }
+
+        $disk = (string) config('imports.artifact_disk', 'local');
+        $prefix = trim((string) config('imports.artifact_prefix', 'imports'), '/');
+        $originalFilename = $this->originalFilename($artifact);
+        $extension = strtolower(pathinfo($originalFilename, PATHINFO_EXTENSION));
+        $storedFilename = (string) Str::uuid().($extension !== '' ? ".{$extension}" : '');
+        $path = implode('/', array_filter([
+            $prefix,
+            now()->format('Y/m/d'),
+            (string) $batch->getKey(),
+            $storedFilename,
+        ]));
+
+        if (! Storage::disk($disk)->put($path, $contents)) {
+            throw new RuntimeException("The original import artifact could not be stored on disk [{$disk}].");
+        }
+
+        $batch->artifacts()->create([
+            'type' => 'original',
+            'disk' => $disk,
+            'path' => $path,
+            'original_filename' => $originalFilename,
+            'mime_type' => $artifact instanceof UploadedFile ? $artifact->getClientMimeType() : null,
+            'file_size' => strlen($contents),
+            'checksum' => hash('sha256', $contents),
+            'metadata_json' => [],
+        ]);
     }
 }

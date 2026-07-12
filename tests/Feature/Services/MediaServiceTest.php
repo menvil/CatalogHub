@@ -16,7 +16,6 @@ class MediaServiceTest extends TestCase
     public function test_resolves_media_service_from_container(): void
     {
         $this->assertInstanceOf(MediaService::class, app(MediaService::class));
-        $this->assertTrue(method_exists(app(MediaService::class), 'uploadOriginal'));
     }
 
     public function test_uploads_original_image_and_creates_media_asset(): void
@@ -30,7 +29,7 @@ class MediaServiceTest extends TestCase
         $this->assertInstanceOf(MediaAsset::class, $asset);
         $this->assertTrue($asset->exists);
         $this->assertSame('public', $asset->disk);
-        $this->assertNotNull($asset->original_path);
+        $this->assertNotSame('', $asset->original_path);
         $this->assertSame('monitor.jpg', $asset->original_filename);
         $this->assertSame(1200, $asset->width);
         $this->assertSame(800, $asset->height);

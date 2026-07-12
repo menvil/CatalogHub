@@ -6,6 +6,7 @@ use App\Models\MediaAsset;
 use App\Models\MediaAssignment;
 use App\ValueObjects\Media\MediaResolutionResult;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 final class MediaResolver
 {
@@ -30,15 +31,10 @@ final class MediaResolver
         ?int $siteId = null,
         ?int $marketId = null,
     ): ?MediaAssignment {
-        foreach ($this->candidates($role, $locale, $siteId, $marketId) as $candidate) {
-            $assignment = $this->query($entityType, $entityId, $candidate)->first();
-
-            if ($assignment instanceof MediaAssignment) {
-                return $assignment;
-            }
-        }
-
-        return null;
+        return $this->matchAssignment(
+            $this->assignmentsForCandidates($entityType, $entityId, $role, $locale, $siteId, $marketId),
+            $this->candidates($role, $locale, $siteId, $marketId),
+        );
     }
 
     public function explain(
@@ -51,11 +47,14 @@ final class MediaResolver
     ): MediaResolutionResult {
         $fallbackChain = [];
 
-        foreach ($this->candidates($role, $locale, $siteId, $marketId) as $candidate) {
+        $candidates = $this->candidates($role, $locale, $siteId, $marketId);
+        $assignments = $this->assignmentsForCandidates($entityType, $entityId, $role, $locale, $siteId, $marketId);
+
+        foreach ($candidates as $candidate) {
             $label = $this->candidateLabel($candidate);
             $fallbackChain[] = $label;
 
-            $assignment = $this->query($entityType, $entityId, $candidate)->first();
+            $assignment = $this->matchAssignment($assignments, [$candidate]);
 
             if ($assignment instanceof MediaAssignment) {
                 return new MediaResolutionResult(
@@ -80,21 +79,70 @@ final class MediaResolver
     }
 
     /**
-     * @param  array{role: string, locale: ?string, site_id: ?int, market_id: ?int}  $candidate
-     * @return Builder<MediaAssignment>
+     * @return Collection<int, MediaAssignment>
      */
-    private function query(string $entityType, int $entityId, array $candidate): Builder
-    {
+    private function assignmentsForCandidates(
+        string $entityType,
+        int $entityId,
+        string $role,
+        ?string $locale,
+        ?int $siteId,
+        ?int $marketId,
+    ): Collection {
+        $roles = array_values(array_unique(array_merge([$role], $this->fallbackRoles($role))));
+        $locales = array_values(array_unique(array_filter([$locale], fn (?string $value): bool => $value !== null)));
+        $siteIds = array_values(array_unique(array_filter([$siteId], fn (?int $value): bool => $value !== null)));
+        $marketIds = array_values(array_unique(array_filter([$marketId], fn (?int $value): bool => $value !== null)));
+
         return MediaAssignment::query()
             ->with('asset')
             ->forEntity($entityType, $entityId)
-            ->forRole($candidate['role'])
-            ->when($candidate['locale'] === null, fn (Builder $query): Builder => $query->whereNull('locale'), fn (Builder $query): Builder => $query->where('locale', $candidate['locale']))
-            ->when($candidate['site_id'] === null, fn (Builder $query): Builder => $query->whereNull('site_id'), fn (Builder $query): Builder => $query->where('site_id', $candidate['site_id']))
-            ->when($candidate['market_id'] === null, fn (Builder $query): Builder => $query->whereNull('market_id'), fn (Builder $query): Builder => $query->where('market_id', $candidate['market_id']))
+            ->whereIn('role', $roles)
+            ->where(function (Builder $query) use ($locales): void {
+                $query->whereNull('locale');
+
+                if ($locales !== []) {
+                    $query->orWhereIn('locale', $locales);
+                }
+            })
+            ->where(function (Builder $query) use ($siteIds): void {
+                $query->whereNull('site_id');
+
+                if ($siteIds !== []) {
+                    $query->orWhereIn('site_id', $siteIds);
+                }
+            })
+            ->where(function (Builder $query) use ($marketIds): void {
+                $query->whereNull('market_id');
+
+                if ($marketIds !== []) {
+                    $query->orWhereIn('market_id', $marketIds);
+                }
+            })
             ->orderByDesc('is_primary')
             ->orderBy('position')
-            ->orderBy('id');
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
+     * @param  Collection<int, MediaAssignment>  $assignments
+     * @param  list<array{role: string, locale: ?string, site_id: ?int, market_id: ?int}>  $candidates
+     */
+    private function matchAssignment(Collection $assignments, array $candidates): ?MediaAssignment
+    {
+        foreach ($candidates as $candidate) {
+            $assignment = $assignments->first(fn (MediaAssignment $assignment): bool => $assignment->role === $candidate['role']
+                && $assignment->locale === $candidate['locale']
+                && $assignment->site_id === $candidate['site_id']
+                && $assignment->market_id === $candidate['market_id']);
+
+            if ($assignment instanceof MediaAssignment) {
+                return $assignment;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -108,6 +156,10 @@ final class MediaResolver
         foreach ($roles as $candidateRole) {
             if ($siteId !== null && $marketId !== null && $locale !== null) {
                 $candidates[] = ['role' => $candidateRole, 'locale' => $locale, 'site_id' => $siteId, 'market_id' => $marketId];
+            }
+
+            if ($siteId !== null && $marketId !== null) {
+                $candidates[] = ['role' => $candidateRole, 'locale' => null, 'site_id' => $siteId, 'market_id' => $marketId];
             }
 
             if ($siteId !== null && $locale !== null) {

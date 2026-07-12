@@ -30,10 +30,17 @@
                 <span class="text-sm font-medium">Status</span>
                 <select class="mt-1 w-full rounded border-admin-border" name="status">
                     @foreach (\App\Enums\TranslationStatus::options() as $value => $label)
+                        @continue($value === \App\Enums\TranslationStatus::Approved->value)
                         <option value="{{ $value }}" @selected(old('status', $translation?->status?->value ?? 'human_reviewed') === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
             </label>
+
+            @if ($errors->any())
+                <div class="rounded-admin-input border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {{ $errors->first() }}
+                </div>
+            @endif
 
             <button class="rounded bg-amber-600 px-4 py-2 text-white" type="submit">Save translation</button>
         </form>

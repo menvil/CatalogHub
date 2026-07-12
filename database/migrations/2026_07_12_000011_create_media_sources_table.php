@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('media_sources', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('media_asset_id')->constrained('media_assets')->cascadeOnDelete();
+            $table->foreignId('media_asset_id')->unique()->constrained('media_assets')->cascadeOnDelete();
             $table->string('source_type')->nullable();
             $table->text('source_url')->nullable();
             $table->string('source_name')->nullable();

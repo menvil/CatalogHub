@@ -15,15 +15,18 @@ final readonly class SaveAttributeSectionTranslationAction
     /** @param array<string, mixed> $data */
     public function handle(AttributeSection $section, Locale $locale, array $data): AttributeSectionTranslation
     {
-        return AttributeSectionTranslation::query()->updateOrCreate(
+        $translation = AttributeSectionTranslation::query()->updateOrCreate(
             ['attribute_section_id' => $section->id, 'locale' => $locale->code],
             [
                 'locale_id' => $locale->id,
                 'name' => $data['name'] ?? null,
                 'description' => $data['description'] ?? null,
                 'status' => $data['status'] ?? TranslationStatus::HumanReviewed,
-                'source_hash' => $this->hashService->forAttributeSection($section),
             ],
         );
+
+        $translation->forceFill(['source_hash' => $this->hashService->forAttributeSection($section)])->save();
+
+        return $translation;
     }
 }

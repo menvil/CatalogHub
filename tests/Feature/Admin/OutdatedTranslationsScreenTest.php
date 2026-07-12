@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Enums\TranslationStatus;
+use App\Enums\UserRole;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Locale;
 use App\Models\Translations\ProductTranslation;
@@ -33,5 +34,23 @@ class OutdatedTranslationsScreenTest extends TestCase
             ->assertOk()
             ->assertSee('Outdated Translations')
             ->assertSee('LG Monitor DE');
+    }
+
+    public function test_outdated_translations_rejects_array_filters(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+
+        $this->actingAs($admin)
+            ->get(route('central.translations.outdated', ['entity_type' => ['product', 'unit']]))
+            ->assertSessionHasErrors('entity_type');
+    }
+
+    public function test_blocks_user_without_translation_permission_from_outdated_translations_screen(): void
+    {
+        $moderator = User::factory()->create(['role' => UserRole::Moderator]);
+
+        $this->actingAs($moderator)
+            ->get(route('central.translations.outdated'))
+            ->assertForbidden();
     }
 }

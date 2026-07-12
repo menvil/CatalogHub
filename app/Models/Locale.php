@@ -16,7 +16,6 @@ use Illuminate\Database\Eloquent\Model;
     'native_name',
     'direction',
     'is_active',
-    'is_default',
     'position',
 ])]
 final class Locale extends Model
@@ -27,6 +26,22 @@ final class Locale extends Model
     protected static function newFactory(): LocaleFactory
     {
         return LocaleFactory::new();
+    }
+
+    protected static function booted(): void
+    {
+        self::saved(function (Locale $locale): void {
+            if (! $locale->is_default) {
+                return;
+            }
+
+            self::withoutEvents(function () use ($locale): void {
+                self::query()
+                    ->whereKeyNot($locale->getKey())
+                    ->where('is_default', true)
+                    ->update(['is_default' => false]);
+            });
+        });
     }
 
     protected function casts(): array

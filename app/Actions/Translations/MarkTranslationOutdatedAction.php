@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 final class MarkTranslationOutdatedAction
 {
-    public function handle(Model $translation, ?string $reason = null): Model
+    public function handle(Model $translation): Model
     {
         $translation->setAttribute('status', TranslationStatus::Outdated);
         $translation->save();

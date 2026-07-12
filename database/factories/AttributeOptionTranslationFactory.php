@@ -18,7 +18,7 @@ class AttributeOptionTranslationFactory extends Factory
         return [
             'attribute_option_id' => AttributeOption::factory(),
             'locale_id' => Locale::factory(),
-            'locale' => 'de-DE',
+            'locale' => fn (array $attributes): ?string => Locale::query()->find($attributes['locale_id'])?->code,
             'label' => fake()->word(),
             'description' => fake()->optional()->sentence(),
             'status' => TranslationStatus::HumanReviewed,

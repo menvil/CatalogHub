@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\CentralCatalog\CentralProduct;
 use App\Models\MediaAsset;
 use App\Models\MediaAssignment;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -18,7 +19,7 @@ class MediaAssignmentFactory extends Factory
         return [
             'media_asset_id' => MediaAsset::factory(),
             'entity_type' => 'central_product',
-            'entity_id' => fake()->numberBetween(1, 1000),
+            'entity_id' => CentralProduct::factory(),
             'role' => fake()->randomElement(['main', 'card', 'gallery', 'hero', 'og']),
             'position' => 0,
             'locale' => null,

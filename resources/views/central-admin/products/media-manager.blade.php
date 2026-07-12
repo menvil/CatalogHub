@@ -49,6 +49,10 @@
         <section class="grid gap-admin-section lg:grid-cols-2">
             <div class="rounded-admin-card border border-admin-border bg-admin-surface p-admin-card">
                 <h2 class="text-lg font-semibold text-admin-text">Assign Existing Media</h2>
+                <form method="GET" action="{{ route('central.products.media', $product) }}" class="mt-4 flex gap-admin-field">
+                    <input name="media_search" value="{{ $assetSearch }}" class="min-w-0 flex-1 rounded-admin-input border border-admin-border bg-admin-surface px-3 py-2 text-sm" placeholder="Search asset filename, checksum, or ID">
+                    <button class="rounded-admin-input border border-admin-border bg-admin-surface px-4 py-2 text-sm font-semibold text-admin-text">Search</button>
+                </form>
                 <form method="POST" action="{{ route('central.products.media.assign', $product) }}" class="mt-4 space-y-admin-field">
                     @csrf
                     <label class="block text-sm font-medium text-admin-text">Asset
@@ -110,9 +114,19 @@
                 <div class="mt-4 rounded-admin-card border border-admin-border bg-admin-surface-muted p-4">
                     <h3 class="text-sm font-semibold text-admin-text">Resolved media</h3>
                     @if ($resolution->found())
+                        <img
+                            src="{{ $urlGenerator->forAsset($resolution->asset) }}"
+                            alt="{{ $resolution->asset->original_filename ?? 'Resolved media' }}"
+                            class="mt-3 aspect-video w-full rounded-admin-input border border-admin-border object-contain"
+                        >
                         <p class="mt-2 text-sm text-admin-muted">{{ $resolution->asset->original_filename ?? $resolution->asset->uuid }}</p>
                         <p class="text-sm text-admin-muted">Matched: {{ $resolution->matchedStep }}</p>
                     @else
+                        <img
+                            src="{{ $resolution->placeholderUrl }}"
+                            alt="Placeholder media"
+                            class="mt-3 aspect-video w-full rounded-admin-input border border-admin-border object-contain"
+                        >
                         <p class="mt-2 text-sm text-admin-muted">Placeholder fallback</p>
                     @endif
                     <ol class="mt-3 list-decimal space-y-1 pl-5 text-sm text-admin-muted">

@@ -96,6 +96,32 @@ class MediaResolverTest extends TestCase
         $this->assertSame($marketAsset->id, $resolved?->id);
     }
 
+    public function test_resolves_site_and_market_assignment_without_locale(): void
+    {
+        $globalAsset = MediaAsset::factory()->create();
+        $scopedAsset = MediaAsset::factory()->create();
+
+        MediaAssignment::factory()->for($globalAsset, 'asset')->create([
+            'entity_type' => 'central_product',
+            'entity_id' => 123,
+            'role' => 'main',
+            'site_id' => null,
+            'market_id' => null,
+        ]);
+        MediaAssignment::factory()->for($scopedAsset, 'asset')->create([
+            'entity_type' => 'central_product',
+            'entity_id' => 123,
+            'role' => 'main',
+            'site_id' => 10,
+            'market_id' => 5,
+            'locale' => null,
+        ]);
+
+        $resolved = app(MediaResolver::class)->resolve('central_product', 123, 'main', siteId: 10, marketId: 5);
+
+        $this->assertSame($scopedAsset->id, $resolved?->id);
+    }
+
     public function test_role_fallback_and_placeholder_explanation_are_deterministic(): void
     {
         $asset = MediaAsset::factory()->create();

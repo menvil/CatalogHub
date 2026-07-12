@@ -20,7 +20,7 @@ return new class extends Migration
             $table->unsignedBigInteger('file_size')->nullable();
             $table->unsignedInteger('width')->nullable();
             $table->unsignedInteger('height')->nullable();
-            $table->string('checksum')->nullable()->index();
+            $table->string('checksum')->nullable()->unique();
             $table->string('status')->default('active')->index();
             $table->timestamps();
 

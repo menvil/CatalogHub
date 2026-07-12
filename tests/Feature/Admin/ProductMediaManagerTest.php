@@ -90,6 +90,7 @@ class ProductMediaManagerTest extends TestCase
             ->get(route('central.products.media', ['product' => $product, 'preview_role' => 'main']))
             ->assertOk()
             ->assertSee('Resolved media')
-            ->assertSee('main.jpg');
+            ->assertSee('main.jpg')
+            ->assertSee('alt="main.jpg"', false);
     }
 }

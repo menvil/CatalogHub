@@ -39,7 +39,7 @@ class MediaAssetsSchemaTest extends TestCase
             fn (array $index): bool => $index['unique'] === true && $index['columns'] === ['uuid']
         ));
         $this->assertTrue($indexes->contains(
-            fn (array $index): bool => $index['columns'] === ['checksum']
+            fn (array $index): bool => $index['unique'] === true && $index['columns'] === ['checksum']
         ));
     }
 }

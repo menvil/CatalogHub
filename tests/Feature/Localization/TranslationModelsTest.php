@@ -138,4 +138,20 @@ class TranslationModelsTest extends TestCase
             'locale' => 'de-DE',
         ]);
     }
+
+    public function test_translation_factories_keep_locale_string_consistent_with_locale_model(): void
+    {
+        $translations = [
+            ProductTranslation::factory()->create(),
+            CategoryTranslation::factory()->create(),
+            AttributeTranslation::factory()->create(),
+            AttributeSectionTranslation::factory()->create(),
+            AttributeOptionTranslation::factory()->create(),
+            UnitTranslation::factory()->create(),
+        ];
+
+        foreach ($translations as $translation) {
+            $this->assertSame($translation->localeModel->code, $translation->locale);
+        }
+    }
 }

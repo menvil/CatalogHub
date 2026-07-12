@@ -27,4 +27,13 @@ class MediaSourcesSchemaTest extends TestCase
             'updated_at',
         ]));
     }
+
+    public function test_media_sources_allows_only_one_source_record_per_asset(): void
+    {
+        $indexes = collect(Schema::getIndexes('media_sources'));
+
+        $this->assertTrue($indexes->contains(
+            fn (array $index): bool => $index['unique'] === true && $index['columns'] === ['media_asset_id']
+        ));
+    }
 }

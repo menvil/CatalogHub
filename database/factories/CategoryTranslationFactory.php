@@ -15,12 +15,10 @@ class CategoryTranslationFactory extends Factory
 
     public function definition(): array
     {
-        $locale = Locale::factory();
-
         return [
             'category_id' => CentralCategory::factory(),
-            'locale_id' => $locale,
-            'locale' => 'de-DE',
+            'locale_id' => Locale::factory(),
+            'locale' => fn (array $attributes): ?string => Locale::query()->find($attributes['locale_id'])?->code,
             'name' => fake()->words(2, true),
             'description' => fake()->optional()->sentence(),
             'seo_title' => fake()->optional()->sentence(3),

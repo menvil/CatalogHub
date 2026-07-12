@@ -18,10 +18,7 @@ class MarkTranslationOutdatedActionTest extends TestCase
             'status' => TranslationStatus::Approved,
         ]);
 
-        app(MarkTranslationOutdatedAction::class)->handle(
-            translation: $translation,
-            reason: 'Source product name changed.',
-        );
+        app(MarkTranslationOutdatedAction::class)->handle($translation);
 
         $this->assertSame(TranslationStatus::Outdated, $translation->fresh()->status);
     }

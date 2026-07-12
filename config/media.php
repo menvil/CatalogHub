@@ -4,6 +4,7 @@ return [
     'disk' => env('MEDIA_UPLOAD_DISK', 'public'),
     'placeholder_url' => env('MEDIA_PLACEHOLDER_URL', '/images/media-placeholder.svg'),
     'dispatch_variants_on_upload' => env('MEDIA_DISPATCH_VARIANTS_ON_UPLOAD', false),
+    'allowed_upload_mimes' => ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
     'variants' => [
         'thumbnail' => [
             'width' => 160,

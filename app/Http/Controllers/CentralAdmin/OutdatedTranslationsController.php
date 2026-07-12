@@ -11,10 +11,17 @@ final class OutdatedTranslationsController extends Controller
 {
     public function __invoke(Request $request, OutdatedTranslationsQuery $query): View
     {
+        abort_unless($request->user()?->hasCatalogHubPermission('translations.manage'), 403);
+
+        $filters = $request->validate([
+            'locale' => ['nullable', 'string', 'max:20'],
+            'entity_type' => ['nullable', 'string', 'in:product,category,attribute,section,option,unit'],
+        ]);
+
         return view('central-admin.translations.outdated', [
             'items' => $query->get(
-                locale: $request->string('locale')->toString() ?: null,
-                entityType: $request->string('entity_type')->toString() ?: null,
+                locale: $filters['locale'] ?? null,
+                entityType: $filters['entity_type'] ?? null,
             ),
         ]);
     }

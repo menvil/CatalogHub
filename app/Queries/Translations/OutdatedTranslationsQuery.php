@@ -25,7 +25,7 @@ final class OutdatedTranslationsQuery
             }
 
             $translations = $config['model']::query()
-                ->with($config['relation'])
+                ->with([$config['relation'], 'localeModel'])
                 ->where('status', TranslationStatus::Outdated)
                 ->when($locale, fn ($query) => $query->where('locale', $locale))
                 ->limit(100)

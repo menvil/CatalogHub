@@ -11,6 +11,7 @@ use App\Models\CentralCatalog\CentralProduct;
 use App\Models\MeasurementUnit;
 use App\Services\Translations\TranslationSourceHashService;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final readonly class DetectOutdatedTranslationsAction
 {
@@ -21,23 +22,16 @@ final readonly class DetectOutdatedTranslationsAction
     public function handle(Model $entity): int
     {
         $currentHash = $this->hashFor($entity);
-        $count = 0;
 
-        foreach ($this->translationsFor($entity) as $translation) {
-            if ($translation->getAttribute('source_hash') === null) {
-                continue;
-            }
-
-            if ($translation->getAttribute('source_hash') === $currentHash) {
-                continue;
-            }
-
-            $translation->setAttribute('status', TranslationStatus::Outdated);
-            $translation->save();
-            $count++;
-        }
-
-        return $count;
+        return match (true) {
+            $entity instanceof CentralProduct,
+            $entity instanceof CentralCategory,
+            $entity instanceof AttributeDefinition,
+            $entity instanceof AttributeSection,
+            $entity instanceof AttributeOption,
+            $entity instanceof MeasurementUnit => $this->markRelationOutdated($entity->translations(), $currentHash),
+            default => throw new \InvalidArgumentException('Unsupported translatable entity: '.$entity::class),
+        };
     }
 
     private function hashFor(Model $entity): string
@@ -53,19 +47,11 @@ final readonly class DetectOutdatedTranslationsAction
         };
     }
 
-    /**
-     * @return iterable<Model>
-     */
-    private function translationsFor(Model $entity): iterable
+    private function markRelationOutdated(HasMany $translations, string $currentHash): int
     {
-        return match (true) {
-            $entity instanceof CentralProduct,
-            $entity instanceof CentralCategory,
-            $entity instanceof AttributeDefinition,
-            $entity instanceof AttributeSection,
-            $entity instanceof AttributeOption,
-            $entity instanceof MeasurementUnit => $entity->translations()->get(),
-            default => throw new \InvalidArgumentException('Unsupported translatable entity: '.$entity::class),
-        };
+        return $translations
+            ->whereNotNull('source_hash')
+            ->where('source_hash', '!=', $currentHash)
+            ->update(['status' => TranslationStatus::Outdated]);
     }
 }

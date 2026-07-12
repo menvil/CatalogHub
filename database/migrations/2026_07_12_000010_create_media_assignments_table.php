@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -29,6 +30,19 @@ return new class extends Migration
             $table->index(['media_asset_id']);
             $table->index(['position']);
         });
+
+        DB::statement(
+            "CREATE UNIQUE INDEX media_assignments_primary_context_unique
+            ON media_assignments (
+                entity_type,
+                entity_id,
+                role,
+                COALESCE(locale, ''),
+                COALESCE(site_id, 0),
+                COALESCE(market_id, 0)
+            )
+            WHERE is_primary = true"
+        );
     }
 
     public function down(): void

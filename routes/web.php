@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\CentralAdmin\MissingTranslationsController;
+use App\Http\Controllers\CentralAdmin\Media\MediaAssetDetailController;
+use App\Http\Controllers\CentralAdmin\Media\MediaLibraryController;
+use App\Http\Controllers\CentralAdmin\Media\ProductMediaManagerController;
 use App\Http\Controllers\CentralAdmin\OutdatedTranslationsController;
 use App\Http\Controllers\CentralAdmin\TranslationDashboardController;
 use App\Http\Controllers\CentralAdmin\TranslationEditorController;
@@ -59,4 +62,18 @@ Route::middleware('auth')->prefix('admin')->group(function (): void {
         ->name('central.units.translations.edit');
     Route::post('/units/{unit}/translations/{locale}', [TranslationEditorController::class, 'saveUnit'])
         ->name('central.units.translations.save');
+});
+
+Route::middleware('auth')->prefix('central')->group(function (): void {
+    Route::get('/media', MediaLibraryController::class)
+        ->name('central.media.index');
+    Route::get('/media/{asset}', [MediaAssetDetailController::class, 'show'])
+        ->name('central.media.show');
+    Route::post('/media/{asset}/source', [MediaAssetDetailController::class, 'updateSource'])
+        ->name('central.media.source.update');
+
+    Route::get('/products/{product}/media', [ProductMediaManagerController::class, 'show'])
+        ->name('central.products.media');
+    Route::post('/products/{product}/media/assign', [ProductMediaManagerController::class, 'assign'])
+        ->name('central.products.media.assign');
 });

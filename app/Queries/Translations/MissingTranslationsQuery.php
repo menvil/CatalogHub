@@ -36,7 +36,10 @@ final class MissingTranslationsQuery
                     ->whereDoesntHave('translations', fn ($translationQuery) => $translationQuery->where('locale', $activeLocale->code));
 
                 if ($search !== null && $search !== '') {
-                    $query->where($config['label'], 'like', "%{$search}%");
+                    $escapedSearch = addcslashes($search, '\%_');
+                    $column = $query->getQuery()->getGrammar()->wrap($config['label']);
+
+                    $query->whereRaw("{$column} like ? escape '\\'", ["%{$escapedSearch}%"]);
                 }
 
                 foreach ($query->limit(100)->get() as $entity) {

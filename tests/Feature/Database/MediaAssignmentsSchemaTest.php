@@ -2,6 +2,9 @@
 
 namespace Tests\Feature\Database;
 
+use App\Models\MediaAsset;
+use App\Models\MediaAssignment;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -43,5 +46,33 @@ class MediaAssignmentsSchemaTest extends TestCase
         $this->assertTrue($indexes->contains(
             fn (array $index): bool => $index['columns'] === ['entity_type', 'entity_id', 'role', 'market_id']
         ));
+    }
+
+    public function test_media_assignments_enforces_one_primary_assignment_per_context(): void
+    {
+        $asset = MediaAsset::factory()->create();
+        $otherAsset = MediaAsset::factory()->create();
+
+        MediaAssignment::factory()->for($asset, 'asset')->create([
+            'entity_type' => 'central_product',
+            'entity_id' => 123,
+            'role' => 'main',
+            'locale' => null,
+            'site_id' => null,
+            'market_id' => null,
+            'is_primary' => true,
+        ]);
+
+        $this->expectException(QueryException::class);
+
+        MediaAssignment::factory()->for($otherAsset, 'asset')->create([
+            'entity_type' => 'central_product',
+            'entity_id' => 123,
+            'role' => 'main',
+            'locale' => null,
+            'site_id' => null,
+            'market_id' => null,
+            'is_primary' => true,
+        ]);
     }
 }

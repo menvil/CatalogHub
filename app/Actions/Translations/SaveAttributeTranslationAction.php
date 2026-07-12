@@ -15,7 +15,7 @@ final readonly class SaveAttributeTranslationAction
     /** @param array<string, mixed> $data */
     public function handle(AttributeDefinition $attribute, Locale $locale, array $data): AttributeTranslation
     {
-        return AttributeTranslation::query()->updateOrCreate(
+        $translation = AttributeTranslation::query()->updateOrCreate(
             ['attribute_definition_id' => $attribute->id, 'locale' => $locale->code],
             [
                 'locale_id' => $locale->id,
@@ -23,8 +23,11 @@ final readonly class SaveAttributeTranslationAction
                 'short_label' => $data['short_label'] ?? null,
                 'help_text' => $data['help_text'] ?? null,
                 'status' => $data['status'] ?? TranslationStatus::HumanReviewed,
-                'source_hash' => $this->hashService->forAttribute($attribute),
             ],
         );
+
+        $translation->forceFill(['source_hash' => $this->hashService->forAttribute($attribute)])->save();
+
+        return $translation;
     }
 }

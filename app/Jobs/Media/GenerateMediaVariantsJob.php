@@ -39,8 +39,7 @@ final class GenerateMediaVariantsJob implements ShouldQueue
         }
 
         try {
-            $sourcePath = $disk->path($asset->original_path);
-            [$image, $sourceWidth, $sourceHeight] = $this->loadImage($sourcePath, (string) $asset->mime_type);
+            [$image, $sourceWidth, $sourceHeight] = $this->loadImage((string) $disk->get($asset->original_path), (string) $asset->mime_type);
             [$target, $width, $height] = $this->resize($image, $sourceWidth, $sourceHeight, $config);
 
             $format = strtolower((string) $config['format']);
@@ -51,11 +50,11 @@ final class GenerateMediaVariantsJob implements ShouldQueue
                 $format === 'jpg' ? 'jpg' : $format
             );
 
-            ob_start();
-            $this->outputImage($target, $format, (int) $config['quality']);
-            $contents = (string) ob_get_clean();
+            $contents = $this->encodeImage($target, $format, (int) $config['quality']);
 
-            $disk->put($path, $contents);
+            if ($contents === '' || $disk->put($path, $contents) === false) {
+                throw new RuntimeException('Unable to store generated media variant.');
+            }
 
             MediaVariant::query()->updateOrCreate(
                 [
@@ -88,15 +87,13 @@ final class GenerateMediaVariantsJob implements ShouldQueue
     /**
      * @return array{0: \GdImage, 1: int, 2: int}
      */
-    private function loadImage(string $path, string $mime): array
+    private function loadImage(string $contents, string $mime): array
     {
-        $image = match ($mime) {
-            'image/jpeg', 'image/jpg' => imagecreatefromjpeg($path),
-            'image/png' => imagecreatefrompng($path),
-            'image/gif' => imagecreatefromgif($path),
-            'image/webp' => imagecreatefromwebp($path),
-            default => false,
-        };
+        if (! in_array($mime, config('media.allowed_upload_mimes', []), true)) {
+            throw new RuntimeException("Unsupported image mime [{$mime}].");
+        }
+
+        $image = imagecreatefromstring($contents);
 
         if (! $image instanceof \GdImage) {
             throw new RuntimeException("Unsupported image mime [{$mime}].");
@@ -121,9 +118,14 @@ final class GenerateMediaVariantsJob implements ShouldQueue
             $offsetX = (int) floor(($targetWidth - $resizedWidth) / 2);
             $offsetY = (int) floor(($targetHeight - $resizedHeight) / 2);
             $target = imagecreatetruecolor($targetWidth, $targetHeight);
+            if (! $target instanceof \GdImage) {
+                throw new RuntimeException('Unable to allocate target image.');
+            }
             imagealphablending($target, false);
             imagesavealpha($target, true);
-            imagecopyresampled($target, $image, $offsetX, $offsetY, 0, 0, $resizedWidth, $resizedHeight, $sourceWidth, $sourceHeight);
+            if (! imagecopyresampled($target, $image, $offsetX, $offsetY, 0, 0, $resizedWidth, $resizedHeight, $sourceWidth, $sourceHeight)) {
+                throw new RuntimeException('Unable to resize source image.');
+            }
 
             return [$target, $targetWidth, $targetHeight];
         }
@@ -132,21 +134,44 @@ final class GenerateMediaVariantsJob implements ShouldQueue
         $width = max(1, (int) floor($sourceWidth * $scale));
         $height = max(1, (int) floor($sourceHeight * $scale));
         $target = imagecreatetruecolor($width, $height);
+        if (! $target instanceof \GdImage) {
+            throw new RuntimeException('Unable to allocate target image.');
+        }
         imagealphablending($target, false);
         imagesavealpha($target, true);
-        imagecopyresampled($target, $image, 0, 0, 0, 0, $width, $height, $sourceWidth, $sourceHeight);
+        if (! imagecopyresampled($target, $image, 0, 0, 0, 0, $width, $height, $sourceWidth, $sourceHeight)) {
+            throw new RuntimeException('Unable to resize source image.');
+        }
 
         return [$target, $width, $height];
     }
 
-    private function outputImage(\GdImage $image, string $format, int $quality): void
+    private function encodeImage(\GdImage $image, string $format, int $quality): string
     {
-        match ($format) {
-            'jpg', 'jpeg' => imagejpeg($image, null, $quality),
-            'webp' => imagewebp($image, null, $quality),
-            'png' => imagepng($image),
-            default => throw new RuntimeException("Unsupported output format [{$format}]."),
-        };
+        ob_start();
+
+        try {
+            $encoded = match ($format) {
+                'jpg', 'jpeg' => imagejpeg($image, null, $quality),
+                'webp' => imagewebp($image, null, $quality),
+                'png' => imagepng($image),
+                default => throw new RuntimeException("Unsupported output format [{$format}]."),
+            };
+
+            $contents = ob_get_clean();
+
+            if ($encoded !== true) {
+                throw new RuntimeException("Unable to encode image format [{$format}].");
+            }
+
+            return $contents;
+        } catch (\Throwable $exception) {
+            if (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+
+            throw $exception;
+        }
     }
 
     /**

@@ -32,6 +32,22 @@
             </div>
         </form>
 
+        <form method="POST" action="{{ route('central.media.upload') }}" enctype="multipart/form-data" class="grid gap-admin-field rounded-admin-card border border-admin-border bg-admin-surface p-admin-card md:grid-cols-[minmax(0,1fr)_auto]">
+            @csrf
+            <label class="text-sm font-medium text-admin-text">
+                Upload original image
+                <input name="file" type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="mt-1 w-full rounded-admin-input border border-admin-border bg-admin-surface px-3 py-2">
+            </label>
+            <div class="flex items-end">
+                <button class="rounded-admin-input bg-admin-primary px-4 py-2 text-sm font-semibold text-white">Upload</button>
+            </div>
+            @if ($errors->any())
+                <div class="rounded-admin-input border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 md:col-span-2">
+                    {{ $errors->first() }}
+                </div>
+            @endif
+        </form>
+
         <section class="rounded-admin-card border border-admin-border bg-admin-surface p-admin-card">
             <div class="flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-admin-text">Media Library</h2>

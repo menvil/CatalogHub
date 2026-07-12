@@ -18,7 +18,7 @@ class ProductTranslationFactory extends Factory
         return [
             'product_id' => CentralProduct::factory(),
             'locale_id' => Locale::factory(),
-            'locale' => 'de-DE',
+            'locale' => fn (array $attributes): ?string => Locale::query()->find($attributes['locale_id'])?->code,
             'name' => fake()->words(4, true),
             'subtitle' => fake()->optional()->sentence(3),
             'short_description' => fake()->optional()->sentence(),

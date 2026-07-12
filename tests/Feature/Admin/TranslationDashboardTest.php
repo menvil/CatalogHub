@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Enums\UserRole;
 use App\Models\Locale;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -21,5 +22,14 @@ class TranslationDashboardTest extends TestCase
             ->assertOk()
             ->assertSee('Translation Dashboard')
             ->assertSee('Translation Coverage');
+    }
+
+    public function test_blocks_user_without_translation_permission_from_translation_dashboard(): void
+    {
+        $moderator = User::factory()->create(['role' => UserRole::Moderator]);
+
+        $this->actingAs($moderator)
+            ->get(route('central.translations.dashboard'))
+            ->assertForbidden();
     }
 }

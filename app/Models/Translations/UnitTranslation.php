@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['measurement_unit_id', 'locale_id', 'locale', 'short_name', 'long_name', 'plural_name', 'symbol_position', 'space_between_value_and_unit', 'status', 'source_hash', 'approved_at', 'approved_by_user_id'])]
+#[Fillable(['measurement_unit_id', 'locale_id', 'locale', 'short_name', 'long_name', 'plural_name', 'symbol_position', 'space_between_value_and_unit', 'status'])]
 final class UnitTranslation extends Model
 {
     /** @use HasFactory<UnitTranslationFactory> */

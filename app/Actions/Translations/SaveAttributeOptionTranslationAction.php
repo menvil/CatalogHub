@@ -15,15 +15,18 @@ final readonly class SaveAttributeOptionTranslationAction
     /** @param array<string, mixed> $data */
     public function handle(AttributeOption $option, Locale $locale, array $data): AttributeOptionTranslation
     {
-        return AttributeOptionTranslation::query()->updateOrCreate(
+        $translation = AttributeOptionTranslation::query()->updateOrCreate(
             ['attribute_option_id' => $option->id, 'locale' => $locale->code],
             [
                 'locale_id' => $locale->id,
                 'label' => $data['label'] ?? null,
                 'description' => $data['description'] ?? null,
                 'status' => $data['status'] ?? TranslationStatus::HumanReviewed,
-                'source_hash' => $this->hashService->forAttributeOption($option),
             ],
         );
+
+        $translation->forceFill(['source_hash' => $this->hashService->forAttributeOption($option)])->save();
+
+        return $translation;
     }
 }

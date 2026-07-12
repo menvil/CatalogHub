@@ -23,6 +23,7 @@ class UnitTranslationEditorTest extends TestCase
                 'short_name' => 'Вт',
                 'long_name' => 'ватт',
                 'plural_name' => 'ватт',
+                'symbol_position' => 'after',
                 'space_between_value_and_unit' => true,
             ])
             ->assertRedirect();
@@ -31,10 +32,30 @@ class UnitTranslationEditorTest extends TestCase
             'measurement_unit_id' => $unit->id,
             'locale' => 'ru-RU',
             'short_name' => 'Вт',
+            'long_name' => 'ватт',
+            'plural_name' => 'ватт',
+            'symbol_position' => 'after',
+            'space_between_value_and_unit' => true,
         ]);
         $this->assertDatabaseHas('measurement_units', [
             'id' => $unit->id,
             'code' => 'watt',
         ]);
+    }
+
+    public function test_rejects_invalid_unit_symbol_position(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        $unit = MeasurementUnit::factory()->create(['code' => 'watt']);
+        $locale = Locale::factory()->create(['code' => 'ru-RU']);
+
+        $this->actingAs($admin)
+            ->from(route('central.units.translations.edit', [$unit, $locale]))
+            ->post(route('central.units.translations.save', [$unit, $locale]), [
+                'short_name' => 'Вт',
+                'symbol_position' => 'middle',
+            ])
+            ->assertRedirect(route('central.units.translations.edit', [$unit, $locale]))
+            ->assertSessionHasErrors('symbol_position');
     }
 }

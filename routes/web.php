@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CentralAdmin\Media\MediaAssetDetailController;
 use App\Http\Controllers\CentralAdmin\Media\MediaLibraryController;
+use App\Http\Controllers\CentralAdmin\Media\MediaUploadController;
 use App\Http\Controllers\CentralAdmin\Media\ProductMediaManagerController;
 use App\Http\Controllers\CentralAdmin\MissingTranslationsController;
 use App\Http\Controllers\CentralAdmin\OutdatedTranslationsController;
@@ -67,6 +68,8 @@ Route::middleware('auth')->prefix('admin')->group(function (): void {
 Route::middleware('auth')->prefix('central')->group(function (): void {
     Route::get('/media', MediaLibraryController::class)
         ->name('central.media.index');
+    Route::post('/media/upload', MediaUploadController::class)
+        ->name('central.media.upload');
     Route::get('/media/{asset}', [MediaAssetDetailController::class, 'show'])
         ->name('central.media.show');
     Route::post('/media/{asset}/source', [MediaAssetDetailController::class, 'updateSource'])

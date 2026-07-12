@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['category_id', 'locale_id', 'locale', 'name', 'description', 'seo_title', 'seo_description', 'status', 'source_hash', 'approved_at', 'approved_by_user_id'])]
+#[Fillable(['category_id', 'locale_id', 'locale', 'name', 'description', 'seo_title', 'seo_description', 'status'])]
 final class CategoryTranslation extends Model
 {
     /** @use HasFactory<CategoryTranslationFactory> */

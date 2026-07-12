@@ -7,6 +7,7 @@ use App\Services\Media\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use InvalidArgumentException;
 use Tests\TestCase;
 
 class MediaServiceTest extends TestCase
@@ -50,5 +51,18 @@ class MediaServiceTest extends TestCase
 
         $this->assertSame($first->id, $second->id);
         $this->assertSame(1, MediaAsset::query()->count());
+    }
+
+    public function test_rejects_image_mimes_that_variant_job_cannot_decode(): void
+    {
+        Storage::fake('public');
+
+        $this->expectException(InvalidArgumentException::class);
+
+        app(MediaService::class)->uploadOriginal(
+            UploadedFile::fake()->create('icon.svg', 1, 'image/svg+xml')
+        );
+
+        $this->assertSame(0, MediaAsset::query()->count());
     }
 }

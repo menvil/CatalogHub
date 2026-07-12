@@ -15,7 +15,7 @@ final readonly class SaveCategoryTranslationAction
     /** @param array<string, mixed> $data */
     public function handle(CentralCategory $category, Locale $locale, array $data): CategoryTranslation
     {
-        return CategoryTranslation::query()->updateOrCreate(
+        $translation = CategoryTranslation::query()->updateOrCreate(
             ['category_id' => $category->id, 'locale' => $locale->code],
             [
                 'locale_id' => $locale->id,
@@ -24,8 +24,11 @@ final readonly class SaveCategoryTranslationAction
                 'seo_title' => $data['seo_title'] ?? null,
                 'seo_description' => $data['seo_description'] ?? null,
                 'status' => $data['status'] ?? TranslationStatus::HumanReviewed,
-                'source_hash' => $this->hashService->forCategory($category),
             ],
         );
+
+        $translation->forceFill(['source_hash' => $this->hashService->forCategory($category)])->save();
+
+        return $translation;
     }
 }

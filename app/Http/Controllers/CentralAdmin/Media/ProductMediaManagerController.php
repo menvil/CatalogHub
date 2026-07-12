@@ -10,6 +10,7 @@ use App\Services\Media\MediaResolver;
 use App\Services\Media\MediaUrlGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -48,10 +49,27 @@ final class ProductMediaManagerController extends Controller
             ->get()
             ->groupBy('role');
 
+        $assetSearch = trim((string) $request->query('media_search', ''));
+        $assets = MediaAsset::query()
+            ->when($assetSearch !== '', function ($query) use ($assetSearch): void {
+                $query->where(function ($query) use ($assetSearch): void {
+                    $query->where('original_filename', 'like', "%{$assetSearch}%")
+                        ->orWhere('checksum', 'like', "%{$assetSearch}%");
+
+                    if (ctype_digit($assetSearch)) {
+                        $query->orWhere('id', (int) $assetSearch);
+                    }
+                });
+            })
+            ->latest()
+            ->limit(50)
+            ->get();
+
         return view('central-admin.products.media-manager', [
             'product' => $product,
             'roles' => self::ROLES,
-            'assets' => MediaAsset::query()->latest()->limit(50)->get(),
+            'assets' => $assets,
+            'assetSearch' => $assetSearch,
             'assignments' => $assignments,
             'urlGenerator' => $urls,
             'resolution' => $resolver->explain(
@@ -91,21 +109,23 @@ final class ProductMediaManagerController extends Controller
             'market_id' => $data['market_id'] ?? null,
         ];
 
-        if (in_array($role, self::SINGULAR_ROLES, true)) {
-            MediaAssignment::query()->where($scope)->delete();
-        }
+        DB::transaction(function () use ($data, $product, $role, $scope): void {
+            if (in_array($role, self::SINGULAR_ROLES, true)) {
+                MediaAssignment::query()->where($scope)->delete();
+            }
 
-        $position = (int) MediaAssignment::query()
-            ->forEntity(self::ENTITY_TYPE, $product->id)
-            ->forRole($role)
-            ->max('position') + 1;
+            $position = (int) MediaAssignment::query()
+                ->forEntity(self::ENTITY_TYPE, $product->id)
+                ->forRole($role)
+                ->max('position') + 1;
 
-        MediaAssignment::query()->create($scope + [
-            'media_asset_id' => (int) $data['media_asset_id'],
-            'position' => $position,
-            'is_primary' => in_array($role, self::SINGULAR_ROLES, true),
-            'visibility' => 'global',
-        ]);
+            MediaAssignment::query()->create($scope + [
+                'media_asset_id' => (int) $data['media_asset_id'],
+                'position' => $position,
+                'is_primary' => in_array($role, self::SINGULAR_ROLES, true),
+                'visibility' => 'global',
+            ]);
+        });
 
         return redirect()
             ->route('central.products.media', $product)

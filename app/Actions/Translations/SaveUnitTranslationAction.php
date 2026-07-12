@@ -15,7 +15,7 @@ final readonly class SaveUnitTranslationAction
     /** @param array<string, mixed> $data */
     public function handle(MeasurementUnit $unit, Locale $locale, array $data): UnitTranslation
     {
-        return UnitTranslation::query()->updateOrCreate(
+        $translation = UnitTranslation::query()->updateOrCreate(
             ['measurement_unit_id' => $unit->id, 'locale' => $locale->code],
             [
                 'locale_id' => $locale->id,
@@ -25,8 +25,11 @@ final readonly class SaveUnitTranslationAction
                 'symbol_position' => $data['symbol_position'] ?? 'after',
                 'space_between_value_and_unit' => (bool) ($data['space_between_value_and_unit'] ?? true),
                 'status' => $data['status'] ?? TranslationStatus::HumanReviewed,
-                'source_hash' => $this->hashService->forUnit($unit),
             ],
         );
+
+        $translation->forceFill(['source_hash' => $this->hashService->forUnit($unit)])->save();
+
+        return $translation;
     }
 }

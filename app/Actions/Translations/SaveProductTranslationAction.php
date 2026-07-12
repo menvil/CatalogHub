@@ -15,7 +15,7 @@ final readonly class SaveProductTranslationAction
     /** @param array<string, mixed> $data */
     public function handle(CentralProduct $product, Locale $locale, array $data): ProductTranslation
     {
-        return ProductTranslation::query()->updateOrCreate(
+        $translation = ProductTranslation::query()->updateOrCreate(
             ['product_id' => $product->id, 'locale' => $locale->code],
             [
                 'locale_id' => $locale->id,
@@ -26,8 +26,11 @@ final readonly class SaveProductTranslationAction
                 'seo_title' => $data['seo_title'] ?? null,
                 'seo_description' => $data['seo_description'] ?? null,
                 'status' => $data['status'] ?? TranslationStatus::HumanReviewed,
-                'source_hash' => $this->hashService->forProduct($product),
             ],
         );
+
+        $translation->forceFill(['source_hash' => $this->hashService->forProduct($product)])->save();
+
+        return $translation;
     }
 }

@@ -20,15 +20,17 @@ final readonly class TranslationStatsService
      */
     public function dashboard(): array
     {
+        $coverageByLocale = $this->completeness->allActiveLocales();
+
         return [
             'locales_count' => Locale::query()->count(),
             'approved_count' => $this->countByStatus(TranslationStatus::Approved),
             'outdated_count' => $this->countByStatus(TranslationStatus::Outdated),
             'missing_count' => array_sum(array_map(
                 fn (array $localeStats): int => (int) $localeStats['missing'],
-                $this->completeness->allActiveLocales(),
+                $coverageByLocale,
             )),
-            'coverage_by_locale' => $this->completeness->allActiveLocales(),
+            'coverage_by_locale' => $coverageByLocale,
         ];
     }
 

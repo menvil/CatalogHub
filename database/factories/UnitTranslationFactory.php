@@ -18,7 +18,7 @@ class UnitTranslationFactory extends Factory
         return [
             'measurement_unit_id' => MeasurementUnit::factory(),
             'locale_id' => Locale::factory(),
-            'locale' => 'de-DE',
+            'locale' => fn (array $attributes): ?string => Locale::query()->find($attributes['locale_id'])?->code,
             'short_name' => fake()->lexify('??'),
             'long_name' => fake()->word(),
             'plural_name' => fake()->word(),

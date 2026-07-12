@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['attribute_section_id', 'locale_id', 'locale', 'name', 'description', 'status', 'source_hash', 'approved_at', 'approved_by_user_id'])]
+#[Fillable(['attribute_section_id', 'locale_id', 'locale', 'name', 'description', 'status'])]
 final class AttributeSectionTranslation extends Model
 {
     /** @use HasFactory<AttributeSectionTranslationFactory> */

@@ -32,17 +32,15 @@ final class TranslationCompletenessService
 
         foreach ($this->configs() as $config) {
             $required = $config['source']::query()->count();
-            $approved = $config['translation']::query()
+            $statusCounts = $config['translation']::query()
+                ->selectRaw('status, count(*) as aggregate')
                 ->where('locale', $locale)
-                ->where('status', TranslationStatus::Approved)
-                ->count();
-            $outdated = $config['translation']::query()
-                ->where('locale', $locale)
-                ->where('status', TranslationStatus::Outdated)
-                ->count();
-            $existing = $config['translation']::query()
-                ->where('locale', $locale)
-                ->count();
+                ->groupBy('status')
+                ->pluck('aggregate', 'status');
+
+            $approved = (int) ($statusCounts[TranslationStatus::Approved->value] ?? 0);
+            $outdated = (int) ($statusCounts[TranslationStatus::Outdated->value] ?? 0);
+            $existing = (int) $statusCounts->sum();
             $missing = max(0, $required - $existing);
             $coverage = $required === 0 ? 100.0 : round(($approved / $required) * 100, 1);
 

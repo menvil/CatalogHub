@@ -26,7 +26,7 @@ final class GenerateMediaVariantsJob implements ShouldQueue
     }
 
     /**
-     * @param array{width: int, height: int, fit: string, format: string, quality: int} $config
+     * @param  array{width: int, height: int, fit: string, format: string, quality: int}  $config
      */
     private function generate(MediaAsset $asset, string $type, array $config): void
     {
@@ -106,7 +106,7 @@ final class GenerateMediaVariantsJob implements ShouldQueue
     }
 
     /**
-     * @param array{width: int, height: int, fit: string, format: string, quality: int} $config
+     * @param  array{width: int, height: int, fit: string, format: string, quality: int}  $config
      * @return array{0: \GdImage, 1: int, 2: int}
      */
     private function resize(\GdImage $image, int $sourceWidth, int $sourceHeight, array $config): array
@@ -150,7 +150,7 @@ final class GenerateMediaVariantsJob implements ShouldQueue
     }
 
     /**
-     * @param array{width: int, height: int, fit: string, format: string, quality: int} $config
+     * @param  array{width: int, height: int, fit: string, format: string, quality: int}  $config
      */
     private function markFailed(MediaAsset $asset, string $type, array $config): void
     {

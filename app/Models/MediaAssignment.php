@@ -51,7 +51,7 @@ final class MediaAssignment extends Model
     }
 
     /**
-     * @param Builder<MediaAssignment> $query
+     * @param  Builder<MediaAssignment>  $query
      * @return Builder<MediaAssignment>
      */
     public function scopeForEntity(Builder $query, string $entityType, int $entityId): Builder
@@ -60,7 +60,7 @@ final class MediaAssignment extends Model
     }
 
     /**
-     * @param Builder<MediaAssignment> $query
+     * @param  Builder<MediaAssignment>  $query
      * @return Builder<MediaAssignment>
      */
     public function scopeForRole(Builder $query, string $role): Builder
@@ -69,7 +69,7 @@ final class MediaAssignment extends Model
     }
 
     /**
-     * @param Builder<MediaAssignment> $query
+     * @param  Builder<MediaAssignment>  $query
      * @return Builder<MediaAssignment>
      */
     public function scopeForLocale(Builder $query, ?string $locale): Builder

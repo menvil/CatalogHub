@@ -80,7 +80,7 @@ final class MediaResolver
     }
 
     /**
-     * @param array{role: string, locale: ?string, site_id: ?int, market_id: ?int} $candidate
+     * @param  array{role: string, locale: ?string, site_id: ?int, market_id: ?int}  $candidate
      * @return Builder<MediaAssignment>
      */
     private function query(string $entityType, int $entityId, array $candidate): Builder
@@ -159,7 +159,7 @@ final class MediaResolver
     }
 
     /**
-     * @param array{role: string, locale: ?string, site_id: ?int, market_id: ?int} $candidate
+     * @param  array{role: string, locale: ?string, site_id: ?int, market_id: ?int}  $candidate
      */
     private function candidateLabel(array $candidate): string
     {

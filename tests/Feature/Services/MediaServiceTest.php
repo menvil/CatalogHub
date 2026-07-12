@@ -57,12 +57,11 @@ class MediaServiceTest extends TestCase
     {
         Storage::fake('public');
 
+        $this->assertSame(0, MediaAsset::query()->count());
         $this->expectException(InvalidArgumentException::class);
 
         app(MediaService::class)->uploadOriginal(
             UploadedFile::fake()->create('icon.svg', 1, 'image/svg+xml')
         );
-
-        $this->assertSame(0, MediaAsset::query()->count());
     }
 }

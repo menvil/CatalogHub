@@ -7,6 +7,8 @@ use App\Models\Locale;
 use App\Models\MeasurementUnit;
 use App\Models\Translations\UnitTranslation;
 use App\Services\Translations\TranslationSourceHashService;
+use App\Services\Translations\TranslationStatsService;
+use InvalidArgumentException;
 
 final readonly class SaveUnitTranslationAction
 {
@@ -15,6 +17,12 @@ final readonly class SaveUnitTranslationAction
     /** @param array<string, mixed> $data */
     public function handle(MeasurementUnit $unit, Locale $locale, array $data): UnitTranslation
     {
+        $symbolPosition = (string) ($data['symbol_position'] ?? 'after');
+
+        if (! in_array($symbolPosition, ['before', 'after'], true)) {
+            throw new InvalidArgumentException("Invalid unit symbol position [{$symbolPosition}].");
+        }
+
         $translation = UnitTranslation::query()->updateOrCreate(
             ['measurement_unit_id' => $unit->id, 'locale' => $locale->code],
             [
@@ -22,13 +30,14 @@ final readonly class SaveUnitTranslationAction
                 'short_name' => $data['short_name'] ?? null,
                 'long_name' => $data['long_name'] ?? null,
                 'plural_name' => $data['plural_name'] ?? null,
-                'symbol_position' => $data['symbol_position'] ?? 'after',
+                'symbol_position' => $symbolPosition,
                 'space_between_value_and_unit' => (bool) ($data['space_between_value_and_unit'] ?? true),
                 'status' => $data['status'] ?? TranslationStatus::HumanReviewed,
             ],
         );
 
         $translation->forceFill(['source_hash' => $this->hashService->forUnit($unit)])->save();
+        TranslationStatsService::forgetDashboardCache();
 
         return $translation;
     }

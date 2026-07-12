@@ -36,10 +36,18 @@ final class ProductMediaManagerController extends Controller
     ): View {
         $this->authorizeMedia($request);
 
-        $previewRole = (string) $request->query('preview_role', 'main');
-        $previewLocale = $request->query('preview_locale') ?: null;
-        $previewSiteId = $request->query('preview_site_id') === null ? null : (int) $request->query('preview_site_id');
-        $previewMarketId = $request->query('preview_market_id') === null ? null : (int) $request->query('preview_market_id');
+        $filters = $request->validate([
+            'preview_role' => ['nullable', 'string', Rule::in(self::ROLES)],
+            'preview_locale' => ['nullable', 'string', 'max:20', 'regex:/^[a-z]{2,3}(-[A-Z]{2})?$/'],
+            'preview_site_id' => ['nullable', 'integer', 'min:1'],
+            'preview_market_id' => ['nullable', 'integer', 'min:1'],
+            'media_search' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $previewRole = $filters['preview_role'] ?? 'main';
+        $previewLocale = $filters['preview_locale'] ?? null;
+        $previewSiteId = isset($filters['preview_site_id']) ? (int) $filters['preview_site_id'] : null;
+        $previewMarketId = isset($filters['preview_market_id']) ? (int) $filters['preview_market_id'] : null;
 
         $assignments = MediaAssignment::query()
             ->with('asset.variants')
@@ -49,7 +57,7 @@ final class ProductMediaManagerController extends Controller
             ->get()
             ->groupBy('role');
 
-        $assetSearch = trim((string) $request->query('media_search', ''));
+        $assetSearch = trim((string) ($filters['media_search'] ?? ''));
         $assets = MediaAsset::query()
             ->when($assetSearch !== '', function ($query) use ($assetSearch): void {
                 $query->where(function ($query) use ($assetSearch): void {
@@ -110,14 +118,17 @@ final class ProductMediaManagerController extends Controller
         ];
 
         DB::transaction(function () use ($data, $product, $role, $scope): void {
+            $lockedAssignments = MediaAssignment::query()
+                ->forEntity(self::ENTITY_TYPE, $product->id)
+                ->forRole($role)
+                ->lockForUpdate()
+                ->get();
+
             if (in_array($role, self::SINGULAR_ROLES, true)) {
                 MediaAssignment::query()->where($scope)->delete();
             }
 
-            $position = (int) MediaAssignment::query()
-                ->forEntity(self::ENTITY_TYPE, $product->id)
-                ->forRole($role)
-                ->max('position') + 1;
+            $position = ((int) $lockedAssignments->max('position')) + 1;
 
             MediaAssignment::query()->create($scope + [
                 'media_asset_id' => (int) $data['media_asset_id'],

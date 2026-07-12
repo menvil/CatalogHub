@@ -2,10 +2,12 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Actions\Translations\SaveUnitTranslationAction;
 use App\Models\Locale;
 use App\Models\MeasurementUnit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use InvalidArgumentException;
 use Tests\TestCase;
 
 class UnitTranslationEditorTest extends TestCase
@@ -57,5 +59,18 @@ class UnitTranslationEditorTest extends TestCase
             ])
             ->assertRedirect(route('central.units.translations.edit', [$unit, $locale]))
             ->assertSessionHasErrors('symbol_position');
+    }
+
+    public function test_save_unit_translation_action_rejects_invalid_symbol_position(): void
+    {
+        $unit = MeasurementUnit::factory()->create(['code' => 'watt']);
+        $locale = Locale::factory()->create(['code' => 'ru-RU']);
+
+        $this->expectException(InvalidArgumentException::class);
+
+        app(SaveUnitTranslationAction::class)->handle($unit, $locale, [
+            'short_name' => 'Вт',
+            'symbol_position' => 'middle',
+        ]);
     }
 }

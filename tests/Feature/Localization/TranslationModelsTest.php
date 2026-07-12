@@ -18,6 +18,7 @@ use App\Models\Translations\ProductTranslation;
 use App\Models\Translations\UnitTranslation;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class TranslationModelsTest extends TestCase
@@ -153,5 +154,14 @@ class TranslationModelsTest extends TestCase
         foreach ($translations as $translation) {
             $this->assertSame($translation->localeModel->code, $translation->locale);
         }
+    }
+
+    public function test_attribute_option_translation_uniqueness_uses_locale_id(): void
+    {
+        $indexes = collect(Schema::getIndexes('attribute_option_translations'));
+
+        $this->assertTrue($indexes->contains(
+            fn (array $index): bool => $index['unique'] === true && $index['columns'] === ['attribute_option_id', 'locale_id']
+        ));
     }
 }

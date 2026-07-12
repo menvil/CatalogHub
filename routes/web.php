@@ -26,7 +26,7 @@ if (app()->environment(['local', 'testing'])) {
     })->name('dev.admin-visual-smoke');
 }
 
-Route::middleware('auth')->prefix('admin')->group(function (): void {
+Route::middleware(['auth', 'can:translations.manage'])->prefix('admin')->group(function (): void {
     Route::get('/translations/dashboard', TranslationDashboardController::class)
         ->name('central.translations.dashboard');
     Route::get('/translations/missing', MissingTranslationsController::class)

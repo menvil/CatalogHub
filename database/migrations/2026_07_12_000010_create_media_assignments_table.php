@@ -23,7 +23,6 @@ return new class extends Migration
             $table->string('visibility')->default('global');
             $table->timestamps();
 
-            $table->index(['entity_type', 'entity_id', 'role']);
             $table->index(['entity_type', 'entity_id', 'role', 'locale'], 'media_assignments_locale_index');
             $table->index(['entity_type', 'entity_id', 'role', 'site_id'], 'media_assignments_site_index');
             $table->index(['entity_type', 'entity_id', 'role', 'market_id'], 'media_assignments_market_index');

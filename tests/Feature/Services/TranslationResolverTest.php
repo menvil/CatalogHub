@@ -54,6 +54,28 @@ class TranslationResolverTest extends TestCase
         $this->assertSame('fallback_locale', $resolved->source);
     }
 
+    public function test_falls_back_to_same_language_translation_before_default_locale(): void
+    {
+        $product = CentralProduct::factory()->create(['name' => 'Source Name']);
+        Locale::factory()->create(['code' => 'en-US', 'language_code' => 'en', 'is_default' => true]);
+        Locale::factory()->create(['code' => 'de-AT', 'language_code' => 'de', 'region_code' => 'AT']);
+        $german = Locale::factory()->create(['code' => 'de-DE', 'language_code' => 'de', 'region_code' => 'DE']);
+
+        ProductTranslation::factory()->create([
+            'product_id' => $product->id,
+            'locale_id' => $german->id,
+            'locale' => 'de-DE',
+            'name' => 'Deutscher Name',
+            'status' => TranslationStatus::Approved,
+        ]);
+
+        $resolved = app(TranslationResolver::class)->resolve($product, 'name', 'de-AT');
+
+        $this->assertSame('Deutscher Name', $resolved->value);
+        $this->assertSame('fallback_locale', $resolved->source);
+        $this->assertSame('de-DE', $resolved->locale);
+    }
+
     public function test_falls_back_to_source_field_when_no_translation_exists(): void
     {
         $category = CentralCategory::factory()->create(['name' => 'Monitors']);

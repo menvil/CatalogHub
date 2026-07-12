@@ -7,6 +7,7 @@ use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Locale;
 use App\Models\Translations\ProductTranslation;
 use App\Services\Translations\TranslationSourceHashService;
+use App\Services\Translations\TranslationStatsService;
 
 final readonly class SaveProductTranslationAction
 {
@@ -30,6 +31,7 @@ final readonly class SaveProductTranslationAction
         );
 
         $translation->forceFill(['source_hash' => $this->hashService->forProduct($product)])->save();
+        TranslationStatsService::forgetDashboardCache();
 
         return $translation;
     }

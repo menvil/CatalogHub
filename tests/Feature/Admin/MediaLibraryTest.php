@@ -52,4 +52,22 @@ class MediaLibraryTest extends TestCase
         $this->assertSame('monitor.jpg', $asset->original_filename);
         Storage::disk('public')->assertExists($asset->original_path);
     }
+
+    public function test_rejects_media_upload_with_oversized_dimensions(): void
+    {
+        Storage::fake('public');
+        config(['media.max_upload_width' => 100]);
+
+        $admin = User::factory()->centralAdmin()->create();
+
+        $this->actingAs($admin)
+            ->from(route('central.media.index'))
+            ->post(route('central.media.upload'), [
+                'file' => UploadedFile::fake()->image('huge.jpg', 200, 100),
+            ])
+            ->assertRedirect(route('central.media.index'))
+            ->assertSessionHasErrors('file');
+
+        $this->assertSame(0, MediaAsset::query()->count());
+    }
 }

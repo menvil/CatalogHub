@@ -26,23 +26,32 @@ final class MissingTranslationsQuery
 
         $items = [];
 
-        foreach ($locales as $activeLocale) {
-            foreach ($this->entityConfigs() as $config) {
-                if ($entityType !== null && $entityType !== $config['type']) {
-                    continue;
-                }
+        $localeCodes = $locales->pluck('code')->all();
 
-                $query = $config['model']::query()
-                    ->whereDoesntHave('translations', fn ($translationQuery) => $translationQuery->where('locale', $activeLocale->code));
+        foreach ($this->entityConfigs() as $config) {
+            if ($entityType !== null && $entityType !== $config['type']) {
+                continue;
+            }
 
-                if ($search !== null && $search !== '') {
-                    $escapedSearch = addcslashes($search, '\%_');
-                    $column = $query->getQuery()->getGrammar()->wrap($config['label']);
+            $query = $config['model']::query()
+                ->with(['translations' => fn ($translationQuery) => $translationQuery->whereIn('locale', $localeCodes)])
+                ->orderBy($config['model']::query()->getModel()->getKeyName());
 
-                    $query->whereRaw("{$column} like ? escape '\\'", ["%{$escapedSearch}%"]);
-                }
+            if ($search !== null && $search !== '') {
+                $escapedSearch = addcslashes($search, '\%_');
+                $column = $query->getQuery()->getGrammar()->wrap($config['label']);
 
-                foreach ($query->limit(100)->get() as $entity) {
+                $query->whereRaw("{$column} like ? escape '\\'", ["%{$escapedSearch}%"]);
+            }
+
+            foreach ($query->get() as $entity) {
+                $existingLocales = $entity->translations->pluck('locale');
+
+                foreach ($locales as $activeLocale) {
+                    if ($existingLocales->contains($activeLocale->code)) {
+                        continue;
+                    }
+
                     $items[] = [
                         'entity_type' => $config['type'],
                         'entity_id' => (int) $entity->getKey(),

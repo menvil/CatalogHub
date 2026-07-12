@@ -30,7 +30,7 @@
                 <span class="text-sm font-medium">Status</span>
                 <select class="mt-1 w-full rounded border-admin-border" name="status">
                     @foreach (\App\Enums\TranslationStatus::options() as $value => $label)
-                        @continue($value === \App\Enums\TranslationStatus::Approved->value)
+                        @continue($value === \App\Enums\TranslationStatus::Approved->value && $translation?->status !== \App\Enums\TranslationStatus::Approved)
                         <option value="{{ $value }}" @selected(old('status', $translation?->status?->value ?? 'human_reviewed') === $value)>{{ $label }}</option>
                     @endforeach
                 </select>

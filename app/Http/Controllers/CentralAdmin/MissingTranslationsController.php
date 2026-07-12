@@ -11,8 +11,6 @@ final class MissingTranslationsController extends Controller
 {
     public function __invoke(Request $request, MissingTranslationsQuery $query): View
     {
-        abort_unless($request->user()?->hasCatalogHubPermission('translations.manage'), 403);
-
         $filters = $request->validate([
             'locale' => ['nullable', 'string', 'max:20'],
             'entity_type' => ['nullable', 'string', 'in:product,category,attribute,section,option,unit'],

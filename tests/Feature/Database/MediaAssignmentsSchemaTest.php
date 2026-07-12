@@ -46,6 +46,18 @@ class MediaAssignmentsSchemaTest extends TestCase
         $this->assertTrue($indexes->contains(
             fn (array $index): bool => $index['columns'] === ['entity_type', 'entity_id', 'role', 'market_id']
         ));
+        $this->assertFalse($indexes->contains(
+            fn (array $index): bool => $index['name'] === 'media_assignments_entity_type_entity_id_role_index'
+        ));
+
+        $foreignKeys = collect(Schema::getForeignKeys('media_assignments'));
+
+        $this->assertFalse($foreignKeys->contains(
+            fn (array $foreignKey): bool => $foreignKey['columns'] === ['site_id']
+        ));
+        $this->assertFalse($foreignKeys->contains(
+            fn (array $foreignKey): bool => $foreignKey['columns'] === ['market_id']
+        ));
     }
 
     public function test_media_assignments_enforces_one_primary_assignment_per_context(): void

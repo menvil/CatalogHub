@@ -30,6 +30,19 @@ final class Locale extends Model
 
     protected static function booted(): void
     {
+        self::saving(function (Locale $locale): void {
+            if (! $locale->is_default) {
+                return;
+            }
+
+            self::withoutEvents(function () use ($locale): void {
+                self::query()
+                    ->when($locale->exists, fn (Builder $query): Builder => $query->whereKeyNot($locale->getKey()))
+                    ->where('is_default', true)
+                    ->update(['is_default' => false]);
+            });
+        });
+
         self::saved(function (Locale $locale): void {
             if (! $locale->is_default) {
                 return;

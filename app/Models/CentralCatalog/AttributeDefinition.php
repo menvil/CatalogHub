@@ -3,6 +3,7 @@
 namespace App\Models\CentralCatalog;
 
 use App\Enums\AttributeDataType;
+use App\Models\Translations\AttributeTranslation;
 use Database\Factories\AttributeDefinitionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -152,5 +153,13 @@ final class AttributeDefinition extends Model
     public function productValues(): HasMany
     {
         return $this->hasMany(CentralProductAttributeValue::class, 'attribute_definition_id');
+    }
+
+    /**
+     * @return HasMany<AttributeTranslation, $this>
+     */
+    public function translations(): HasMany
+    {
+        return $this->hasMany(AttributeTranslation::class, 'attribute_definition_id');
     }
 }

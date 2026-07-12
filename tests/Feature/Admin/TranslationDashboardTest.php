@@ -1,0 +1,25 @@
+<?php
+
+namespace Tests\Feature\Admin;
+
+use App\Models\Locale;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class TranslationDashboardTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_allows_central_admin_to_view_translation_dashboard(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        Locale::factory()->create(['code' => 'de-DE', 'is_active' => true]);
+
+        $this->actingAs($admin)
+            ->get(route('central.translations.dashboard'))
+            ->assertOk()
+            ->assertSee('Translation Dashboard')
+            ->assertSee('Translation Coverage');
+    }
+}

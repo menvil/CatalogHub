@@ -2,12 +2,14 @@
 
 namespace App\Models\CentralCatalog;
 
+use App\Models\Translations\AttributeOptionTranslation;
 use Database\Factories\AttributeOptionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property AttributeDefinition $attribute
@@ -56,5 +58,13 @@ final class AttributeOption extends Model
     public function attribute(): BelongsTo
     {
         return $this->belongsTo(AttributeDefinition::class, 'attribute_definition_id');
+    }
+
+    /**
+     * @return HasMany<AttributeOptionTranslation, $this>
+     */
+    public function translations(): HasMany
+    {
+        return $this->hasMany(AttributeOptionTranslation::class, 'attribute_option_id');
     }
 }

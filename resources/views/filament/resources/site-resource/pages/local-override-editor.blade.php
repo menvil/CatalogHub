@@ -9,10 +9,12 @@
                             <option value="{{ $entityTypeOption }}">{{ str($entityTypeOption)->headline() }}</option>
                         @endforeach
                     </select>
+                    @error('entityType') <span class="block text-sm text-danger-600">{{ $message }}</span> @enderror
                 </label>
                 <label for="override-entity-id" class="space-y-2">
                     <span>Entity ID</span>
                     <input id="override-entity-id" wire:model="entityId" type="number">
+                    @error('entityId') <span class="block text-sm text-danger-600">{{ $message }}</span> @enderror
                 </label>
                 <label for="override-field" class="space-y-2">
                     <span>Field</span>
@@ -21,18 +23,26 @@
                             <option value="{{ $fieldOption }}">{{ str($fieldOption)->headline() }}</option>
                         @endforeach
                     </select>
+                    @error('field') <span class="block text-sm text-danger-600">{{ $message }}</span> @enderror
                 </label>
                 <label for="override-locale" class="space-y-2">
                     <span>Locale (optional)</span>
                     <input id="override-locale" wire:model="localeCode" placeholder="de-DE">
+                    @error('localeCode') <span class="block text-sm text-danger-600">{{ $message }}</span> @enderror
                 </label>
                 <label for="override-value" class="space-y-2">
                     <span>Override value</span>
-                    <input id="override-value" wire:model="value" placeholder="Leave empty to clear">
+                    @if(in_array($this->field, ['meta_description', 'intro_text', 'hero_text'], true))
+                        <textarea id="override-value" wire:model="value" rows="5" placeholder="Leave empty to clear"></textarea>
+                    @else
+                        <input id="override-value" wire:model="value" placeholder="Leave empty to clear">
+                    @endif
+                    @error('value') <span class="block text-sm text-danger-600">{{ $message }}</span> @enderror
                 </label>
                 <label for="override-reason" class="space-y-2">
                     <span>Reason (optional)</span>
                     <input id="override-reason" wire:model="reason">
+                    @error('reason') <span class="block text-sm text-danger-600">{{ $message }}</span> @enderror
                 </label>
             </div>
             @if($this->field === 'local_slug')

@@ -3,9 +3,11 @@
 namespace App\Filament\Resources\SiteResource\Pages;
 
 use App\Actions\Sites\UpdateSiteProductVisibilityAction;
+use App\Enums\CentralProductStatus;
 use App\Filament\Resources\SiteResource;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Site;
+use App\Models\SiteProduct;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Illuminate\Database\Eloquent\Collection;
@@ -32,7 +34,20 @@ final class ManageSiteProducts extends Page
         /** @var Site $site */ $site = $this->getRecord();
         $categoryIds = DB::table('site_categories')->where('site_id', $site->id)->where('is_enabled', true)->pluck('central_category_id');
 
-        return CentralProduct::query()->whereIn('central_category_id', $categoryIds)->with('brand')->orderBy('name')->get();
+        return CentralProduct::query()
+            ->whereIn('central_category_id', $categoryIds)
+            ->where('status', CentralProductStatus::Active)
+            ->with('brand')
+            ->orderBy('name')
+            ->get();
+    }
+
+    /** @return Collection<int, SiteProduct> */
+    public function getSiteProductStates(): Collection
+    {
+        /** @var Site $site */ $site = $this->getRecord();
+
+        return $site->products()->get();
     }
 
     public function setVisibility(int $productId, string $visibility): void
@@ -46,6 +61,7 @@ final class ManageSiteProducts extends Page
     {
         /** @var Site $site */ $site = $this->getRecord();
         $existing = $site->products()->where('central_product_id', $productId)->first();
-        app(UpdateSiteProductVisibilityAction::class)->handle($site, CentralProduct::query()->findOrFail($productId), $existing->visibility ?? 'hidden', ! (bool) $existing?->is_featured);
+        $visibility = $existing instanceof SiteProduct ? $existing->visibility : 'hidden';
+        app(UpdateSiteProductVisibilityAction::class)->handle($site, CentralProduct::query()->findOrFail($productId), $visibility, ! (bool) $existing?->is_featured);
     }
 }

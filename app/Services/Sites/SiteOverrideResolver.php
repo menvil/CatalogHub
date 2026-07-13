@@ -18,7 +18,7 @@ final class SiteOverrideResolver
         }
 
         if ($override instanceof SiteOverride) {
-            return $override->value();
+            return $override->overrideValue();
         }
 
         if ($translatedCentralValue !== null && $translatedCentralValue !== '') {

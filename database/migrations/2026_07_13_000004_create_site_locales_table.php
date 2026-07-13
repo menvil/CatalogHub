@@ -23,6 +23,31 @@ return new class extends Migration
         });
 
         DB::statement('CREATE UNIQUE INDEX site_locales_single_default_per_site ON site_locales (site_id) WHERE is_default = true');
+
+        if (DB::getDriverName() === 'sqlite') {
+            DB::unprepared(<<<'SQL'
+                CREATE TRIGGER site_locales_default_enabled_insert
+                BEFORE INSERT ON site_locales
+                WHEN NEW.is_default = 1 AND NEW.is_enabled = 0
+                BEGIN
+                    SELECT RAISE(ABORT, 'site_locales default locale must be enabled');
+                END
+                SQL);
+            DB::unprepared(<<<'SQL'
+                CREATE TRIGGER site_locales_default_enabled_update
+                BEFORE UPDATE OF is_default, is_enabled ON site_locales
+                WHEN NEW.is_default = 1 AND NEW.is_enabled = 0
+                BEGIN
+                    SELECT RAISE(ABORT, 'site_locales default locale must be enabled');
+                END
+                SQL);
+        } else {
+            DB::statement(<<<'SQL'
+                ALTER TABLE site_locales
+                ADD CONSTRAINT site_locales_default_must_be_enabled
+                CHECK (NOT is_default OR is_enabled)
+                SQL);
+        }
     }
 
     public function down(): void

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Sites;
 
 use App\Actions\Sites\UpsertSiteOverrideAction;
+use App\Enums\UserRole;
 use App\Filament\Resources\SiteResource\Pages\LocalOverrideEditor;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Locale;
@@ -76,6 +77,28 @@ class LocalOverrideEditorTest extends TestCase
             ->assertSee('for="override-locale"', false)
             ->assertSee('for="override-value"', false)
             ->assertSee('for="override-reason"', false);
+    }
+
+    public function test_catalog_editor_cannot_access_local_override_editor(): void
+    {
+        $site = Site::factory()->create();
+
+        $this->actingAs(User::factory()->create(['role' => UserRole::CatalogEditor]))
+            ->get(LocalOverrideEditor::getUrl(['record' => $site]))
+            ->assertForbidden();
+    }
+
+    public function test_editor_renders_validation_errors_and_multiline_values(): void
+    {
+        $site = Site::factory()->create();
+
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
+            ->test(LocalOverrideEditor::class, ['record' => $site->getRouteKey()])
+            ->call('save')
+            ->assertHasErrors(['entityId'])
+            ->assertSee('The entity id field is required.')
+            ->set('field', 'intro_text')
+            ->assertSeeHtml('<textarea id="override-value"');
     }
 
     private function enableLocale(Site $site, string $code): void

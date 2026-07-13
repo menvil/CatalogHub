@@ -66,6 +66,19 @@ class BrandVisibilityRulesTest extends TestCase
             ->assertSee('wire:key="brand-visibility-'.$brand->id.'"', false);
     }
 
+    public function test_atomic_toggle_observes_the_latest_visibility_state(): void
+    {
+        $site = Site::factory()->create();
+        $brand = CentralBrand::factory()->create();
+        $service = app(SiteBrandVisibilityService::class);
+
+        $service->toggle($site, $brand);
+        $this->assertFalse($service->allows($site->fresh(), $brand));
+
+        $service->toggle($site, $brand);
+        $this->assertTrue($service->allows($site->fresh(), $brand));
+    }
+
     public function test_hide_uses_current_locked_settings_instead_of_stale_model_state(): void
     {
         $staleSite = Site::factory()->create();

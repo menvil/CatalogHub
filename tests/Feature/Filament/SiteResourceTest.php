@@ -71,4 +71,17 @@ class SiteResourceTest extends TestCase
                 'default_locale' => 'max',
             ]);
     }
+
+    public function test_create_action_visibility_matches_wizard_access(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->get(SiteResource::getUrl())
+            ->assertOk()
+            ->assertDontSee('Create site');
+
+        $this->actingAs(User::factory()->centralAdmin()->create())
+            ->get(SiteResource::getUrl())
+            ->assertOk()
+            ->assertSee('Create site');
+    }
 }

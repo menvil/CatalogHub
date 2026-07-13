@@ -6,6 +6,7 @@ use App\Actions\Sites\UpsertSiteOverrideAction;
 use App\Filament\Resources\SiteResource;
 use App\Models\Site;
 use App\Models\SiteOverride;
+use App\Models\User;
 use App\Services\Sites\AllowedSiteOverrideFields;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
@@ -37,6 +38,16 @@ final class LocalOverrideEditor extends Page
     public function mount(int|string $record): void
     {
         $this->record = $this->resolveRecord($record);
+    }
+
+    /** @param array<string, mixed> $parameters */
+    public static function canAccess(array $parameters = []): bool
+    {
+        $user = auth()->user();
+
+        return parent::canAccess($parameters)
+            && $user instanceof User
+            && ($user->isSuperAdmin() || $user->isCentralAdmin() || $user->hasCatalogHubPermission('site.content.manage'));
     }
 
     /** @return Collection<int, SiteOverride> */

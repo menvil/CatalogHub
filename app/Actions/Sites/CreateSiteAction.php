@@ -9,6 +9,7 @@ use App\Models\Market;
 use App\Models\Site;
 use App\Models\SiteFeature;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 final class CreateSiteAction
@@ -45,6 +46,10 @@ final class CreateSiteAction
         if (! is_array($features) || array_diff(array_keys($features), SiteFeature::KEYS) !== []) {
             throw ValidationException::withMessages(['features' => 'Only supported site features can be configured.']);
         }
+
+        Validator::make(['features' => $features], [
+            'features.*' => ['required', 'boolean:strict'],
+        ])->validate();
 
         $data['features'] = $features;
 

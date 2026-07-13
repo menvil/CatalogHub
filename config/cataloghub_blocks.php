@@ -99,4 +99,18 @@ return [
         ],
         'view_component' => 'blocks.buying-guides',
     ],
+    'price_block' => [
+        'name' => 'Price Block',
+        'description' => 'Placeholder for future offer and price comparison data.',
+        'category' => 'commerce',
+        'supported_page_types_json' => ['home', 'category', 'product'],
+        'required_features_json' => ['price_comparison'],
+        'config_schema_json' => [
+            'title' => 'string',
+            'mode' => 'best_offer|offers_table|price_widget|coverage',
+            'limit' => 'integer',
+            'show_freshness' => 'boolean',
+        ],
+        'view_component' => 'blocks.price-block',
+    ],
 ];

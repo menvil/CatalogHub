@@ -12,6 +12,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property SiteMode $mode
+ * @property SiteStatus $status
+ * @property array<string, mixed>|null $settings_json
+ */
 #[Fillable(['market_id', 'code', 'name', 'domain', 'mode', 'default_locale', 'status', 'settings_json'])]
 final class Site extends Model
 {

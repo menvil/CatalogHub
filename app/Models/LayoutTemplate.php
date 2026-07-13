@@ -6,6 +6,15 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property string $page_type
+ * @property string $code
+ * @property string $name
+ * @property string $view_path
+ * @property string $status
+ * @property array<string, mixed>|null $slots_json
+ * @property array<string, mixed>|null $config_schema_json
+ */
 #[Fillable([
     'theme_id',
     'page_type',

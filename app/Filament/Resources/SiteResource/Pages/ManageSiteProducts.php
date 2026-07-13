@@ -46,6 +46,6 @@ final class ManageSiteProducts extends Page
     {
         /** @var Site $site */ $site = $this->getRecord();
         $existing = $site->products()->where('central_product_id', $productId)->first();
-        app(UpdateSiteProductVisibilityAction::class)->handle($site, CentralProduct::query()->findOrFail($productId), $existing?->visibility ?? 'hidden', ! (bool) $existing?->is_featured);
+        app(UpdateSiteProductVisibilityAction::class)->handle($site, CentralProduct::query()->findOrFail($productId), $existing->visibility ?? 'hidden', ! (bool) $existing?->is_featured);
     }
 }

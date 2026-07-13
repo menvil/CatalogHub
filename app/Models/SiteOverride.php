@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/** @property array{value?: mixed} $value_json */
 #[Fillable(['site_id', 'entity_type', 'entity_id', 'field', 'locale_code', 'value_json', 'reason', 'status'])]
 final class SiteOverride extends Model
 {

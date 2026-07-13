@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['market_id', 'code', 'name', 'domain', 'mode', 'default_locale', 'status', 'settings_json'])]
@@ -31,6 +32,12 @@ final class Site extends Model
     public function market(): BelongsTo
     {
         return $this->belongsTo(Market::class);
+    }
+
+    /** @return HasMany<SiteFeature, $this> */
+    public function features(): HasMany
+    {
+        return $this->hasMany(SiteFeature::class);
     }
 
     public function isSingleCategory(): bool

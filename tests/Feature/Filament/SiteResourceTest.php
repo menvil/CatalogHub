@@ -6,6 +6,7 @@ use App\Filament\Resources\SiteResource;
 use App\Filament\Resources\SiteResource\Pages\CreateSite;
 use App\Filament\Resources\SiteResource\Pages\EditSite;
 use App\Filament\Resources\SiteResource\Pages\ListSites;
+use App\Filament\Resources\SiteResource\RelationManagers\SiteFeaturesRelationManager;
 use App\Models\Site;
 use Tests\TestCase;
 
@@ -21,5 +22,6 @@ class SiteResourceTest extends TestCase
         $this->assertTrue(class_exists(ListSites::class));
         $this->assertTrue(class_exists(CreateSite::class));
         $this->assertTrue(class_exists(EditSite::class));
+        $this->assertContains(SiteFeaturesRelationManager::class, SiteResource::getRelations());
     }
 }

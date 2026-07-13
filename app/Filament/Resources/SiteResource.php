@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Enums\SiteMode;
 use App\Enums\SiteStatus;
 use App\Filament\Resources\SiteResource\Pages;
+use App\Filament\Resources\SiteResource\RelationManagers\SiteFeaturesRelationManager;
 use App\Models\Site;
 use BackedEnum;
 use Filament\Actions\EditAction;
@@ -43,5 +44,10 @@ final class SiteResource extends Resource
     public static function getPages(): array
     {
         return ['index' => Pages\ListSites::route('/'), 'create' => Pages\CreateSite::route('/create'), 'edit' => Pages\EditSite::route('/{record}/edit')];
+    }
+
+    public static function getRelations(): array
+    {
+        return [SiteFeaturesRelationManager::class];
     }
 }

@@ -9,16 +9,19 @@ use App\Models\Site;
 use App\Services\Sites\SiteOverrideResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\EnablesSiteProductCategories;
 use Tests\TestCase;
 
 class LocalTitleOverrideTest extends TestCase
 {
+    use EnablesSiteProductCategories;
     use RefreshDatabase;
 
     public function test_resolver_prefers_active_local_title_without_mutating_central_title(): void
     {
         $site = Site::factory()->create();
         $product = CentralProduct::factory()->create(['name' => 'Canonical Title']);
+        $this->enableProductCategory($site, $product);
         $this->enableLocale($site, 'de-DE');
         app(UpsertSiteOverrideAction::class)->handle($site, 'product', $product->id, 'local_title', 'de-DE', 'Lokaler Titel');
 
@@ -41,6 +44,7 @@ class LocalTitleOverrideTest extends TestCase
     {
         $site = Site::factory()->create();
         $product = CentralProduct::factory()->create();
+        $this->enableProductCategory($site, $product);
         $this->enableLocale($site, 'de-DE');
         $action = app(UpsertSiteOverrideAction::class);
         $resolver = app(SiteOverrideResolver::class);

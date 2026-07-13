@@ -54,6 +54,10 @@ final class UpsertSiteOverrideAction
                 throw ValidationException::withMessages(['entity_id' => 'The selected override target does not exist.']);
             }
 
+            if ($entityType === 'product' && ! $this->productCategoryIsEnabled($lockedSite, $entityId)) {
+                throw ValidationException::withMessages(['entity_id' => 'The selected product must belong to an enabled site category.']);
+            }
+
             if ($localeCode !== '' && ! DB::table('site_locales')
                 ->where('site_id', $lockedSite->getKey())
                 ->where('locale_code', $localeCode)
@@ -78,5 +82,15 @@ final class UpsertSiteOverrideAction
             'brand' => CentralBrand::query()->whereKey($entityId)->exists(),
             default => false,
         };
+    }
+
+    private function productCategoryIsEnabled(Site $site, int $productId): bool
+    {
+        return DB::table('central_products')
+            ->join('site_categories', 'site_categories.central_category_id', '=', 'central_products.central_category_id')
+            ->where('central_products.id', $productId)
+            ->where('site_categories.site_id', $site->getKey())
+            ->where('site_categories.is_enabled', true)
+            ->exists();
     }
 }

@@ -8,17 +8,28 @@ use App\Models\Site;
 use App\Services\Sites\SiteBrandVisibilityService;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Livewire\WithPagination;
 
 final class BrandVisibilityRules extends Page
 {
     use InteractsWithRecord;
+    use WithPagination;
 
     protected static string $resource = SiteResource::class;
 
     protected string $view = 'filament.resources.site-resource.pages.brand-visibility-rules';
 
     protected static ?string $title = 'Brand Visibility Rules';
+
+    public string $search = '';
+
+    private SiteBrandVisibilityService $visibilityService;
+
+    public function boot(SiteBrandVisibilityService $visibilityService): void
+    {
+        $this->visibilityService = $visibilityService;
+    }
 
     public function mount(int|string $record): void
     {
@@ -31,17 +42,36 @@ final class BrandVisibilityRules extends Page
         return parent::canAccess($parameters) && SiteResource::canManageContent();
     }
 
-    /** @return Collection<int, CentralBrand> */
-    public function getBrands(): Collection
+    /**
+     * @return array{
+     *     brands: LengthAwarePaginator<int, CentralBrand>,
+     *     allowedById: array<int, bool>
+     * }
+     */
+    public function getBrandPage(): array
     {
-        return CentralBrand::query()->orderBy('name')->get();
+        $brands = CentralBrand::query()
+            ->when($this->search !== '', fn ($query) => $query->where('name', 'like', '%'.$this->search.'%'))
+            ->orderBy('name')
+            ->paginate(50);
+        /** @var Site $site */ $site = $this->getRecord();
+
+        return [
+            'brands' => $brands,
+            'allowedById' => $this->visibilityService->allowsBrands($site, $brands->getCollection()),
+        ];
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
     }
 
     public function toggle(int $brandId): void
     {
         /** @var Site $site */ $site = $this->getRecord();
         $brand = CentralBrand::query()->findOrFail($brandId);
-        app(SiteBrandVisibilityService::class)->toggle($site, $brand);
+        $this->visibilityService->toggle($site, $brand);
 
         $this->record = $site->fresh();
     }

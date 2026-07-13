@@ -35,26 +35,60 @@ class CreateSiteWizardTest extends TestCase
 
         Livewire::actingAs($admin)
             ->test(CreateSiteWizard::class)
+            ->set('currentStep', 3)
             ->set('enabledLocales', ['de-DE'])
             ->assertSeeHtml('<option value="de-DE">German</option>')
             ->assertDontSeeHtml('<option value="en-US">English</option>');
     }
 
-    public function test_step_progression_is_bounded(): void
+    public function test_step_progression_validates_each_stage_and_creates_from_review(): void
     {
+        $market = Market::factory()->create(['status' => MarketStatus::Active, 'default_locale' => 'en-US']);
+        $locale = Locale::factory()->create(['code' => 'en-US']);
+        $category = CentralCategory::factory()->create(['status' => CentralCategoryStatus::Active]);
         $component = Livewire::actingAs(User::factory()->centralAdmin()->create())
             ->test(CreateSiteWizard::class)
             ->assertSet('currentStep', 0)
             ->call('previousStep')
             ->assertSet('currentStep', 0)
             ->call('nextStep')
-            ->assertSet('currentStep', 1);
+            ->assertHasErrors(['code', 'name'])
+            ->assertSet('currentStep', 0)
+            ->set('code', 'guided-site')
+            ->set('name', 'Guided Site')
+            ->call('nextStep')
+            ->assertSet('currentStep', 1)
+            ->assertDontSeeHtml('id="site-code"')
+            ->assertSeeHtml('id="site-market"')
+            ->set('marketId', $market->id)
+            ->call('nextStep')
+            ->assertSet('currentStep', 2)
+            ->set('mode', 'single_category')
+            ->call('nextStep')
+            ->assertSet('currentStep', 3)
+            ->set('enabledLocales', [$locale->code])
+            ->set('defaultLocale', $locale->code)
+            ->call('nextStep')
+            ->assertSet('currentStep', 4)
+            ->set('enabledCategories', [$category->id])
+            ->call('nextStep')
+            ->assertSet('currentStep', 5)
+            ->set('features.comparison', true)
+            ->call('nextStep')
+            ->assertSet('currentStep', 6)
+            ->assertSeeHtml('data-site-review');
 
         for ($step = 0; $step < 10; $step++) {
             $component->call('nextStep');
         }
 
-        $component->assertSet('currentStep', 6);
+        $component
+            ->assertSet('currentStep', 6)
+            ->call('createSite')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('sites', ['code' => 'guided-site', 'market_id' => $market->id]);
+        $this->assertDatabaseHas('site_features', ['feature_key' => 'comparison', 'is_enabled' => true]);
     }
 
     public function test_feature_options_use_the_canonical_feature_keys(): void
@@ -70,6 +104,7 @@ class CreateSiteWizardTest extends TestCase
 
         Livewire::actingAs(User::factory()->centralAdmin()->create())
             ->test(CreateSiteWizard::class)
+            ->set('currentStep', 3)
             ->assertSeeHtml('wire:model.live="enabledLocales"')
             ->set('enabledLocales', ['de-DE'])
             ->assertSeeHtml('<option value="de-DE">German</option>');
@@ -82,6 +117,7 @@ class CreateSiteWizardTest extends TestCase
             ->call('createSite')
             ->assertHasErrors(['code', 'name', 'marketId', 'enabledLocales', 'defaultLocale', 'enabledCategories'])
             ->assertSee('The code field is required.')
+            ->set('currentStep', 3)
             ->assertSee('The default locale field is required.');
     }
 
@@ -90,14 +126,22 @@ class CreateSiteWizardTest extends TestCase
         $locale = Locale::factory()->create();
         $category = CentralCategory::factory()->create(['status' => CentralCategoryStatus::Active]);
 
-        $this->actingAs(User::factory()->centralAdmin()->create())
-            ->get(CreateSiteWizard::getUrl())
-            ->assertOk()
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
+            ->test(CreateSiteWizard::class)
             ->assertSee('for="site-code"', false)
             ->assertSee('for="site-name"', false)
             ->assertSee('for="site-domain"', false)
+            ->assertDontSee('for="site-market"', false)
+            ->set('currentStep', 1)
+            ->assertSee('for="site-market"', false)
+            ->set('currentStep', 2)
+            ->assertSee('for="site-mode"', false)
+            ->set('currentStep', 3)
             ->assertSee('wire:key="site-locale-'.$locale->id.'"', false)
+            ->assertSee('for="site-default-locale"', false)
+            ->set('currentStep', 4)
             ->assertSee('wire:key="site-category-'.$category->id.'"', false)
+            ->set('currentStep', 5)
             ->assertSee('wire:key="site-feature-comparison"', false);
     }
 
@@ -119,6 +163,7 @@ class CreateSiteWizardTest extends TestCase
             ->call('createSite')
             ->assertHasErrors(['marketId'])
             ->assertHasNoErrors(['market_id'])
+            ->assertSet('currentStep', 1)
             ->assertSee('The selected market must be active.');
     }
 }

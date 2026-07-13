@@ -27,31 +27,11 @@ return new class extends Migration
         if (in_array($driver, ['pgsql', 'sqlite'], true)) {
             DB::statement('CREATE UNIQUE INDEX site_locales_single_default_per_site ON site_locales (site_id) WHERE is_default = true');
         } elseif (in_array($driver, ['mysql', 'mariadb'], true)) {
-            DB::unprepared(<<<'SQL'
-                CREATE TRIGGER site_locales_single_default_insert
-                BEFORE INSERT ON site_locales
-                FOR EACH ROW
-                BEGIN
-                    IF NEW.is_default = 1 AND EXISTS (
-                        SELECT 1 FROM site_locales
-                        WHERE site_id = NEW.site_id AND is_default = 1
-                    ) THEN
-                        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'site_locales only one default locale is allowed per site';
-                    END IF;
-                END
-                SQL);
-            DB::unprepared(<<<'SQL'
-                CREATE TRIGGER site_locales_single_default_update
-                BEFORE UPDATE ON site_locales
-                FOR EACH ROW
-                BEGIN
-                    IF NEW.is_default = 1 AND EXISTS (
-                        SELECT 1 FROM site_locales
-                        WHERE site_id = NEW.site_id AND is_default = 1 AND id <> NEW.id
-                    ) THEN
-                        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'site_locales only one default locale is allowed per site';
-                    END IF;
-                END
+            DB::statement(<<<'SQL'
+                ALTER TABLE site_locales
+                ADD COLUMN default_site_id BIGINT UNSIGNED
+                    GENERATED ALWAYS AS (CASE WHEN is_default = 1 THEN site_id ELSE NULL END) STORED,
+                ADD UNIQUE INDEX site_locales_single_default_per_site (default_site_id)
                 SQL);
         } else {
             throw new RuntimeException("Unsupported database driver for site locale constraints: {$driver}");

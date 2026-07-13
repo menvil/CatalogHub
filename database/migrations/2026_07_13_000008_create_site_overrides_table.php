@@ -19,7 +19,7 @@ return new class extends Migration
             $table->text('reason')->nullable();
             $table->string('status')->default('draft')->index();
             $table->timestamps();
-            $table->unique(['site_id', 'entity_type', 'entity_id', 'field', 'locale_code']);
+            $table->unique(['site_id', 'entity_type', 'entity_id', 'field', 'locale_code'], 'site_overrides_scope_unique');
         });
     }
 

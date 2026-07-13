@@ -7,6 +7,7 @@ use App\Enums\SiteStatus;
 use App\Filament\Resources\SiteResource\Pages;
 use App\Filament\Resources\SiteResource\RelationManagers\SiteFeaturesRelationManager;
 use App\Models\Site;
+use App\Models\User;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
@@ -25,6 +26,14 @@ final class SiteResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedComputerDesktop;
 
     protected static string|UnitEnum|null $navigationGroup = 'Portal Admin';
+
+    public static function canManageContent(): bool
+    {
+        $user = auth()->user();
+
+        return $user instanceof User
+            && ($user->isSuperAdmin() || $user->isCentralAdmin() || $user->hasCatalogHubPermission('site.content.manage'));
+    }
 
     public static function form(Schema $schema): Schema
     {

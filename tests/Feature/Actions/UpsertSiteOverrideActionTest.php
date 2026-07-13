@@ -147,6 +147,27 @@ class UpsertSiteOverrideActionTest extends TestCase
         ]);
     }
 
+    #[DataProvider('oversizedFields')]
+    public function test_override_field_length_limits_are_enforced(string $field, int $maximum): void
+    {
+        try {
+            app(UpsertSiteOverrideAction::class)->handle(
+                Site::factory()->create(),
+                'product',
+                CentralProduct::factory()->create()->id,
+                $field,
+                null,
+                str_repeat('x', $maximum + 1),
+            );
+
+            $this->fail("An oversized {$field} override was accepted.");
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('value', $exception->errors());
+        }
+
+        $this->assertDatabaseCount('site_overrides', 0);
+    }
+
     /** @return array<string, array{string}> */
     public static function entityTypes(): array
     {
@@ -154,6 +175,16 @@ class UpsertSiteOverrideActionTest extends TestCase
             'product' => ['product'],
             'category' => ['category'],
             'brand' => ['brand'],
+        ];
+    }
+
+    /** @return array<string, array{string, int}> */
+    public static function oversizedFields(): array
+    {
+        return [
+            'meta title' => ['meta_title', 255],
+            'meta description' => ['meta_description', 1000],
+            'intro text' => ['intro_text', 5000],
         ];
     }
 }

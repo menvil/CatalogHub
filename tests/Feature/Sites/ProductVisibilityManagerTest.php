@@ -4,6 +4,7 @@ namespace Tests\Feature\Sites;
 
 use App\Actions\Sites\UpdateSiteProductVisibilityAction;
 use App\Enums\CentralProductStatus;
+use App\Enums\UserRole;
 use App\Filament\Resources\SiteResource\Pages\ManageSiteProducts;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
@@ -70,6 +71,35 @@ class ProductVisibilityManagerTest extends TestCase
             'site_id' => $site->id,
             'central_product_id' => $product->id,
             'visibility' => 'hidden',
+            'is_featured' => true,
+        ]);
+    }
+
+    public function test_translator_cannot_access_product_visibility_manager(): void
+    {
+        $site = Site::factory()->create();
+
+        $this->actingAs(User::factory()->create(['role' => UserRole::Translator]))
+            ->get(ManageSiteProducts::getUrl(['record' => $site]))
+            ->assertForbidden();
+    }
+
+    public function test_repeated_visibility_updates_update_one_site_product_row(): void
+    {
+        $site = Site::factory()->create();
+        $category = CentralCategory::factory()->create();
+        DB::table('site_categories')->insert(['site_id' => $site->id, 'central_category_id' => $category->id, 'is_enabled' => true, 'position' => 0, 'created_at' => now(), 'updated_at' => now()]);
+        $product = CentralProduct::factory()->create(['central_category_id' => $category->id, 'status' => CentralProductStatus::Active]);
+        $action = app(UpdateSiteProductVisibilityAction::class);
+
+        $action->handle($site, $product, 'visible');
+        $action->handle($site, $product, 'excluded', true);
+
+        $this->assertDatabaseCount('site_products', 1);
+        $this->assertDatabaseHas('site_products', [
+            'site_id' => $site->id,
+            'central_product_id' => $product->id,
+            'visibility' => 'excluded',
             'is_featured' => true,
         ]);
     }

@@ -4,6 +4,7 @@ namespace App\Services\Imports;
 
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\Imports\AttributeMapping;
+use App\Models\Imports\RawProduct;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 
@@ -54,5 +55,17 @@ final class AttributeMappingService
                 'mapping_type' => 'attribute',
             ]
         );
+    }
+
+    public function usageCount(AttributeMapping $mapping): int
+    {
+        return RawProduct::query()
+            ->where('import_source_id', $mapping->import_source_id)
+            ->get(['raw_payload_json'])
+            ->filter(fn (RawProduct $rawProduct): bool => array_key_exists(
+                $mapping->raw_key,
+                $rawProduct->raw_payload_json,
+            ))
+            ->count();
     }
 }

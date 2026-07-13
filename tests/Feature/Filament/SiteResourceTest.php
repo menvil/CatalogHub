@@ -8,6 +8,7 @@ use App\Filament\Resources\SiteResource\Pages\CreateSite;
 use App\Filament\Resources\SiteResource\Pages\EditSite;
 use App\Filament\Resources\SiteResource\Pages\ListSites;
 use App\Filament\Resources\SiteResource\Pages\LocalOverrideEditor;
+use App\Filament\Resources\SiteResource\Pages\LocalSeoOverride;
 use App\Filament\Resources\SiteResource\Pages\ManageSiteProducts;
 use App\Filament\Resources\SiteResource\RelationManagers\SiteFeaturesRelationManager;
 use App\Models\Site;
@@ -31,6 +32,8 @@ class SiteResourceTest extends TestCase
         $this->assertArrayHasKey('brands', SiteResource::getPages());
         $this->assertTrue(class_exists(LocalOverrideEditor::class));
         $this->assertArrayHasKey('overrides', SiteResource::getPages());
+        $this->assertTrue(class_exists(LocalSeoOverride::class));
+        $this->assertArrayHasKey('seo', SiteResource::getPages());
         $this->assertContains(SiteFeaturesRelationManager::class, SiteResource::getRelations());
     }
 }

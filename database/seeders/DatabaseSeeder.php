@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             MeasurementDimensionsSeeder::class,
             MetricMeasurementUnitsSeeder::class,
             ImperialMeasurementUnitsSeeder::class,
+            BlockRegistrySeeder::class,
         ]);
 
         // User::factory(10)->create();

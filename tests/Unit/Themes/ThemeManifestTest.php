@@ -36,6 +36,14 @@ class ThemeManifestTest extends TestCase
         ThemeManifest::fromArray(['name' => 'Missing Code', 'layouts' => ['home' => 'home-clean']]);
     }
 
+    public function test_manifest_without_name_is_rejected(): void
+    {
+        $this->expectException(InvalidThemeManifestException::class);
+        $this->expectExceptionMessage('name is required');
+
+        ThemeManifest::fromArray(['code' => 'missing_name', 'layouts' => ['home' => 'home-clean']]);
+    }
+
     public function test_manifest_without_layouts_is_rejected(): void
     {
         $this->expectException(InvalidThemeManifestException::class);

@@ -6,6 +6,7 @@ use App\Domains\Themes\Services\BlockCompatibilityValidator;
 use App\Enums\BlockStatus;
 use App\Enums\ThemeStatus;
 use App\Exceptions\Themes\CannotUseBlockException;
+use App\Exceptions\Themes\InvalidThemeManifestException;
 use App\Models\BlockDefinition;
 use App\Models\Site;
 use App\Models\SiteFeature;
@@ -81,6 +82,26 @@ class BlockCompatibilityValidatorTest extends TestCase
         app(BlockCompatibilityValidator::class)->validate($site, 'latest_reviews');
 
         $this->addToAssertionCount(1);
+    }
+
+    public function test_invalid_manifest_is_preserved_as_previous_exception(): void
+    {
+        $theme = Theme::factory()->create(['status' => ThemeStatus::Active]);
+        ThemeManifestRecord::query()->create([
+            'theme_id' => $theme->id,
+            'manifest_json' => ['code' => $theme->code, 'supports' => [], 'layouts' => ['home' => 'home-clean']],
+            'supports_json' => [],
+            'layouts_json' => ['home' => 'home-clean'],
+        ]);
+        $site = Site::factory()->create(['theme_id' => $theme->id]);
+        $this->block('hero_search');
+
+        try {
+            app(BlockCompatibilityValidator::class)->validate($site, 'hero_search');
+            $this->fail('An invalid manifest was accepted.');
+        } catch (CannotUseBlockException $exception) {
+            $this->assertInstanceOf(InvalidThemeManifestException::class, $exception->getPrevious());
+        }
     }
 
     /** @param list<string> $supports */

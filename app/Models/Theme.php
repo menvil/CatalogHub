@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 /**
  * @property ThemeStatus $status
  * @property array<string, mixed>|null $config_json
+ * @property-read ThemeManifestRecord|null $manifest
  */
 #[Fillable([
     'code',

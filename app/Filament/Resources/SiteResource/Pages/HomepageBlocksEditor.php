@@ -18,6 +18,8 @@ use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
+use JsonException;
+use stdClass;
 
 final class HomepageBlocksEditor extends Page
 {
@@ -31,7 +33,9 @@ final class HomepageBlocksEditor extends Page
 
     public string $selectedBlockCode = '';
 
-    public string $configJson = '{}';
+    public string $addConfigJson = '{}';
+
+    public string $editConfigJson = '{}';
 
     public ?int $editingBlockId = null;
 
@@ -78,9 +82,12 @@ final class HomepageBlocksEditor extends Page
         $this->validate(['selectedBlockCode' => ['required', 'string']]);
         /** @var Site $site */
         $site = $this->getRecord();
-        $action->handle($site, $this->selectedBlockCode, $this->decodedConfig());
-        $this->reset('selectedBlockCode', 'configJson');
-        $this->configJson = '{}';
+        try {
+            $action->handle($site, $this->selectedBlockCode, $this->decodedConfig('addConfigJson'));
+        } catch (ValidationException $exception) {
+            $this->throwMappedConfigValidation($exception, 'addConfigJson');
+        }
+        $this->reset('selectedBlockCode', 'addConfigJson');
         Notification::make()->title('Homepage block added')->success()->send();
     }
 
@@ -90,21 +97,28 @@ final class HomepageBlocksEditor extends Page
         $site = $this->getRecord();
         $block = $site->homeBlocks()->findOrFail($homeBlockId);
         $this->editingBlockId = $block->id;
-        $this->configJson = json_encode($block->config_json ?? [], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
+        $config = $block->config_json ?? [];
+        $this->editConfigJson = $config === []
+            ? '{}'
+            : json_encode($config, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
     }
 
     public function saveConfig(UpdateSiteHomeBlockConfigAction $action): void
     {
         if ($this->editingBlockId === null) {
-            throw ValidationException::withMessages(['configJson' => 'Choose a block to edit.']);
+            throw ValidationException::withMessages(['editConfigJson' => 'Choose a block to edit.']);
         }
 
         /** @var Site $site */
         $site = $this->getRecord();
         $block = $site->homeBlocks()->findOrFail($this->editingBlockId);
-        $action->handle($site, $block, $this->decodedConfig());
+        try {
+            $action->handle($site, $block, $this->decodedConfig('editConfigJson'));
+        } catch (ValidationException $exception) {
+            $this->throwMappedConfigValidation($exception, 'editConfigJson');
+        }
         $this->editingBlockId = null;
-        $this->configJson = '{}';
+        $this->editConfigJson = '{}';
         Notification::make()->title('Block configuration saved')->success()->send();
     }
 
@@ -138,13 +152,33 @@ final class HomepageBlocksEditor extends Page
     }
 
     /** @return array<string, mixed> */
-    private function decodedConfig(): array
+    private function decodedConfig(string $property): array
     {
-        $decoded = json_decode($this->configJson, true);
-        if (! is_array($decoded) || array_is_list($decoded)) {
-            throw ValidationException::withMessages(['configJson' => 'Configuration must be a JSON object.']);
+        $json = $property === 'addConfigJson' ? $this->addConfigJson : $this->editConfigJson;
+
+        try {
+            $object = json_decode($json, false, 512, JSON_THROW_ON_ERROR);
+            $decoded = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            throw ValidationException::withMessages([$property => 'Configuration must be valid JSON.']);
+        }
+
+        if (! $object instanceof stdClass || ! is_array($decoded)) {
+            throw ValidationException::withMessages([$property => 'Configuration must be a JSON object.']);
         }
 
         return $decoded;
+    }
+
+    private function throwMappedConfigValidation(ValidationException $exception, string $property): never
+    {
+        $messages = [];
+
+        foreach ($exception->errors() as $key => $errors) {
+            $target = $key === 'config' || str_starts_with($key, 'config.') ? $property : $key;
+            $messages[$target] = [...($messages[$target] ?? []), ...$errors];
+        }
+
+        throw ValidationException::withMessages($messages);
     }
 }

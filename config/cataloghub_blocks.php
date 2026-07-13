@@ -38,7 +38,7 @@ return [
             'title' => 'string',
             'limit' => 'integer',
             'source' => 'rating|popular|manual|latest',
-            'category_id' => 'integer',
+            'category_id' => ['type' => 'integer', 'nullable' => true],
             'layout' => 'grid|carousel|list',
         ],
         'view_component' => 'blocks.top-products',
@@ -52,7 +52,7 @@ return [
         'config_schema_json' => [
             'title' => 'string',
             'limit' => 'integer',
-            'min_rating' => 'integer',
+            'min_rating' => ['type' => 'integer', 'nullable' => true],
             'layout' => 'cards|compact',
         ],
         'view_component' => 'blocks.latest-reviews',
@@ -79,7 +79,7 @@ return [
         'required_features_json' => ['polls'],
         'config_schema_json' => [
             'title' => 'string',
-            'poll_id' => 'integer',
+            'poll_id' => ['type' => 'integer', 'nullable' => true],
             'placement' => 'inline|sidebar|card',
         ],
         'view_component' => 'blocks.poll-block',
@@ -93,7 +93,7 @@ return [
         'config_schema_json' => [
             'title' => 'string',
             'limit' => 'integer',
-            'category_id' => 'integer',
+            'category_id' => ['type' => 'integer', 'nullable' => true],
             'content_type' => 'buying_guide|how_to_guide|article',
             'layout' => 'cards|list',
         ],

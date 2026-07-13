@@ -31,29 +31,29 @@ final readonly class ThemeManifest
         $layouts = $data['layouts'] ?? null;
 
         if (! is_array($supports) || ! array_is_list($supports)) {
-            throw new InvalidThemeManifestException('Theme manifest supports must be a list.');
+            throw InvalidThemeManifestException::because('Theme manifest supports must be a list.');
         }
 
         $normalizedSupports = [];
         foreach ($supports as $capability) {
             if (! is_string($capability) || trim($capability) === '') {
-                throw new InvalidThemeManifestException('Theme manifest supports must contain non-empty strings.');
+                throw InvalidThemeManifestException::because('Theme manifest supports must contain non-empty strings.');
             }
 
             $normalizedSupports[] = trim($capability);
         }
 
         if (! is_array($layouts) || $layouts === [] || array_is_list($layouts)) {
-            throw new InvalidThemeManifestException('Theme manifest layouts must be a non-empty page type map.');
+            throw InvalidThemeManifestException::because('Theme manifest layouts must be a non-empty page type map.');
         }
 
         $normalizedLayouts = [];
         foreach ($layouts as $pageType => $layoutCode) {
             if (! is_string($pageType) || ! in_array($pageType, self::PAGE_TYPES, true)) {
-                throw new InvalidThemeManifestException("Unknown theme layout page type: {$pageType}.");
+                throw InvalidThemeManifestException::because("Unknown theme layout page type: {$pageType}.");
             }
             if (! is_string($layoutCode) || trim($layoutCode) === '') {
-                throw new InvalidThemeManifestException("Theme layout for {$pageType} must be a non-empty string.");
+                throw InvalidThemeManifestException::because("Theme layout for {$pageType} must be a non-empty string.");
             }
 
             $normalizedLayouts[$pageType] = trim($layoutCode);
@@ -107,7 +107,7 @@ final readonly class ThemeManifest
         $value = $data[$key] ?? null;
 
         if (! is_string($value) || trim($value) === '') {
-            throw new InvalidThemeManifestException("Theme manifest {$key} is required.");
+            throw InvalidThemeManifestException::because("Theme manifest {$key} is required.");
         }
 
         return trim($value);
@@ -122,7 +122,7 @@ final readonly class ThemeManifest
             return null;
         }
         if (! is_string($value) || trim($value) === '') {
-            throw new InvalidThemeManifestException("Theme manifest {$key} must be a non-empty string when provided.");
+            throw InvalidThemeManifestException::because("Theme manifest {$key} must be a non-empty string when provided.");
         }
 
         return trim($value);

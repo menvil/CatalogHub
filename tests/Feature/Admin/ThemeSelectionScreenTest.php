@@ -44,7 +44,7 @@ class ThemeSelectionScreenTest extends TestCase
         ]);
         ThemeManifestRecord::query()->create([
             'theme_id' => $incompatible->id,
-            'manifest_json' => $this->manifest($incompatible->code, []),
+            'manifest_json' => $this->manifest($incompatible->code, [], ['home' => 'home-minimal']),
             'supports_json' => [],
             'layouts_json' => ['home' => 'home-minimal'],
         ]);
@@ -57,10 +57,9 @@ class ThemeSelectionScreenTest extends TestCase
         $this->actingAs(User::factory()->centralAdmin()->create())
             ->get(ThemeSelection::getUrl(['record' => $site]))
             ->assertOk()
-            ->assertSee('Catalog Clean')
-            ->assertSee('Compatible')
-            ->assertSee('Minimal Theme')
-            ->assertSee('Incompatible')
+            ->assertSeeInOrder(['Catalog Clean', 'Compatible', 'Minimal Theme', 'Incompatible'])
+            ->assertSeeHtml('data-compatibility="compatible"')
+            ->assertSeeHtml('data-compatibility="incompatible"')
             ->assertSee('Missing site features: reviews')
             ->assertDontSee('Archived Theme');
     }
@@ -87,20 +86,26 @@ class ThemeSelectionScreenTest extends TestCase
 
         Livewire::actingAs(User::factory()->centralAdmin()->create())
             ->test(ThemeSelection::class, ['record' => $site->getRouteKey()])
+            ->assertSee('Activate')
             ->call('activate', $theme->id)
-            ->assertNotified('Theme activated');
+            ->assertNotified('Theme activated')
+            ->assertSee('Current')
+            ->assertSee('Active theme');
 
         $this->assertSame($theme->id, $site->fresh()->theme_id);
     }
 
-    /** @param list<string> $supports */
-    private function manifest(string $code, array $supports): array
+    /**
+     * @param  list<string>  $supports
+     * @param  array<string, string>  $layouts
+     */
+    private function manifest(string $code, array $supports, array $layouts = ['home' => 'home-clean']): array
     {
         return [
             'code' => $code,
             'name' => str($code)->headline()->toString(),
             'supports' => $supports,
-            'layouts' => ['home' => 'home-clean'],
+            'layouts' => $layouts,
         ];
     }
 }

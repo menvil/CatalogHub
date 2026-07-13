@@ -82,4 +82,23 @@ class ThemeManifestParserTest extends TestCase
             'layouts' => ['home' => 'home-clean'],
         ]);
     }
+
+    public function test_stale_theme_instance_cannot_store_manifest_for_old_code(): void
+    {
+        $theme = Theme::factory()->create(['code' => 'old_code']);
+        Theme::query()->whereKey($theme->id)->update(['code' => 'new_code']);
+
+        try {
+            app(ThemeManifestParser::class)->parseAndStore($theme, [
+                'code' => 'old_code',
+                'name' => 'Old Code Theme',
+                'layouts' => ['home' => 'home-clean'],
+            ]);
+            $this->fail('A manifest matching only the stale theme code was stored.');
+        } catch (InvalidThemeManifestException $exception) {
+            $this->assertStringContainsString('code must match', $exception->getMessage());
+        }
+
+        $this->assertDatabaseMissing('theme_manifests', ['theme_id' => $theme->id]);
+    }
 }

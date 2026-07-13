@@ -3,10 +3,13 @@
 namespace Tests\Feature\Themes;
 
 use App\Domains\Themes\Actions\ActivateThemeAction;
+use App\Enums\BlockStatus;
 use App\Enums\ThemeStatus;
 use App\Exceptions\Themes\CannotActivateThemeException;
+use App\Models\BlockDefinition;
 use App\Models\Site;
 use App\Models\SiteFeature;
+use App\Models\SiteHomeBlock;
 use App\Models\Theme;
 use App\Models\ThemeManifestRecord;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -50,6 +53,56 @@ class ActivateThemeActionTest extends TestCase
         $this->expectExceptionMessage('not active');
 
         app(ActivateThemeAction::class)->handle($site, $theme);
+    }
+
+    public function test_theme_missing_an_enabled_homepage_block_capability_cannot_be_activated(): void
+    {
+        $current = $this->theme(ThemeStatus::Active, ['hero_search']);
+        $candidate = $this->theme(ThemeStatus::Active, []);
+        $site = Site::factory()->create(['theme_id' => $current->id]);
+        $definition = BlockDefinition::factory()->create([
+            'code' => 'hero_search',
+            'status' => BlockStatus::Active,
+            'supported_page_types_json' => ['home'],
+        ]);
+        SiteHomeBlock::factory()->create([
+            'site_id' => $site->id,
+            'block_code' => $definition->code,
+            'position' => 1,
+            'enabled' => true,
+        ]);
+
+        try {
+            app(ActivateThemeAction::class)->handle($site, $candidate);
+            $this->fail('A theme missing an enabled homepage block capability was activated.');
+        } catch (CannotActivateThemeException $exception) {
+            $this->assertStringContainsString('hero_search', $exception->getMessage());
+            $this->assertNotNull($exception->getPrevious());
+        }
+
+        $this->assertSame($current->id, $site->fresh()->theme_id);
+    }
+
+    public function test_theme_supporting_enabled_homepage_blocks_can_be_activated(): void
+    {
+        $current = $this->theme(ThemeStatus::Active, ['hero_search']);
+        $candidate = $this->theme(ThemeStatus::Active, ['hero_search']);
+        $site = Site::factory()->create(['theme_id' => $current->id]);
+        $definition = BlockDefinition::factory()->create([
+            'code' => 'hero_search',
+            'status' => BlockStatus::Active,
+            'supported_page_types_json' => ['home'],
+        ]);
+        SiteHomeBlock::factory()->create([
+            'site_id' => $site->id,
+            'block_code' => $definition->code,
+            'position' => 1,
+            'enabled' => true,
+        ]);
+
+        app(ActivateThemeAction::class)->handle($site, $candidate);
+
+        $this->assertSame($candidate->id, $site->fresh()->theme_id);
     }
 
     /** @param list<string> $supports */

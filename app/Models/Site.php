@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property SiteStatus $status
  * @property int|null $theme_id
  * @property array<string, mixed>|null $settings_json
+ * @property-read Theme|null $theme
  */
 #[Fillable(['market_id', 'theme_id', 'code', 'name', 'domain', 'mode', 'default_locale', 'status', 'settings_json'])]
 final class Site extends Model

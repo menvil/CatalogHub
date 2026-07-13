@@ -24,13 +24,13 @@ final class AddSiteHomeBlockAction
     {
         return DB::transaction(function () use ($site, $blockCode, $config): SiteHomeBlock {
             $lockedSite = Site::query()->lockForUpdate()->findOrFail($site->getKey());
-            $this->compatibility->validate($lockedSite, $blockCode);
             $definition = $this->blocks->findByCode($blockCode);
 
             if (! $definition instanceof BlockDefinition) {
                 throw CannotUseBlockException::because("Block {$blockCode} is not registered.");
             }
 
+            $this->compatibility->validate($lockedSite, $definition->code);
             $this->configValidator->validate($definition, $config);
             $position = ((int) $lockedSite->homeBlocks()->max('position')) + 1;
 

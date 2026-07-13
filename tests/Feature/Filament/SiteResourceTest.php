@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Filament;
 
+use App\Enums\SiteMode;
+use App\Enums\UserRole;
 use App\Filament\Resources\SiteResource;
 use App\Filament\Resources\SiteResource\Pages\BrandVisibilityRules;
 use App\Filament\Resources\SiteResource\Pages\EditSite;
@@ -11,6 +13,7 @@ use App\Filament\Resources\SiteResource\Pages\LocalSeoOverride;
 use App\Filament\Resources\SiteResource\Pages\ManageSiteProducts;
 use App\Filament\Resources\SiteResource\Pages\SiteDashboard;
 use App\Filament\Resources\SiteResource\RelationManagers\SiteFeaturesRelationManager;
+use App\Models\Market;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -61,15 +64,47 @@ class SiteResourceTest extends TestCase
                 'code' => $tooLong,
                 'name' => $tooLong,
                 'domain' => $tooLong,
-                'default_locale' => $tooLong,
             ])
             ->call('save')
             ->assertHasFormErrors([
                 'code' => 'max',
                 'name' => 'max',
                 'domain' => 'max',
-                'default_locale' => 'max',
             ]);
+    }
+
+    public function test_user_without_site_settings_permission_cannot_edit_site(): void
+    {
+        $site = Site::factory()->create();
+
+        $this->actingAs(User::factory()->create(['role' => UserRole::CatalogEditor]))
+            ->get(EditSite::getUrl(['record' => $site]))
+            ->assertForbidden();
+    }
+
+    public function test_invariant_sensitive_site_fields_are_immutable_on_edit(): void
+    {
+        $site = Site::factory()->create([
+            'mode' => SiteMode::MultiCategory,
+            'default_locale' => 'en-US',
+        ]);
+        $originalMarketId = $site->market_id;
+        $alternateMarket = Market::factory()->create();
+
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
+            ->test(EditSite::class, ['record' => $site->getRouteKey()])
+            ->fillForm([
+                'market_id' => $alternateMarket->id,
+                'mode' => SiteMode::SingleCategory->value,
+                'default_locale' => 'de-DE',
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $site->refresh();
+        $this->assertSame($originalMarketId, $site->market_id);
+        $this->assertSame(SiteMode::MultiCategory, $site->mode);
+        $this->assertSame('en-US', $site->default_locale);
     }
 
     public function test_create_action_visibility_matches_wizard_access(): void

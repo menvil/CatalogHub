@@ -3,9 +3,11 @@
 namespace Tests\Feature\Filament;
 
 use App\Enums\CentralCategoryStatus;
+use App\Enums\MarketStatus;
 use App\Filament\Pages\CreateSiteWizard;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Locale;
+use App\Models\Market;
 use App\Models\SiteFeature;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -97,5 +99,26 @@ class CreateSiteWizardTest extends TestCase
             ->assertSee('wire:key="site-locale-'.$locale->id.'"', false)
             ->assertSee('wire:key="site-category-'.$category->id.'"', false)
             ->assertSee('wire:key="site-feature-comparison"', false);
+    }
+
+    public function test_action_validation_errors_are_mapped_to_wizard_field_names(): void
+    {
+        $market = Market::factory()->create(['status' => MarketStatus::Archived]);
+        $locale = Locale::factory()->create(['code' => 'en-US']);
+        $category = CentralCategory::factory()->create(['status' => CentralCategoryStatus::Active]);
+
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
+            ->test(CreateSiteWizard::class)
+            ->set('code', 'inactive-market')
+            ->set('name', 'Inactive market')
+            ->set('marketId', $market->id)
+            ->set('mode', 'single_category')
+            ->set('enabledLocales', [$locale->code])
+            ->set('defaultLocale', $locale->code)
+            ->set('enabledCategories', [$category->id])
+            ->call('createSite')
+            ->assertHasErrors(['marketId'])
+            ->assertHasNoErrors(['market_id'])
+            ->assertSee('The selected market must be active.');
     }
 }

@@ -207,4 +207,55 @@ class CreateSiteActionTest extends TestCase
 
         $this->assertDatabaseCount('sites', 0);
     }
+
+    public function test_category_ids_are_validated_as_integers_before_normalization(): void
+    {
+        $market = Market::factory()->create(['status' => MarketStatus::Active]);
+        $category = CentralCategory::factory()->create(['status' => CentralCategoryStatus::Active]);
+        Locale::factory()->create(['code' => 'en-US']);
+
+        try {
+            app(CreateSiteAction::class)->handle([
+                'market_id' => $market->id,
+                'code' => 'malformed-category',
+                'name' => 'Malformed category',
+                'mode' => 'single_category',
+                'default_locale' => 'en-US',
+                'locales' => ['en-US'],
+                'categories' => [$category->id + 0.5],
+            ]);
+
+            $this->fail('A malformed category id was accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('categories.0', $exception->errors());
+        }
+
+        $this->assertDatabaseCount('sites', 0);
+    }
+
+    public function test_unsupported_site_status_is_rejected(): void
+    {
+        $market = Market::factory()->create(['status' => MarketStatus::Active]);
+        $category = CentralCategory::factory()->create(['status' => CentralCategoryStatus::Active]);
+        Locale::factory()->create(['code' => 'en-US']);
+
+        try {
+            app(CreateSiteAction::class)->handle([
+                'market_id' => $market->id,
+                'code' => 'invalid-status',
+                'name' => 'Invalid status',
+                'mode' => 'single_category',
+                'status' => 'unsupported',
+                'default_locale' => 'en-US',
+                'locales' => ['en-US'],
+                'categories' => [$category->id],
+            ]);
+
+            $this->fail('An unsupported site status was accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('status', $exception->errors());
+        }
+
+        $this->assertDatabaseCount('sites', 0);
+    }
 }

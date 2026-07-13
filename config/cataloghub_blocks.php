@@ -57,4 +57,18 @@ return [
         ],
         'view_component' => 'blocks.latest-reviews',
     ],
+    'lead_form' => [
+        'name' => 'Lead Form',
+        'description' => 'Placeholder for lead collection on home and product pages.',
+        'category' => 'conversion',
+        'supported_page_types_json' => ['home', 'product'],
+        'required_features_json' => ['leads'],
+        'config_schema_json' => [
+            'title' => 'string',
+            'lead_type' => 'repair|buying_advice|accessory_request|business_inquiry',
+            'button_label' => 'string',
+            'layout' => 'inline|card|sidebar',
+        ],
+        'view_component' => 'blocks.lead-form',
+    ],
 ];

@@ -57,6 +57,27 @@ class RawPayloadPersistenceTest extends TestCase
         $this->assertSame(2, $batch->fresh()->raw_items_count);
     }
 
+    public function test_hash_is_stable_for_nested_json_objects_with_different_property_order(): void
+    {
+        $firstSpecs = new \stdClass;
+        $firstSpecs->power = 100;
+        $firstSpecs->dimensions = (object) ['width' => 20, 'height' => 30];
+
+        $secondDimensions = new \stdClass;
+        $secondDimensions->height = 30;
+        $secondDimensions->width = 20;
+        $secondSpecs = new \stdClass;
+        $secondSpecs->dimensions = $secondDimensions;
+        $secondSpecs->power = 100;
+
+        $hasher = new RawPayloadHasher;
+
+        $this->assertSame(
+            $hasher->hash(['specs' => $firstSpecs]),
+            $hasher->hash(['specs' => $secondSpecs]),
+        );
+    }
+
     public function test_factory_and_writer_use_the_same_payload_hash_algorithm(): void
     {
         $rawProduct = RawProduct::factory()->create();
@@ -118,7 +139,7 @@ class RawPayloadPersistenceTest extends TestCase
         $rawProduct = (new RawProductWriter)->write($batch, $payload);
 
         $this->assertSame(1, $batch->fresh()->raw_items_count);
-        $this->assertNotNull($rawProduct->payload_hash);
+        $this->assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/', $rawProduct->payload_hash);
     }
 
     public function test_rejects_recursive_payload_before_canonicalization(): void

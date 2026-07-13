@@ -33,6 +33,19 @@ class ProcessImportBatchJobTest extends TestCase
         $this->assertNotNull($batch->finished_at);
     }
 
+    public function test_failed_job_marks_a_pending_batch_failed(): void
+    {
+        $batch = ImportBatch::factory()->create(['status' => 'pending']);
+
+        (new ProcessImportBatchJob($batch->id))->failed(new RuntimeException('Dispatch failed'));
+
+        $batch->refresh();
+
+        $this->assertSame('failed', $batch->status);
+        $this->assertSame('Dispatch failed', $batch->error_message);
+        $this->assertNotNull($batch->finished_at);
+    }
+
     public function test_failed_callback_does_not_overwrite_a_completed_batch(): void
     {
         $batch = ImportBatch::factory()->create([

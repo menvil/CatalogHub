@@ -118,7 +118,7 @@ class ImportWizardTest extends TestCase
         $this->assertSame(0, ImportBatch::query()->count());
     }
 
-    public function test_large_artifact_is_queued_and_exposes_batch_status_for_polling(): void
+    public function test_large_artifact_is_queued_for_polling_and_repeated_delivery_is_idempotent(): void
     {
         Storage::fake('imports');
         Queue::fake();
@@ -148,12 +148,17 @@ class ImportWizardTest extends TestCase
         );
         $this->assertSame(0, RawProduct::query()->count());
 
-        (new ProcessImportBatchJob($batch->id))->handle(app(ImportService::class));
-        (new ProcessImportBatchJob($batch->id))->handle(app(ImportService::class));
+        $job = new ProcessImportBatchJob($batch->id);
+        $job->handle(app(ImportService::class));
+        $rawProductIds = RawProduct::query()->orderBy('id')->pluck('id')->all();
+        $this->assertCount(2, $rawProductIds);
+
+        $job->handle(app(ImportService::class));
+        $this->assertSame($rawProductIds, RawProduct::query()->orderBy('id')->pluck('id')->all());
 
         $component
             ->call('refreshBatchStatus')
             ->assertSet('batchStatus', 'completed');
-        $this->assertSame(2, RawProduct::query()->count());
+        $this->assertSame('completed', $batch->fresh()->status);
     }
 }

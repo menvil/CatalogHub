@@ -3,6 +3,7 @@
 namespace App\Services\Imports;
 
 use JsonException;
+use stdClass;
 
 final class RawPayloadHasher
 {
@@ -42,6 +43,22 @@ final class RawPayloadHasher
 
     private function canonicalize(mixed $value): mixed
     {
+        if ($value instanceof stdClass) {
+            $properties = get_object_vars($value);
+            ksort($properties, SORT_STRING);
+            $canonical = new stdClass;
+
+            foreach ($properties as $key => $item) {
+                $canonical->{$key} = $this->canonicalize($item);
+            }
+
+            return $canonical;
+        }
+
+        if (is_object($value)) {
+            throw new JsonException('Raw payload object values must use stdClass.');
+        }
+
         if (! is_array($value)) {
             return $value;
         }

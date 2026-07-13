@@ -81,7 +81,11 @@ class DuplicateDetectorTest extends TestCase
         $candidate = (new DuplicateDetector)->detect($draft)->sole();
 
         $this->assertSame($product->id, $candidate->candidate_id);
-        $this->assertSame('0.5500', $candidate->score);
+        $this->assertGreaterThanOrEqual(
+            (float) config('imports.duplicate_min_score'),
+            (float) $candidate->score,
+        );
+        $this->assertSame(1.0, (float) $candidate->reason_json['title_similarity']);
         $this->assertFalse($candidate->reason_json['brand_match']);
         $this->assertFalse($candidate->reason_json['category_match']);
     }

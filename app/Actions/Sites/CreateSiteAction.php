@@ -2,6 +2,7 @@
 
 namespace App\Actions\Sites;
 
+use App\Models\Market;
 use App\Models\Site;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -11,6 +12,12 @@ final class CreateSiteAction
     /** @param array<string, mixed> $data */
     public function handle(array $data): Site
     {
+        $market = Market::query()->find($data['market_id'] ?? null);
+
+        if (! $market?->isActive()) {
+            throw ValidationException::withMessages(['market_id' => 'The selected market must be active.']);
+        }
+
         $categoryCount = count($data['categories'] ?? []);
 
         if (($data['mode'] ?? null) === 'single_category' && $categoryCount !== 1) {

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Sites;
 
 use App\Actions\Sites\CreateSiteAction;
+use App\Enums\MarketStatus;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Market;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -31,7 +32,7 @@ class SiteModeSelectionTest extends TestCase
     /** @param list<int> $categories */
     private function data(string $mode, array $categories): array
     {
-        $market = Market::factory()->create();
+        $market = Market::factory()->create(['status' => MarketStatus::Active]);
 
         return ['market_id' => $market->id, 'code' => fake()->unique()->slug(), 'name' => 'Site', 'mode' => $mode, 'default_locale' => 'en-US', 'locales' => ['en-US'], 'categories' => $categories, 'features' => []];
     }

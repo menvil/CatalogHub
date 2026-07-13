@@ -71,6 +71,21 @@ final class CreateSiteWizard extends Page
         return Market::query()->where('status', MarketStatus::Active)->orderBy('name')->get();
     }
 
+    public function getSelectedMarket(): ?Market
+    {
+        return $this->marketId === null ? null : Market::query()->find($this->marketId);
+    }
+
+    public function updatedMarketId(): void
+    {
+        $market = $this->getSelectedMarket();
+
+        if ($market instanceof Market && Locale::query()->where('code', $market->default_locale)->where('is_active', true)->exists()) {
+            $this->defaultLocale = $market->default_locale;
+            $this->enabledLocales = array_values(array_unique([...$this->enabledLocales, $market->default_locale]));
+        }
+    }
+
     /** @return Collection<int, Locale> */
     public function getLocales(): Collection
     {

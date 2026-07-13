@@ -13,16 +13,19 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
+use Tests\Concerns\EnablesSiteProductCategories;
 use Tests\TestCase;
 
 class LocalOverrideEditorTest extends TestCase
 {
+    use EnablesSiteProductCategories;
     use RefreshDatabase;
 
     public function test_allowed_presentation_override_is_upserted(): void
     {
         $site = Site::factory()->create();
         $product = CentralProduct::factory()->create();
+        $this->enableProductCategory($site, $product);
         $this->enableLocale($site, 'de-DE');
         $action = app(UpsertSiteOverrideAction::class);
         $action->handle($site, 'product', $product->id, 'local_title', 'de-DE', 'Lokaler Titel');
@@ -42,6 +45,7 @@ class LocalOverrideEditorTest extends TestCase
     {
         $site = Site::factory()->create();
         $product = CentralProduct::factory()->create();
+        $this->enableProductCategory($site, $product);
         $this->enableLocale($site, 'de-DE');
         app(UpsertSiteOverrideAction::class)->handle($site, 'product', $product->id, 'local_title', 'de-DE', 'Local title');
 
@@ -105,6 +109,7 @@ class LocalOverrideEditorTest extends TestCase
     {
         $site = Site::factory()->create();
         $product = CentralProduct::factory()->create();
+        $this->enableProductCategory($site, $product);
         $admin = User::factory()->centralAdmin()->create();
 
         Livewire::actingAs($admin)

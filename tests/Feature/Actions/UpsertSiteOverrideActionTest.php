@@ -3,6 +3,7 @@
 namespace Tests\Feature\Actions;
 
 use App\Actions\Sites\UpsertSiteOverrideAction;
+use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Locale;
 use App\Models\Site;
@@ -10,10 +11,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Concerns\EnablesSiteProductCategories;
 use Tests\TestCase;
 
 class UpsertSiteOverrideActionTest extends TestCase
 {
+    use EnablesSiteProductCategories;
     use RefreshDatabase;
 
     #[DataProvider('entityTypes')]
@@ -41,6 +44,7 @@ class UpsertSiteOverrideActionTest extends TestCase
     {
         $site = Site::factory()->create();
         $product = CentralProduct::factory()->create();
+        $this->enableProductCategory($site, $product);
         Locale::factory()->create(['code' => 'de-DE']);
         DB::table('site_locales')->insert([
             'site_id' => $site->id,
@@ -72,6 +76,7 @@ class UpsertSiteOverrideActionTest extends TestCase
     {
         $site = Site::factory()->create();
         $product = CentralProduct::factory()->create();
+        $this->enableProductCategory($site, $product);
 
         try {
             app(UpsertSiteOverrideAction::class)->handle(
@@ -95,6 +100,7 @@ class UpsertSiteOverrideActionTest extends TestCase
     {
         $site = Site::factory()->create();
         $product = CentralProduct::factory()->create();
+        $this->enableProductCategory($site, $product);
         Locale::factory()->create(['code' => 'de-DE']);
         DB::table('site_locales')->insert([
             'site_id' => $site->id,
@@ -131,6 +137,7 @@ class UpsertSiteOverrideActionTest extends TestCase
     {
         $site = Site::factory()->create();
         $product = CentralProduct::factory()->create();
+        $this->enableProductCategory($site, $product);
         $action = app(UpsertSiteOverrideAction::class);
 
         $action->handle($site, 'product', $product->id, 'local_title', null, 'First title');
@@ -145,6 +152,48 @@ class UpsertSiteOverrideActionTest extends TestCase
             'locale_code' => '',
             'value_json' => json_encode(['value' => 'Updated title']),
         ]);
+    }
+
+    public function test_product_override_requires_an_enabled_site_category(): void
+    {
+        $site = Site::factory()->create();
+        $product = CentralProduct::factory()->create([
+            'central_category_id' => CentralCategory::factory()->create()->id,
+        ]);
+
+        try {
+            app(UpsertSiteOverrideAction::class)->handle($site, 'product', $product->id, 'local_title', null, 'Out of scope');
+
+            $this->fail('An override outside the enabled site categories was accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('entity_id', $exception->errors());
+        }
+
+        $this->assertDatabaseCount('site_overrides', 0);
+    }
+
+    public function test_disabled_site_category_rejects_product_override(): void
+    {
+        $site = Site::factory()->create();
+        $product = CentralProduct::factory()->create();
+        $this->enableProductCategory($site, $product, false);
+
+        $this->expectException(ValidationException::class);
+        app(UpsertSiteOverrideAction::class)->handle($site, 'product', $product->id, 'local_title', null, 'Disabled category');
+    }
+
+    public function test_override_can_be_cleared_after_its_product_category_is_disabled(): void
+    {
+        $site = Site::factory()->create();
+        $product = CentralProduct::factory()->create();
+        $this->enableProductCategory($site, $product);
+        $action = app(UpsertSiteOverrideAction::class);
+        $action->handle($site, 'product', $product->id, 'local_title', null, 'Local title');
+
+        DB::table('site_categories')->where('site_id', $site->id)->update(['is_enabled' => false]);
+        $action->handle($site, 'product', $product->id, 'local_title', null, '');
+
+        $this->assertDatabaseCount('site_overrides', 0);
     }
 
     #[DataProvider('oversizedFields')]

@@ -9,16 +9,19 @@ use App\Models\Site;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Tests\Concerns\EnablesSiteProductCategories;
 use Tests\TestCase;
 
 class LocalSlugOverrideTest extends TestCase
 {
+    use EnablesSiteProductCategories;
     use RefreshDatabase;
 
     public function test_locale_slug_is_saved_without_changing_canonical_slug(): void
     {
         $site = Site::factory()->create();
         $product = CentralProduct::factory()->create(['slug' => 'canonical-slug']);
+        $this->enableProductCategory($site, $product);
         $this->enableLocale($site, 'de-DE');
         app(UpsertSiteOverrideAction::class)->handle($site, 'product', $product->id, 'local_slug', 'de-DE', 'lokaler-slug');
 
@@ -30,6 +33,9 @@ class LocalSlugOverrideTest extends TestCase
     {
         $site = Site::factory()->create();
         $products = CentralProduct::factory()->count(2)->create();
+        foreach ($products as $product) {
+            $this->enableProductCategory($site, $product);
+        }
         $this->enableLocale($site, 'de-DE');
         $action = app(UpsertSiteOverrideAction::class);
         $action->handle($site, 'product', $products[0]->id, 'local_slug', 'de-DE', 'same-slug');
@@ -42,15 +48,20 @@ class LocalSlugOverrideTest extends TestCase
     {
         $site = Site::factory()->create();
         $this->enableLocale($site, 'de-DE');
+        $product = CentralProduct::factory()->create();
+        $this->enableProductCategory($site, $product);
 
         $this->expectException(ValidationException::class);
-        app(UpsertSiteOverrideAction::class)->handle($site, 'product', CentralProduct::factory()->create()->id, 'local_slug', 'de-DE', 'Invalid Slug');
+        app(UpsertSiteOverrideAction::class)->handle($site, 'product', $product->id, 'local_slug', 'de-DE', 'Invalid Slug');
     }
 
     public function test_locale_slug_cannot_duplicate_a_global_fallback_slug(): void
     {
         $site = Site::factory()->create();
         $products = CentralProduct::factory()->count(2)->create();
+        foreach ($products as $product) {
+            $this->enableProductCategory($site, $product);
+        }
         $this->enableLocale($site, 'de-DE');
         $action = app(UpsertSiteOverrideAction::class);
         $action->handle($site, 'product', $products[0]->id, 'local_slug', null, 'same-slug');
@@ -63,6 +74,9 @@ class LocalSlugOverrideTest extends TestCase
     {
         $site = Site::factory()->create();
         $products = CentralProduct::factory()->count(2)->create();
+        foreach ($products as $product) {
+            $this->enableProductCategory($site, $product);
+        }
         $this->enableLocale($site, 'de-DE');
         $action = app(UpsertSiteOverrideAction::class);
         $action->handle($site, 'product', $products[0]->id, 'local_slug', 'de-DE', 'same-slug');
@@ -75,6 +89,9 @@ class LocalSlugOverrideTest extends TestCase
     {
         $site = Site::factory()->create();
         $products = CentralProduct::factory()->count(2)->create();
+        foreach ($products as $product) {
+            $this->enableProductCategory($site, $product);
+        }
         $this->enableLocale($site, 'de-DE');
         $this->enableLocale($site, 'en-US');
         $action = app(UpsertSiteOverrideAction::class);

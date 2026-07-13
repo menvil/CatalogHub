@@ -68,6 +68,11 @@ final class CreateSiteWizard extends Page
 
     public function nextStep(): void
     {
+        if ($this->currentStep >= 6) {
+            return;
+        }
+
+        $this->validate($this->rulesForStep($this->currentStep));
         $this->currentStep = min(6, $this->currentStep + 1);
     }
 
@@ -113,17 +118,14 @@ final class CreateSiteWizard extends Page
 
     public function createSite(CreateSiteAction $action): void
     {
-        $categoryRules = $this->mode === SiteMode::SingleCategory->value
-            ? ['required', 'array', 'size:1']
-            : ['required', 'array', 'min:1'];
+        try {
+            $data = $this->validate($this->allRules());
+        } catch (ValidationException $exception) {
+            $this->showStepForErrors($exception->errors());
 
-        $data = $this->validate([
-            'code' => ['required', 'string', 'max:255', 'unique:sites,code'], 'name' => ['required', 'string', 'max:255'],
-            'domain' => ['nullable', 'string', 'max:255', 'unique:sites,domain'], 'marketId' => ['required', 'integer', 'exists:markets,id'],
-            'mode' => ['required', 'in:single_category,multi_category'], 'enabledLocales' => ['required', 'array', 'min:1'],
-            'enabledLocales.*' => ['string', 'exists:locales,code'], 'defaultLocale' => ['required', 'string', 'in:'.implode(',', $this->enabledLocales)],
-            'enabledCategories' => $categoryRules, 'enabledCategories.*' => ['integer', 'exists:central_categories,id'], 'features' => ['array'],
-        ]);
+            throw $exception;
+        }
+
         try {
             $site = $action->handle(['market_id' => $data['marketId'], 'code' => $data['code'], 'name' => $data['name'], 'domain' => $data['domain'], 'mode' => $data['mode'], 'default_locale' => $data['defaultLocale'], 'locales' => $data['enabledLocales'], 'categories' => $data['enabledCategories'], 'features' => $data['features']]);
         } catch (ValidationException $exception) {
@@ -139,10 +141,73 @@ final class CreateSiteWizard extends Page
                 $errors[$fieldMap[$field] ?? $field] = $messages;
             }
 
+            $this->showStepForErrors($errors);
+
             throw ValidationException::withMessages($errors);
         }
 
         $this->createdSiteId = $site->id;
         Notification::make()->title('Site created')->success()->send();
+    }
+
+    /** @return array<string, list<string>> */
+    private function rulesForStep(int $step): array
+    {
+        return match ($step) {
+            0 => [
+                'code' => ['required', 'string', 'max:255', 'unique:sites,code'],
+                'name' => ['required', 'string', 'max:255'],
+                'domain' => ['nullable', 'string', 'max:255', 'unique:sites,domain'],
+            ],
+            1 => [
+                'marketId' => ['required', 'integer', 'exists:markets,id'],
+            ],
+            2 => [
+                'mode' => ['required', 'in:single_category,multi_category'],
+            ],
+            3 => [
+                'enabledLocales' => ['required', 'array', 'min:1'],
+                'enabledLocales.*' => ['string', 'exists:locales,code'],
+                'defaultLocale' => ['required', 'string', 'in:'.implode(',', $this->enabledLocales)],
+            ],
+            4 => [
+                'enabledCategories' => $this->mode === SiteMode::SingleCategory->value
+                    ? ['required', 'array', 'size:1']
+                    : ['required', 'array', 'min:1'],
+                'enabledCategories.*' => ['integer', 'exists:central_categories,id'],
+            ],
+            5 => [
+                'features' => ['array'],
+                'features.*' => ['boolean:strict'],
+            ],
+            default => [],
+        };
+    }
+
+    /** @return array<string, list<string>> */
+    private function allRules(): array
+    {
+        return array_merge(...array_map(fn (int $step): array => $this->rulesForStep($step), range(0, 5)));
+    }
+
+    /** @param array<string, list<string>> $errors */
+    private function showStepForErrors(array $errors): void
+    {
+        $field = array_key_first($errors);
+
+        if ($field === null) {
+            return;
+        }
+
+        $rootField = explode('.', $field)[0];
+        $this->currentStep = match ($rootField) {
+            'code', 'name', 'domain' => 0,
+            'marketId' => 1,
+            'mode' => 2,
+            'enabledLocales', 'defaultLocale' => 3,
+            'enabledCategories' => 4,
+            'features' => 5,
+            default => $this->currentStep,
+        };
     }
 }

@@ -12,16 +12,19 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
+use Tests\Concerns\EnablesSiteProductCategories;
 use Tests\TestCase;
 
 class LocalSeoOverrideTest extends TestCase
 {
+    use EnablesSiteProductCategories;
     use RefreshDatabase;
 
     public function test_locale_specific_meta_fields_are_saved_without_central_mutation(): void
     {
         $site = Site::factory()->create();
         $product = CentralProduct::factory()->create();
+        $this->enableProductCategory($site, $product);
         $this->enableLocale($site, 'de-DE');
         $name = $product->name;
         $action = app(UpsertSiteOverrideAction::class);
@@ -37,6 +40,7 @@ class LocalSeoOverrideTest extends TestCase
     {
         $site = Site::factory()->create();
         $product = CentralProduct::factory()->create();
+        $this->enableProductCategory($site, $product);
         $this->enableLocale($site, 'de-DE');
         $action = app(UpsertSiteOverrideAction::class);
         $action->handle($site, 'product', $product->id, 'meta_title', 'de-DE', 'Title');
@@ -87,6 +91,7 @@ class LocalSeoOverrideTest extends TestCase
     {
         $site = Site::factory()->create();
         $product = CentralProduct::factory()->create();
+        $this->enableProductCategory($site, $product);
         $this->enableLocale($site, 'de-DE');
         $action = app(UpsertSiteOverrideAction::class);
         $action->handle($site, 'product', $product->id, 'meta_title', 'de-DE', 'Old title');

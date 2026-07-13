@@ -43,6 +43,22 @@ final class SiteBrandVisibilityService
         return ! in_array($brand->id, $this->hiddenIds($site), true);
     }
 
+    /**
+     * @param  iterable<CentralBrand>  $brands
+     * @return array<int, bool>
+     */
+    public function allowsBrands(Site $site, iterable $brands): array
+    {
+        $hiddenIds = $this->hiddenIds($site);
+        $allowedById = [];
+
+        foreach ($brands as $brand) {
+            $allowedById[$brand->id] = ! in_array($brand->id, $hiddenIds, true);
+        }
+
+        return $allowedById;
+    }
+
     public function allowsProduct(Site $site, CentralProduct $product): bool
     {
         $brandId = $product->getAttribute('central_brand_id');

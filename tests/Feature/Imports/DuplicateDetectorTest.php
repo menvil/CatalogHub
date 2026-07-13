@@ -46,14 +46,13 @@ class DuplicateDetectorTest extends TestCase
         $matchingBrand = CentralBrand::factory()->create();
         $matchingCategory = CentralCategory::factory()->create();
         $otherBrand = CentralBrand::factory()->create();
-        $otherCategory = CentralCategory::factory()->create();
         $exact = CentralProduct::factory()
             ->for($matchingBrand, 'brand')
             ->for($matchingCategory, 'category')
             ->create(['name' => 'Shared Product Name']);
         $different = CentralProduct::factory()
             ->for($otherBrand, 'brand')
-            ->for($otherCategory, 'category')
+            ->for($matchingCategory, 'category')
             ->create(['name' => 'Shared Product Name']);
         $draft = NormalizedProductDraft::factory()->create([
             'title' => 'Shared Product Name',
@@ -77,5 +76,32 @@ class DuplicateDetectorTest extends TestCase
 
         $this->assertCount(0, $candidates);
         $this->assertSame(0, DuplicateCandidate::query()->count());
+    }
+
+    public function test_redetection_preserves_an_existing_review_decision(): void
+    {
+        $brand = CentralBrand::factory()->create();
+        $category = CentralCategory::factory()->create();
+        $product = CentralProduct::factory()->for($brand, 'brand')->for($category, 'category')->create([
+            'name' => 'Reviewed Mixer',
+        ]);
+        $draft = NormalizedProductDraft::factory()->create([
+            'title' => 'Reviewed Mixer',
+            'brand_id' => $brand->id,
+            'category_id' => $category->id,
+        ]);
+        DuplicateCandidate::query()->create([
+            'import_batch_id' => $draft->import_batch_id,
+            'normalized_product_draft_id' => $draft->id,
+            'candidate_type' => 'central_product',
+            'candidate_id' => $product->id,
+            'score' => '0.9000',
+            'reason_json' => [],
+            'status' => 'confirmed_duplicate',
+        ]);
+
+        (new DuplicateDetector)->detect($draft);
+
+        $this->assertSame('confirmed_duplicate', DuplicateCandidate::query()->sole()->status);
     }
 }

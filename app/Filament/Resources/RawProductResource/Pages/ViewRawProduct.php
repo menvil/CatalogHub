@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\RawProductResource\Pages;
 
 use App\Filament\Resources\ImportBatchResource;
+use App\Filament\Resources\NormalizedProductDraftResource;
 use App\Filament\Resources\RawProductResource;
 use App\Models\Imports\RawProduct;
 use Filament\Actions\Action;
@@ -28,7 +29,9 @@ final class ViewRawProduct extends ViewRecord
                 ->label('Normalized draft')
                 ->icon(Heroicon::OutlinedDocumentCheck)
                 ->visible($draft !== null)
-                ->url($draft !== null ? url("/admin/normalized-product-drafts/{$draft->id}") : null),
+                ->url($draft !== null
+                    ? NormalizedProductDraftResource::getUrl('view', ['record' => $draft])
+                    : null),
         ];
     }
 }

@@ -7,6 +7,7 @@ use App\Models\Imports\NormalizedProductDraft;
 use App\Models\MediaAsset;
 use App\Models\MediaSource;
 use App\Services\Imports\ImportMediaDownloader;
+use App\Services\Media\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
@@ -36,7 +37,7 @@ class ImportMediaDownloadTest extends TestCase
             ]],
         ]);
 
-        app(ImportMediaDownloader::class)->downloadForDraft($draft);
+        $this->downloader()->downloadForDraft($draft);
 
         $asset = MediaAsset::query()->sole();
         $source = MediaSource::query()->sole();
@@ -69,12 +70,81 @@ class ImportMediaDownloadTest extends TestCase
             ],
         ]);
 
-        app(ImportMediaDownloader::class)->downloadForDraft($draft);
+        $this->downloader()->downloadForDraft($draft);
 
         $media = $draft->fresh()->media_json;
         $this->assertSame('failed', $media[0]['status']);
         $this->assertSame('downloaded', $media[1]['status']);
         $this->assertSame(1, MediaAsset::query()->count());
         $this->assertSame('media_download_failed', NormalizationError::query()->sole()->code);
+    }
+
+    public function test_rejects_dns_resolved_private_addresses_before_requesting_media(): void
+    {
+        Storage::fake('public');
+        Http::fake();
+        $draft = NormalizedProductDraft::factory()->create([
+            'media_json' => [['source_url' => 'https://internal.example.test/product.jpg']],
+        ]);
+        $downloader = new ImportMediaDownloader(
+            app(MediaService::class),
+            static fn (string $host): array => ['127.0.0.1'],
+        );
+
+        $downloader->downloadForDraft($draft);
+
+        Http::assertNothingSent();
+        $this->assertSame('failed', $draft->fresh()->media_json[0]['status']);
+        $this->assertStringContainsString(
+            'Private or reserved',
+            NormalizationError::query()->sole()->message,
+        );
+    }
+
+    public function test_rejects_oversized_response_during_bounded_download(): void
+    {
+        Storage::fake('public');
+        config()->set('imports.media_download_max_bytes', 8);
+        Http::fake([
+            'https://cdn.example.test/large.jpg' => Http::response(str_repeat('x', 9), 200, [
+                'Content-Type' => 'image/jpeg',
+            ]),
+        ]);
+        $draft = NormalizedProductDraft::factory()->create([
+            'media_json' => [['source_url' => 'https://cdn.example.test/large.jpg']],
+        ]);
+
+        $this->downloader()->downloadForDraft($draft);
+
+        $this->assertSame('failed', $draft->fresh()->media_json[0]['status']);
+        $this->assertStringContainsString('exceeds', NormalizationError::query()->sole()->message);
+        $this->assertSame(0, MediaAsset::query()->count());
+    }
+
+    public function test_rejects_non_image_bytes_with_an_image_content_type(): void
+    {
+        Storage::fake('public');
+        Http::fake([
+            'https://cdn.example.test/spoofed.jpg' => Http::response('plain text payload', 200, [
+                'Content-Type' => 'image/jpeg',
+            ]),
+        ]);
+        $draft = NormalizedProductDraft::factory()->create([
+            'media_json' => [['source_url' => 'https://cdn.example.test/spoofed.jpg']],
+        ]);
+
+        $this->downloader()->downloadForDraft($draft);
+
+        $this->assertSame('failed', $draft->fresh()->media_json[0]['status']);
+        $this->assertStringContainsString('not an image', NormalizationError::query()->sole()->message);
+        $this->assertSame(0, MediaAsset::query()->count());
+    }
+
+    private function downloader(): ImportMediaDownloader
+    {
+        return new ImportMediaDownloader(
+            app(MediaService::class),
+            static fn (string $host): array => ['93.184.216.34'],
+        );
     }
 }

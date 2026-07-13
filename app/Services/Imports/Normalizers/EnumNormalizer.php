@@ -7,10 +7,14 @@ use App\Data\Imports\NormalizedAttributeValueData;
 use App\Enums\AttributeDataType;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
 
 final class EnumNormalizer implements AttributeValueNormalizerInterface
 {
+    /** @var array<int, Collection<int, AttributeOption>> */
+    private array $optionsByDefinitionId = [];
+
     public function supports(AttributeDefinition $definition): bool
     {
         return $definition->data_type === AttributeDataType::Enum;
@@ -25,7 +29,11 @@ final class EnumNormalizer implements AttributeValueNormalizerInterface
         }
 
         $needle = $this->normalizeToken((string) $rawValue);
-        $options = $definition->options()->where('is_visible', true)->with('translations')->get();
+        $definitionId = (int) $definition->getKey();
+        $options = $this->optionsByDefinitionId[$definitionId] ??= $definition->options()
+            ->where('is_visible', true)
+            ->with('translations')
+            ->get();
 
         foreach ($options as $option) {
             if ($this->normalizeToken($option->code) === $needle) {

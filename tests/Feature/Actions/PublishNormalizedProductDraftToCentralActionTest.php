@@ -167,6 +167,25 @@ class PublishNormalizedProductDraftToCentralActionTest extends TestCase
         }
     }
 
+    public function test_malformed_attribute_without_identifier_throws_domain_exception(): void
+    {
+        $editor = User::factory()->create(['role' => UserRole::CatalogEditor]);
+        $draft = NormalizedProductDraft::factory()->create([
+            'status' => 'approved',
+            'approved_by_user_id' => $editor->id,
+            'approved_at' => now(),
+            'attributes_json' => [[
+                'value_type' => 'string',
+                'value' => 'missing definition',
+            ]],
+        ]);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('references an unknown attribute definition');
+
+        app(PublishNormalizedProductDraftToCentralAction::class)->handle($draft, $editor);
+    }
+
     public function test_ui_calls_guarded_backend_publish_action(): void
     {
         $moderator = User::factory()->create(['role' => UserRole::Moderator]);

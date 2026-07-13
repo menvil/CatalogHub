@@ -2,11 +2,11 @@
     <form wire:submit="startImport" class="space-y-6">
         <x-admin.stepper-wizard
             :steps="[
-                ['key' => 'source', 'label' => 'Source', 'status' => 'completed'],
-                ['key' => 'artifact', 'label' => 'Artifact', 'status' => $artifact ? 'completed' : 'current'],
-                ['key' => 'confirm', 'label' => 'Confirm', 'status' => $artifact ? 'current' : 'pending'],
+                ['key' => 'source', 'label' => 'Source', 'status' => $sourceId ? 'completed' : 'current'],
+                ['key' => 'artifact', 'label' => 'Artifact', 'status' => ! $sourceId ? 'pending' : ($artifact ? 'completed' : 'current')],
+                ['key' => 'confirm', 'label' => 'Confirm', 'status' => $sourceId && $artifact ? 'current' : 'pending'],
             ]"
-            current-step="{{ $artifact ? 'confirm' : 'artifact' }}"
+            current-step="{{ ! $sourceId ? 'source' : ($artifact ? 'confirm' : 'artifact') }}"
         />
 
         <x-admin.card title="Import source" description="Choose an active adapter and upload its original artifact.">
@@ -37,9 +37,19 @@
         </x-admin.card>
 
         @if ($createdBatchId)
-            <x-admin.card variant="success" title="Import batch created">
-                Batch #{{ $createdBatchId }} completed. The original artifact and raw products are available for review.
-            </x-admin.card>
+            <div @if (in_array($batchStatus, ['pending', 'processing'], true)) wire:poll.2s="refreshBatchStatus" @endif>
+                <x-admin.card
+                    :variant="$batchStatus === 'failed' ? 'danger' : ($batchStatus === 'completed' ? 'success' : 'default')"
+                    title="Import batch created"
+                >
+                    Batch #{{ $createdBatchId }} status: {{ $batchStatus }}.
+                    @if ($batchStatus === 'completed')
+                        The original artifact and raw products are available for review.
+                    @elseif (in_array($batchStatus, ['pending', 'processing'], true))
+                        This page will update automatically when background processing finishes.
+                    @endif
+                </x-admin.card>
+            </div>
         @endif
 
         <div class="flex justify-end">

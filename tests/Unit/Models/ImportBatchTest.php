@@ -58,4 +58,13 @@ class ImportBatchTest extends TestCase
         $this->assertSame('Invalid payload', $batch->error_message);
         $this->assertNotNull($batch->finished_at);
     }
+
+    public function test_factory_filename_is_fully_optional(): void
+    {
+        $filenames = ImportBatch::factory()->count(30)->make()->pluck('original_filename');
+
+        $this->assertTrue($filenames->every(
+            fn (?string $filename): bool => $filename === null || str_ends_with($filename, '.data'),
+        ));
+    }
 }

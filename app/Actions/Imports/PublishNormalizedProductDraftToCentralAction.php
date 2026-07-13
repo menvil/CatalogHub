@@ -118,7 +118,7 @@ final class PublishNormalizedProductDraftToCentralAction
 
         if (isset($candidate['attribute_definition_id'])) {
             $definition = AttributeDefinition::query()->find((int) $candidate['attribute_definition_id']);
-        } elseif (filled($candidate['code']) && $draft->category_id !== null) {
+        } elseif (filled($candidate['code'] ?? null) && $draft->category_id !== null) {
             $definition = AttributeDefinition::query()
                 ->where('central_category_id', $draft->category_id)
                 ->where('code', $candidate['code'])

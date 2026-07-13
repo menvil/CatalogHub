@@ -61,11 +61,7 @@ final class AttributeMappingService
     {
         return RawProduct::query()
             ->where('import_source_id', $mapping->import_source_id)
-            ->get(['raw_payload_json'])
-            ->filter(fn (RawProduct $rawProduct): bool => array_key_exists(
-                $mapping->raw_key,
-                $rawProduct->raw_payload_json,
-            ))
+            ->whereJsonContainsKey("raw_payload_json->{$mapping->raw_key}")
             ->count();
     }
 }

@@ -58,6 +58,11 @@ class User extends Authenticatable implements FilamentUser
         return $this->userRole() === UserRole::CatalogEditor;
     }
 
+    public function canManageImports(): bool
+    {
+        return $this->isSuperAdmin() || $this->isCentralAdmin() || $this->isCatalogEditor();
+    }
+
     public function isSiteAdmin(): bool
     {
         return $this->userRole() === UserRole::SiteAdmin;

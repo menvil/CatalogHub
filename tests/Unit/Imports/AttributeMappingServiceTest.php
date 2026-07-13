@@ -5,7 +5,9 @@ namespace Tests\Unit\Imports;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Imports\AttributeMapping;
+use App\Models\Imports\ImportBatch;
 use App\Models\Imports\ImportSource;
+use App\Models\Imports\RawProduct;
 use App\Services\Imports\AttributeMappingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -54,5 +56,41 @@ class AttributeMappingServiceTest extends TestCase
         $this->assertSame('unknown_field', $mapping->normalized_raw_key);
         $this->assertSame('auto', $mapping->status);
         $this->assertSame($definitionsBefore, AttributeDefinition::query()->count());
+    }
+
+    public function test_counts_source_payloads_containing_the_raw_key_in_the_database(): void
+    {
+        $source = ImportSource::factory()->create();
+        $otherSource = ImportSource::factory()->create();
+        $category = CentralCategory::factory()->create();
+        $mapping = AttributeMapping::query()->create([
+            'import_source_id' => $source->id,
+            'category_id' => $category->id,
+            'raw_key' => 'Power (W)',
+            'normalized_raw_key' => 'power_w',
+            'confidence' => '1.0000',
+            'status' => 'reviewed',
+            'mapping_type' => 'attribute',
+        ]);
+        $batch = ImportBatch::factory()->create(['import_source_id' => $source->id]);
+        $otherBatch = ImportBatch::factory()->create(['import_source_id' => $otherSource->id]);
+
+        RawProduct::factory()->create([
+            'import_batch_id' => $batch->id,
+            'import_source_id' => $source->id,
+            'raw_payload_json' => ['Power (W)' => 500],
+        ]);
+        RawProduct::factory()->create([
+            'import_batch_id' => $batch->id,
+            'import_source_id' => $source->id,
+            'raw_payload_json' => ['Power' => 300],
+        ]);
+        RawProduct::factory()->create([
+            'import_batch_id' => $otherBatch->id,
+            'import_source_id' => $otherSource->id,
+            'raw_payload_json' => ['Power (W)' => 700],
+        ]);
+
+        $this->assertSame(1, (new AttributeMappingService)->usageCount($mapping));
     }
 }

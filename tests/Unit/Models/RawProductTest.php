@@ -41,4 +41,17 @@ class RawProductTest extends TestCase
         $this->assertInstanceOf(NormalizedProductDraft::class, $rawProduct->draft()->getRelated());
         $this->assertInstanceOf(NormalizationError::class, $rawProduct->errors()->getRelated());
     }
+
+    public function test_factory_hash_uses_canonical_writer_encoding(): void
+    {
+        $rawProduct = RawProduct::factory()->make();
+        $payload = $rawProduct->raw_payload_json;
+        ksort($payload, SORT_STRING);
+        $encoded = json_encode(
+            $payload,
+            JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+        );
+
+        $this->assertSame(hash('sha256', $encoded), $rawProduct->payload_hash);
+    }
 }

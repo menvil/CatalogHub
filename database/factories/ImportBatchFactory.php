@@ -18,7 +18,7 @@ class ImportBatchFactory extends Factory
         return [
             'import_source_id' => ImportSource::factory(),
             'status' => 'pending',
-            'original_filename' => fake()->optional()->word().'.data',
+            'original_filename' => fake()->optional()->passthrough(fake()->word().'.data'),
             'total_items' => 0,
             'raw_items_count' => 0,
             'drafts_count' => 0,

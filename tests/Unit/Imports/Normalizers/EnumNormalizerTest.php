@@ -8,6 +8,7 @@ use App\Models\CentralCatalog\AttributeOption;
 use App\Models\Translations\AttributeOptionTranslation;
 use App\Services\Imports\Normalizers\EnumNormalizer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class EnumNormalizerTest extends TestCase
@@ -52,6 +53,20 @@ class EnumNormalizerTest extends TestCase
         $this->assertFalse($result->isValid);
         $this->assertSame('unknown_enum_option', $result->errorCode);
         $this->assertSame($count, AttributeOption::query()->count());
+    }
+
+    public function test_reuses_loaded_options_for_the_same_definition(): void
+    {
+        [$definition, $option] = $this->definitionAndOption();
+        $normalizer = new EnumNormalizer;
+        DB::enableQueryLog();
+
+        $normalizer->normalize($definition, $option->code);
+        $queriesAfterFirstCall = count(DB::getQueryLog());
+        $normalizer->normalize($definition, $option->label);
+
+        $this->assertGreaterThan(0, $queriesAfterFirstCall);
+        $this->assertCount($queriesAfterFirstCall, DB::getQueryLog());
     }
 
     /** @return array{AttributeDefinition, AttributeOption} */

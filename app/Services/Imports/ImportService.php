@@ -3,6 +3,8 @@
 namespace App\Services\Imports;
 
 use App\Contracts\Imports\ProductImporterInterface;
+use App\Jobs\Imports\ProcessImportBatchJob;
+use App\Models\Imports\ImportArtifact;
 use App\Models\Imports\ImportBatch;
 use App\Models\Imports\ImportSource;
 use Illuminate\Http\UploadedFile;
@@ -26,11 +28,7 @@ final readonly class ImportService
         UploadedFile|string $artifact,
         array $options = [],
     ): ImportBatch {
-        $batch = $source->batches()->create([
-            'status' => 'pending',
-            'original_filename' => $this->originalFilename($artifact),
-            'metadata_json' => $options,
-        ]);
+        $batch = $this->createBatch($source, $artifact, $options);
 
         try {
             $batch->markStarted();
@@ -41,6 +39,53 @@ final readonly class ImportService
             $batch->markFailed($exception->getMessage() ?: $exception::class);
 
             throw $exception;
+        }
+
+        return $batch->refresh();
+    }
+
+    /** @param array<string, mixed> $options */
+    public function queueImport(
+        ImportSource $source,
+        UploadedFile|string $artifact,
+        array $options = [],
+    ): ImportBatch {
+        $batch = $this->createBatch($source, $artifact, $options);
+
+        try {
+            $this->storeOriginalArtifact($batch, $artifact);
+            ProcessImportBatchJob::dispatch($batch->id);
+        } catch (Throwable $exception) {
+            $batch->markFailed($exception->getMessage() ?: $exception::class);
+
+            throw $exception;
+        }
+
+        return $batch->refresh();
+    }
+
+    public function processQueuedImport(ImportBatch $batch): ImportBatch
+    {
+        $temporaryPath = null;
+
+        try {
+            $artifact = $batch->artifacts()->where('type', 'original')->firstOrFail();
+            $temporaryPath = $this->copyArtifactToTemporaryFile($artifact);
+            $batch->markStarted();
+            $this->resolveImporter($batch->source)->import(
+                $batch,
+                $temporaryPath,
+                $batch->metadata_json ?? [],
+            );
+            $batch->markFinished();
+        } catch (Throwable $exception) {
+            $batch->markFailed($exception->getMessage() ?: $exception::class);
+
+            throw $exception;
+        } finally {
+            if (is_string($temporaryPath)) {
+                @unlink($temporaryPath);
+            }
         }
 
         return $batch->refresh();
@@ -64,12 +109,37 @@ final readonly class ImportService
             : basename($artifact);
     }
 
-    private function storeOriginalArtifact(ImportBatch $batch, UploadedFile|string $artifact): void
+    /** @param array<string, mixed> $options */
+    private function createBatch(
+        ImportSource $source,
+        UploadedFile|string $artifact,
+        array $options,
+    ): ImportBatch {
+        return $source->batches()->create([
+            'status' => 'pending',
+            'original_filename' => $this->originalFilename($artifact),
+            'metadata_json' => $options,
+        ]);
+    }
+
+    private function storeOriginalArtifact(ImportBatch $batch, UploadedFile|string $artifact): ImportArtifact
     {
         $sourcePath = $artifact instanceof UploadedFile ? $artifact->getRealPath() : $artifact;
-        $contents = $sourcePath !== false ? file_get_contents($sourcePath) : false;
 
-        if ($contents === false) {
+        if (! is_string($sourcePath) || ! is_file($sourcePath) || ! is_readable($sourcePath)) {
+            throw new RuntimeException('The original import artifact could not be read.');
+        }
+
+        $fileSize = filesize($sourcePath);
+        $checksum = hash_file('sha256', $sourcePath);
+
+        if ($fileSize === false || $checksum === false) {
+            throw new RuntimeException('The original import artifact could not be read.');
+        }
+
+        $stream = fopen($sourcePath, 'rb');
+
+        if ($stream === false) {
             throw new RuntimeException('The original import artifact could not be read.');
         }
 
@@ -85,19 +155,61 @@ final readonly class ImportService
             $storedFilename,
         ]));
 
-        if (! Storage::disk($disk)->put($path, $contents)) {
-            throw new RuntimeException("The original import artifact could not be stored on disk [{$disk}].");
+        try {
+            if (! Storage::disk($disk)->put($path, $stream)) {
+                throw new RuntimeException("The original import artifact could not be stored on disk [{$disk}].");
+            }
+        } finally {
+            fclose($stream);
         }
 
-        $batch->artifacts()->create([
+        return $batch->artifacts()->create([
             'type' => 'original',
             'disk' => $disk,
             'path' => $path,
             'original_filename' => $originalFilename,
             'mime_type' => $artifact instanceof UploadedFile ? $artifact->getClientMimeType() : null,
-            'file_size' => strlen($contents),
-            'checksum' => hash('sha256', $contents),
+            'file_size' => $fileSize,
+            'checksum' => $checksum,
             'metadata_json' => [],
         ]);
+    }
+
+    private function copyArtifactToTemporaryFile(ImportArtifact $artifact): string
+    {
+        $source = Storage::disk($artifact->disk)->readStream($artifact->path);
+        $temporaryPath = tempnam(sys_get_temp_dir(), 'cataloghub-import-artifact-');
+
+        if (! is_resource($source) || $temporaryPath === false) {
+            if (is_resource($source)) {
+                fclose($source);
+            }
+
+            throw new RuntimeException('The stored import artifact could not be read.');
+        }
+
+        $destination = fopen($temporaryPath, 'wb');
+
+        if ($destination === false) {
+            fclose($source);
+            @unlink($temporaryPath);
+
+            throw new RuntimeException('The stored import artifact could not be read.');
+        }
+
+        try {
+            if (stream_copy_to_stream($source, $destination) === false) {
+                throw new RuntimeException('The stored import artifact could not be read.');
+            }
+        } catch (Throwable $exception) {
+            @unlink($temporaryPath);
+
+            throw $exception;
+        } finally {
+            fclose($source);
+            fclose($destination);
+        }
+
+        return $temporaryPath;
     }
 }

@@ -58,12 +58,19 @@ final readonly class UnitNormalizer implements AttributeValueNormalizerInterface
             return $this->failure($rawValue, 'incompatible_unit_dimension', $exception->getMessage());
         }
 
-        if ($definition->data_type === AttributeDataType::Integer && floor($canonicalValue) !== $canonicalValue) {
-            return $this->failure(
-                $rawValue,
-                'invalid_integer',
-                'The canonical measured value contains a fraction for an integer attribute.'
-            );
+        if ($definition->data_type === AttributeDataType::Integer) {
+            $roundedValue = round($canonicalValue);
+            $tolerance = 1e-8;
+
+            if (abs($canonicalValue - $roundedValue) > $tolerance) {
+                return $this->failure(
+                    $rawValue,
+                    'invalid_integer',
+                    'The canonical measured value contains a fraction for an integer attribute.'
+                );
+            }
+
+            $canonicalValue = $roundedValue;
         }
 
         return NormalizedAttributeValueData::success($canonicalValue, $rawValue, [

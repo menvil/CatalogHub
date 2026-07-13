@@ -97,20 +97,24 @@ final class NormalizedProductDraftResource extends Resource
                 ->columnSpanFull(),
             TextEntry::make('duplicate_summary')
                 ->label('Duplicate candidates')
-                ->state(fn (NormalizedProductDraft $record): string => self::prettyJson(
-                    $record->duplicateCandidates()
+                ->state(function (NormalizedProductDraft $record): ?string {
+                    $candidates = $record->duplicateCandidates()
                         ->get(['candidate_type', 'candidate_id', 'score', 'reason_json', 'status'])
-                        ->toArray()
-                ))
+                        ->toArray();
+
+                    return $candidates === [] ? null : self::prettyJson($candidates);
+                })
                 ->placeholder('None')
                 ->columnSpanFull(),
             TextEntry::make('error_summary')
                 ->label('Normalization errors')
-                ->state(fn (NormalizedProductDraft $record): string => self::prettyJson(
-                    $record->errors()
+                ->state(function (NormalizedProductDraft $record): ?string {
+                    $errors = $record->errors()
                         ->get(['severity', 'code', 'message', 'raw_key', 'raw_value', 'resolved_at'])
-                        ->toArray()
-                ))
+                        ->toArray();
+
+                    return $errors === [] ? null : self::prettyJson($errors);
+                })
                 ->placeholder('None')
                 ->columnSpanFull(),
             TextEntry::make('review_notes')->placeholder('None')->columnSpanFull(),

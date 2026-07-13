@@ -5,6 +5,7 @@ namespace App\Services\Imports;
 use App\Models\Imports\NormalizationError;
 use App\Models\Imports\NormalizedProductDraft;
 use App\Services\Media\MediaService;
+use Closure;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
@@ -13,7 +14,11 @@ use Throwable;
 
 final readonly class ImportMediaDownloader
 {
-    public function __construct(private MediaService $mediaService) {}
+    /** @param (Closure(string): list<string>)|null $hostResolver */
+    public function __construct(
+        private MediaService $mediaService,
+        private ?Closure $hostResolver = null,
+    ) {}
 
     public function downloadForDraft(NormalizedProductDraft $draft): NormalizedProductDraft
     {
@@ -45,25 +50,18 @@ final readonly class ImportMediaDownloader
     {
         $url = (string) ($candidate['source_url'] ?? $candidate['url'] ?? '');
         $this->assertSafeUrl($url);
-
-        $response = Http::timeout((int) config('imports.media_download_timeout', 10))->get($url);
-        $response->throw();
-        $this->assertImageResponse($response);
-
-        $body = $response->body();
         $maximumBytes = (int) config('imports.media_download_max_bytes', 10 * 1024 * 1024);
-
-        if (strlen($body) > $maximumBytes) {
-            throw new RuntimeException('The imported media file exceeds the configured size limit.');
-        }
-
         $temporaryPath = tempnam(sys_get_temp_dir(), 'cataloghub-import-media-');
 
-        if ($temporaryPath === false || file_put_contents($temporaryPath, $body) === false) {
+        if ($temporaryPath === false) {
             throw new RuntimeException('Unable to create a temporary imported media file.');
         }
 
         try {
+            $response = $this->downloadToFile($url, $temporaryPath, $maximumBytes);
+            $response->throw();
+            $this->assertImageResponse($response, $temporaryPath);
+
             $filename = basename((string) parse_url($url, PHP_URL_PATH)) ?: 'imported-image.jpg';
             $mimeType = trim(explode(';', (string) $response->header('Content-Type'))[0]);
             $file = new UploadedFile($temporaryPath, $filename, $mimeType, null, true);
@@ -111,19 +109,129 @@ final readonly class ImportMediaDownloader
 
         if (
             filter_var($host, FILTER_VALIDATE_IP) !== false
-            && filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false
+        ) {
+            $this->assertPublicIp($host);
+
+            return;
+        }
+
+        $addresses = $this->resolveHostAddresses($host);
+
+        if ($addresses === []) {
+            throw new RuntimeException('The imported media host could not be resolved.');
+        }
+
+        foreach ($addresses as $address) {
+            $this->assertPublicIp($address);
+        }
+    }
+
+    private function assertImageResponse(Response $response, string $path): void
+    {
+        $mimeType = strtolower((string) $response->header('Content-Type'));
+        $imageInfo = @getimagesize($path);
+
+        if (
+            ! str_starts_with($mimeType, 'image/')
+            || $imageInfo === false
+            || ! str_starts_with(strtolower($imageInfo['mime']), 'image/')
+        ) {
+            throw new RuntimeException('The imported media response is not an image.');
+        }
+    }
+
+    private function downloadToFile(string $url, string $path, int $maximumBytes): Response
+    {
+        $response = Http::timeout((int) config('imports.media_download_timeout', 10))
+            ->withOptions([
+                'allow_redirects' => false,
+                'sink' => $path,
+                'progress' => static function (int $downloadTotal, int $downloadedBytes) use ($maximumBytes): void {
+                    if ($downloadTotal > $maximumBytes || $downloadedBytes > $maximumBytes) {
+                        throw new RuntimeException('The imported media file exceeds the configured size limit.');
+                    }
+                },
+            ])
+            ->get($url);
+
+        if ((filesize($path) ?: 0) === 0) {
+            $this->writeResponseStream($response, $path, $maximumBytes);
+        }
+
+        if ((filesize($path) ?: 0) > $maximumBytes) {
+            throw new RuntimeException('The imported media file exceeds the configured size limit.');
+        }
+
+        return $response;
+    }
+
+    private function writeResponseStream(Response $response, string $path, int $maximumBytes): void
+    {
+        $source = $response->toPsrResponse()->getBody();
+        $destination = fopen($path, 'wb');
+
+        if ($destination === false) {
+            throw new RuntimeException('Unable to create a temporary imported media file.');
+        }
+
+        $written = 0;
+
+        try {
+            while (! $source->eof()) {
+                $chunk = $source->read(min(8192, $maximumBytes - $written + 1));
+                $written += strlen($chunk);
+
+                if ($written > $maximumBytes) {
+                    throw new RuntimeException('The imported media file exceeds the configured size limit.');
+                }
+
+                if ($chunk !== '' && fwrite($destination, $chunk) === false) {
+                    throw new RuntimeException('Unable to create a temporary imported media file.');
+                }
+            }
+        } finally {
+            fclose($destination);
+        }
+    }
+
+    private function assertPublicIp(string $address): void
+    {
+        if (
+            filter_var($address, FILTER_VALIDATE_IP) === false
+            || filter_var(
+                $address,
+                FILTER_VALIDATE_IP,
+                FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE,
+            ) === false
         ) {
             throw new RuntimeException('Private or reserved media hosts are not allowed.');
         }
     }
 
-    private function assertImageResponse(Response $response): void
+    /** @return list<string> */
+    private function resolveHostAddresses(string $host): array
     {
-        $mimeType = strtolower((string) $response->header('Content-Type'));
-
-        if (! str_starts_with($mimeType, 'image/')) {
-            throw new RuntimeException('The imported media response is not an image.');
+        if ($this->hostResolver instanceof Closure) {
+            return ($this->hostResolver)($host);
         }
+
+        $records = dns_get_record($host, DNS_A | DNS_AAAA);
+
+        if ($records === false) {
+            return [];
+        }
+
+        $addresses = [];
+
+        foreach ($records as $record) {
+            $address = $record['ip'] ?? $record['ipv6'] ?? null;
+
+            if (is_string($address)) {
+                $addresses[] = $address;
+            }
+        }
+
+        return array_values(array_unique($addresses));
     }
 
     /** @param array<string, mixed> $candidate */

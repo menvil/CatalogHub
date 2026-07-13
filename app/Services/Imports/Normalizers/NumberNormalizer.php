@@ -67,7 +67,17 @@ final class NumberNormalizer implements AttributeValueNormalizerInterface
                 ? str_replace(['.', ','], ['', '.'], $value)
                 : str_replace(',', '', $value);
         } else {
-            $value = str_replace(',', '.', $value);
+            $separator = str_contains($value, ',') ? ',' : (str_contains($value, '.') ? '.' : null);
+
+            if ($separator !== null && substr_count($value, $separator) > 1) {
+                if (! preg_match('/\A[+-]?\d{1,3}(?:'.preg_quote($separator, '/').'\d{3})+\z/', $value)) {
+                    return null;
+                }
+
+                $value = str_replace($separator, '', $value);
+            } else {
+                $value = str_replace(',', '.', $value);
+            }
         }
 
         if (! preg_match('/\A[+-]?\d+(?:\.\d+)?\z/', $value)) {

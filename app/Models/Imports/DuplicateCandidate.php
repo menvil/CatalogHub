@@ -2,6 +2,7 @@
 
 namespace App\Models\Imports;
 
+use App\Models\CentralCatalog\CentralProduct;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -18,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $status
  * @property int|null $reviewed_by_user_id
  * @property NormalizedProductDraft $draft
+ * @property CentralProduct|null $centralProductCandidate
  */
 #[Fillable([
     'import_batch_id',
@@ -58,5 +60,11 @@ final class DuplicateCandidate extends Model
     public function reviewedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by_user_id');
+    }
+
+    /** @return BelongsTo<CentralProduct, $this> */
+    public function centralProductCandidate(): BelongsTo
+    {
+        return $this->belongsTo(CentralProduct::class, 'candidate_id');
     }
 }

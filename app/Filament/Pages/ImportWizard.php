@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\Imports\ImportBatch;
 use App\Models\Imports\ImportSource;
 use App\Models\User;
 use App\Services\Imports\ImportService;
@@ -36,12 +37,13 @@ final class ImportWizard extends Page
 
     public ?int $createdBatchId = null;
 
+    public ?string $batchStatus = null;
+
     public static function canAccess(): bool
     {
         $user = auth()->user();
 
-        return $user instanceof User
-            && ($user->isSuperAdmin() || $user->isCentralAdmin() || $user->isCatalogEditor());
+        return $user instanceof User && $user->canManageImports();
     }
 
     /** @return Collection<int, ImportSource> */
@@ -54,7 +56,12 @@ final class ImportWizard extends Page
     {
         $validated = $this->validate([
             'sourceId' => ['required', 'integer', 'exists:import_sources,id'],
-            'artifact' => ['required', 'file', 'max:51200'],
+            'artifact' => [
+                'required',
+                'file',
+                'mimetypes:application/octet-stream,application/x-php,text/plain,text/x-php',
+                'max:51200',
+            ],
             'locale' => ['nullable', 'string', 'max:32'],
         ]);
 
@@ -69,13 +76,49 @@ final class ImportWizard extends Page
             'locale' => $validated['locale'] ?? null,
         ], static fn (mixed $value): bool => filled($value));
 
-        $batch = app(ImportService::class)->startImport($source, $artifact, $options);
+        $shouldQueue = (int) $artifact->getSize()
+            > (int) config('imports.queued_artifact_threshold_bytes', 5 * 1024 * 1024);
+        $batch = $shouldQueue
+            ? app(ImportService::class)->queueImport($source, $artifact, $options)
+            : app(ImportService::class)->startImport($source, $artifact, $options);
         $this->createdBatchId = $batch->id;
+        $this->batchStatus = $batch->status;
 
         Notification::make()
-            ->title('Import completed')
-            ->body("Batch #{$batch->id} was created.")
-            ->success()
+            ->title($shouldQueue ? 'Import queued' : 'Import completed')
+            ->body($shouldQueue
+                ? "Batch #{$batch->id} is being processed in the background."
+                : "Batch #{$batch->id} was created.")
+            ->status($shouldQueue ? 'info' : 'success')
             ->send();
+    }
+
+    public function refreshBatchStatus(): void
+    {
+        if ($this->createdBatchId === null) {
+            return;
+        }
+
+        $batch = ImportBatch::query()->find($this->createdBatchId);
+
+        if (! $batch instanceof ImportBatch || $batch->status === $this->batchStatus) {
+            return;
+        }
+
+        $this->batchStatus = $batch->status;
+
+        if ($batch->status === 'completed') {
+            Notification::make()
+                ->title('Import completed')
+                ->body("Batch #{$batch->id} is ready for review.")
+                ->success()
+                ->send();
+        } elseif ($batch->status === 'failed') {
+            Notification::make()
+                ->title('Import failed')
+                ->body($batch->error_message ?? "Batch #{$batch->id} failed.")
+                ->danger()
+                ->send();
+        }
     }
 }

@@ -27,6 +27,15 @@ class NumberNormalizerTest extends TestCase
         $this->assertSame('invalid_number', $result->errorCode);
     }
 
+    #[DataProvider('invalidGrouping')]
+    public function test_rejects_malformed_repeated_grouping(string $rawValue): void
+    {
+        $result = (new NumberNormalizer)->normalize($this->decimalDefinition(), $rawValue);
+
+        $this->assertFalse($result->isValid);
+        $this->assertSame('invalid_number', $result->errorCode);
+    }
+
     public function test_integer_attribute_rejects_decimal_value(): void
     {
         $definition = new AttributeDefinition([
@@ -50,7 +59,16 @@ class NumberNormalizerTest extends TestCase
         yield 'non-breaking space' => ["1\u{00A0}234,50", '1234.5'];
         yield 'mixed European' => ['1.234,56', '1234.56'];
         yield 'mixed English' => ['1,234.56', '1234.56'];
+        yield 'repeated comma thousands' => ['1,234,567', '1234567'];
+        yield 'repeated dot thousands' => ['1.234.567', '1234567'];
         yield 'negative' => [' -0012,50 ', '-12.5'];
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function invalidGrouping(): iterable
+    {
+        yield 'uneven comma groups' => ['12,34,567'];
+        yield 'uneven dot groups' => ['1.23.456'];
     }
 
     private function decimalDefinition(): AttributeDefinition

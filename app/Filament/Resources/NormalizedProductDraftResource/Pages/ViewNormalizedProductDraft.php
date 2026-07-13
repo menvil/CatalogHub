@@ -20,8 +20,7 @@ final class ViewNormalizedProductDraft extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        /** @var NormalizedProductDraft $draft */
-        $draft = $this->getRecord();
+        $draft = $this->getDraft();
 
         return [
             Action::make('publish')

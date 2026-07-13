@@ -57,6 +57,24 @@ class UnitNormalizerTest extends TestCase
         $this->assertSame('incompatible_unit_dimension', $result->errorCode);
     }
 
+    public function test_integer_accepts_negligible_conversion_noise_but_rejects_real_fraction(): void
+    {
+        $definition = new AttributeDefinition([
+            'name' => 'Temperature',
+            'data_type' => AttributeDataType::Integer,
+            'dimension' => 'temperature',
+            'canonical_unit' => 'celsius',
+        ]);
+
+        $nearInteger = app(UnitNormalizer::class)->normalize($definition, '32 fahrenheit');
+        $fraction = app(UnitNormalizer::class)->normalize($definition, '33 fahrenheit');
+
+        $this->assertTrue($nearInteger->isValid);
+        $this->assertSame(0.0, $nearInteger->value);
+        $this->assertFalse($fraction->isValid);
+        $this->assertSame('invalid_integer', $fraction->errorCode);
+    }
+
     /** @return iterable<string, array{string, string, string, string, float}> */
     public static function measuredValues(): iterable
     {

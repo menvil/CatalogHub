@@ -195,7 +195,7 @@ class ProductVisibilityManagerTest extends TestCase
             ->test(ManageSiteProducts::class, ['record' => $site->getRouteKey()])
             ->assertSee('Paginated Product 01')
             ->assertDontSee('Paginated Product 51')
-            ->set('search', 'Paginated Product 51')
+            ->set('search', 'paginated product 51')
             ->assertSee('Paginated Product 51');
     }
 }

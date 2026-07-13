@@ -10,6 +10,7 @@
                 <input wire:model="reason" placeholder="Reason (optional)">
             </div>
             @if($this->field === 'local_slug')<p class="mt-3 text-sm text-gray-500">Use a lowercase slug without spaces or leading/trailing slashes.</p>@endif
+            @if($this->field === 'local_title')<p class="mt-3 text-sm text-gray-500">This display title takes precedence over the translated central title for the selected locale.</p>@endif
         </x-admin.card>
         <div class="flex justify-end"><x-filament::button type="submit">Save override</x-filament::button></div>
     </form>

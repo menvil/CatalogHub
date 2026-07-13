@@ -25,6 +25,19 @@ final class SiteBrandVisibilityService
         });
     }
 
+    public function toggle(Site $site, CentralBrand $brand): void
+    {
+        DB::transaction(function () use ($brand, $site): void {
+            $lockedSite = Site::query()->whereKey($site->getKey())->lockForUpdate()->firstOrFail();
+            $hiddenIds = $this->hiddenIds($lockedSite);
+            $updatedIds = in_array($brand->id, $hiddenIds, true)
+                ? array_values(array_diff($hiddenIds, [$brand->id]))
+                : array_values(array_unique([...$hiddenIds, $brand->id]));
+
+            $this->save($lockedSite, $updatedIds);
+        });
+    }
+
     public function allows(Site $site, CentralBrand $brand): bool
     {
         return ! in_array($brand->id, $this->hiddenIds($site), true);

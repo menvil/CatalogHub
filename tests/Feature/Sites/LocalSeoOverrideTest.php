@@ -86,6 +86,7 @@ class LocalSeoOverrideTest extends TestCase
 
         $this->assertDatabaseHas('site_overrides', ['site_id' => $site->id, 'field' => 'meta_description', 'value_json' => json_encode(['value' => 'Existing description'])]);
         $this->assertDatabaseHas('site_overrides', ['site_id' => $site->id, 'field' => 'intro_text', 'value_json' => json_encode(['value' => 'Existing intro'])]);
+        $this->assertDatabaseHas('site_overrides', ['site_id' => $site->id, 'field' => 'meta_title', 'value_json' => json_encode(['value' => 'New title'])]);
     }
 
     private function enableLocale(Site $site, string $code): void

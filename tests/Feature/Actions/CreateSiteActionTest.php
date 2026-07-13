@@ -103,4 +103,77 @@ class CreateSiteActionTest extends TestCase
 
         $this->assertDatabaseMissing('sites', ['code' => 'unsupported-feature']);
     }
+
+    public function test_feature_values_must_be_strict_booleans(): void
+    {
+        $market = Market::factory()->create(['status' => MarketStatus::Active]);
+        $category = CentralCategory::factory()->create(['status' => CentralCategoryStatus::Active]);
+        Locale::factory()->create(['code' => 'en-US']);
+
+        try {
+            app(CreateSiteAction::class)->handle([
+                'market_id' => $market->id,
+                'code' => 'malformed-feature',
+                'name' => 'Malformed feature',
+                'mode' => 'single_category',
+                'default_locale' => 'en-US',
+                'locales' => ['en-US'],
+                'categories' => [$category->id],
+                'features' => ['comparison' => 'false'],
+            ]);
+
+            $this->fail('A non-boolean feature value was accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('features.comparison', $exception->errors());
+        }
+
+        $this->assertDatabaseMissing('sites', ['code' => 'malformed-feature']);
+    }
+
+    public function test_empty_locales_are_rejected(): void
+    {
+        $market = Market::factory()->create(['status' => MarketStatus::Active]);
+
+        try {
+            app(CreateSiteAction::class)->handle([
+                'market_id' => $market->id,
+                'code' => 'empty-locales',
+                'name' => 'Empty locales',
+                'mode' => 'single_category',
+                'default_locale' => 'en-US',
+                'locales' => [],
+                'categories' => [CentralCategory::factory()->create(['status' => CentralCategoryStatus::Active])->id],
+            ]);
+
+            $this->fail('A site without locales was accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('locales', $exception->errors());
+        }
+
+        $this->assertDatabaseMissing('sites', ['code' => 'empty-locales']);
+    }
+
+    public function test_default_locale_must_be_in_enabled_locales(): void
+    {
+        $market = Market::factory()->create(['status' => MarketStatus::Active]);
+        Locale::factory()->create(['code' => 'en-US']);
+
+        try {
+            app(CreateSiteAction::class)->handle([
+                'market_id' => $market->id,
+                'code' => 'disabled-default-locale',
+                'name' => 'Disabled default locale',
+                'mode' => 'single_category',
+                'default_locale' => 'de-DE',
+                'locales' => ['en-US'],
+                'categories' => [CentralCategory::factory()->create(['status' => CentralCategoryStatus::Active])->id],
+            ]);
+
+            $this->fail('A default locale outside the enabled locales was accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('default_locale', $exception->errors());
+        }
+
+        $this->assertDatabaseMissing('sites', ['code' => 'disabled-default-locale']);
+    }
 }

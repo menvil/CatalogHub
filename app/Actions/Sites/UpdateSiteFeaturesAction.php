@@ -26,8 +26,16 @@ final class UpdateSiteFeaturesAction
         ])->validate();
 
         DB::transaction(function () use ($site, $features): void {
+            $lockedSite = Site::query()->whereKey($site->getKey())->lockForUpdate()->firstOrFail();
+
             foreach ($features as $key => $data) {
-                $site->features()->updateOrCreate(['feature_key' => $key], ['is_enabled' => $data['is_enabled'], 'config_json' => $data['config_json'] ?? null]);
+                $values = ['is_enabled' => $data['is_enabled']];
+
+                if (array_key_exists('config_json', $data)) {
+                    $values['config_json'] = $data['config_json'];
+                }
+
+                $lockedSite->features()->updateOrCreate(['feature_key' => $key], $values);
             }
         });
     }

@@ -19,12 +19,20 @@ class MarketSelectionTest extends TestCase
     public function test_inactive_market_cannot_be_used_to_create_site(): void
     {
         $market = Market::factory()->create(['status' => MarketStatus::Archived]);
+        Locale::factory()->create(['code' => 'en-US']);
 
-        $this->expectException(ValidationException::class);
-        app(CreateSiteAction::class)->handle([
-            'market_id' => $market->id, 'code' => 'archived-market', 'name' => 'Archived', 'mode' => 'single_category',
-            'default_locale' => 'en-US', 'locales' => ['en-US'], 'categories' => [CentralCategory::factory()->create(['status' => CentralCategoryStatus::Active])->id], 'features' => [],
-        ]);
+        try {
+            app(CreateSiteAction::class)->handle([
+                'market_id' => $market->id, 'code' => 'archived-market', 'name' => 'Archived', 'mode' => 'single_category',
+                'default_locale' => 'en-US', 'locales' => ['en-US'], 'categories' => [CentralCategory::factory()->create(['status' => CentralCategoryStatus::Active])->id], 'features' => [],
+            ]);
+
+            $this->fail('An inactive market was accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('market_id', $exception->errors());
+        }
+
+        $this->assertDatabaseMissing('sites', ['code' => 'archived-market']);
     }
 
     public function test_active_market_is_saved_on_site(): void

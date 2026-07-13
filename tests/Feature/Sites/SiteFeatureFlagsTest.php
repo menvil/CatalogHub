@@ -73,4 +73,40 @@ class SiteFeatureFlagsTest extends TestCase
 
         $this->assertTrue($site->features()->sole()->is_enabled);
     }
+
+    public function test_status_only_update_preserves_existing_feature_config(): void
+    {
+        $site = Site::factory()->create();
+        SiteFeature::query()->create([
+            'site_id' => $site->id,
+            'feature_key' => 'reviews',
+            'is_enabled' => true,
+            'config_json' => ['moderation' => true],
+        ]);
+
+        app(UpdateSiteFeaturesAction::class)->handle($site, [
+            'reviews' => ['is_enabled' => false],
+        ]);
+
+        $feature = $site->features()->sole();
+        $this->assertFalse($feature->is_enabled);
+        $this->assertSame(['moderation' => true], $feature->config_json);
+    }
+
+    public function test_explicit_null_clears_existing_feature_config(): void
+    {
+        $site = Site::factory()->create();
+        SiteFeature::query()->create([
+            'site_id' => $site->id,
+            'feature_key' => 'reviews',
+            'is_enabled' => true,
+            'config_json' => ['moderation' => true],
+        ]);
+
+        app(UpdateSiteFeaturesAction::class)->handle($site, [
+            'reviews' => ['is_enabled' => true, 'config_json' => null],
+        ]);
+
+        $this->assertNull($site->features()->sole()->config_json);
+    }
 }

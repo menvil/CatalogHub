@@ -1,6 +1,6 @@
 <x-filament-panels::page>
     <x-admin.card title="Product visibility" description="Local publication state; central product data is read-only.">
-        @php($siteProducts = $this->getRecord()->products()->get()->keyBy('central_product_id'))
+        @php($siteProducts = $this->getSiteProductStates()->keyBy('central_product_id'))
         <div class="space-y-3">
             @foreach($this->getProducts() as $product)
                 @php($state = $siteProducts->get($product->id))

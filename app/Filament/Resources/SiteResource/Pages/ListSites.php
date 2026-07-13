@@ -13,6 +13,6 @@ final class ListSites extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [Action::make('create')->label('Create site')->url(CreateSiteWizard::getUrl())];
+        return [Action::make('create')->label('Create site')->url(CreateSiteWizard::getUrl())->visible(fn (): bool => CreateSiteWizard::canAccess())];
     }
 }

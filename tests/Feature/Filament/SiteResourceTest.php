@@ -7,6 +7,7 @@ use App\Filament\Resources\SiteResource\Pages\BrandVisibilityRules;
 use App\Filament\Resources\SiteResource\Pages\CreateSite;
 use App\Filament\Resources\SiteResource\Pages\EditSite;
 use App\Filament\Resources\SiteResource\Pages\ListSites;
+use App\Filament\Resources\SiteResource\Pages\LocalOverrideEditor;
 use App\Filament\Resources\SiteResource\Pages\ManageSiteProducts;
 use App\Filament\Resources\SiteResource\RelationManagers\SiteFeaturesRelationManager;
 use App\Models\Site;
@@ -28,6 +29,8 @@ class SiteResourceTest extends TestCase
         $this->assertArrayHasKey('products', SiteResource::getPages());
         $this->assertTrue(class_exists(BrandVisibilityRules::class));
         $this->assertArrayHasKey('brands', SiteResource::getPages());
+        $this->assertTrue(class_exists(LocalOverrideEditor::class));
+        $this->assertArrayHasKey('overrides', SiteResource::getPages());
         $this->assertContains(SiteFeaturesRelationManager::class, SiteResource::getRelations());
     }
 }

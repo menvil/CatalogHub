@@ -16,6 +16,7 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Validation\ValidationException;
 use UnitEnum;
 
 final class CreateSiteWizard extends Page
@@ -123,7 +124,24 @@ final class CreateSiteWizard extends Page
             'enabledLocales.*' => ['string', 'exists:locales,code'], 'defaultLocale' => ['required', 'string', 'in:'.implode(',', $this->enabledLocales)],
             'enabledCategories' => $categoryRules, 'enabledCategories.*' => ['integer', 'exists:central_categories,id'], 'features' => ['array'],
         ]);
-        $site = $action->handle(['market_id' => $data['marketId'], 'code' => $data['code'], 'name' => $data['name'], 'domain' => $data['domain'], 'mode' => $data['mode'], 'default_locale' => $data['defaultLocale'], 'locales' => $data['enabledLocales'], 'categories' => $data['enabledCategories'], 'features' => $data['features']]);
+        try {
+            $site = $action->handle(['market_id' => $data['marketId'], 'code' => $data['code'], 'name' => $data['name'], 'domain' => $data['domain'], 'mode' => $data['mode'], 'default_locale' => $data['defaultLocale'], 'locales' => $data['enabledLocales'], 'categories' => $data['enabledCategories'], 'features' => $data['features']]);
+        } catch (ValidationException $exception) {
+            $fieldMap = [
+                'market_id' => 'marketId',
+                'locales' => 'enabledLocales',
+                'default_locale' => 'defaultLocale',
+                'categories' => 'enabledCategories',
+            ];
+            $errors = [];
+
+            foreach ($exception->errors() as $field => $messages) {
+                $errors[$fieldMap[$field] ?? $field] = $messages;
+            }
+
+            throw ValidationException::withMessages($errors);
+        }
+
         $this->createdSiteId = $site->id;
         Notification::make()->title('Site created')->success()->send();
     }

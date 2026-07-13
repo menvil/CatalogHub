@@ -10,18 +10,23 @@ use App\Models\Site;
 use App\Models\SiteProduct;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Livewire\WithPagination;
 
 final class ManageSiteProducts extends Page
 {
     use InteractsWithRecord;
+    use WithPagination;
 
     protected static string $resource = SiteResource::class;
 
     protected string $view = 'filament.resources.site-resource.pages.manage-site-products';
 
     protected static ?string $title = 'Product Visibility';
+
+    public string $search = '';
 
     public function mount(int|string $record): void
     {
@@ -34,8 +39,8 @@ final class ManageSiteProducts extends Page
         return parent::canAccess($parameters) && SiteResource::canManageContent();
     }
 
-    /** @return Collection<int, CentralProduct> */
-    public function getProducts(): Collection
+    /** @return LengthAwarePaginator<int, CentralProduct> */
+    public function getProducts(): LengthAwarePaginator
     {
         /** @var Site $site */ $site = $this->getRecord();
         $categoryIds = DB::table('site_categories')->where('site_id', $site->id)->where('is_enabled', true)->pluck('central_category_id');
@@ -43,31 +48,36 @@ final class ManageSiteProducts extends Page
         return CentralProduct::query()
             ->whereIn('central_category_id', $categoryIds)
             ->where('status', CentralProductStatus::Active)
+            ->when($this->search !== '', fn ($query) => $query->where('name', 'like', '%'.$this->search.'%'))
             ->with('brand')
             ->orderBy('name')
-            ->get();
+            ->paginate(50);
     }
 
-    /** @return Collection<int, SiteProduct> */
-    public function getSiteProductStates(): Collection
+    /** @param list<int> $productIds
+     * @return Collection<int, SiteProduct>
+     */
+    public function getSiteProductStates(array $productIds): Collection
     {
         /** @var Site $site */ $site = $this->getRecord();
 
-        return $site->products()->get();
+        return $site->products()->whereIn('central_product_id', $productIds)->get();
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
     }
 
     public function setVisibility(int $productId, string $visibility): void
     {
         /** @var Site $site */ $site = $this->getRecord();
-        $existing = $site->products()->where('central_product_id', $productId)->first();
-        app(UpdateSiteProductVisibilityAction::class)->handle($site, CentralProduct::query()->findOrFail($productId), $visibility, (bool) $existing?->is_featured);
+        app(UpdateSiteProductVisibilityAction::class)->handle($site, CentralProduct::query()->findOrFail($productId), $visibility);
     }
 
     public function toggleFeatured(int $productId): void
     {
         /** @var Site $site */ $site = $this->getRecord();
-        $existing = $site->products()->where('central_product_id', $productId)->first();
-        $visibility = $existing instanceof SiteProduct ? $existing->visibility : 'hidden';
-        app(UpdateSiteProductVisibilityAction::class)->handle($site, CentralProduct::query()->findOrFail($productId), $visibility, ! (bool) $existing?->is_featured);
+        app(UpdateSiteProductVisibilityAction::class)->toggleFeatured($site, CentralProduct::query()->findOrFail($productId));
     }
 }

@@ -11,6 +11,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Validation\ValidationException;
 
 final class LocalOverrideEditor extends Page
 {
@@ -56,7 +57,24 @@ final class LocalOverrideEditor extends Page
     {
         $data = $this->validate(['entityType' => ['required', 'in:'.implode(',', AllowedSiteOverrideFields::ENTITY_TYPES)], 'entityId' => ['required', 'integer', 'min:1'], 'field' => ['required', 'in:'.implode(',', AllowedSiteOverrideFields::FIELDS)], 'localeCode' => ['nullable', 'string', 'max:32'], 'value' => ['nullable', 'string'], 'reason' => ['nullable', 'string', 'max:1000']]);
         /** @var Site $site */ $site = $this->getRecord();
-        $action->handle($site, $data['entityType'], $data['entityId'], $data['field'], $data['localeCode'], $data['value'] ?? null, $data['reason']);
+        try {
+            $action->handle($site, $data['entityType'], $data['entityId'], $data['field'], $data['localeCode'], $data['value'] ?? null, $data['reason']);
+        } catch (ValidationException $exception) {
+            $keyMap = [
+                'entity_type' => 'entityType',
+                'entity_id' => 'entityId',
+                'locale_code' => 'localeCode',
+                'slug' => 'value',
+            ];
+            $errors = [];
+
+            foreach ($exception->errors() as $key => $messages) {
+                $errors[$keyMap[$key] ?? $key] = $messages;
+            }
+
+            throw ValidationException::withMessages($errors);
+        }
+
         Notification::make()->title('Override saved')->success()->send();
     }
 }

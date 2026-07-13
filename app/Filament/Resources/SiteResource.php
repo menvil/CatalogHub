@@ -17,6 +17,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 final class SiteResource extends Resource
@@ -35,13 +36,26 @@ final class SiteResource extends Resource
             && ($user->isSuperAdmin() || $user->isCentralAdmin() || $user->hasCatalogHubPermission('site.content.manage'));
     }
 
+    public static function canManageSettings(): bool
+    {
+        $user = auth()->user();
+
+        return $user instanceof User
+            && ($user->isSuperAdmin() || $user->isCentralAdmin() || $user->hasCatalogHubPermission('site.settings.manage'));
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return self::canManageSettings();
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Select::make('market_id')->relationship('market', 'name')->required(), TextInput::make('code')->required()->maxLength(255)->unique(ignoreRecord: true),
+            Select::make('market_id')->relationship('market', 'name')->required()->disabledOn('edit'), TextInput::make('code')->required()->maxLength(255)->unique(ignoreRecord: true),
             TextInput::make('name')->required()->maxLength(255), TextInput::make('domain')->maxLength(255)->unique(ignoreRecord: true),
-            Select::make('mode')->required()->options(collect(SiteMode::cases())->mapWithKeys(fn (SiteMode $mode) => [$mode->value => str($mode->value)->headline()])),
-            TextInput::make('default_locale')->required()->maxLength(255), Select::make('status')->required()->options(SiteStatus::options())->default(SiteStatus::default()->value),
+            Select::make('mode')->required()->options(collect(SiteMode::cases())->mapWithKeys(fn (SiteMode $mode) => [$mode->value => str($mode->value)->headline()]))->disabledOn('edit'),
+            TextInput::make('default_locale')->required()->maxLength(255)->disabledOn('edit'), Select::make('status')->required()->options(SiteStatus::options())->default(SiteStatus::default()->value),
         ]);
     }
 

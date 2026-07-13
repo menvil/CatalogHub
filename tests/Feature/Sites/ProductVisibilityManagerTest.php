@@ -104,6 +104,44 @@ class ProductVisibilityManagerTest extends TestCase
         ]);
     }
 
+    public function test_visibility_change_preserves_featured_state_inside_the_locked_update(): void
+    {
+        $site = Site::factory()->create();
+        $category = CentralCategory::factory()->create();
+        DB::table('site_categories')->insert(['site_id' => $site->id, 'central_category_id' => $category->id, 'is_enabled' => true, 'position' => 0, 'created_at' => now(), 'updated_at' => now()]);
+        $product = CentralProduct::factory()->create(['central_category_id' => $category->id, 'status' => CentralProductStatus::Active]);
+        $action = app(UpdateSiteProductVisibilityAction::class);
+
+        $action->handle($site, $product, 'visible', true);
+        $action->handle($site, $product, 'hidden');
+
+        $this->assertDatabaseHas('site_products', [
+            'site_id' => $site->id,
+            'central_product_id' => $product->id,
+            'visibility' => 'hidden',
+            'is_featured' => true,
+        ]);
+    }
+
+    public function test_featured_toggle_reads_and_inverts_state_inside_the_locked_update(): void
+    {
+        $site = Site::factory()->create();
+        $category = CentralCategory::factory()->create();
+        DB::table('site_categories')->insert(['site_id' => $site->id, 'central_category_id' => $category->id, 'is_enabled' => true, 'position' => 0, 'created_at' => now(), 'updated_at' => now()]);
+        $product = CentralProduct::factory()->create(['central_category_id' => $category->id, 'status' => CentralProductStatus::Active]);
+        $action = app(UpdateSiteProductVisibilityAction::class);
+
+        $action->toggleFeatured($site, $product);
+        $action->toggleFeatured($site, $product);
+
+        $this->assertDatabaseHas('site_products', [
+            'site_id' => $site->id,
+            'central_product_id' => $product->id,
+            'visibility' => 'hidden',
+            'is_featured' => false,
+        ]);
+    }
+
     public function test_inactive_product_cannot_be_added_to_a_site(): void
     {
         $site = Site::factory()->create();
@@ -137,5 +175,27 @@ class ProductVisibilityManagerTest extends TestCase
             ->test(ManageSiteProducts::class, ['record' => $site->getRouteKey()])
             ->assertSee($active->name)
             ->assertDontSee($archived->name);
+    }
+
+    public function test_product_manager_paginates_and_searches_large_catalogs(): void
+    {
+        $site = Site::factory()->create();
+        $category = CentralCategory::factory()->create();
+        DB::table('site_categories')->insert(['site_id' => $site->id, 'central_category_id' => $category->id, 'is_enabled' => true, 'position' => 0, 'created_at' => now(), 'updated_at' => now()]);
+
+        foreach (range(1, 51) as $index) {
+            CentralProduct::factory()->create([
+                'central_category_id' => $category->id,
+                'status' => CentralProductStatus::Active,
+                'name' => sprintf('Paginated Product %02d', $index),
+            ]);
+        }
+
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
+            ->test(ManageSiteProducts::class, ['record' => $site->getRouteKey()])
+            ->assertSee('Paginated Product 01')
+            ->assertDontSee('Paginated Product 51')
+            ->set('search', 'Paginated Product 51')
+            ->assertSee('Paginated Product 51');
     }
 }

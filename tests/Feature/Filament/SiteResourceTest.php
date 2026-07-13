@@ -10,6 +10,7 @@ use App\Filament\Resources\SiteResource\Pages\ListSites;
 use App\Filament\Resources\SiteResource\Pages\LocalOverrideEditor;
 use App\Filament\Resources\SiteResource\Pages\LocalSeoOverride;
 use App\Filament\Resources\SiteResource\Pages\ManageSiteProducts;
+use App\Filament\Resources\SiteResource\Pages\SiteDashboard;
 use App\Filament\Resources\SiteResource\RelationManagers\SiteFeaturesRelationManager;
 use App\Models\Site;
 use Tests\TestCase;
@@ -34,6 +35,8 @@ class SiteResourceTest extends TestCase
         $this->assertArrayHasKey('overrides', SiteResource::getPages());
         $this->assertTrue(class_exists(LocalSeoOverride::class));
         $this->assertArrayHasKey('seo', SiteResource::getPages());
+        $this->assertTrue(class_exists(SiteDashboard::class));
+        $this->assertArrayHasKey('dashboard', SiteResource::getPages());
         $this->assertContains(SiteFeaturesRelationManager::class, SiteResource::getRelations());
     }
 }

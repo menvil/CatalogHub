@@ -15,9 +15,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * @property SiteMode $mode
  * @property SiteStatus $status
+ * @property int|null $theme_id
  * @property array<string, mixed>|null $settings_json
  */
-#[Fillable(['market_id', 'code', 'name', 'domain', 'mode', 'default_locale', 'status', 'settings_json'])]
+#[Fillable(['market_id', 'theme_id', 'code', 'name', 'domain', 'mode', 'default_locale', 'status', 'settings_json'])]
 final class Site extends Model
 {
     /** @use HasFactory<SiteFactory> */
@@ -37,6 +38,12 @@ final class Site extends Model
     public function market(): BelongsTo
     {
         return $this->belongsTo(Market::class);
+    }
+
+    /** @return BelongsTo<Theme, $this> */
+    public function theme(): BelongsTo
+    {
+        return $this->belongsTo(Theme::class);
     }
 
     /** @return HasMany<SiteFeature, $this> */

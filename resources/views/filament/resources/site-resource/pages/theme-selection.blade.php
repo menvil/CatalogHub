@@ -63,9 +63,12 @@
 
                         <button
                             type="button"
-                            class="fi-btn fi-btn-size-md inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold {{ $option['compatible'] ? 'bg-primary-600 text-white opacity-60' : 'cursor-not-allowed bg-gray-200 text-gray-500' }}"
-                            disabled
-                            title="Theme activation is added in the next task"
+                            @if ($option['compatible'] && ! $option['current'])
+                                wire:click="activate({{ $theme->getKey() }})"
+                            @else
+                                disabled
+                            @endif
+                            class="fi-btn fi-btn-size-md inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold {{ $option['compatible'] && ! $option['current'] ? 'bg-primary-600 text-white' : 'cursor-not-allowed bg-gray-200 text-gray-500' }}"
                         >
                             {{ $option['current'] ? 'Active theme' : 'Activate' }}
                         </button>

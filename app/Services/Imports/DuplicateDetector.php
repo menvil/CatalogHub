@@ -25,23 +25,7 @@ final class DuplicateDetector
                 ->where('status', 'pending')
                 ->delete();
 
-            $products = CentralProduct::query()
-                ->when(
-                    $draft->brand_id !== null || $draft->category_id !== null,
-                    fn ($query) => $query->where(function ($query) use ($draft): void {
-                        $query
-                            ->when(
-                                $draft->brand_id !== null,
-                                fn ($query) => $query->where('central_brand_id', $draft->brand_id),
-                            )
-                            ->when(
-                                $draft->category_id !== null,
-                                fn ($query) => $query->orWhere('central_category_id', $draft->category_id),
-                            );
-                    }),
-                );
-
-            foreach ($products->lazyById() as $product) {
+            foreach (CentralProduct::query()->lazyById() as $product) {
                 [$score, $reason] = $this->score($draft, $product);
 
                 if ($score < $minimumScore) {

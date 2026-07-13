@@ -154,6 +154,59 @@ class ImportMediaDownloadTest extends TestCase
         );
     }
 
+    public function test_accepts_a_public_ipv6_literal(): void
+    {
+        Storage::fake('public');
+        $image = UploadedFile::fake()->image('product.jpg', 100, 100);
+        Http::fake([
+            'https://[2606:4700:4700::1111]/product.jpg' => Http::response(
+                file_get_contents($image->getRealPath()),
+                200,
+                ['Content-Type' => 'image/jpeg'],
+            ),
+        ]);
+        $draft = NormalizedProductDraft::factory()->create([
+            'media_json' => [['source_url' => 'https://[2606:4700:4700::1111]/product.jpg']],
+        ]);
+
+        $this->downloader()->downloadForDraft($draft);
+
+        $this->assertSame('downloaded', $draft->fresh()->media_json[0]['status']);
+    }
+
+    public function test_pins_the_validated_dns_address_for_the_request(): void
+    {
+        Storage::fake('public');
+        $image = UploadedFile::fake()->image('product.jpg', 100, 100);
+        $capturedOptions = null;
+        Http::globalMiddleware(static function (callable $handler) use (&$capturedOptions): callable {
+            return static function ($request, array $options) use ($handler, &$capturedOptions) {
+                $capturedOptions = $options;
+
+                return $handler($request, $options);
+            };
+        });
+        Http::fake([
+            'https://cdn.example.test/product.jpg' => Http::response(
+                file_get_contents($image->getRealPath()),
+                200,
+                ['Content-Type' => 'image/jpeg'],
+            ),
+        ]);
+        $draft = NormalizedProductDraft::factory()->create([
+            'media_json' => [['source_url' => 'https://cdn.example.test/product.jpg']],
+        ]);
+
+        $this->downloader()->downloadForDraft($draft);
+
+        $this->assertIsArray($capturedOptions);
+        $this->assertSame(
+            ['cdn.example.test:443:93.184.216.34'],
+            $capturedOptions['curl'][CURLOPT_RESOLVE] ?? null,
+        );
+        $this->assertSame('', $capturedOptions['proxy'] ?? null);
+    }
+
     public function test_rejects_oversized_response_during_bounded_download(): void
     {
         Storage::fake('public');

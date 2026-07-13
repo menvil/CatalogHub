@@ -50,7 +50,7 @@ final readonly class ImportMediaDownloader
     private function downloadCandidate(NormalizedProductDraft $draft, array $candidate): array
     {
         $url = (string) ($candidate['source_url'] ?? $candidate['url'] ?? '');
-        $this->assertSafeUrl($url);
+        $curlResolve = $this->assertSafeUrl($url);
         $maximumBytes = (int) config('imports.media_download_max_bytes', 10 * 1024 * 1024);
         $temporaryPath = tempnam(sys_get_temp_dir(), 'cataloghub-import-media-');
 
@@ -59,7 +59,7 @@ final readonly class ImportMediaDownloader
         }
 
         try {
-            $response = $this->downloadToFile($url, $temporaryPath, $maximumBytes);
+            $response = $this->downloadToFile($url, $temporaryPath, $maximumBytes, $curlResolve);
             $response->throw();
             $this->assertImageResponse($response, $temporaryPath);
 
@@ -116,14 +116,15 @@ final readonly class ImportMediaDownloader
         ];
     }
 
-    private function assertSafeUrl(string $url): void
+    private function assertSafeUrl(string $url): ?string
     {
         if (filter_var($url, FILTER_VALIDATE_URL) === false) {
             throw new RuntimeException('The imported media URL is invalid.');
         }
 
         $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
-        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        $parsedHost = strtolower((string) parse_url($url, PHP_URL_HOST));
+        $host = trim($parsedHost, '[]');
 
         if (! in_array($scheme, ['http', 'https'], true) || $host === '' || $host === 'localhost') {
             throw new RuntimeException('The imported media URL is not allowed.');
@@ -134,7 +135,7 @@ final readonly class ImportMediaDownloader
         ) {
             $this->assertPublicIp($host);
 
-            return;
+            return null;
         }
 
         $addresses = $this->resolveHostAddresses($host);
@@ -146,6 +147,18 @@ final readonly class ImportMediaDownloader
         foreach ($addresses as $address) {
             $this->assertPublicIp($address);
         }
+
+        if (! defined('CURLOPT_RESOLVE')) {
+            throw new RuntimeException('Secure media hostname resolution is not available.');
+        }
+
+        $port = (int) (parse_url($url, PHP_URL_PORT) ?: ($scheme === 'https' ? 443 : 80));
+        $pinnedAddresses = array_map(
+            static fn (string $address): string => str_contains($address, ':') ? "[{$address}]" : $address,
+            $addresses,
+        );
+
+        return sprintf('%s:%d:%s', $host, $port, implode(',', $pinnedAddresses));
     }
 
     private function assertImageResponse(Response $response, string $path): void
@@ -162,18 +175,29 @@ final readonly class ImportMediaDownloader
         }
     }
 
-    private function downloadToFile(string $url, string $path, int $maximumBytes): Response
-    {
+    private function downloadToFile(
+        string $url,
+        string $path,
+        int $maximumBytes,
+        ?string $curlResolve,
+    ): Response {
+        $options = [
+            'allow_redirects' => false,
+            'proxy' => '',
+            'sink' => $path,
+            'progress' => static function (int $downloadTotal, int $downloadedBytes) use ($maximumBytes): void {
+                if ($downloadTotal > $maximumBytes || $downloadedBytes > $maximumBytes) {
+                    throw new RuntimeException('The imported media file exceeds the configured size limit.');
+                }
+            },
+        ];
+
+        if ($curlResolve !== null) {
+            $options['curl'] = [CURLOPT_RESOLVE => [$curlResolve]];
+        }
+
         $response = Http::timeout((int) config('imports.media_download_timeout', 10))
-            ->withOptions([
-                'allow_redirects' => false,
-                'sink' => $path,
-                'progress' => static function (int $downloadTotal, int $downloadedBytes) use ($maximumBytes): void {
-                    if ($downloadTotal > $maximumBytes || $downloadedBytes > $maximumBytes) {
-                        throw new RuntimeException('The imported media file exceeds the configured size limit.');
-                    }
-                },
-            ])
+            ->withOptions($options)
             ->get($url);
 
         if ((filesize($path) ?: 0) === 0) {

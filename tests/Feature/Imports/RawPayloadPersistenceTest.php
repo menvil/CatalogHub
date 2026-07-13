@@ -4,6 +4,8 @@ namespace Tests\Feature\Imports;
 
 use App\Models\Imports\ImportBatch;
 use App\Models\Imports\ImportSource;
+use App\Models\Imports\RawProduct;
+use App\Services\Imports\RawPayloadHasher;
 use App\Services\Imports\RawProductWriter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use JsonException;
@@ -53,6 +55,16 @@ class RawPayloadPersistenceTest extends TestCase
 
         $this->assertSame($first->payload_hash, $second->payload_hash);
         $this->assertSame(2, $batch->fresh()->raw_items_count);
+    }
+
+    public function test_factory_and_writer_use_the_same_payload_hash_algorithm(): void
+    {
+        $rawProduct = RawProduct::factory()->create();
+
+        $this->assertSame(
+            (new RawPayloadHasher)->hash($rawProduct->raw_payload_json),
+            $rawProduct->payload_hash,
+        );
     }
 
     public function test_limits_extracted_strings_without_losing_the_full_payload(): void

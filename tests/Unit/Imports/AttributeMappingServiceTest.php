@@ -117,4 +117,33 @@ class AttributeMappingServiceTest extends TestCase
 
         $this->assertSame(2, (new AttributeMappingService)->usageCount($mapping));
     }
+
+    public function test_usage_count_treats_arrow_as_part_of_an_exact_top_level_key(): void
+    {
+        $source = ImportSource::factory()->create();
+        $category = CentralCategory::factory()->create();
+        $mapping = AttributeMapping::query()->create([
+            'import_source_id' => $source->id,
+            'category_id' => $category->id,
+            'raw_key' => 'Power->W',
+            'normalized_raw_key' => 'power_w',
+            'confidence' => '1.0000',
+            'status' => 'reviewed',
+            'mapping_type' => 'attribute',
+        ]);
+        $batch = ImportBatch::factory()->create(['import_source_id' => $source->id]);
+
+        RawProduct::factory()->create([
+            'import_batch_id' => $batch->id,
+            'import_source_id' => $source->id,
+            'raw_payload_json' => ['Power->W' => 500],
+        ]);
+        RawProduct::factory()->create([
+            'import_batch_id' => $batch->id,
+            'import_source_id' => $source->id,
+            'raw_payload_json' => ['Power' => ['W' => 300]],
+        ]);
+
+        $this->assertSame(1, (new AttributeMappingService)->usageCount($mapping));
+    }
 }

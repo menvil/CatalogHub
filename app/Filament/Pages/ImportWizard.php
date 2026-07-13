@@ -102,12 +102,14 @@ final class ImportWizard extends Page
         $this->createdBatchId = $batch->id;
         $this->batchStatus = $batch->status;
 
+        $isBackground = in_array($batch->status, ['pending', 'processing'], true);
+
         Notification::make()
-            ->title($shouldQueue ? 'Import queued' : 'Import completed')
-            ->body($shouldQueue
+            ->title($isBackground ? 'Import queued' : 'Import completed')
+            ->body($isBackground
                 ? "Batch #{$batch->id} is being processed in the background."
                 : "Batch #{$batch->id} was created.")
-            ->status($shouldQueue ? 'info' : 'success')
+            ->status($isBackground ? 'info' : 'success')
             ->send();
     }
 

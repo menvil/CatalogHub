@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Actions\Imports\ReviewDuplicateCandidateAction;
 use App\Filament\Resources\DuplicateCandidateResource\Pages;
+use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Imports\DuplicateCandidate;
 use App\Models\User;
 use BackedEnum;
@@ -42,7 +43,7 @@ final class DuplicateCandidateResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()->with('centralProductCandidate');
+        $query = parent::getEloquentQuery()->with('candidate');
         $batchId = request()->integer('batch');
 
         return $batchId > 0 ? $query->where('import_batch_id', $batchId) : $query;
@@ -128,7 +129,9 @@ final class DuplicateCandidateResource extends Resource
     private static function candidateName(DuplicateCandidate $candidate): string
     {
         if ($candidate->candidate_type === 'central_product') {
-            $name = $candidate->centralProductCandidate?->name;
+            $name = $candidate->candidate instanceof CentralProduct
+                ? $candidate->candidate->name
+                : null;
 
             return is_string($name) && $name !== ''
                 ? $name

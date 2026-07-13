@@ -5,7 +5,6 @@ namespace App\Services\Imports;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\Imports\AttributeMapping;
 use App\Models\Imports\RawProduct;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -74,13 +73,33 @@ final class AttributeMappingService
             return 0;
         }
 
+        return $this->countPayloadsContainingAnyTopLevelKey(
+            (int) $mapping->import_source_id,
+            $matchingKeys,
+        );
+    }
+
+    /** @param Collection<int, string> $keys */
+    private function countPayloadsContainingAnyTopLevelKey(int $sourceId, Collection $keys): int
+    {
+        $connection = RawProduct::query()->getModel()->getConnection();
+        $placeholders = $keys->map(static fn (): string => '?')->implode(', ');
+
+        $keyExistsSql = match ($connection->getDriverName()) {
+            'pgsql' => "exists (select 1 from jsonb_object_keys(raw_payload_json::jsonb) as payload_keys(payload_key) where payload_key in ({$placeholders}))",
+            'mysql', 'mariadb' => "exists (select 1 from json_table(json_keys(raw_payload_json), '$[*]' columns (payload_key varchar(1024) path '$')) as payload_keys where payload_key in ({$placeholders}))",
+            'sqlite' => "exists (select 1 from json_each(raw_payload_json) as payload_keys where payload_keys.key in ({$placeholders}))",
+            'sqlsrv' => "exists (select 1 from openjson(raw_payload_json) as payload_keys where payload_keys.[key] in ({$placeholders}))",
+            default => null,
+        };
+
+        if ($keyExistsSql === null) {
+            return 0;
+        }
+
         return RawProduct::query()
-            ->where('import_source_id', $mapping->import_source_id)
-            ->where(function (Builder $query) use ($matchingKeys): void {
-                foreach ($matchingKeys as $key) {
-                    $query->orWhereJsonContainsKey("raw_payload_json->{$key}");
-                }
-            })
+            ->where('import_source_id', $sourceId)
+            ->whereRaw($keyExistsSql, $keys->all())
             ->count();
     }
 

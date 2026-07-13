@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 /**
  * @property int $id
@@ -19,7 +20,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $status
  * @property int|null $reviewed_by_user_id
  * @property NormalizedProductDraft $draft
- * @property CentralProduct|null $centralProductCandidate
+ * @property CentralProduct|NormalizedProductDraft|null $candidate
  */
 #[Fillable([
     'import_batch_id',
@@ -62,9 +63,9 @@ final class DuplicateCandidate extends Model
         return $this->belongsTo(User::class, 'reviewed_by_user_id');
     }
 
-    /** @return BelongsTo<CentralProduct, $this> */
-    public function centralProductCandidate(): BelongsTo
+    /** @return MorphTo<Model, $this> */
+    public function candidate(): MorphTo
     {
-        return $this->belongsTo(CentralProduct::class, 'candidate_id');
+        return $this->morphTo(__FUNCTION__, 'candidate_type', 'candidate_id');
     }
 }

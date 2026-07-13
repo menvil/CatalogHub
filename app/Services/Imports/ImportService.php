@@ -59,7 +59,7 @@ final readonly class ImportService
 
         try {
             $this->storeOriginalArtifact($batch, $artifact);
-            ProcessImportBatchJob::dispatch($batch->id);
+            ProcessImportBatchJob::dispatch($batch->id)->afterCommit();
         } catch (Throwable $exception) {
             $batch->markFailed($exception->getMessage() ?: $exception::class);
 
@@ -73,10 +73,26 @@ final readonly class ImportService
     {
         $temporaryPath = null;
 
+        $claimed = ImportBatch::query()
+            ->whereKey($batch->getKey())
+            ->where('status', 'pending')
+            ->update([
+                'status' => 'processing',
+                'started_at' => now(),
+                'finished_at' => null,
+                'error_message' => null,
+                'updated_at' => now(),
+            ]);
+
+        if ($claimed === 0) {
+            return $batch->refresh();
+        }
+
+        $batch->refresh();
+
         try {
             $artifact = $batch->artifacts()->where('type', 'original')->firstOrFail();
             $temporaryPath = $this->copyArtifactToTemporaryFile($artifact);
-            $batch->markStarted();
             $this->resolveImporter($batch->source)->import(
                 $batch,
                 $temporaryPath,
@@ -212,6 +228,10 @@ final readonly class ImportService
         if (! is_resource($source) || $temporaryPath === false) {
             if (is_resource($source)) {
                 fclose($source);
+            }
+
+            if (is_string($temporaryPath)) {
+                @unlink($temporaryPath);
             }
 
             throw new RuntimeException('The stored import artifact could not be read.');

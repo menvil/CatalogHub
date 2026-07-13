@@ -13,7 +13,7 @@
             <div class="grid gap-5 md:grid-cols-2">
                 <label class="space-y-2 text-sm font-medium text-gray-700 dark:text-gray-200">
                     <span>Source</span>
-                    <select wire:model="sourceId" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-950">
+                    <select wire:model.live="sourceId" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-950">
                         <option value="">Select source</option>
                         @foreach ($this->getSources() as $source)
                             <option value="{{ $source->id }}">{{ $source->name }} ({{ $source->type }})</option>

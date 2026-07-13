@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Importers\SerializedPhpProductImporter;
 use App\Models\CentralCatalog\CentralProduct;
+use App\Models\Imports\NormalizedProductDraft;
 use App\Models\User;
 use App\Observers\CentralProductObserver;
 use App\Services\Imports\AttributeNormalizer;
@@ -15,6 +16,7 @@ use App\Services\Imports\Normalizers\EnumNormalizer;
 use App\Services\Imports\Normalizers\MultiEnumNormalizer;
 use App\Services\Imports\Normalizers\NumberNormalizer;
 use App\Services\Imports\Normalizers\UnitNormalizer;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -49,6 +51,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Relation::morphMap([
+            'central_product' => CentralProduct::class,
+            'normalized_product_draft' => NormalizedProductDraft::class,
+        ]);
+
         Gate::define('translations.manage', fn (User $user): bool => $user->hasCatalogHubPermission('translations.manage'));
 
         CentralProduct::observe(CentralProductObserver::class);

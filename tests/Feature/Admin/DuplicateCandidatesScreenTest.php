@@ -59,6 +59,24 @@ class DuplicateCandidatesScreenTest extends TestCase
         $this->assertSame($productCount, CentralProduct::query()->count());
     }
 
+    public function test_draft_candidate_does_not_resolve_a_central_product_with_the_same_id(): void
+    {
+        $product = CentralProduct::factory()->create();
+        $draft = NormalizedProductDraft::factory()->create();
+        $candidate = DuplicateCandidate::query()->create([
+            'import_batch_id' => $draft->import_batch_id,
+            'normalized_product_draft_id' => $draft->id,
+            'candidate_type' => 'normalized_product_draft',
+            'candidate_id' => $draft->id,
+            'score' => '0.9100',
+            'reason_json' => [],
+        ]);
+
+        $this->assertSame($product->id, $draft->id);
+        $this->assertTrue($candidate->candidate->is($draft));
+        $this->assertNotInstanceOf(CentralProduct::class, $candidate->candidate);
+    }
+
     /** @return array{DuplicateCandidate, CentralProduct} */
     private function candidate(): array
     {

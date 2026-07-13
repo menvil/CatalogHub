@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Imports\ImportBatch;
 use App\Models\Imports\RawProduct;
+use App\Services\Imports\RawPayloadHasher;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -34,31 +35,9 @@ class RawProductFactory extends Factory
             'raw_brand' => $payload['brand'],
             'raw_category' => $payload['category'],
             'raw_payload_json' => $payload,
-            'payload_hash' => hash('sha256', json_encode(
-                $this->canonicalize($payload),
-                JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
-            )),
+            'payload_hash' => (new RawPayloadHasher)->hash($payload),
             'status' => 'pending',
             'error_message' => null,
         ];
-    }
-
-    private function canonicalize(mixed $value): mixed
-    {
-        if (! is_array($value)) {
-            return $value;
-        }
-
-        if (array_is_list($value)) {
-            return array_map($this->canonicalize(...), $value);
-        }
-
-        ksort($value, SORT_STRING);
-
-        foreach ($value as $key => $item) {
-            $value[$key] = $this->canonicalize($item);
-        }
-
-        return $value;
     }
 }

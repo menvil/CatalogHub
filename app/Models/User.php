@@ -60,7 +60,7 @@ class User extends Authenticatable implements FilamentUser
 
     public function canManageImports(): bool
     {
-        return $this->isSuperAdmin() || $this->isCentralAdmin() || $this->isCatalogEditor();
+        return $this->hasCatalogHubPermission('imports.manage');
     }
 
     public function isSiteAdmin(): bool

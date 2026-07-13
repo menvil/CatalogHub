@@ -31,7 +31,8 @@ class ImportWizardTest extends TestCase
             ->assertOk()
             ->assertSee('Import Wizard')
             ->assertSee($source->name)
-            ->assertSee('Start import');
+            ->assertSee('Start import')
+            ->assertSee('wire:model.live="sourceId"', false);
     }
 
     public function test_hides_active_sources_without_a_registered_importer(): void
@@ -85,7 +86,7 @@ class ImportWizardTest extends TestCase
         $this->assertSame(2, RawProduct::query()->count());
     }
 
-    public function test_page_access_is_limited_to_catalog_management_roles(): void
+    public function test_page_access_requires_the_import_management_permission(): void
     {
         $moderator = User::factory()->create(['role' => UserRole::Moderator]);
         $editor = User::factory()->create(['role' => UserRole::CatalogEditor]);
@@ -94,6 +95,9 @@ class ImportWizardTest extends TestCase
         $this->assertFalse(ImportWizard::canAccess());
 
         $this->actingAs($editor);
+        $this->assertFalse(ImportWizard::canAccess());
+
+        $this->actingAs(User::factory()->centralAdmin()->create());
         $this->assertTrue(ImportWizard::canAccess());
     }
 
@@ -139,10 +143,12 @@ class ImportWizardTest extends TestCase
         $batch = ImportBatch::query()->sole();
         Queue::assertPushed(
             ProcessImportBatchJob::class,
-            fn (ProcessImportBatchJob $job): bool => $job->importBatchId === $batch->id,
+            fn (ProcessImportBatchJob $job): bool => $job->importBatchId === $batch->id
+                && $job->afterCommit === true,
         );
         $this->assertSame(0, RawProduct::query()->count());
 
+        (new ProcessImportBatchJob($batch->id))->handle(app(ImportService::class));
         (new ProcessImportBatchJob($batch->id))->handle(app(ImportService::class));
 
         $component

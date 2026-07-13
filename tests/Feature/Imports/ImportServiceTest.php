@@ -9,6 +9,7 @@ use App\Models\Imports\ImportSource;
 use App\Services\Imports\ImportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Tests\TestCase;
@@ -68,5 +69,31 @@ class ImportServiceTest extends TestCase
         $this->assertSame('failed', $batch->status);
         $this->assertSame('Broken import', $batch->error_message);
         $this->assertNotNull($batch->finished_at);
+    }
+
+    public function test_unreadable_stored_artifact_does_not_leave_a_temporary_file(): void
+    {
+        Storage::fake('imports');
+        Queue::fake();
+        $source = ImportSource::factory()->create();
+        $upload = UploadedFile::fake()->createWithContent('products.data', 'products');
+        $importer = $this->createMock(ProductImporterInterface::class);
+        $importer->method('supports')->willReturn(true);
+        $service = new ImportService([$importer]);
+        $batch = $service->queueImport($source, $upload);
+        $artifact = $batch->artifacts()->sole();
+        Storage::disk($artifact->disk)->delete($artifact->path);
+        $temporaryPattern = sys_get_temp_dir().'/cataloghub-import-artifact-*';
+        $filesBefore = glob($temporaryPattern) ?: [];
+
+        try {
+            $service->processQueuedImport($batch);
+            $this->fail('An unreadable stored artifact should fail the import.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('The stored import artifact could not be read.', $exception->getMessage());
+        }
+
+        $this->assertSame($filesBefore, glob($temporaryPattern) ?: []);
+        $this->assertSame('failed', $batch->fresh()->status);
     }
 }

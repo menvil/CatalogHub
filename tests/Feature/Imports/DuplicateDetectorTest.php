@@ -41,7 +41,7 @@ class DuplicateDetectorTest extends TestCase
         $this->assertSame(1, CentralProduct::query()->count());
     }
 
-    public function test_different_brand_and_category_lower_candidate_score(): void
+    public function test_different_brand_lowers_candidate_score(): void
     {
         $matchingBrand = CentralBrand::factory()->create();
         $matchingCategory = CentralCategory::factory()->create();
@@ -65,6 +65,23 @@ class DuplicateDetectorTest extends TestCase
         $exactScore = (float) DuplicateCandidate::query()->where('candidate_id', $exact->id)->sole()->score;
         $differentScore = (float) DuplicateCandidate::query()->where('candidate_id', $different->id)->sole()->score;
         $this->assertGreaterThan($differentScore, $exactScore);
+    }
+
+    public function test_exact_title_match_is_not_excluded_by_different_brand_and_category(): void
+    {
+        $product = CentralProduct::factory()->create(['name' => 'Shared Product Name']);
+        $draft = NormalizedProductDraft::factory()->create([
+            'title' => 'Shared Product Name',
+            'brand_id' => CentralBrand::factory()->create()->id,
+            'category_id' => CentralCategory::factory()->create()->id,
+        ]);
+
+        $candidate = (new DuplicateDetector)->detect($draft)->sole();
+
+        $this->assertSame($product->id, $candidate->candidate_id);
+        $this->assertSame('0.5500', $candidate->score);
+        $this->assertFalse($candidate->reason_json['brand_match']);
+        $this->assertFalse($candidate->reason_json['category_match']);
     }
 
     public function test_unrelated_product_does_not_create_candidate(): void

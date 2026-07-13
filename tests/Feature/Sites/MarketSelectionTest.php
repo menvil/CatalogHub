@@ -3,6 +3,7 @@
 namespace Tests\Feature\Sites;
 
 use App\Actions\Sites\CreateSiteAction;
+use App\Enums\CentralCategoryStatus;
 use App\Enums\MarketStatus;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Market;
@@ -21,7 +22,7 @@ class MarketSelectionTest extends TestCase
         $this->expectException(ValidationException::class);
         app(CreateSiteAction::class)->handle([
             'market_id' => $market->id, 'code' => 'archived-market', 'name' => 'Archived', 'mode' => 'single_category',
-            'default_locale' => 'en-US', 'locales' => ['en-US'], 'categories' => [CentralCategory::factory()->create()->id], 'features' => [],
+            'default_locale' => 'en-US', 'locales' => ['en-US'], 'categories' => [CentralCategory::factory()->create(['status' => CentralCategoryStatus::Active])->id], 'features' => [],
         ]);
     }
 
@@ -30,7 +31,7 @@ class MarketSelectionTest extends TestCase
         $market = Market::factory()->create(['status' => MarketStatus::Active]);
         $site = app(CreateSiteAction::class)->handle([
             'market_id' => $market->id, 'code' => 'active-market', 'name' => 'Active', 'mode' => 'single_category',
-            'default_locale' => 'en-US', 'locales' => ['en-US'], 'categories' => [CentralCategory::factory()->create()->id], 'features' => [],
+            'default_locale' => 'en-US', 'locales' => ['en-US'], 'categories' => [CentralCategory::factory()->create(['status' => CentralCategoryStatus::Active])->id], 'features' => [],
         ]);
 
         $this->assertTrue($site->market->is($market));

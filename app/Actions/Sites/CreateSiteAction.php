@@ -2,6 +2,8 @@
 
 namespace App\Actions\Sites;
 
+use App\Enums\CentralCategoryStatus;
+use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Market;
 use App\Models\Site;
 use Illuminate\Support\Facades\DB;
@@ -30,7 +32,8 @@ final class CreateSiteAction
 
         $data['locales'] = $locales;
 
-        $categoryCount = count($data['categories'] ?? []);
+        $categories = array_values(array_unique(array_map('intval', $data['categories'] ?? [])));
+        $categoryCount = count($categories);
 
         if (($data['mode'] ?? null) === 'single_category' && $categoryCount !== 1) {
             throw ValidationException::withMessages(['categories' => 'Single-category sites require exactly one enabled category.']);
@@ -39,6 +42,17 @@ final class CreateSiteAction
         if (($data['mode'] ?? null) === 'multi_category' && $categoryCount < 1) {
             throw ValidationException::withMessages(['categories' => 'Multi-category sites require at least one enabled category.']);
         }
+
+        $activeCategoryCount = CentralCategory::query()
+            ->whereKey($categories)
+            ->where('status', CentralCategoryStatus::Active)
+            ->count();
+
+        if ($activeCategoryCount !== $categoryCount) {
+            throw ValidationException::withMessages(['categories' => 'Only active categories can be enabled for a site.']);
+        }
+
+        $data['categories'] = $categories;
 
         return DB::transaction(function () use ($data): Site {
             $site = Site::query()->create([

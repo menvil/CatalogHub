@@ -37,4 +37,21 @@ class BrandVisibilityRulesTest extends TestCase
 
         $this->assertFalse(app(SiteBrandVisibilityService::class)->allowsProduct($site->fresh(), $product));
     }
+
+    public function test_hide_uses_current_locked_settings_instead_of_stale_model_state(): void
+    {
+        $staleSite = Site::factory()->create();
+        $existingHiddenBrand = CentralBrand::factory()->create();
+        $newHiddenBrand = CentralBrand::factory()->create();
+        Site::query()->findOrFail($staleSite->id)->update([
+            'settings_json' => ['hidden_brand_ids' => [$existingHiddenBrand->id]],
+        ]);
+
+        $service = app(SiteBrandVisibilityService::class);
+        $service->hide($staleSite, $newHiddenBrand);
+        $freshSite = $staleSite->fresh();
+
+        $this->assertFalse($service->allows($freshSite, $existingHiddenBrand));
+        $this->assertFalse($service->allows($freshSite, $newHiddenBrand));
+    }
 }

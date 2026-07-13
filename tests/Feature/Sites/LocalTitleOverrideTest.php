@@ -33,4 +33,25 @@ class LocalTitleOverrideTest extends TestCase
         $this->assertSame('Translated', $resolver->resolve($site, 'product', 42, 'local_title', 'de-DE', 'Translated', 'Fallback'));
         $this->assertSame('Fallback', $resolver->resolve($site, 'product', 42, 'local_title', 'de-DE', null, 'Fallback'));
     }
+
+    public function test_resolver_uses_empty_locale_sentinel_for_global_override(): void
+    {
+        $site = Site::factory()->create();
+        $action = app(UpsertSiteOverrideAction::class);
+        $resolver = app(SiteOverrideResolver::class);
+        $action->handle($site, 'product', 42, 'local_title', null, 'Global title');
+
+        $this->assertDatabaseHas('site_overrides', [
+            'site_id' => $site->id,
+            'entity_type' => 'product',
+            'entity_id' => 42,
+            'field' => 'local_title',
+            'locale_code' => '',
+        ]);
+        $this->assertSame('Global title', $resolver->resolve($site, 'product', 42, 'local_title', null, 'Translated', 'Fallback'));
+        $this->assertSame('Global title', $resolver->resolve($site, 'product', 42, 'local_title', 'de-DE', 'Translated', 'Fallback'));
+
+        $action->handle($site, 'product', 42, 'local_title', 'de-DE', 'German title');
+        $this->assertSame('German title', $resolver->resolve($site, 'product', 42, 'local_title', 'de-DE', 'Translated', 'Fallback'));
+    }
 }

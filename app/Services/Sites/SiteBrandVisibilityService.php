@@ -5,17 +5,24 @@ namespace App\Services\Sites;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Site;
+use Illuminate\Support\Facades\DB;
 
 final class SiteBrandVisibilityService
 {
     public function hide(Site $site, CentralBrand $brand): void
     {
-        $this->save($site, array_values(array_unique([...$this->hiddenIds($site), $brand->id])));
+        DB::transaction(function () use ($brand, $site): void {
+            $lockedSite = Site::query()->whereKey($site)->lockForUpdate()->firstOrFail();
+            $this->save($lockedSite, array_values(array_unique([...$this->hiddenIds($lockedSite), $brand->id])));
+        });
     }
 
     public function allow(Site $site, CentralBrand $brand): void
     {
-        $this->save($site, array_values(array_diff($this->hiddenIds($site), [$brand->id])));
+        DB::transaction(function () use ($brand, $site): void {
+            $lockedSite = Site::query()->whereKey($site)->lockForUpdate()->firstOrFail();
+            $this->save($lockedSite, array_values(array_diff($this->hiddenIds($lockedSite), [$brand->id])));
+        });
     }
 
     public function allows(Site $site, CentralBrand $brand): bool

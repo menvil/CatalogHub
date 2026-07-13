@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Actions\Sites\CreateSiteAction;
+use App\Enums\CentralCategoryStatus;
 use App\Enums\MarketStatus;
 use App\Enums\SiteMode;
 use App\Models\CentralCatalog\CentralCategory;
@@ -51,12 +52,24 @@ final class CreateSiteWizard extends Page
 
     public ?int $createdSiteId = null;
 
+    public int $currentStep = 0;
+
     /** @var list<string> */
     public const FEATURE_KEYS = ['reviews', 'leads', 'price_comparison', 'comparison', 'polls', 'blog', 'guides', 'external_price_widget', 'local_offers'];
 
     public function mount(): void
     {
         $this->features = array_fill_keys(self::FEATURE_KEYS, false);
+    }
+
+    public function previousStep(): void
+    {
+        $this->currentStep = max(0, $this->currentStep - 1);
+    }
+
+    public function nextStep(): void
+    {
+        $this->currentStep = min(6, $this->currentStep + 1);
     }
 
     public static function canAccess(): bool
@@ -96,7 +109,7 @@ final class CreateSiteWizard extends Page
     /** @return Collection<int, CentralCategory> */
     public function getCategories(): Collection
     {
-        return CentralCategory::query()->where('status', 'active')->orderBy('position')->get();
+        return CentralCategory::query()->where('status', CentralCategoryStatus::Active)->orderBy('position')->get();
     }
 
     public function createSite(CreateSiteAction $action): void

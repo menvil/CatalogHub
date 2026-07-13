@@ -3,12 +3,15 @@
 namespace Tests\Feature\Sites;
 
 use App\Actions\Sites\UpdateSiteProductVisibilityAction;
+use App\Filament\Resources\SiteResource\Pages\ManageSiteProducts;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Site;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class ProductVisibilityManagerTest extends TestCase
@@ -33,5 +36,25 @@ class ProductVisibilityManagerTest extends TestCase
     {
         $this->expectException(ValidationException::class);
         app(UpdateSiteProductVisibilityAction::class)->handle(Site::factory()->create(), CentralProduct::factory()->create(['central_category_id' => CentralCategory::factory()->create()->id]), 'visible');
+    }
+
+    public function test_toggle_featured_creates_hidden_row_when_no_visibility_row_exists(): void
+    {
+        $site = Site::factory()->create();
+        $category = CentralCategory::factory()->create();
+        DB::table('site_categories')->insert(['site_id' => $site->id, 'central_category_id' => $category->id, 'is_enabled' => true, 'position' => 0, 'created_at' => now(), 'updated_at' => now()]);
+        $product = CentralProduct::factory()->create(['central_category_id' => $category->id]);
+
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
+            ->test(ManageSiteProducts::class, ['record' => $site->getRouteKey()])
+            ->call('toggleFeatured', $product->id)
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('site_products', [
+            'site_id' => $site->id,
+            'central_product_id' => $product->id,
+            'visibility' => 'hidden',
+            'is_featured' => true,
+        ]);
     }
 }

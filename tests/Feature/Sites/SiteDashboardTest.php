@@ -27,7 +27,7 @@ class SiteDashboardTest extends TestCase
         SiteFeature::query()->create(['site_id' => $site->id, 'feature_key' => 'reviews', 'is_enabled' => true]);
         DB::table('site_locales')->insert(['site_id' => $site->id, 'locale_code' => 'en-US', 'is_default' => true, 'is_enabled' => true, 'position' => 0, 'created_at' => now(), 'updated_at' => now()]);
 
-        $metrics = app(SiteDashboardMetrics::class)->for($site);
+        $metrics = app(SiteDashboardMetrics::class)->metricsFor($site);
         $this->assertSame(1, $metrics['visible_products']);
         $this->assertSame(1, $metrics['hidden_products']);
         $this->assertSame(1, $metrics['enabled_locales']);

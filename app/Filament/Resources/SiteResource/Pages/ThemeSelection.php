@@ -3,9 +3,11 @@
 namespace App\Filament\Resources\SiteResource\Pages;
 
 use App\Domains\Themes\Actions\ActivateThemeAction;
+use App\Domains\Themes\DTO\ThemeCompatibilityResult;
 use App\Domains\Themes\Services\ThemeFeatureCompatibilityChecker;
 use App\Domains\Themes\Services\ThemeRegistry;
 use App\Exceptions\Themes\CannotActivateThemeException;
+use App\Exceptions\Themes\InvalidThemeManifestException;
 use App\Filament\Resources\SiteResource;
 use App\Models\Site;
 use App\Models\Theme;
@@ -50,14 +52,16 @@ final class ThemeSelection extends Page
         $site = $this->getRecord();
         $registry = app(ThemeRegistry::class);
         $checker = app(ThemeFeatureCompatibilityChecker::class);
+        $enabledFeatures = $checker->enabledFeaturesFor($site);
 
         return $registry->activeThemes()
-            ->map(function (Theme $theme) use ($site, $registry, $checker): array {
-                $compatibility = $checker->check($site, $theme);
-
+            ->map(function (Theme $theme) use ($site, $registry, $checker, $enabledFeatures): array {
                 try {
-                    $supports = $registry->manifestFor($theme)->supports;
-                } catch (\Throwable) {
+                    $manifest = $registry->manifestFor($theme);
+                    $compatibility = $checker->checkWithManifest($enabledFeatures, $manifest);
+                    $supports = $manifest->supports;
+                } catch (InvalidThemeManifestException $exception) {
+                    $compatibility = new ThemeCompatibilityResult(false, $enabledFeatures, [$exception->getMessage()]);
                     $supports = [];
                 }
 

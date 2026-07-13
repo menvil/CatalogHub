@@ -22,8 +22,23 @@ final class BlockConfigValidator
         foreach ($config as $key => $value) {
             $definition = $schema[$key] ?? null;
             $type = is_array($definition) ? ($definition['type'] ?? null) : $definition;
+            $nullable = is_array($definition) && ($definition['nullable'] ?? false) === true;
 
-            if (! is_string($type) || $type === 'nullable' || $value === null) {
+            if (! is_string($type)) {
+                continue;
+            }
+
+            if ($value === null) {
+                if ($nullable || $type === 'nullable') {
+                    continue;
+                }
+
+                throw ValidationException::withMessages([
+                    "config.{$key}" => "Block config {$key} cannot be null.",
+                ]);
+            }
+
+            if ($type === 'nullable') {
                 continue;
             }
 

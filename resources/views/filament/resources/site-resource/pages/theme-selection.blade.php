@@ -15,6 +15,8 @@
                     :title="$theme->name"
                     :description="$theme->description"
                     :variant="$option['current'] ? 'success' : 'default'"
+                    data-theme-code="{{ $theme->code }}"
+                    data-compatibility="{{ $option['compatible'] ? 'compatible' : 'incompatible' }}"
                 >
                     <x-slot:actions>
                         @if ($option['current'])

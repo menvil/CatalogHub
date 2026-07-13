@@ -15,21 +15,22 @@ final class ThemeManifestParser
     public function parseAndStore(Theme $theme, array|string $manifest): ThemeManifest
     {
         $data = is_string($manifest) ? $this->decode($manifest) : $manifest;
-        $value = ThemeManifest::fromArray($data);
 
-        if ($value->code !== $theme->code) {
-            throw new InvalidThemeManifestException('Theme manifest code must match the theme code.');
-        }
+        return DB::transaction(function () use ($data, $theme): ThemeManifest {
+            $lockedTheme = Theme::query()->whereKey($theme->getKey())->lockForUpdate()->firstOrFail();
+            $value = ThemeManifest::fromArray($data);
 
-        $schemaVersion = $data['schema_version'] ?? null;
-        if ($schemaVersion !== null && (! is_string($schemaVersion) || trim($schemaVersion) === '')) {
-            throw new InvalidThemeManifestException('Theme manifest schema_version must be a non-empty string when provided.');
-        }
+            if ($value->code !== $lockedTheme->code) {
+                throw InvalidThemeManifestException::because('Theme manifest code must match the theme code.');
+            }
 
-        DB::transaction(function () use ($data, $schemaVersion, $theme, $value): void {
-            Theme::query()->whereKey($theme->getKey())->lockForUpdate()->firstOrFail();
+            $schemaVersion = $data['schema_version'] ?? null;
+            if ($schemaVersion !== null && (! is_string($schemaVersion) || trim($schemaVersion) === '')) {
+                throw InvalidThemeManifestException::because('Theme manifest schema_version must be a non-empty string when provided.');
+            }
+
             ThemeManifestRecord::query()->updateOrCreate(
-                ['theme_id' => $theme->getKey()],
+                ['theme_id' => $lockedTheme->getKey()],
                 [
                     'manifest_json' => $data,
                     'supports_json' => $value->supports,
@@ -39,9 +40,9 @@ final class ThemeManifestParser
                     'validation_errors_json' => null,
                 ],
             );
-        });
 
-        return $value;
+            return $value;
+        });
     }
 
     /** @return array<string, mixed> */
@@ -50,11 +51,11 @@ final class ThemeManifestParser
         try {
             $decoded = json_decode($manifest, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $exception) {
-            throw new InvalidThemeManifestException('Theme manifest JSON is invalid.', previous: $exception);
+            throw InvalidThemeManifestException::because('Theme manifest JSON is invalid.', $exception);
         }
 
         if (! is_array($decoded) || array_is_list($decoded)) {
-            throw new InvalidThemeManifestException('Theme manifest JSON must decode to an object.');
+            throw InvalidThemeManifestException::because('Theme manifest JSON must decode to an object.');
         }
 
         return $decoded;

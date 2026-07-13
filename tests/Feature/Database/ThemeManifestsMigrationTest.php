@@ -34,7 +34,10 @@ class ThemeManifestsMigrationTest extends TestCase
             fn (array $index): bool => $index['unique'] === true && $index['columns'] === ['theme_id']
         ));
         $this->assertTrue($foreignKeys->contains(
-            fn (array $foreignKey): bool => $foreignKey['columns'] === ['theme_id'] && $foreignKey['foreign_table'] === 'themes'
+            fn (array $foreignKey): bool => $foreignKey['columns'] === ['theme_id']
+                && $foreignKey['foreign_table'] === 'themes'
+                && $foreignKey['foreign_columns'] === ['id']
+                && $foreignKey['on_delete'] === 'cascade'
         ));
     }
 
@@ -57,6 +60,11 @@ class ThemeManifestsMigrationTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $this->assertDatabaseHas('theme_manifests', ['theme_id' => $themeId]);
+        $record = DB::table('theme_manifests')->where('theme_id', $themeId)->first();
+
+        $this->assertNotNull($record);
+        $this->assertSame($manifest, json_decode((string) $record->manifest_json, true, flags: JSON_THROW_ON_ERROR));
+        $this->assertSame($manifest['supports'], json_decode((string) $record->supports_json, true, flags: JSON_THROW_ON_ERROR));
+        $this->assertSame($manifest['layouts'], json_decode((string) $record->layouts_json, true, flags: JSON_THROW_ON_ERROR));
     }
 }

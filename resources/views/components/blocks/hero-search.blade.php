@@ -5,10 +5,13 @@
     @if (! empty($config['subtitle']))
         <p>{{ $config['subtitle'] }}</p>
     @endif
-    <input
-        type="search"
-        disabled
-        aria-label="Catalog search preview"
-        placeholder="{{ $config['search_placeholder'] ?? 'Search products...' }}"
-    >
+    <form role="search">
+        <input
+            type="search"
+            disabled
+            aria-label="Catalog search preview"
+            placeholder="{{ $config['search_placeholder'] ?? 'Search products...' }}"
+        >
+    </form>
+    <p>Search data will be available when the public catalog runtime is introduced.</p>
 </section>

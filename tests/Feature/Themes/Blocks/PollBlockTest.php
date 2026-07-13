@@ -32,6 +32,8 @@ class PollBlockTest extends TestCase
         $this->assertTrue($block->isActive());
         $this->assertSame(['home', 'category', 'product'], $block->supported_page_types_json);
         $this->assertSame(['polls'], $block->required_features_json);
+        $this->assertSame('string', $block->config_schema_json['title']);
+        $this->assertSame(['type' => 'integer', 'nullable' => true], $block->config_schema_json['poll_id']);
         $this->assertSame('inline|sidebar|card', $block->config_schema_json['placement']);
         $this->assertTrue(View::exists('components.blocks.poll-block'));
     }

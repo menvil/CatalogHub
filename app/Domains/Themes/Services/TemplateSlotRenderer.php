@@ -11,6 +11,7 @@ use App\Models\LayoutTemplate;
 use App\Models\Site;
 use App\Models\SiteHomeBlock;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 final class TemplateSlotRenderer
 {
@@ -35,39 +36,84 @@ final class TemplateSlotRenderer
             return collect();
         }
 
+        $site->loadMissing('theme.manifest');
+        $theme = $site->theme;
+        if ($theme === null || ! $theme->isActive()) {
+            return collect();
+        }
+
+        try {
+            $manifest = $this->themes->manifestFor($theme);
+        } catch (InvalidThemeManifestException $exception) {
+            Log::warning('Cannot resolve homepage blocks for an invalid theme manifest.', [
+                'site_id' => $site->getKey(),
+                'theme_id' => $theme->getKey(),
+                'exception' => $exception,
+            ]);
+
+            return collect();
+        }
+
+        /** @var list<string> $enabledFeatures */
+        $enabledFeatures = $site->features()->where('is_enabled', true)->pluck('feature_key')->all();
+
         return $site->homeBlocks()
             ->with('definition')
             ->where('enabled', true)
             ->orderBy('position')
             ->get()
-            ->map(function (SiteHomeBlock $homeBlock) use ($site, $pageType): RenderedBlock {
-                $this->compatibility->validate($site, $homeBlock->block_code, $pageType);
-                $definition = $homeBlock->definition;
+            ->map(function (SiteHomeBlock $homeBlock) use ($site, $pageType, $theme, $manifest, $enabledFeatures): ?RenderedBlock {
+                try {
+                    $definition = $homeBlock->definition;
+                    if (! $definition instanceof BlockDefinition) {
+                        throw CannotUseBlockException::because("Block {$homeBlock->block_code} is not registered.");
+                    }
 
-                if (! $definition instanceof BlockDefinition || ! is_string($definition->view_component) || $definition->view_component === '') {
-                    throw CannotUseBlockException::because("Block {$homeBlock->block_code} does not declare a view component.");
+                    $this->compatibility->validateResolved($definition, $theme, $manifest, $enabledFeatures, $pageType);
+
+                    if (! is_string($definition->view_component) || $definition->view_component === '') {
+                        throw CannotUseBlockException::because("Block {$homeBlock->block_code} does not declare a view component.");
+                    }
+
+                    return new RenderedBlock(
+                        code: $homeBlock->block_code,
+                        viewComponent: $definition->view_component,
+                        config: $homeBlock->config_json ?? [],
+                        position: $homeBlock->position,
+                    );
+                } catch (CannotUseBlockException $exception) {
+                    Log::warning('Skipping incompatible site home block.', [
+                        'site_id' => $site->getKey(),
+                        'block_code' => $homeBlock->block_code,
+                        'page_type' => $pageType,
+                        'exception' => $exception,
+                    ]);
+
+                    return null;
                 }
-
-                return new RenderedBlock(
-                    code: $homeBlock->block_code,
-                    viewComponent: $definition->view_component,
-                    config: $homeBlock->config_json ?? [],
-                    position: $homeBlock->position,
-                );
             })
+            ->filter(fn (?RenderedBlock $block): bool => $block instanceof RenderedBlock)
             ->values();
     }
 
     public function resolveLayout(Site $site, string $pageType): ?LayoutTemplate
     {
-        $theme = $site->theme()->first();
+        $site->loadMissing('theme.manifest');
+        $theme = $site->theme;
         if ($theme === null || ! $theme->isActive()) {
             return null;
         }
 
         try {
             $layoutCode = $this->themes->manifestFor($theme)->layoutFor($pageType);
-        } catch (InvalidThemeManifestException) {
+        } catch (InvalidThemeManifestException $exception) {
+            Log::warning('Cannot resolve layout for an invalid theme manifest.', [
+                'site_id' => $site->getKey(),
+                'theme_id' => $theme->getKey(),
+                'page_type' => $pageType,
+                'exception' => $exception,
+            ]);
+
             return null;
         }
 

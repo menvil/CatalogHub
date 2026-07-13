@@ -20,8 +20,13 @@ final class ReorderSiteHomeBlocksAction
                 throw ValidationException::withMessages(['order' => 'The block order must include every site home block exactly once.']);
             }
 
+            $blockCount = count($orderedIds);
+            $stagingStart = ((int) $blocks->max('position')) + $blockCount + 1;
+            if ($blockCount > 0 && $stagingStart + $blockCount - 1 > 4_294_967_295) {
+                throw ValidationException::withMessages(['order' => 'Block positions are too large to reorder safely.']);
+            }
             foreach ($orderedIds as $index => $id) {
-                $blocks->get($id)?->update(['position' => 1_000_000 + $index]);
+                $blocks->get($id)?->update(['position' => $stagingStart + $index]);
             }
 
             foreach ($orderedIds as $index => $id) {

@@ -13,7 +13,7 @@ final class ThemeRegistry
     /** @return Collection<int, Theme> */
     public function activeThemes(): Collection
     {
-        return Theme::query()->active()->orderBy('name')->get();
+        return Theme::query()->with('manifest')->active()->orderBy('name')->get();
     }
 
     public function findByCode(string $code): ?Theme
@@ -23,10 +23,10 @@ final class ThemeRegistry
 
     public function manifestFor(Theme $theme): ThemeManifest
     {
-        $record = $theme->manifest()->first();
+        $record = $theme->manifest;
 
         if (! $record instanceof ThemeManifestRecord) {
-            throw new InvalidThemeManifestException("Theme {$theme->code} does not have a manifest.");
+            throw InvalidThemeManifestException::because("Theme {$theme->code} does not have a manifest.");
         }
 
         return ThemeManifest::fromArray($record->manifest_json);

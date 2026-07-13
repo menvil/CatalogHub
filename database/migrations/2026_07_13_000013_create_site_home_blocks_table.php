@@ -19,8 +19,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('block_code')->references('code')->on('block_registry')->restrictOnDelete();
-            $table->unique(['site_id', 'block_code', 'position'], 'site_home_blocks_site_block_position_unique');
-            $table->index(['site_id', 'position'], 'site_home_blocks_site_position_index');
+            $table->unique(['site_id', 'position'], 'site_home_blocks_site_position_unique');
         });
     }
 

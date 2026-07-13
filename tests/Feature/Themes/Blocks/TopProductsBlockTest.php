@@ -33,7 +33,7 @@ class TopProductsBlockTest extends TestCase
         $this->assertSame('string', $block->config_schema_json['title']);
         $this->assertSame('integer', $block->config_schema_json['limit']);
         $this->assertSame('rating|popular|manual|latest', $block->config_schema_json['source']);
-        $this->assertSame('integer', $block->config_schema_json['category_id']);
+        $this->assertSame(['type' => 'integer', 'nullable' => true], $block->config_schema_json['category_id']);
         $this->assertSame('grid|carousel|list', $block->config_schema_json['layout']);
         $this->assertTrue(View::exists('components.blocks.top-products'));
     }

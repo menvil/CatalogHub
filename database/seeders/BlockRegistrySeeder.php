@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Enums\BlockStatus;
 use App\Models\BlockDefinition;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 class BlockRegistrySeeder extends Seeder
@@ -16,15 +17,17 @@ class BlockRegistrySeeder extends Seeder
             throw new RuntimeException('CatalogHub block registry configuration must be an array.');
         }
 
-        foreach ($definitions as $code => $definition) {
-            if (! is_string($code) || ! is_array($definition)) {
-                throw new RuntimeException('Every CatalogHub block definition must use a string code and array definition.');
-            }
+        DB::transaction(function () use ($definitions): void {
+            foreach ($definitions as $code => $definition) {
+                if (! is_string($code) || ! is_array($definition)) {
+                    throw new RuntimeException('Every CatalogHub block definition must use a string code and array definition.');
+                }
 
-            BlockDefinition::query()->updateOrCreate(
-                ['code' => $code],
-                [...$definition, 'status' => BlockStatus::Active],
-            );
-        }
+                BlockDefinition::query()->updateOrCreate(
+                    ['code' => $code],
+                    [...$definition, 'status' => BlockStatus::Active],
+                );
+            }
+        });
     }
 }

@@ -8,6 +8,7 @@ use App\Exceptions\Themes\InvalidThemeManifestException;
 use App\Models\Theme;
 use App\Models\ThemeManifestRecord;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class ThemeRegistryTest extends TestCase
@@ -53,5 +54,27 @@ class ThemeRegistryTest extends TestCase
         $this->expectExceptionMessage('does not have a manifest');
 
         app(ThemeRegistry::class)->manifestFor(Theme::factory()->create());
+    }
+
+    public function test_active_theme_manifests_are_eager_loaded_and_reused(): void
+    {
+        $theme = Theme::factory()->create(['status' => ThemeStatus::Active]);
+        ThemeManifestRecord::query()->create([
+            'theme_id' => $theme->id,
+            'manifest_json' => ['code' => $theme->code, 'name' => $theme->name, 'supports' => [], 'layouts' => ['home' => 'home-clean']],
+            'supports_json' => [],
+            'layouts_json' => ['home' => 'home-clean'],
+        ]);
+        $registry = app(ThemeRegistry::class);
+        $loadedTheme = $registry->activeThemes()->firstOrFail();
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $registry->manifestFor($loadedTheme);
+        $registry->manifestFor($loadedTheme);
+        $queries = DB::getQueryLog();
+        DB::disableQueryLog();
+
+        $this->assertSame([], $queries);
     }
 }

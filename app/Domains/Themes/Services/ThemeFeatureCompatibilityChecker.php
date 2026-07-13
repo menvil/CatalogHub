@@ -3,6 +3,7 @@
 namespace App\Domains\Themes\Services;
 
 use App\Domains\Themes\DTO\ThemeCompatibilityResult;
+use App\Domains\Themes\ValueObjects\ThemeManifest;
 use App\Exceptions\Themes\InvalidThemeManifestException;
 use App\Models\Site;
 use App\Models\Theme;
@@ -26,12 +27,7 @@ final class ThemeFeatureCompatibilityChecker
 
     public function check(Site $site, Theme $theme): ThemeCompatibilityResult
     {
-        /** @var list<string> $enabledFeatures */
-        $enabledFeatures = $site->features()
-            ->where('is_enabled', true)
-            ->orderBy('feature_key')
-            ->pluck('feature_key')
-            ->all();
+        $enabledFeatures = $this->enabledFeaturesFor($site);
 
         try {
             $manifest = $this->themes->manifestFor($theme);
@@ -43,6 +39,25 @@ final class ThemeFeatureCompatibilityChecker
             );
         }
 
+        return $this->checkWithManifest($enabledFeatures, $manifest);
+    }
+
+    /** @return list<string> */
+    public function enabledFeaturesFor(Site $site): array
+    {
+        /** @var list<string> $features */
+        $features = $site->features()
+            ->where('is_enabled', true)
+            ->orderBy('feature_key')
+            ->pluck('feature_key')
+            ->all();
+
+        return $features;
+    }
+
+    /** @param list<string> $enabledFeatures */
+    public function checkWithManifest(array $enabledFeatures, ThemeManifest $manifest): ThemeCompatibilityResult
+    {
         $missing = [];
         foreach ($enabledFeatures as $feature) {
             $capabilities = self::FEATURE_CAPABILITIES[$feature] ?? [$feature];

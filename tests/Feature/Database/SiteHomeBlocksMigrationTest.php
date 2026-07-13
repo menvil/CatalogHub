@@ -31,10 +31,14 @@ class SiteHomeBlocksMigrationTest extends TestCase
         $foreignKeys = collect(Schema::getForeignKeys('site_home_blocks'));
 
         $this->assertTrue($foreignKeys->contains(
-            fn (array $foreignKey): bool => $foreignKey['columns'] === ['site_id'] && $foreignKey['foreign_table'] === 'sites'
+            fn (array $foreignKey): bool => $foreignKey['columns'] === ['site_id']
+                && $foreignKey['foreign_table'] === 'sites'
+                && $foreignKey['foreign_columns'] === ['id']
         ));
         $this->assertTrue($foreignKeys->contains(
-            fn (array $foreignKey): bool => $foreignKey['columns'] === ['block_code'] && $foreignKey['foreign_table'] === 'block_registry'
+            fn (array $foreignKey): bool => $foreignKey['columns'] === ['block_code']
+                && $foreignKey['foreign_table'] === 'block_registry'
+                && $foreignKey['foreign_columns'] === ['code']
         ));
     }
 
@@ -43,10 +47,7 @@ class SiteHomeBlocksMigrationTest extends TestCase
         $indexes = collect(Schema::getIndexes('site_home_blocks'));
 
         $this->assertTrue($indexes->contains(
-            fn (array $index): bool => $index['unique'] === true && $index['columns'] === ['site_id', 'block_code', 'position']
-        ));
-        $this->assertTrue($indexes->contains(
-            fn (array $index): bool => $index['columns'] === ['site_id', 'position']
+            fn (array $index): bool => $index['unique'] === true && $index['columns'] === ['site_id', 'position']
         ));
     }
 }

@@ -59,4 +59,25 @@ class CreateSiteWizardTest extends TestCase
             ->test(CreateSiteWizard::class)
             ->assertSet('features', array_fill_keys(SiteFeature::KEYS, false));
     }
+
+    public function test_locale_checkboxes_update_default_options_live(): void
+    {
+        Locale::factory()->create(['code' => 'de-DE', 'name' => 'German']);
+
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
+            ->test(CreateSiteWizard::class)
+            ->assertSeeHtml('wire:model.live="enabledLocales"')
+            ->set('enabledLocales', ['de-DE'])
+            ->assertSeeHtml('<option value="de-DE">German</option>');
+    }
+
+    public function test_validation_errors_are_rendered_next_to_wizard_fields(): void
+    {
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
+            ->test(CreateSiteWizard::class)
+            ->call('createSite')
+            ->assertHasErrors(['code', 'name', 'marketId', 'enabledLocales', 'defaultLocale', 'enabledCategories'])
+            ->assertSee('The code field is required.')
+            ->assertSee('The default locale field is required.');
+    }
 }

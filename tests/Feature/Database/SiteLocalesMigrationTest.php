@@ -73,4 +73,40 @@ class SiteLocalesMigrationTest extends TestCase
             'updated_at' => now(),
         ]);
     }
+
+    public function test_default_locale_must_be_enabled_on_insert(): void
+    {
+        $site = Site::factory()->create();
+        Locale::factory()->create(['code' => 'de-DE']);
+
+        $this->expectException(QueryException::class);
+        DB::table('site_locales')->insert([
+            'site_id' => $site->id,
+            'locale_code' => 'de-DE',
+            'is_default' => true,
+            'is_enabled' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    public function test_default_locale_cannot_be_disabled_on_update(): void
+    {
+        $site = Site::factory()->create();
+        Locale::factory()->create(['code' => 'de-DE']);
+        DB::table('site_locales')->insert([
+            'site_id' => $site->id,
+            'locale_code' => 'de-DE',
+            'is_default' => true,
+            'is_enabled' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->expectException(QueryException::class);
+        DB::table('site_locales')
+            ->where('site_id', $site->id)
+            ->where('locale_code', 'de-DE')
+            ->update(['is_enabled' => false]);
+    }
 }

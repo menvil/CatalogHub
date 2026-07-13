@@ -5,6 +5,7 @@ namespace Tests\Feature\Sites;
 use App\Actions\Sites\CreateSiteAction;
 use App\Enums\CentralCategoryStatus;
 use App\Enums\MarketStatus;
+use App\Enums\SiteMode;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Locale;
 use App\Models\Market;
@@ -18,17 +19,40 @@ class SiteModeSelectionTest extends TestCase
 
     public function test_single_category_mode_requires_exactly_one_category(): void
     {
-        $this->expectException(ValidationException::class);
+        $data = $this->data(SiteMode::SingleCategory->value, CentralCategory::factory()->count(2)->create(['status' => CentralCategoryStatus::Active])->modelKeys());
 
-        app(CreateSiteAction::class)->handle($this->data('single_category', CentralCategory::factory()->count(2)->create(['status' => CentralCategoryStatus::Active])->modelKeys()));
+        try {
+            app(CreateSiteAction::class)->handle($data);
+
+            $this->fail('A single-category site with multiple categories was accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('categories', $exception->errors());
+        }
+
+        $this->assertDatabaseMissing('sites', ['code' => $data['code']]);
     }
 
     public function test_multi_category_mode_accepts_more_than_one_category(): void
     {
-        $site = app(CreateSiteAction::class)->handle($this->data('multi_category', CentralCategory::factory()->count(2)->create(['status' => CentralCategoryStatus::Active])->modelKeys()));
+        $site = app(CreateSiteAction::class)->handle($this->data(SiteMode::MultiCategory->value, CentralCategory::factory()->count(2)->create(['status' => CentralCategoryStatus::Active])->modelKeys()));
 
-        $this->assertSame('multi_category', $site->mode->value);
+        $this->assertSame(SiteMode::MultiCategory, $site->mode);
         $this->assertDatabaseCount('site_categories', 2);
+    }
+
+    public function test_multi_category_mode_rejects_empty_categories(): void
+    {
+        $data = $this->data(SiteMode::MultiCategory->value, []);
+
+        try {
+            app(CreateSiteAction::class)->handle($data);
+
+            $this->fail('A multi-category site without categories was accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('categories', $exception->errors());
+        }
+
+        $this->assertDatabaseMissing('sites', ['code' => $data['code']]);
     }
 
     /** @param list<int> $categories */

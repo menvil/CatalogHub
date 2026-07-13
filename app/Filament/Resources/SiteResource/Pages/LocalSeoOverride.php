@@ -77,7 +77,7 @@ final class LocalSeoOverride extends Page
                 $field = (string) $override->field;
 
                 if (array_key_exists($field, $values)) {
-                    $values[$field] = (string) $override->value();
+                    $values[$field] = (string) $override->overrideValue();
                 }
             }
         }

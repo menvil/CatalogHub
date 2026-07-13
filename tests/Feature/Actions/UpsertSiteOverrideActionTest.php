@@ -109,6 +109,42 @@ class UpsertSiteOverrideActionTest extends TestCase
         $action->handle($site, 'product', $product->id, 'hero_text', null, 'Global hero');
 
         $this->assertDatabaseCount('site_overrides', 2);
+        $this->assertDatabaseHas('site_overrides', [
+            'site_id' => $site->id,
+            'entity_type' => 'product',
+            'entity_id' => $product->id,
+            'field' => 'local_title',
+            'locale_code' => 'de-DE',
+            'value_json' => json_encode(['value' => 'German title']),
+        ]);
+        $this->assertDatabaseHas('site_overrides', [
+            'site_id' => $site->id,
+            'entity_type' => 'product',
+            'entity_id' => $product->id,
+            'field' => 'hero_text',
+            'locale_code' => '',
+            'value_json' => json_encode(['value' => 'Global hero']),
+        ]);
+    }
+
+    public function test_matching_override_scope_is_updated_without_a_duplicate(): void
+    {
+        $site = Site::factory()->create();
+        $product = CentralProduct::factory()->create();
+        $action = app(UpsertSiteOverrideAction::class);
+
+        $action->handle($site, 'product', $product->id, 'local_title', null, 'First title');
+        $action->handle($site, 'product', $product->id, 'local_title', null, 'Updated title');
+
+        $this->assertDatabaseCount('site_overrides', 1);
+        $this->assertDatabaseHas('site_overrides', [
+            'site_id' => $site->id,
+            'entity_type' => 'product',
+            'entity_id' => $product->id,
+            'field' => 'local_title',
+            'locale_code' => '',
+            'value_json' => json_encode(['value' => 'Updated title']),
+        ]);
     }
 
     /** @return array<string, array{string}> */

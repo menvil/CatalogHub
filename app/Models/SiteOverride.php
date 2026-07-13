@@ -21,7 +21,7 @@ final class SiteOverride extends Model
         return $this->belongsTo(Site::class);
     }
 
-    public function value(): mixed
+    public function overrideValue(): mixed
     {
         return $this->value_json['value'] ?? null;
     }

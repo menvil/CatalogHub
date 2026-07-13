@@ -26,29 +26,33 @@ final class UpsertSiteOverrideAction
 
         $localeCode ??= '';
 
-        if ($value === null || $value === '') {
-            $site->overrides()->where(['entity_type' => $entityType, 'entity_id' => $entityId, 'field' => $field, 'locale_code' => $localeCode])->delete();
+        return DB::transaction(function () use ($entityId, $entityType, $field, $localeCode, $reason, $site, $value): ?SiteOverride {
+            $lockedSite = Site::query()->whereKey($site->getKey())->lockForUpdate()->firstOrFail();
 
-            return null;
-        }
+            if ($value === null || $value === '') {
+                $lockedSite->overrides()->where(['entity_type' => $entityType, 'entity_id' => $entityId, 'field' => $field, 'locale_code' => $localeCode])->delete();
 
-        if (! $this->targetExists($entityType, $entityId)) {
-            throw ValidationException::withMessages(['entity_id' => 'The selected override target does not exist.']);
-        }
+                return null;
+            }
 
-        if ($localeCode !== '' && ! DB::table('site_locales')
-            ->where('site_id', $site->getKey())
-            ->where('locale_code', $localeCode)
-            ->where('is_enabled', true)
-            ->exists()) {
-            throw ValidationException::withMessages(['locale_code' => 'The selected locale must be enabled for the site.']);
-        }
+            if (! $this->targetExists($entityType, $entityId)) {
+                throw ValidationException::withMessages(['entity_id' => 'The selected override target does not exist.']);
+            }
 
-        if ($field === 'local_slug') {
-            Validator::make(['slug' => $value], ['slug' => ['required', 'string', 'lowercase', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', new UniqueSiteSlug($site, $entityType, $localeCode, $entityId)]])->validate();
-        }
+            if ($localeCode !== '' && ! DB::table('site_locales')
+                ->where('site_id', $lockedSite->getKey())
+                ->where('locale_code', $localeCode)
+                ->where('is_enabled', true)
+                ->exists()) {
+                throw ValidationException::withMessages(['locale_code' => 'The selected locale must be enabled for the site.']);
+            }
 
-        return $site->overrides()->updateOrCreate(['entity_type' => $entityType, 'entity_id' => $entityId, 'field' => $field, 'locale_code' => $localeCode], ['value_json' => ['value' => $value], 'reason' => $reason, 'status' => 'active']);
+            if ($field === 'local_slug') {
+                Validator::make(['slug' => $value], ['slug' => ['required', 'string', 'lowercase', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', new UniqueSiteSlug($lockedSite, $entityType, $localeCode, $entityId)]])->validate();
+            }
+
+            return $lockedSite->overrides()->updateOrCreate(['entity_type' => $entityType, 'entity_id' => $entityId, 'field' => $field, 'locale_code' => $localeCode], ['value_json' => ['value' => $value], 'reason' => $reason, 'status' => 'active']);
+        });
     }
 
     private function targetExists(string $entityType, int $entityId): bool

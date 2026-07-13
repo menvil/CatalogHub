@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'import_batch_id',
     'raw_product_id',
     'matched_central_product_id',
+    'published_central_product_id',
     'brand_id',
     'category_id',
     'title',
@@ -79,6 +80,12 @@ final class NormalizedProductDraft extends Model
     public function matchedCentralProduct(): BelongsTo
     {
         return $this->belongsTo(CentralProduct::class, 'matched_central_product_id');
+    }
+
+    /** @return BelongsTo<CentralProduct, $this> */
+    public function publishedCentralProduct(): BelongsTo
+    {
+        return $this->belongsTo(CentralProduct::class, 'published_central_product_id');
     }
 
     /** @return BelongsTo<User, $this> */

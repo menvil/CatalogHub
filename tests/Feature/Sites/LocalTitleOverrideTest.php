@@ -4,16 +4,16 @@ namespace Tests\Feature\Sites;
 
 use App\Actions\Sites\UpsertSiteOverrideAction;
 use App\Models\CentralCatalog\CentralProduct;
-use App\Models\Locale;
 use App\Models\Site;
 use App\Services\Sites\SiteOverrideResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
+use Tests\Concerns\EnablesSiteLocales;
 use Tests\Concerns\EnablesSiteProductCategories;
 use Tests\TestCase;
 
 class LocalTitleOverrideTest extends TestCase
 {
+    use EnablesSiteLocales;
     use EnablesSiteProductCategories;
     use RefreshDatabase;
 
@@ -62,17 +62,5 @@ class LocalTitleOverrideTest extends TestCase
 
         $action->handle($site, 'product', $product->id, 'local_title', 'de-DE', 'German title');
         $this->assertSame('German title', $resolver->resolve($site, 'product', $product->id, 'local_title', 'de-DE', 'Translated', 'Fallback'));
-    }
-
-    private function enableLocale(Site $site, string $code): void
-    {
-        Locale::factory()->create(['code' => $code]);
-        DB::table('site_locales')->insert([
-            'site_id' => $site->id,
-            'locale_code' => $code,
-            'is_enabled' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
     }
 }

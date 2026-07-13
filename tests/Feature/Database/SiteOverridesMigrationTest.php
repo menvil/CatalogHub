@@ -17,7 +17,10 @@ class SiteOverridesMigrationTest extends TestCase
     {
         $this->assertTrue(Schema::hasTable('site_overrides'));
         $this->assertTrue(Schema::hasColumns('site_overrides', ['id', 'site_id', 'entity_type', 'entity_id', 'field', 'locale_code', 'value_json', 'reason', 'status', 'created_at', 'updated_at']));
-        $this->assertTrue(collect(Schema::getIndexes('site_overrides'))->contains(fn (array $index): bool => $index['unique'] === true && $index['columns'] === ['site_id', 'entity_type', 'entity_id', 'field', 'locale_code']));
+        $uniqueIndex = collect(Schema::getIndexes('site_overrides'))->firstWhere('name', 'site_overrides_scope_unique');
+        $this->assertNotNull($uniqueIndex);
+        $this->assertTrue($uniqueIndex['unique']);
+        $this->assertSame(['site_id', 'entity_type', 'entity_id', 'field', 'locale_code'], $uniqueIndex['columns']);
         $localeColumn = collect(Schema::getColumns('site_overrides'))->firstWhere('name', 'locale_code');
         $this->assertFalse($localeColumn['nullable']);
     }

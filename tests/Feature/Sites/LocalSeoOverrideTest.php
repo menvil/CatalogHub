@@ -6,17 +6,17 @@ use App\Actions\Sites\UpsertSiteOverrideAction;
 use App\Enums\UserRole;
 use App\Filament\Resources\SiteResource\Pages\LocalSeoOverride;
 use App\Models\CentralCatalog\CentralProduct;
-use App\Models\Locale;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
+use Tests\Concerns\EnablesSiteLocales;
 use Tests\Concerns\EnablesSiteProductCategories;
 use Tests\TestCase;
 
 class LocalSeoOverrideTest extends TestCase
 {
+    use EnablesSiteLocales;
     use EnablesSiteProductCategories;
     use RefreshDatabase;
 
@@ -140,17 +140,5 @@ class LocalSeoOverrideTest extends TestCase
         $this->assertDatabaseHas('site_overrides', ['site_id' => $site->id, 'field' => 'meta_description', 'value_json' => json_encode(['value' => 'Existing description'])]);
         $this->assertDatabaseHas('site_overrides', ['site_id' => $site->id, 'field' => 'intro_text', 'value_json' => json_encode(['value' => 'Existing intro'])]);
         $this->assertDatabaseHas('site_overrides', ['site_id' => $site->id, 'field' => 'meta_title', 'value_json' => json_encode(['value' => 'New title'])]);
-    }
-
-    private function enableLocale(Site $site, string $code): void
-    {
-        Locale::factory()->create(['code' => $code]);
-        DB::table('site_locales')->insert([
-            'site_id' => $site->id,
-            'locale_code' => $code,
-            'is_enabled' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
     }
 }

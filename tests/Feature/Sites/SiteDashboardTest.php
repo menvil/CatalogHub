@@ -4,6 +4,7 @@ namespace Tests\Feature\Sites;
 
 use App\Filament\Resources\SiteResource\Pages\SiteDashboard;
 use App\Models\CentralCatalog\CentralProduct;
+use App\Models\Locale;
 use App\Models\Site;
 use App\Models\SiteFeature;
 use App\Models\SiteProduct;
@@ -25,6 +26,7 @@ class SiteDashboardTest extends TestCase
         SiteProduct::query()->create(['site_id' => $site->id, 'central_product_id' => CentralProduct::factory()->create()->id, 'visibility' => 'hidden']);
         SiteProduct::query()->create(['site_id' => $other->id, 'central_product_id' => CentralProduct::factory()->create()->id, 'visibility' => 'visible']);
         SiteFeature::query()->create(['site_id' => $site->id, 'feature_key' => 'reviews', 'is_enabled' => true]);
+        Locale::factory()->create(['code' => 'en-US']);
         DB::table('site_locales')->insert(['site_id' => $site->id, 'locale_code' => 'en-US', 'is_default' => true, 'is_enabled' => true, 'position' => 0, 'created_at' => now(), 'updated_at' => now()]);
 
         $metrics = app(SiteDashboardMetrics::class)->metricsFor($site);

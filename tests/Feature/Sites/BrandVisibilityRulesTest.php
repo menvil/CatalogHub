@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\Sites;
 
+use App\Filament\Resources\SiteResource\Pages\BrandVisibilityRules;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Site;
+use App\Models\User;
 use App\Services\Sites\SiteBrandVisibilityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -33,9 +35,35 @@ class BrandVisibilityRulesTest extends TestCase
         $site = Site::factory()->create();
         $brand = CentralBrand::factory()->create();
         $product = CentralProduct::factory()->create(['central_brand_id' => $brand->id]);
-        app(SiteBrandVisibilityService::class)->hide($site, $brand);
+        $service = app(SiteBrandVisibilityService::class);
+        $service->hide($site, $brand);
 
-        $this->assertFalse(app(SiteBrandVisibilityService::class)->allowsProduct($site->fresh(), $product));
+        $this->assertFalse($service->allowsProduct($site->fresh(), $product));
+        $service->allow($site->fresh(), $brand);
+        $this->assertTrue($service->allowsProduct($site->fresh(), $product));
+    }
+
+    public function test_product_visibility_does_not_lazy_load_the_brand_relation(): void
+    {
+        $site = Site::factory()->create();
+        $product = CentralProduct::factory()->create([
+            'central_brand_id' => CentralBrand::factory()->create()->id,
+        ]);
+
+        $this->assertFalse($product->relationLoaded('brand'));
+        app(SiteBrandVisibilityService::class)->allowsProduct($site, $product);
+        $this->assertFalse($product->relationLoaded('brand'));
+    }
+
+    public function test_brand_rows_have_stable_livewire_keys(): void
+    {
+        $site = Site::factory()->create();
+        $brand = CentralBrand::factory()->create();
+
+        $this->actingAs(User::factory()->centralAdmin()->create())
+            ->get(BrandVisibilityRules::getUrl(['record' => $site]))
+            ->assertOk()
+            ->assertSee('wire:key="brand-visibility-'.$brand->id.'"', false);
     }
 
     public function test_hide_uses_current_locked_settings_instead_of_stale_model_state(): void

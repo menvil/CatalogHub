@@ -16,8 +16,8 @@ class MarketFactory extends Factory
     public function definition(): array
     {
         return [
-            'code' => strtoupper(fake()->unique()->bothify('??')),
-            'name' => fake()->unique()->country(),
+            'code' => strtoupper(fake()->unique()->bothify('??#####')),
+            'name' => fake()->country(),
             'country_code' => strtoupper(fake()->countryCode()),
             'currency_code' => 'EUR',
             'default_locale' => 'en-US',

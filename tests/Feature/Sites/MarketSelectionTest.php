@@ -6,6 +6,7 @@ use App\Actions\Sites\CreateSiteAction;
 use App\Enums\CentralCategoryStatus;
 use App\Enums\MarketStatus;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Models\Locale;
 use App\Models\Market;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
@@ -29,6 +30,7 @@ class MarketSelectionTest extends TestCase
     public function test_active_market_is_saved_on_site(): void
     {
         $market = Market::factory()->create(['status' => MarketStatus::Active]);
+        Locale::factory()->create(['code' => 'en-US']);
         $site = app(CreateSiteAction::class)->handle([
             'market_id' => $market->id, 'code' => 'active-market', 'name' => 'Active', 'mode' => 'single_category',
             'default_locale' => 'en-US', 'locales' => ['en-US'], 'categories' => [CentralCategory::factory()->create(['status' => CentralCategoryStatus::Active])->id], 'features' => [],

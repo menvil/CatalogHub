@@ -4,8 +4,10 @@ namespace App\Actions\Sites;
 
 use App\Enums\CentralCategoryStatus;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Models\Locale;
 use App\Models\Market;
 use App\Models\Site;
+use App\Models\SiteFeature;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -30,7 +32,21 @@ final class CreateSiteAction
             throw ValidationException::withMessages(['default_locale' => 'The default locale must be enabled for the site.']);
         }
 
+        $activeLocaleCount = Locale::query()->active()->whereIn('code', $locales)->count();
+
+        if ($activeLocaleCount !== count($locales)) {
+            throw ValidationException::withMessages(['locales' => 'Only active locales can be enabled for a site.']);
+        }
+
         $data['locales'] = $locales;
+
+        $features = $data['features'] ?? [];
+
+        if (! is_array($features) || array_diff(array_keys($features), SiteFeature::KEYS) !== []) {
+            throw ValidationException::withMessages(['features' => 'Only supported site features can be configured.']);
+        }
+
+        $data['features'] = $features;
 
         $categories = array_values(array_unique(array_map('intval', $data['categories'] ?? [])));
         $categoryCount = count($categories);
@@ -65,7 +81,7 @@ final class CreateSiteAction
             foreach ($data['categories'] as $position => $categoryId) {
                 DB::table('site_categories')->insert(['site_id' => $site->id, 'central_category_id' => $categoryId, 'is_enabled' => true, 'position' => $position, 'created_at' => now(), 'updated_at' => now()]);
             }
-            foreach (($data['features'] ?? []) as $feature => $enabled) {
+            foreach ($data['features'] as $feature => $enabled) {
                 DB::table('site_features')->insert(['site_id' => $site->id, 'feature_key' => $feature, 'is_enabled' => $enabled, 'created_at' => now(), 'updated_at' => now()]);
             }
 

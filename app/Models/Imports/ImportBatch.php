@@ -9,6 +9,18 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int $import_source_id
+ * @property string $status
+ * @property int $total_items
+ * @property int $raw_items_count
+ * @property int $drafts_count
+ * @property int $approved_count
+ * @property int $rejected_count
+ * @property int $failed_count
+ * @property array<string, mixed>|null $metadata_json
+ */
 #[Fillable([
     'import_source_id',
     'status',

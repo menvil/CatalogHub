@@ -7,6 +7,16 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $import_batch_id
+ * @property int|null $raw_product_id
+ * @property int|null $normalized_product_draft_id
+ * @property string $severity
+ * @property string $code
+ * @property string $message
+ * @property array<string, mixed>|null $context_json
+ */
 #[Fillable([
     'import_batch_id',
     'raw_product_id',

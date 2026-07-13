@@ -89,7 +89,7 @@ final class PublishNormalizedProductDraftToCentralAction
     private function persistAttributes(NormalizedProductDraft $draft, CentralProduct $product): void
     {
         foreach ($draft->attributes_json ?? [] as $candidate) {
-            if (! is_array($candidate) || ($candidate['is_valid'] ?? true) === false) {
+            if (($candidate['is_valid'] ?? true) === false) {
                 throw new LogicException("Draft [{$draft->id}] contains an invalid normalized attribute candidate.");
             }
 
@@ -163,7 +163,7 @@ final class PublishNormalizedProductDraftToCentralAction
             'canonical_unit' => $candidate['canonical_unit'] ?? $metadata['canonical_unit'] ?? null,
             'confidence' => $candidate['confidence'] ?? $draft->confidence,
             'source_type' => 'import',
-            'source_id' => (string) ($draft->rawProduct?->external_id ?? $draft->raw_product_id),
+            'source_id' => (string) ($draft->rawProduct->external_id ?? $draft->raw_product_id),
             'source_reference' => [
                 'import_batch_id' => $draft->import_batch_id,
                 'raw_product_id' => $draft->raw_product_id,

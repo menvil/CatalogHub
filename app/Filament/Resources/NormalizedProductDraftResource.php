@@ -78,7 +78,7 @@ final class NormalizedProductDraftResource extends Resource
             TextEntry::make('rawProduct.raw_title')->label('Raw title')->placeholder('Missing'),
             TextEntry::make('raw_payload')
                 ->label('Raw payload')
-                ->state(fn (NormalizedProductDraft $record): string => self::prettyJson($record->rawProduct?->raw_payload_json))
+                ->state(fn (NormalizedProductDraft $record): string => self::prettyJson($record->rawProduct->raw_payload_json))
                 ->copyable()
                 ->columnSpanFull(),
             TextEntry::make('normalized_payload_json')

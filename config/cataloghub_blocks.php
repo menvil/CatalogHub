@@ -28,4 +28,19 @@ return [
         ],
         'view_component' => 'blocks.popular-categories',
     ],
+    'top_products' => [
+        'name' => 'Top Products',
+        'description' => 'Placeholder for a future projected product selection.',
+        'category' => 'products',
+        'supported_page_types_json' => ['home'],
+        'required_features_json' => [],
+        'config_schema_json' => [
+            'title' => 'string',
+            'limit' => 'integer',
+            'source' => 'rating|popular|manual|latest',
+            'category_id' => 'integer',
+            'layout' => 'grid|carousel|list',
+        ],
+        'view_component' => 'blocks.top-products',
+    ],
 ];

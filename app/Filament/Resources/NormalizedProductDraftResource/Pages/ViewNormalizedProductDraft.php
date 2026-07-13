@@ -1,0 +1,33 @@
+<?php
+
+namespace App\Filament\Resources\NormalizedProductDraftResource\Pages;
+
+use App\Filament\Resources\ImportBatchResource;
+use App\Filament\Resources\NormalizedProductDraftResource;
+use App\Filament\Resources\RawProductResource;
+use App\Models\Imports\NormalizedProductDraft;
+use Filament\Actions\Action;
+use Filament\Resources\Pages\ViewRecord;
+use Filament\Support\Icons\Heroicon;
+
+final class ViewNormalizedProductDraft extends ViewRecord
+{
+    protected static string $resource = NormalizedProductDraftResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        /** @var NormalizedProductDraft $draft */
+        $draft = $this->getRecord();
+
+        return [
+            Action::make('rawProduct')
+                ->label('Raw product')
+                ->icon(Heroicon::OutlinedCodeBracket)
+                ->url(RawProductResource::getUrl('view', ['record' => $draft->raw_product_id])),
+            Action::make('batch')
+                ->label('Import batch')
+                ->icon(Heroicon::OutlinedCircleStack)
+                ->url(ImportBatchResource::getUrl('view', ['record' => $draft->import_batch_id])),
+        ];
+    }
+}

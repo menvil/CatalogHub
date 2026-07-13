@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\NormalizedProductDraftResource\Pages;
 
+use App\Actions\Imports\ApproveNormalizedProductDraftAction;
 use App\Filament\Resources\ImportBatchResource;
 use App\Filament\Resources\NormalizedProductDraftResource;
 use App\Filament\Resources\RawProductResource;
@@ -20,6 +21,14 @@ final class ViewNormalizedProductDraft extends ViewRecord
         $draft = $this->getRecord();
 
         return [
+            Action::make('approve')
+                ->label('Approve')
+                ->color('success')
+                ->icon(Heroicon::OutlinedCheckCircle)
+                ->requiresConfirmation()
+                ->visible(fn (): bool => $this->getRecord()->status === 'pending_review')
+                ->action(fn (NormalizedProductDraft $record): NormalizedProductDraft => app(ApproveNormalizedProductDraftAction::class)
+                    ->handle($record, auth()->user())),
             Action::make('rawProduct')
                 ->label('Raw product')
                 ->icon(Heroicon::OutlinedCodeBracket)

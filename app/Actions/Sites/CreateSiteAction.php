@@ -4,6 +4,7 @@ namespace App\Actions\Sites;
 
 use App\Enums\CentralCategoryStatus;
 use App\Enums\SiteMode;
+use App\Enums\SiteStatus;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Locale;
 use App\Models\Market;
@@ -62,7 +63,17 @@ final class CreateSiteAction
 
         $data['mode'] = $mode;
 
-        $categories = array_values(array_unique(array_map('intval', $data['categories'] ?? [])));
+        $categoryInput = $data['categories'] ?? [];
+
+        if (! is_array($categoryInput)) {
+            throw ValidationException::withMessages(['categories' => 'The categories must be an array of integer IDs.']);
+        }
+
+        Validator::make(['categories' => $categoryInput], [
+            'categories.*' => ['required', 'integer'],
+        ])->validate();
+
+        $categories = array_values(array_unique(array_map('intval', $categoryInput)));
         $categoryCount = count($categories);
 
         if ($mode === SiteMode::SingleCategory->value && $categoryCount !== 1) {
@@ -84,10 +95,18 @@ final class CreateSiteAction
 
         $data['categories'] = $categories;
 
+        $status = $data['status'] ?? SiteStatus::default()->value;
+
+        if (! is_string($status) || SiteStatus::tryFrom($status) === null) {
+            throw ValidationException::withMessages(['status' => 'The selected site status is invalid.']);
+        }
+
+        $data['status'] = $status;
+
         return DB::transaction(function () use ($data): Site {
             $site = Site::query()->create([
                 'market_id' => $data['market_id'], 'code' => $data['code'], 'name' => $data['name'], 'domain' => $data['domain'] ?? null,
-                'mode' => $data['mode'], 'default_locale' => $data['default_locale'], 'status' => $data['status'] ?? 'draft', 'settings_json' => $data['settings_json'] ?? [],
+                'mode' => $data['mode'], 'default_locale' => $data['default_locale'], 'status' => $data['status'], 'settings_json' => $data['settings_json'] ?? [],
             ]);
             foreach ($data['locales'] as $position => $locale) {
                 DB::table('site_locales')->insert(['site_id' => $site->id, 'locale_code' => $locale, 'is_default' => $locale === $data['default_locale'], 'is_enabled' => true, 'position' => $position, 'created_at' => now(), 'updated_at' => now()]);

@@ -38,17 +38,11 @@ final class BrandVisibilityRules extends Page
     }
 
     public function toggle(int $brandId): void
-    { /** @var Site $site */ $site = $this->getRecord();
+    {
+        /** @var Site $site */ $site = $this->getRecord();
         $brand = CentralBrand::query()->findOrFail($brandId);
         app(SiteBrandVisibilityService::class)->toggle($site, $brand);
 
         $this->record = $site->fresh();
-    }
-
-    public function allows(CentralBrand $brand): bool
-    {
-        /** @var Site $site */ $site = $this->getRecord();
-
-        return app(SiteBrandVisibilityService::class)->allows($site, $brand);
     }
 }

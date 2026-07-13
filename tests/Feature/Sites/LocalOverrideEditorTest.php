@@ -101,6 +101,38 @@ class LocalOverrideEditorTest extends TestCase
             ->assertSeeHtml('<textarea id="override-value"');
     }
 
+    public function test_action_validation_errors_are_mapped_to_editor_fields(): void
+    {
+        $site = Site::factory()->create();
+        $product = CentralProduct::factory()->create();
+        $admin = User::factory()->centralAdmin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(LocalOverrideEditor::class, ['record' => $site->getRouteKey()])
+            ->set('entityId', PHP_INT_MAX)
+            ->set('value', 'Ghost title')
+            ->call('save')
+            ->assertHasErrors(['entityId'])
+            ->assertSee('The selected override target does not exist.');
+
+        Livewire::actingAs($admin)
+            ->test(LocalOverrideEditor::class, ['record' => $site->getRouteKey()])
+            ->set('entityId', $product->id)
+            ->set('localeCode', 'de-DE')
+            ->set('value', 'Unconfigured locale')
+            ->call('save')
+            ->assertHasErrors(['localeCode'])
+            ->assertSee('The selected locale must be enabled for the site.');
+
+        Livewire::actingAs($admin)
+            ->test(LocalOverrideEditor::class, ['record' => $site->getRouteKey()])
+            ->set('entityId', $product->id)
+            ->set('field', 'local_slug')
+            ->set('value', 'Invalid Slug')
+            ->call('save')
+            ->assertHasErrors(['value']);
+    }
+
     private function enableLocale(Site $site, string $code): void
     {
         Locale::factory()->create(['code' => $code]);

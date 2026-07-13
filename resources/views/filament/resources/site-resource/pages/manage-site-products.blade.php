@@ -1,8 +1,13 @@
 <x-filament-panels::page>
     <x-admin.card title="Product visibility" description="Local publication state; central product data is read-only.">
-        @php($siteProducts = $this->getSiteProductStates()->keyBy('central_product_id'))
+        @php($products = $this->getProducts())
+        @php($siteProducts = $this->getSiteProductStates($products->pluck('id')->all())->keyBy('central_product_id'))
+        <label for="site-product-search" class="mb-4 block space-y-2">
+            <span>Search products</span>
+            <input id="site-product-search" wire:model.live.debounce.300ms="search" type="search" placeholder="Search by product name">
+        </label>
         <div class="space-y-3">
-            @foreach($this->getProducts() as $product)
+            @foreach($products as $product)
                 @php($state = $siteProducts->get($product->id))
                 <div class="flex items-center justify-between gap-4 border-b border-gray-200 py-3 dark:border-gray-800">
                     <div>
@@ -18,5 +23,6 @@
                 </div>
             @endforeach
         </div>
+        <div class="mt-4">{{ $products->links() }}</div>
     </x-admin.card>
 </x-filament-panels::page>

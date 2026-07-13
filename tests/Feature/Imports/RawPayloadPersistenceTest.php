@@ -67,7 +67,7 @@ class RawPayloadPersistenceTest extends TestCase
         );
     }
 
-    public function test_limits_extracted_strings_without_losing_the_full_payload(): void
+    public function test_limits_display_strings_and_does_not_truncate_external_identifiers(): void
     {
         $batch = ImportBatch::factory()->create();
         $title = str_repeat('Ж', 300);
@@ -79,9 +79,46 @@ class RawPayloadPersistenceTest extends TestCase
             'category' => str_repeat('c', 300),
         ]);
 
-        $this->assertSame(255, mb_strlen((string) $rawProduct->external_id));
+        $this->assertNull($rawProduct->external_id);
         $this->assertSame(255, mb_strlen((string) $rawProduct->raw_title));
+        $this->assertSame(str_repeat('x', 300), $rawProduct->raw_payload_json['id']);
         $this->assertSame($title, $rawProduct->raw_payload_json['title']);
+        $this->assertDatabaseHas('normalization_errors', [
+            'import_batch_id' => $batch->id,
+            'raw_product_id' => $rawProduct->id,
+            'severity' => 'warning',
+            'code' => 'external_id_too_long',
+            'raw_key' => 'id',
+            'raw_value' => str_repeat('x', 300),
+        ]);
+    }
+
+    public function test_uses_the_configured_serialized_payload_depth_limit(): void
+    {
+        config()->set('imports.serialized_php_max_depth', 3);
+        $batch = ImportBatch::factory()->create();
+
+        $this->expectException(JsonException::class);
+
+        (new RawProductWriter)->write($batch, [
+            'specs' => ['nested' => ['too' => ['deep' => true]]],
+        ]);
+    }
+
+    public function test_accepts_payloads_deeper_than_the_old_hardcoded_limit_when_configured(): void
+    {
+        config()->set('imports.serialized_php_max_depth', 80);
+        $batch = ImportBatch::factory()->create();
+        $payload = ['leaf' => true];
+
+        for ($depth = 0; $depth < 65; $depth++) {
+            $payload = ['nested' => $payload];
+        }
+
+        $rawProduct = (new RawProductWriter)->write($batch, $payload);
+
+        $this->assertSame(1, $batch->fresh()->raw_items_count);
+        $this->assertNotNull($rawProduct->payload_hash);
     }
 
     public function test_rejects_recursive_payload_before_canonicalization(): void

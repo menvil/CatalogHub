@@ -32,7 +32,7 @@ return new class extends Migration
             )
                 ->references(['id', 'central_category_id'])
                 ->on('attribute_definitions')
-                ->restrictOnDelete();
+                ->cascadeOnDelete();
         });
     }
 

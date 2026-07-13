@@ -46,4 +46,15 @@ class NormalizedProductDraftTest extends TestCase
         $this->assertInstanceOf(DuplicateCandidate::class, $draft->duplicateCandidates()->getRelated());
         $this->assertInstanceOf(NormalizationError::class, $draft->errors()->getRelated());
     }
+
+    public function test_factory_uses_an_explicit_batch_for_its_raw_product(): void
+    {
+        $batch = ImportBatch::factory()->create();
+
+        $draft = NormalizedProductDraft::factory()->for($batch, 'importBatch')->create();
+
+        $this->assertTrue($batch->is($draft->importBatch));
+        $this->assertTrue($batch->is($draft->rawProduct->batch));
+        $this->assertSame($batch->import_source_id, $draft->rawProduct->import_source_id);
+    }
 }

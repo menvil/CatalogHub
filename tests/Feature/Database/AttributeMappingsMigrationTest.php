@@ -53,6 +53,7 @@ class AttributeMappingsMigrationTest extends TestCase
             fn (array $foreignKey): bool => $foreignKey['columns'] === ['attribute_definition_id', 'category_id']
                 && $foreignKey['foreign_table'] === 'attribute_definitions'
                 && $foreignKey['foreign_columns'] === ['id', 'central_category_id']
+                && $foreignKey['on_delete'] === 'cascade'
         ));
 
         $this->assertTrue($indexes->contains(
@@ -81,5 +82,50 @@ class AttributeMappingsMigrationTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+    }
+
+    public function test_deleting_category_cascades_its_attribute_mappings(): void
+    {
+        $source = ImportSource::factory()->create();
+        $category = CentralCategory::factory()->create();
+        $definition = AttributeDefinition::factory()->for($category, 'category')->create();
+        DB::table('attribute_mappings')->insert([
+            'import_source_id' => $source->id,
+            'category_id' => $category->id,
+            'raw_key' => 'Power',
+            'normalized_raw_key' => 'power',
+            'attribute_definition_id' => $definition->id,
+            'confidence' => 1,
+            'status' => 'reviewed',
+            'mapping_type' => 'attribute',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $category->delete();
+
+        $this->assertDatabaseEmpty('attribute_mappings');
+    }
+
+    public function test_deleting_attribute_definition_cascades_its_mapping(): void
+    {
+        $source = ImportSource::factory()->create();
+        $definition = AttributeDefinition::factory()->create();
+        DB::table('attribute_mappings')->insert([
+            'import_source_id' => $source->id,
+            'category_id' => $definition->central_category_id,
+            'raw_key' => 'Power',
+            'normalized_raw_key' => 'power',
+            'attribute_definition_id' => $definition->id,
+            'confidence' => 1,
+            'status' => 'reviewed',
+            'mapping_type' => 'attribute',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $definition->delete();
+
+        $this->assertDatabaseEmpty('attribute_mappings');
     }
 }

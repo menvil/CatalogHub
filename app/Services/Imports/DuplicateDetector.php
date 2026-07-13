@@ -16,39 +16,49 @@ final class DuplicateDetector
      */
     public function detect(NormalizedProductDraft $draft): Collection
     {
-        return DB::transaction(function () use ($draft): Collection {
-            $minimumScore = (float) config('imports.duplicate_min_score', 0.55);
-            $candidates = new Collection;
+        $minimumScore = (float) config('imports.duplicate_min_score', 0.55);
+        $matches = new Collection;
 
-            $draft->duplicateCandidates()
-                ->where('candidate_type', 'central_product')
-                ->where('status', 'pending')
-                ->delete();
+        foreach (CentralProduct::query()->lazyById() as $product) {
+            [$score, $reason] = $this->score($draft, $product);
 
-            foreach (CentralProduct::query()->lazyById() as $product) {
-                [$score, $reason] = $this->score($draft, $product);
+            if ($score >= $minimumScore) {
+                $matches->push([
+                    'candidate_id' => $product->id,
+                    'score' => number_format($score, 4, '.', ''),
+                    'reason_json' => $reason,
+                ]);
+            }
+        }
 
-                if ($score < $minimumScore) {
-                    continue;
-                }
+        return DB::transaction(function () use ($draft, $matches): Collection {
+            $matchedIds = $matches->pluck('candidate_id')->all();
+            $staleCandidates = $draft->duplicateCandidates()
+                ->where('candidate_type', 'central_product');
 
-                $candidate = DuplicateCandidate::query()->updateOrCreate(
-                    [
-                        'normalized_product_draft_id' => $draft->id,
-                        'candidate_type' => 'central_product',
-                        'candidate_id' => $product->id,
-                    ],
-                    [
-                        'import_batch_id' => $draft->import_batch_id,
-                        'score' => number_format($score, 4, '.', ''),
-                        'reason_json' => $reason,
-                    ]
-                );
-
-                $candidates->push($candidate);
+            if ($matchedIds === []) {
+                $staleCandidates->delete();
+            } else {
+                $staleCandidates->whereNotIn('candidate_id', $matchedIds)->delete();
             }
 
-            return $candidates->sortByDesc('score')->values();
+            return $matches
+                ->map(function (array $match) use ($draft): DuplicateCandidate {
+                    return DuplicateCandidate::query()->updateOrCreate(
+                        [
+                            'normalized_product_draft_id' => $draft->id,
+                            'candidate_type' => 'central_product',
+                            'candidate_id' => $match['candidate_id'],
+                        ],
+                        [
+                            'import_batch_id' => $draft->import_batch_id,
+                            'score' => $match['score'],
+                            'reason_json' => $match['reason_json'],
+                        ]
+                    );
+                })
+                ->sortByDesc('score')
+                ->values();
         });
     }
 

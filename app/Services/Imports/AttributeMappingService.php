@@ -5,12 +5,16 @@ namespace App\Services\Imports;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\Imports\AttributeMapping;
 use App\Models\Imports\RawProduct;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 final class AttributeMappingService
 {
+    /** @var array<int, array<string, array<int, true>>> */
+    private array $payloadProductIdsBySourceKey = [];
+
+    /** @var array<string, int> */
+    private array $usageCounts = [];
+
     public function resolve(int $sourceId, int $categoryId, string $rawKey): ?AttributeDefinition
     {
         $normalizedRawKey = $this->normalizeRawKey($rawKey);
@@ -65,71 +69,55 @@ final class AttributeMappingService
 
     public function usageCount(AttributeMapping $mapping): int
     {
-        $matchingKeys = $this->payloadKeysForSource((int) $mapping->import_source_id)
-            ->filter(fn (string $key): bool => $this->normalizeRawKey($key) === $mapping->normalized_raw_key)
-            ->values();
+        $sourceId = (int) $mapping->import_source_id;
+        $cacheKey = $sourceId."\0".$mapping->normalized_raw_key;
 
-        if ($matchingKeys->isEmpty()) {
-            return 0;
+        if (array_key_exists($cacheKey, $this->usageCounts)) {
+            return $this->usageCounts[$cacheKey];
         }
 
-        return $this->countPayloadsContainingAnyTopLevelKey(
-            (int) $mapping->import_source_id,
-            $matchingKeys,
-        );
+        $matchingProductIds = [];
+
+        foreach ($this->payloadProductIdsByKeyForSource($sourceId) as $rawKey => $productIds) {
+            if ($this->normalizeRawKey($rawKey) === $mapping->normalized_raw_key) {
+                $matchingProductIds += $productIds;
+            }
+        }
+
+        return $this->usageCounts[$cacheKey] = count($matchingProductIds);
     }
 
-    /** @param Collection<int, string> $keys */
-    private function countPayloadsContainingAnyTopLevelKey(int $sourceId, Collection $keys): int
+    /** @return array<string, array<int, true>> */
+    private function payloadProductIdsByKeyForSource(int $sourceId): array
     {
-        $connection = RawProduct::query()->getModel()->getConnection();
-        $placeholders = $keys->map(static fn (): string => '?')->implode(', ');
+        if (array_key_exists($sourceId, $this->payloadProductIdsBySourceKey)) {
+            return $this->payloadProductIdsBySourceKey[$sourceId];
+        }
 
-        $keyExistsSql = match ($connection->getDriverName()) {
-            'pgsql' => "exists (select 1 from jsonb_object_keys(raw_payload_json::jsonb) as payload_keys(payload_key) where payload_key in ({$placeholders}))",
-            'mysql', 'mariadb' => "exists (select 1 from json_table(json_keys(raw_payload_json), '$[*]' columns (payload_key varchar(1024) path '$')) as payload_keys where payload_key in ({$placeholders}))",
-            'sqlite' => "exists (select 1 from json_each(raw_payload_json) as payload_keys where payload_keys.key in ({$placeholders}))",
-            'sqlsrv' => "exists (select 1 from openjson(raw_payload_json) as payload_keys where payload_keys.[key] in ({$placeholders}))",
+        $connection = RawProduct::query()->getModel()->getConnection();
+        $sql = match ($connection->getDriverName()) {
+            'pgsql' => 'select distinct raw_products.id as raw_product_id, payload_key from raw_products cross join lateral jsonb_object_keys(raw_payload_json::jsonb) as payload_keys(payload_key) where import_source_id = ?',
+            'mysql', 'mariadb' => "select distinct raw_products.id as raw_product_id, payload_keys.payload_key from raw_products join json_table(json_keys(raw_payload_json), '$[*]' columns (payload_key varchar(1024) path '$')) as payload_keys where import_source_id = ?",
+            'sqlite' => 'select distinct raw_products.id as raw_product_id, payload_keys.key as payload_key from raw_products cross join json_each(raw_products.raw_payload_json) as payload_keys where raw_products.import_source_id = ?',
+            'sqlsrv' => 'select distinct raw_products.id as raw_product_id, payload.[key] as payload_key from raw_products cross apply openjson(raw_payload_json) as payload where import_source_id = ?',
             default => null,
         };
 
-        if ($keyExistsSql === null) {
-            return 0;
+        if ($sql === null) {
+            return $this->payloadProductIdsBySourceKey[$sourceId] = [];
         }
 
-        return RawProduct::query()
-            ->where('import_source_id', $sourceId)
-            ->whereRaw($keyExistsSql, $keys->all())
-            ->count();
-    }
+        $productIdsByKey = [];
 
-    /** @return Collection<int, string> */
-    private function payloadKeysForSource(int $sourceId): Collection
-    {
-        $connection = RawProduct::query()->getModel()->getConnection();
+        foreach ($connection->select($sql, [$sourceId]) as $row) {
+            $rawKey = $row->payload_key ?? null;
+            $rawProductId = $row->raw_product_id ?? null;
 
-        return match ($connection->getDriverName()) {
-            'pgsql' => collect($connection->select(
-                'select distinct payload_key from raw_products cross join lateral jsonb_object_keys(raw_payload_json::jsonb) as payload_keys(payload_key) where import_source_id = ?',
-                [$sourceId],
-            ))->pluck('payload_key')->filter(static fn (mixed $key): bool => is_string($key))->values(),
-            'mysql', 'mariadb' => collect($connection->select(
-                "select distinct payload_key from raw_products join json_table(json_keys(raw_payload_json), '$[*]' columns (payload_key varchar(1024) path '$')) as payload_keys where import_source_id = ?",
-                [$sourceId],
-            ))->pluck('payload_key')->filter(static fn (mixed $key): bool => is_string($key))->values(),
-            'sqlite' => DB::connection($connection->getName())
-                ->table('raw_products')
-                ->crossJoin(DB::raw('json_each(raw_products.raw_payload_json)'))
-                ->where('raw_products.import_source_id', $sourceId)
-                ->distinct()
-                ->pluck('json_each.key')
-                ->filter(static fn (mixed $key): bool => is_string($key))
-                ->values(),
-            'sqlsrv' => collect($connection->select(
-                'select distinct payload.[key] as payload_key from raw_products cross apply openjson(raw_payload_json) as payload where import_source_id = ?',
-                [$sourceId],
-            ))->pluck('payload_key')->filter(static fn (mixed $key): bool => is_string($key))->values(),
-            default => collect(),
-        };
+            if (is_string($rawKey) && is_numeric($rawProductId)) {
+                $productIdsByKey[$rawKey][(int) $rawProductId] = true;
+            }
+        }
+
+        return $this->payloadProductIdsBySourceKey[$sourceId] = $productIdsByKey;
     }
 }

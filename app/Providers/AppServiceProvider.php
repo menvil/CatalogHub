@@ -7,6 +7,7 @@ use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Imports\NormalizedProductDraft;
 use App\Models\User;
 use App\Observers\CentralProductObserver;
+use App\Services\Imports\AttributeMappingService;
 use App\Services\Imports\AttributeNormalizer;
 use App\Services\Imports\DuplicateDetector;
 use App\Services\Imports\ImportMediaDownloader;
@@ -27,6 +28,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->scoped(AttributeMappingService::class);
+
         $this->app->singleton(
             ImportService::class,
             fn ($app): ImportService => new ImportService([

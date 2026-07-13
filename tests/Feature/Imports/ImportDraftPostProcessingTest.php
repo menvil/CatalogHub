@@ -58,8 +58,10 @@ class ImportDraftPostProcessingTest extends TestCase
             static fn (string $host): array => ['93.184.216.34'],
         );
 
-        (new ImportService([$importer], $mediaDownloader, new DuplicateDetector))
-            ->startImport($source, $artifact);
+        $importService = new ImportService([$importer], $mediaDownloader, new DuplicateDetector);
+        $this->app->instance(ImportService::class, $importService);
+
+        $importService->startImport($source, $artifact);
 
         $draft = NormalizedProductDraft::query()->sole();
         $this->assertSame('downloaded', $draft->media_json[0]['status']);

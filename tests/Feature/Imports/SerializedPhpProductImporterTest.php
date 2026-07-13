@@ -68,9 +68,28 @@ class SerializedPhpProductImporterTest extends TestCase
 
         (new SerializedPhpProductImporter)->import($batch, $file);
 
-        $this->assertSame('invalid_serialized_payload', $batch->errors()->sole()->code);
+        $this->assertSame('invalid_product_json', $batch->errors()->sole()->code);
         $this->assertSame(1, $batch->fresh()->failed_count);
+        $this->assertSame(1, $batch->total_items);
         $this->assertSame(0, RawProduct::query()->count());
+    }
+
+    public function test_invalid_product_json_does_not_discard_valid_sibling_products(): void
+    {
+        $batch = ImportBatch::factory()->create();
+        $file = UploadedFile::fake()->createWithContent('mixed.phpdata', serialize([
+            ['id' => 'invalid', 'measurement' => NAN],
+            ['id' => 'valid', 'title' => 'Valid product'],
+        ]));
+
+        (new SerializedPhpProductImporter)->import($batch, $file);
+
+        $this->assertSame('valid', RawProduct::query()->sole()->external_id);
+        $this->assertSame('invalid_product_json', $batch->errors()->sole()->code);
+        $this->assertSame(['position' => 0], $batch->errors()->sole()->context_json);
+        $this->assertSame(2, $batch->fresh()->total_items);
+        $this->assertSame(1, $batch->raw_items_count);
+        $this->assertSame(1, $batch->failed_count);
     }
 
     public function test_refuses_to_read_more_than_the_configured_artifact_limit(): void

@@ -96,4 +96,15 @@ class ImportBatchDetailTest extends TestCase
             ->assertCanSeeTableRecords([$included])
             ->assertCanNotSeeTableRecords([$excluded]);
     }
+
+    public function test_related_list_ignores_non_positive_batch_ids(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        $products = RawProduct::factory()->count(2)->create();
+
+        Livewire::actingAs($admin)
+            ->withQueryParams(['batch' => -1])
+            ->test(ListRawProducts::class)
+            ->assertCanSeeTableRecords($products);
+    }
 }

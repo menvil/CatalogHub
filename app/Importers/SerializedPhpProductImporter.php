@@ -48,20 +48,6 @@ final class SerializedPhpProductImporter implements ProductImporterInterface
             return;
         }
 
-        try {
-            // Reject recursive and excessively deep reference graphs before application traversal.
-            json_encode(
-                $payload,
-                JSON_THROW_ON_ERROR,
-                max(1, (int) config('imports.serialized_php_max_depth', self::DEFAULT_MAX_DEPTH)),
-            );
-        } catch (JsonException $exception) {
-            $this->recordError($batch, 'invalid_serialized_payload', $exception->getMessage());
-            $batch->increment('failed_count');
-
-            return;
-        }
-
         $products = $this->extractProducts($payload);
         $failed = 0;
 

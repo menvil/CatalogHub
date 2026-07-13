@@ -71,7 +71,7 @@ final readonly class ImportMediaDownloader
                 'source' => 'import',
             ]);
 
-            MediaSource::query()->updateOrCreate([
+            MediaSource::query()->firstOrCreate([
                 'media_asset_id' => $asset->id,
             ], [
                 'source_type' => 'import',

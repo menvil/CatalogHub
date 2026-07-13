@@ -5,6 +5,7 @@ namespace Tests\Feature\Database;
 use App\Models\Imports\NormalizedProductDraft;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -66,5 +67,32 @@ class NormalizedProductDraftsMigrationTest extends TestCase
         $this->expectException(QueryException::class);
 
         NormalizedProductDraft::factory()->create(['confidence' => '1.0001']);
+    }
+
+    public function test_sqlite_rollback_restores_confidence_triggers(): void
+    {
+        if (DB::getDriverName() !== 'sqlite') {
+            $this->markTestSkipped('SQLite-specific table rebuild behavior.');
+        }
+
+        $migration = require database_path(
+            'migrations/2026_07_13_000001_add_published_central_product_id_to_normalized_product_drafts_table.php'
+        );
+
+        $migration->down();
+
+        try {
+            $triggers = DB::table('sqlite_master')
+                ->where('type', 'trigger')
+                ->whereIn('name', [
+                    'normalized_product_drafts_confidence_insert',
+                    'normalized_product_drafts_confidence_update',
+                ])
+                ->count();
+
+            $this->assertSame(2, $triggers);
+        } finally {
+            $migration->up();
+        }
     }
 }

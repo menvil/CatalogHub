@@ -132,6 +132,47 @@ class ImportMediaDownloadTest extends TestCase
         );
     }
 
+    public function test_checksum_deduplication_preserves_an_existing_curated_source(): void
+    {
+        Storage::fake('public');
+        $image = UploadedFile::fake()->image('product.jpg', 100, 100);
+        $bytes = file_get_contents($image->getRealPath());
+        $asset = app(MediaService::class)->uploadOriginal($image);
+        $source = MediaSource::query()->create([
+            'media_asset_id' => $asset->id,
+            'source_type' => 'manual',
+            'source_url' => 'https://manufacturer.example.test/product',
+            'source_name' => 'Manufacturer catalog',
+            'license_type' => 'manufacturer',
+            'attribution' => 'Curated attribution',
+            'metadata' => ['reviewed' => true],
+        ]);
+        Http::fake([
+            'https://cdn.example.test/product.jpg' => Http::response(
+                $bytes,
+                200,
+                ['Content-Type' => 'image/jpeg'],
+            ),
+        ]);
+        $draft = NormalizedProductDraft::factory()->create([
+            'media_json' => [['source_url' => 'https://cdn.example.test/product.jpg']],
+        ]);
+
+        $this->downloader()->downloadForDraft($draft);
+
+        $this->assertSame(1, MediaAsset::query()->count());
+        $this->assertSame(1, MediaSource::query()->count());
+        $source->refresh();
+        $this->assertSame('manual', $source->source_type);
+        $this->assertSame('https://manufacturer.example.test/product', $source->source_url);
+        $this->assertSame('Manufacturer catalog', $source->source_name);
+        $this->assertSame('manufacturer', $source->license_type);
+        $this->assertSame('Curated attribution', $source->attribution);
+        $this->assertSame(['reviewed' => true], $source->metadata);
+        $this->assertSame($asset->id, $draft->fresh()->media_json[0]['media_asset_id']);
+        $this->assertSame('downloaded', $draft->fresh()->media_json[0]['status']);
+    }
+
     public function test_rejects_dns_resolved_private_addresses_before_requesting_media(): void
     {
         Storage::fake('public');

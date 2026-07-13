@@ -4,6 +4,7 @@ namespace App\Services\Imports;
 
 use App\Contracts\Imports\ProductImporterInterface;
 use App\Jobs\Imports\ProcessImportBatchJob;
+use App\Jobs\Imports\ProcessImportDraftsJob;
 use App\Models\Imports\ImportArtifact;
 use App\Models\Imports\ImportBatch;
 use App\Models\Imports\ImportSource;
@@ -15,14 +16,21 @@ use Throwable;
 
 final readonly class ImportService
 {
+    /** @var list<ProductImporterInterface> */
+    private array $importers;
+
     /**
      * @param  iterable<ProductImporterInterface>  $importers
      */
     public function __construct(
-        private iterable $importers = [],
+        iterable $importers = [],
         private ?ImportMediaDownloader $mediaDownloader = null,
         private ?DuplicateDetector $duplicateDetector = null,
-    ) {}
+    ) {
+        $this->importers = array_values(is_array($importers)
+            ? $importers
+            : iterator_to_array($importers, false));
+    }
 
     /**
      * @param  array<string, mixed>  $options
@@ -38,8 +46,7 @@ final readonly class ImportService
             $batch->markStarted();
             $this->storeOriginalArtifact($batch, $artifact);
             $this->resolveImporter($source)->import($batch, $artifact, $options);
-            $this->processDrafts($batch);
-            $batch->markFinished();
+            $this->scheduleDraftProcessing($batch);
         } catch (Throwable $exception) {
             $batch->markFailed($exception->getMessage() ?: $exception::class);
 
@@ -98,8 +105,7 @@ final readonly class ImportService
                 $temporaryPath,
                 $batch->metadata_json ?? [],
             );
-            $this->processDrafts($batch);
-            $batch->markFinished();
+            $this->scheduleDraftProcessing($batch);
         } catch (Throwable $exception) {
             $batch->markFailed($exception->getMessage() ?: $exception::class);
 
@@ -135,16 +141,52 @@ final readonly class ImportService
         throw new RuntimeException("No product importer supports source [{$source->code}].");
     }
 
-    private function processDrafts(ImportBatch $batch): void
+    public function processDraftChunk(ImportBatch $batch, int $afterDraftId): ?int
     {
-        if ($this->mediaDownloader === null && $this->duplicateDetector === null) {
-            return;
+        if ($batch->status !== 'processing') {
+            return null;
         }
 
-        foreach ($batch->drafts()->lazyById() as $draft) {
+        $drafts = $batch->drafts()
+            ->where('id', '>', $afterDraftId)
+            ->orderBy('id')
+            ->limit(max(1, (int) config('imports.post_processing_chunk_size', 1)))
+            ->get();
+
+        foreach ($drafts as $draft) {
             $this->mediaDownloader?->downloadForDraft($draft);
             $this->duplicateDetector?->detect($draft);
         }
+
+        $lastDraftId = $drafts->last()?->id;
+
+        if ($lastDraftId === null || ! $batch->drafts()->where('id', '>', $lastDraftId)->exists()) {
+            $batch->markFinished();
+
+            return null;
+        }
+
+        return $lastDraftId;
+    }
+
+    private function scheduleDraftProcessing(ImportBatch $batch): void
+    {
+        if (
+            ($this->mediaDownloader === null && $this->duplicateDetector === null)
+            || ! $batch->drafts()->exists()
+        ) {
+            $batch->markFinished();
+
+            return;
+        }
+
+        if (config('queue.default') === 'sync') {
+            (new ProcessImportDraftsJob($batch->id))->handle($this);
+
+            return;
+        }
+
+        ProcessImportDraftsJob::dispatch($batch->id)->afterCommit();
     }
 
     private function originalFilename(UploadedFile|string $artifact): string

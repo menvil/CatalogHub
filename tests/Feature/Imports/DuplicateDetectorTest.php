@@ -8,7 +8,9 @@ use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Imports\DuplicateCandidate;
 use App\Models\Imports\NormalizedProductDraft;
 use App\Services\Imports\DuplicateDetector;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class DuplicateDetectorTest extends TestCase
@@ -142,6 +144,47 @@ class DuplicateDetectorTest extends TestCase
         $candidates = $detector->detect($draft);
 
         $this->assertCount(0, $candidates);
+        $this->assertSame(0, DuplicateCandidate::query()->count());
+    }
+
+    public function test_catalog_scoring_runs_outside_the_reconciliation_transaction(): void
+    {
+        CentralProduct::factory()->create(['name' => 'Imported Product']);
+        $draft = NormalizedProductDraft::factory()->create(['title' => 'Imported Product']);
+        $baselineTransactionLevel = DB::connection()->transactionLevel();
+        $transactionLevels = [];
+        DB::listen(function (QueryExecuted $query) use (&$transactionLevels): void {
+            if (str_contains($query->sql, 'central_products')) {
+                $transactionLevels[] = DB::connection()->transactionLevel();
+            }
+        });
+
+        (new DuplicateDetector)->detect($draft);
+
+        $this->assertNotEmpty($transactionLevels);
+        $this->assertSame(
+            [$baselineTransactionLevel],
+            array_values(array_unique($transactionLevels)),
+        );
+    }
+
+    public function test_redetection_removes_a_reviewed_candidate_that_no_longer_matches(): void
+    {
+        $product = CentralProduct::factory()->create(['name' => 'Old matching name']);
+        $draft = NormalizedProductDraft::factory()->create(['title' => 'Old matching name']);
+        DuplicateCandidate::query()->create([
+            'import_batch_id' => $draft->import_batch_id,
+            'normalized_product_draft_id' => $draft->id,
+            'candidate_type' => 'central_product',
+            'candidate_id' => $product->id,
+            'score' => '0.5500',
+            'reason_json' => [],
+            'status' => 'confirmed_duplicate',
+        ]);
+        $product->update(['name' => 'Completely unrelated product']);
+
+        (new DuplicateDetector)->detect($draft);
+
         $this->assertSame(0, DuplicateCandidate::query()->count());
     }
 }

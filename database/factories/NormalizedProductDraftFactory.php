@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Imports\ImportBatch;
 use App\Models\Imports\NormalizedProductDraft;
 use App\Models\Imports\RawProduct;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -19,10 +20,11 @@ class NormalizedProductDraftFactory extends Factory
         $title = fake()->sentence(3);
 
         return [
-            'raw_product_id' => RawProduct::factory(),
-            'import_batch_id' => fn (array $attributes): int => RawProduct::query()
-                ->findOrFail($attributes['raw_product_id'])
-                ->import_batch_id,
+            'import_batch_id' => ImportBatch::factory(),
+            'raw_product_id' => fn (array $attributes): int => RawProduct::factory()
+                ->for(ImportBatch::query()->findOrFail($attributes['import_batch_id']), 'batch')
+                ->create()
+                ->id,
             'matched_central_product_id' => null,
             'brand_id' => null,
             'category_id' => null,

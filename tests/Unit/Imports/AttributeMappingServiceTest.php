@@ -10,6 +10,7 @@ use App\Models\Imports\ImportSource;
 use App\Models\Imports\RawProduct;
 use App\Services\Imports\AttributeMappingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class AttributeMappingServiceTest extends TestCase
@@ -145,5 +146,55 @@ class AttributeMappingServiceTest extends TestCase
         ]);
 
         $this->assertSame(1, (new AttributeMappingService)->usageCount($mapping));
+    }
+
+    public function test_usage_count_reuses_source_key_scan_and_cached_mapping_count(): void
+    {
+        $source = ImportSource::factory()->create();
+        $category = CentralCategory::factory()->create();
+        $batch = ImportBatch::factory()->create(['import_source_id' => $source->id]);
+        RawProduct::factory()->create([
+            'import_batch_id' => $batch->id,
+            'import_source_id' => $source->id,
+            'raw_payload_json' => [
+                'Power (W)' => 500,
+                'POWER - W' => 500,
+                'Color' => 'Black',
+            ],
+        ]);
+        $power = AttributeMapping::query()->create([
+            'import_source_id' => $source->id,
+            'category_id' => $category->id,
+            'raw_key' => 'Power (W)',
+            'normalized_raw_key' => 'power_w',
+            'confidence' => 1,
+            'status' => 'reviewed',
+            'mapping_type' => 'attribute',
+        ]);
+        $color = AttributeMapping::query()->create([
+            'import_source_id' => $source->id,
+            'category_id' => $category->id,
+            'raw_key' => 'Color',
+            'normalized_raw_key' => 'color',
+            'confidence' => 1,
+            'status' => 'reviewed',
+            'mapping_type' => 'attribute',
+        ]);
+        $service = app(AttributeMappingService::class);
+        $this->assertSame($service, app(AttributeMappingService::class));
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $this->assertSame(1, $service->usageCount($power));
+        $this->assertCount(1, DB::getQueryLog());
+
+        DB::flushQueryLog();
+        $this->assertSame(1, $service->usageCount($color));
+        $this->assertCount(0, DB::getQueryLog());
+
+        DB::flushQueryLog();
+        $this->assertSame(1, $service->usageCount($color));
+        $this->assertCount(0, DB::getQueryLog());
+        DB::disableQueryLog();
     }
 }

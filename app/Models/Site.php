@@ -64,6 +64,12 @@ final class Site extends Model
         return $this->hasMany(SiteOverride::class);
     }
 
+    /** @return HasMany<SiteHomeBlock, $this> */
+    public function homeBlocks(): HasMany
+    {
+        return $this->hasMany(SiteHomeBlock::class);
+    }
+
     public function isSingleCategory(): bool
     {
         return $this->mode === SiteMode::SingleCategory;

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property BlockStatus $status
@@ -66,5 +67,11 @@ final class BlockDefinition extends Model
     public function supportsPage(string $pageType): bool
     {
         return in_array($pageType, $this->supported_page_types_json, true);
+    }
+
+    /** @return HasMany<SiteHomeBlock, $this> */
+    public function siteHomeBlocks(): HasMany
+    {
+        return $this->hasMany(SiteHomeBlock::class, 'block_code', 'code');
     }
 }

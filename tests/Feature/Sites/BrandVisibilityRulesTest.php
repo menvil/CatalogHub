@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Sites;
 
+use App\Enums\UserRole;
 use App\Filament\Resources\SiteResource\Pages\BrandVisibilityRules;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralProduct;
@@ -64,6 +65,15 @@ class BrandVisibilityRulesTest extends TestCase
             ->get(BrandVisibilityRules::getUrl(['record' => $site]))
             ->assertOk()
             ->assertSee('wire:key="brand-visibility-'.$brand->id.'"', false);
+    }
+
+    public function test_catalog_editor_cannot_access_brand_visibility_rules(): void
+    {
+        $site = Site::factory()->create();
+
+        $this->actingAs(User::factory()->create(['role' => UserRole::CatalogEditor]))
+            ->get(BrandVisibilityRules::getUrl(['record' => $site]))
+            ->assertForbidden();
     }
 
     public function test_atomic_toggle_observes_the_latest_visibility_state(): void

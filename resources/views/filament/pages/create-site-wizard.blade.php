@@ -13,19 +13,23 @@
         <x-admin.card title="Site configuration" description="Configure the local portal and review it before creation.">
             <div class="grid gap-4 md:grid-cols-2">
                 <div>
-                    <input wire:model="code" placeholder="Site code" class="w-full rounded-md border-gray-300 dark:bg-gray-950">
+                    <label for="site-code" class="mb-1 block text-sm font-medium">Site code</label>
+                    <input id="site-code" wire:model="code" class="w-full rounded-md border-gray-300 dark:bg-gray-950">
                     @error('code') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <input wire:model="name" placeholder="Site name" class="w-full rounded-md border-gray-300 dark:bg-gray-950">
+                    <label for="site-name" class="mb-1 block text-sm font-medium">Site name</label>
+                    <input id="site-name" wire:model="name" class="w-full rounded-md border-gray-300 dark:bg-gray-950">
                     @error('name') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <input wire:model="domain" placeholder="Domain (optional)" class="w-full rounded-md border-gray-300 dark:bg-gray-950">
+                    <label for="site-domain" class="mb-1 block text-sm font-medium">Domain (optional)</label>
+                    <input id="site-domain" wire:model="domain" class="w-full rounded-md border-gray-300 dark:bg-gray-950">
                     @error('domain') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <select wire:model.live="marketId" class="w-full rounded-md border-gray-300 dark:bg-gray-950">
+                    <label for="site-market" class="mb-1 block text-sm font-medium">Market</label>
+                    <select id="site-market" wire:model.live="marketId" class="w-full rounded-md border-gray-300 dark:bg-gray-950">
                         <option value="">Select market</option>
                         @foreach($this->getMarkets() as $market)
                             <option value="{{ $market->id }}">{{ $market->name }}</option>
@@ -34,14 +38,16 @@
                     @error('marketId') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <select wire:model="mode" class="w-full rounded-md border-gray-300 dark:bg-gray-950">
+                    <label for="site-mode" class="mb-1 block text-sm font-medium">Mode</label>
+                    <select id="site-mode" wire:model="mode" class="w-full rounded-md border-gray-300 dark:bg-gray-950">
                         <option value="single_category">Single category</option>
                         <option value="multi_category">Multi category</option>
                     </select>
                     @error('mode') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <select wire:model="defaultLocale" class="w-full rounded-md border-gray-300 dark:bg-gray-950">
+                    <label for="site-default-locale" class="mb-1 block text-sm font-medium">Default locale</label>
+                    <select id="site-default-locale" wire:model="defaultLocale" class="w-full rounded-md border-gray-300 dark:bg-gray-950">
                         <option value="">Default locale</option>
                         @foreach($this->getLocales()->whereIn('code', $enabledLocales) as $locale)
                             <option value="{{ $locale->code }}">{{ $locale->name }}</option>
@@ -59,7 +65,7 @@
             <div class="mt-5">
                 <strong>Locales</strong>
                 @foreach($this->getLocales() as $locale)
-                    <label class="ml-4"><input wire:model.live="enabledLocales" type="checkbox" value="{{ $locale->code }}"> {{ $locale->code }}</label>
+                    <label wire:key="site-locale-{{ $locale->id }}" class="ml-4"><input wire:model.live="enabledLocales" type="checkbox" value="{{ $locale->code }}"> {{ $locale->code }}</label>
                 @endforeach
                 @error('enabledLocales') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
                 @error('enabledLocales.*') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
@@ -67,7 +73,7 @@
             <div class="mt-5">
                 <strong>Categories</strong>
                 @foreach($this->getCategories() as $category)
-                    <label class="ml-4"><input wire:model="enabledCategories" type="checkbox" value="{{ $category->id }}"> {{ $category->name }}</label>
+                    <label wire:key="site-category-{{ $category->id }}" class="ml-4"><input wire:model="enabledCategories" type="checkbox" value="{{ $category->id }}"> {{ $category->name }}</label>
                 @endforeach
                 @error('enabledCategories') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
                 @error('enabledCategories.*') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
@@ -75,7 +81,7 @@
             <div class="mt-5">
                 <strong>Features</strong>
                 @foreach(array_keys($features) as $feature)
-                    <label class="ml-4"><input wire:model="features.{{ $feature }}" type="checkbox"> {{ str($feature)->headline() }}</label>
+                    <label wire:key="site-feature-{{ $feature }}" class="ml-4"><input wire:model="features.{{ $feature }}" type="checkbox"> {{ str($feature)->headline() }}</label>
                 @endforeach
                 @error('features') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
                 @error('features.*') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror

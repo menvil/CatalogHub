@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Filament;
 
+use App\Enums\CentralCategoryStatus;
 use App\Filament\Pages\CreateSiteWizard;
+use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Locale;
 use App\Models\SiteFeature;
 use App\Models\User;
@@ -79,5 +81,21 @@ class CreateSiteWizardTest extends TestCase
             ->assertHasErrors(['code', 'name', 'marketId', 'enabledLocales', 'defaultLocale', 'enabledCategories'])
             ->assertSee('The code field is required.')
             ->assertSee('The default locale field is required.');
+    }
+
+    public function test_inputs_are_labelled_and_dynamic_options_have_stable_keys(): void
+    {
+        $locale = Locale::factory()->create();
+        $category = CentralCategory::factory()->create(['status' => CentralCategoryStatus::Active]);
+
+        $this->actingAs(User::factory()->centralAdmin()->create())
+            ->get(CreateSiteWizard::getUrl())
+            ->assertOk()
+            ->assertSee('for="site-code"', false)
+            ->assertSee('for="site-name"', false)
+            ->assertSee('for="site-domain"', false)
+            ->assertSee('wire:key="site-locale-'.$locale->id.'"', false)
+            ->assertSee('wire:key="site-category-'.$category->id.'"', false)
+            ->assertSee('wire:key="site-feature-comparison"', false);
     }
 }

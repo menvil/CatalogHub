@@ -18,19 +18,23 @@ final class UpdateSiteProductVisibilityAction
             throw ValidationException::withMessages(['visibility' => 'Invalid site product visibility.']);
         }
 
-        if ($product->status !== CentralProductStatus::Active) {
-            throw ValidationException::withMessages(['product' => 'Only active products can be managed for a site.']);
-        }
+        return DB::transaction(function () use ($featured, $product, $site, $visibility): SiteProduct {
+            $lockedSite = Site::query()->whereKey($site->getKey())->lockForUpdate()->firstOrFail();
 
-        $categoryEnabled = DB::table('site_categories')->where('site_id', $site->id)->where('central_category_id', $product->central_category_id)->where('is_enabled', true)->exists();
-        if (! $categoryEnabled) {
-            throw ValidationException::withMessages(['product' => 'The product category is not enabled for this site.']);
-        }
+            if ($product->status !== CentralProductStatus::Active) {
+                throw ValidationException::withMessages(['product' => 'Only active products can be managed for a site.']);
+            }
 
-        if ($visibility === 'visible' && ! app(SiteBrandVisibilityService::class)->allowsProduct($site, $product)) {
-            throw ValidationException::withMessages(['product' => 'The product brand is hidden for this site.']);
-        }
+            $categoryEnabled = DB::table('site_categories')->where('site_id', $lockedSite->id)->where('central_category_id', $product->central_category_id)->where('is_enabled', true)->exists();
+            if (! $categoryEnabled) {
+                throw ValidationException::withMessages(['product' => 'The product category is not enabled for this site.']);
+            }
 
-        return $site->products()->updateOrCreate(['central_product_id' => $product->id], ['visibility' => $visibility, 'is_featured' => $featured]);
+            if ($visibility === 'visible' && ! app(SiteBrandVisibilityService::class)->allowsProduct($lockedSite, $product)) {
+                throw ValidationException::withMessages(['product' => 'The product brand is hidden for this site.']);
+            }
+
+            return $lockedSite->products()->updateOrCreate(['central_product_id' => $product->id], ['visibility' => $visibility, 'is_featured' => $featured]);
+        });
     }
 }

@@ -9,26 +9,32 @@
                             <option value="{{ $entityTypeOption }}">{{ str($entityTypeOption)->headline() }}</option>
                         @endforeach
                     </select>
+                    @error('entityType') <span class="block text-sm text-danger-600">{{ $message }}</span> @enderror
                 </label>
                 <label for="seo-entity-id" class="space-y-2">
                     <span>Entity ID</span>
                     <input id="seo-entity-id" wire:model.change="entityId" type="number">
+                    @error('entityId') <span class="block text-sm text-danger-600">{{ $message }}</span> @enderror
                 </label>
                 <label for="seo-locale" class="space-y-2">
                     <span>Locale <span aria-hidden="true">*</span><span class="sr-only">required</span></span>
                     <input id="seo-locale" wire:model.change="localeCode" placeholder="de-DE" required aria-required="true">
+                    @error('localeCode') <span class="block text-sm text-danger-600">{{ $message }}</span> @enderror
                 </label>
                 <label for="seo-meta-title" class="space-y-2">
                     <span>Meta title</span>
                     <input id="seo-meta-title" wire:model="metaTitle">
+                    @error('metaTitle') <span class="block text-sm text-danger-600">{{ $message }}</span> @enderror
                 </label>
                 <label for="seo-meta-description" class="space-y-2">
                     <span>Meta description</span>
                     <textarea id="seo-meta-description" wire:model="metaDescription"></textarea>
+                    @error('metaDescription') <span class="block text-sm text-danger-600">{{ $message }}</span> @enderror
                 </label>
                 <label for="seo-intro-text" class="space-y-2">
                     <span>Intro text</span>
                     <textarea id="seo-intro-text" wire:model="introText"></textarea>
+                    @error('introText') <span class="block text-sm text-danger-600">{{ $message }}</span> @enderror
                 </label>
             </div>
         </x-admin.card>

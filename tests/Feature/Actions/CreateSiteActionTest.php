@@ -176,4 +176,35 @@ class CreateSiteActionTest extends TestCase
 
         $this->assertDatabaseMissing('sites', ['code' => 'disabled-default-locale']);
     }
+
+    public function test_missing_and_unknown_modes_are_rejected(): void
+    {
+        $market = Market::factory()->create(['status' => MarketStatus::Active]);
+        $category = CentralCategory::factory()->create(['status' => CentralCategoryStatus::Active]);
+        Locale::factory()->create(['code' => 'en-US']);
+
+        foreach ([null, 'unsupported'] as $mode) {
+            $data = [
+                'market_id' => $market->id,
+                'code' => 'invalid-mode-'.($mode ?? 'missing'),
+                'name' => 'Invalid mode',
+                'default_locale' => 'en-US',
+                'locales' => ['en-US'],
+                'categories' => [$category->id],
+            ];
+
+            if ($mode !== null) {
+                $data['mode'] = $mode;
+            }
+
+            try {
+                app(CreateSiteAction::class)->handle($data);
+                $this->fail('A missing or unsupported site mode was accepted.');
+            } catch (ValidationException $exception) {
+                $this->assertArrayHasKey('mode', $exception->errors());
+            }
+        }
+
+        $this->assertDatabaseCount('sites', 0);
+    }
 }

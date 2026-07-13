@@ -3,6 +3,7 @@
 namespace Tests\Feature\Sites;
 
 use App\Actions\Sites\UpsertSiteOverrideAction;
+use App\Enums\UserRole;
 use App\Filament\Resources\SiteResource\Pages\LocalSeoOverride;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Locale;
@@ -59,6 +60,27 @@ class LocalSeoOverrideTest extends TestCase
             ->assertSee('for="seo-meta-title"', false)
             ->assertSee('for="seo-meta-description"', false)
             ->assertSee('for="seo-intro-text"', false);
+    }
+
+    public function test_catalog_editor_cannot_access_local_seo_editor(): void
+    {
+        $site = Site::factory()->create();
+
+        $this->actingAs(User::factory()->create(['role' => UserRole::CatalogEditor]))
+            ->get(LocalSeoOverride::getUrl(['record' => $site]))
+            ->assertForbidden();
+    }
+
+    public function test_seo_validation_errors_are_visible_next_to_controls(): void
+    {
+        $site = Site::factory()->create();
+
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
+            ->test(LocalSeoOverride::class, ['record' => $site->getRouteKey()])
+            ->call('save')
+            ->assertHasErrors(['entityId', 'localeCode'])
+            ->assertSee('The entity id field is required.')
+            ->assertSee('The locale code field is required.');
     }
 
     public function test_editing_one_seo_field_preserves_the_other_existing_fields(): void

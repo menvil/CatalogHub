@@ -25,6 +25,12 @@ final class BrandVisibilityRules extends Page
         $this->record = $this->resolveRecord($record);
     }
 
+    /** @param array<string, mixed> $parameters */
+    public static function canAccess(array $parameters = []): bool
+    {
+        return parent::canAccess($parameters) && SiteResource::canManageContent();
+    }
+
     /** @return Collection<int, CentralBrand> */
     public function getBrands(): Collection
     {

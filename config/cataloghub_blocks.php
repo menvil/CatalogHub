@@ -84,4 +84,19 @@ return [
         ],
         'view_component' => 'blocks.poll-block',
     ],
+    'buying_guides' => [
+        'name' => 'Buying Guides',
+        'description' => 'Placeholder for projected guides and editorial content.',
+        'category' => 'content',
+        'supported_page_types_json' => ['home', 'category'],
+        'required_features_json' => ['guides'],
+        'config_schema_json' => [
+            'title' => 'string',
+            'limit' => 'integer',
+            'category_id' => 'integer',
+            'content_type' => 'buying_guide|how_to_guide|article',
+            'layout' => 'cards|list',
+        ],
+        'view_component' => 'blocks.buying-guides',
+    ],
 ];

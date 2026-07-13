@@ -102,6 +102,8 @@ class RawPayloadPersistenceTest extends TestCase
 
         $this->assertNull($rawProduct->external_id);
         $this->assertSame(255, mb_strlen((string) $rawProduct->raw_title));
+        $this->assertSame(255, mb_strlen((string) $rawProduct->raw_brand));
+        $this->assertSame(255, mb_strlen((string) $rawProduct->raw_category));
         $this->assertSame(str_repeat('x', 300), $rawProduct->raw_payload_json['id']);
         $this->assertSame($title, $rawProduct->raw_payload_json['title']);
         $this->assertDatabaseHas('normalization_errors', [
@@ -111,6 +113,23 @@ class RawPayloadPersistenceTest extends TestCase
             'code' => 'external_id_too_long',
             'raw_key' => 'id',
             'raw_value' => str_repeat('x', 300),
+        ]);
+    }
+
+    public function test_uses_a_later_identifier_when_an_earlier_candidate_is_too_long(): void
+    {
+        $batch = ImportBatch::factory()->create();
+
+        $rawProduct = (new RawProductWriter)->write($batch, [
+            'external_id' => str_repeat('x', 300),
+            'id' => 'usable-id',
+            'sku' => 'unused-sku',
+        ]);
+
+        $this->assertSame('usable-id', $rawProduct->external_id);
+        $this->assertDatabaseMissing('normalization_errors', [
+            'raw_product_id' => $rawProduct->id,
+            'code' => 'external_id_too_long',
         ]);
     }
 

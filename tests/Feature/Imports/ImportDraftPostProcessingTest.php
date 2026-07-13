@@ -59,7 +59,6 @@ class ImportDraftPostProcessingTest extends TestCase
         );
 
         $importService = new ImportService([$importer], $mediaDownloader, new DuplicateDetector);
-        $this->app->instance(ImportService::class, $importService);
 
         $importService->startImport($source, $artifact);
 

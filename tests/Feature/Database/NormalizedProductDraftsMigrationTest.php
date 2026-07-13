@@ -64,9 +64,12 @@ class NormalizedProductDraftsMigrationTest extends TestCase
 
     public function test_database_rejects_confidence_outside_normalized_range(): void
     {
-        $this->expectException(QueryException::class);
-
-        NormalizedProductDraft::factory()->create(['confidence' => '1.0001']);
+        try {
+            NormalizedProductDraft::factory()->create(['confidence' => '1.0001']);
+            $this->fail('The database accepted a draft confidence outside the normalized range.');
+        } catch (QueryException $exception) {
+            $this->assertStringContainsString('confidence', strtolower($exception->getMessage()));
+        }
     }
 
     public function test_sqlite_rollback_restores_confidence_triggers(): void

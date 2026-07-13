@@ -21,6 +21,8 @@ final class ProcessImportDraftsJob implements ShouldQueue
     public function __construct(
         public int $importBatchId,
         public int $afterDraftId = 0,
+        public ?int $draftId = null,
+        public int $mediaOffset = 0,
     ) {}
 
     public function handle(ImportService $importService): void
@@ -28,19 +30,38 @@ final class ProcessImportDraftsJob implements ShouldQueue
         $batch = ImportBatch::query()->findOrFail($this->importBatchId);
 
         if (config('queue.default') === 'sync') {
-            $nextDraftId = $this->afterDraftId;
+            $cursor = [
+                'after_draft_id' => $this->afterDraftId,
+                'draft_id' => $this->draftId,
+                'media_offset' => $this->mediaOffset,
+            ];
 
-            while (($nextDraftId = $importService->processDraftChunk($batch, $nextDraftId)) !== null) {
+            while (($cursor = $importService->processDraftChunk(
+                $batch,
+                $cursor['after_draft_id'],
+                $cursor['draft_id'],
+                $cursor['media_offset'],
+            )) !== null) {
                 // The sync driver has no worker boundary, so iterate without growing the call stack.
             }
 
             return;
         }
 
-        $nextDraftId = $importService->processDraftChunk($batch, $this->afterDraftId);
+        $cursor = $importService->processDraftChunk(
+            $batch,
+            $this->afterDraftId,
+            $this->draftId,
+            $this->mediaOffset,
+        );
 
-        if ($nextDraftId !== null) {
-            self::dispatch($batch->id, $nextDraftId)->afterCommit();
+        if ($cursor !== null) {
+            self::dispatch(
+                $batch->id,
+                $cursor['after_draft_id'],
+                $cursor['draft_id'],
+                $cursor['media_offset'],
+            )->afterCommit();
         }
     }
 

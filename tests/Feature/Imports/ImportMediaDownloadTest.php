@@ -79,6 +79,38 @@ class ImportMediaDownloadTest extends TestCase
         $this->assertSame('media_download_failed', NormalizationError::query()->sole()->code);
     }
 
+    public function test_chunked_download_processes_one_candidate_and_safely_resumes(): void
+    {
+        Storage::fake('public');
+        $image = UploadedFile::fake()->image('product.jpg', 100, 100);
+        Http::fake(fn () => Http::response(
+            file_get_contents($image->getRealPath()),
+            200,
+            ['Content-Type' => 'image/jpeg'],
+        ));
+        $draft = NormalizedProductDraft::factory()->create([
+            'media_json' => [
+                ['source_url' => 'https://cdn.example.test/first.jpg'],
+                ['source_url' => 'https://cdn.example.test/second.jpg'],
+            ],
+        ]);
+        $downloader = $this->downloader();
+
+        $nextOffset = $downloader->downloadChunkForDraft($draft, 0, 1);
+
+        $this->assertSame(1, $nextOffset);
+        $this->assertSame('downloaded', $draft->fresh()->media_json[0]['status']);
+        $this->assertArrayNotHasKey('status', $draft->fresh()->media_json[1]);
+        Http::assertSentCount(1);
+
+        $this->assertSame(1, $downloader->downloadChunkForDraft($draft, 0, 1));
+        Http::assertSentCount(1);
+
+        $this->assertNull($downloader->downloadChunkForDraft($draft, 1, 1));
+        $this->assertSame('downloaded', $draft->fresh()->media_json[1]['status']);
+        Http::assertSentCount(2);
+    }
+
     public function test_malformed_candidate_creates_error_without_aborting_other_candidates(): void
     {
         Storage::fake('public');

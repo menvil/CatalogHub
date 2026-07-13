@@ -79,6 +79,7 @@ final readonly class ImportService
     public function processQueuedImport(ImportBatch $batch): ImportBatch
     {
         $temporaryPath = null;
+        $this->failStaleProcessingBatch($batch);
 
         $claimed = ImportBatch::query()
             ->whereKey($batch->getKey())
@@ -121,16 +122,16 @@ final readonly class ImportService
 
     public function supports(ImportSource $source): bool
     {
-        foreach ($this->importers as $importer) {
-            if ($importer->supports($source)) {
-                return true;
-            }
-        }
-
-        return false;
+        return $this->findImporter($source) !== null;
     }
 
     private function resolveImporter(ImportSource $source): ProductImporterInterface
+    {
+        return $this->findImporter($source)
+            ?? throw new RuntimeException("No product importer supports source [{$source->code}].");
+    }
+
+    private function findImporter(ImportSource $source): ?ProductImporterInterface
     {
         foreach ($this->importers as $importer) {
             if ($importer->supports($source)) {
@@ -138,35 +139,80 @@ final readonly class ImportService
             }
         }
 
-        throw new RuntimeException("No product importer supports source [{$source->code}].");
+        return null;
     }
 
-    public function processDraftChunk(ImportBatch $batch, int $afterDraftId): ?int
-    {
+    /**
+     * @return array{after_draft_id: int, draft_id: int|null, media_offset: int}|null
+     */
+    public function processDraftChunk(
+        ImportBatch $batch,
+        int $afterDraftId,
+        ?int $draftId = null,
+        int $mediaOffset = 0,
+    ): ?array {
         if ($batch->status !== 'processing') {
             return null;
         }
 
-        $drafts = $batch->drafts()
-            ->where('id', '>', $afterDraftId)
-            ->orderBy('id')
-            ->limit(max(1, (int) config('imports.post_processing_chunk_size', 1)))
-            ->get();
+        $batch->touch();
 
-        foreach ($drafts as $draft) {
-            $this->mediaDownloader?->downloadForDraft($draft);
-            $this->duplicateDetector?->detect($draft);
-        }
+        $draft = $draftId === null
+            ? $batch->drafts()->where('id', '>', $afterDraftId)->orderBy('id')->first()
+            : $batch->drafts()->whereKey($draftId)->first();
 
-        $lastDraftId = $drafts->last()?->id;
-
-        if ($lastDraftId === null || ! $batch->drafts()->where('id', '>', $lastDraftId)->exists()) {
+        if ($draft === null) {
             $batch->markFinished();
 
             return null;
         }
 
-        return $lastDraftId;
+        if ($this->mediaDownloader !== null) {
+            $nextMediaOffset = $this->mediaDownloader->downloadChunkForDraft(
+                $draft,
+                $mediaOffset,
+                1,
+            );
+
+            if ($nextMediaOffset !== null) {
+                return [
+                    'after_draft_id' => $afterDraftId,
+                    'draft_id' => $draft->id,
+                    'media_offset' => $nextMediaOffset,
+                ];
+            }
+        }
+
+        $this->duplicateDetector?->detect($draft);
+
+        if (! $batch->drafts()->where('id', '>', $draft->id)->exists()) {
+            $batch->markFinished();
+
+            return null;
+        }
+
+        return [
+            'after_draft_id' => $draft->id,
+            'draft_id' => null,
+            'media_offset' => 0,
+        ];
+    }
+
+    private function failStaleProcessingBatch(ImportBatch $batch): void
+    {
+        $staleAfterSeconds = max(1, (int) config('imports.processing_stale_after_seconds', 90));
+        $failedAt = now();
+
+        ImportBatch::query()
+            ->whereKey($batch->getKey())
+            ->where('status', 'processing')
+            ->where('updated_at', '<=', $failedAt->copy()->subSeconds($staleAfterSeconds))
+            ->update([
+                'status' => 'failed',
+                'finished_at' => $failedAt,
+                'error_message' => 'The import worker stopped responding before the batch completed.',
+                'updated_at' => $failedAt,
+            ]);
     }
 
     private function scheduleDraftProcessing(ImportBatch $batch): void

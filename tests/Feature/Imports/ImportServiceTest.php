@@ -101,6 +101,35 @@ class ImportServiceTest extends TestCase
         $this->assertSame('failed', $batch->fresh()->status);
     }
 
+    public function test_stale_processing_batch_is_failed_before_the_claim_noop_returns(): void
+    {
+        config()->set('imports.processing_stale_after_seconds', 60);
+        $batch = ImportBatch::factory()->create(['status' => 'processing']);
+        ImportBatch::query()->whereKey($batch->id)->update([
+            'updated_at' => now()->subMinutes(2),
+        ]);
+
+        $result = (new ImportService)->processQueuedImport($batch);
+
+        $this->assertSame('failed', $result->status);
+        $this->assertSame(
+            'The import worker stopped responding before the batch completed.',
+            $result->error_message,
+        );
+        $this->assertNotNull($result->finished_at);
+    }
+
+    public function test_active_processing_batch_is_not_reclaimed(): void
+    {
+        config()->set('imports.processing_stale_after_seconds', 60);
+        $batch = ImportBatch::factory()->create(['status' => 'processing']);
+
+        $result = (new ImportService)->processQueuedImport($batch);
+
+        $this->assertSame('processing', $result->status);
+        $this->assertNull($result->finished_at);
+    }
+
     public function test_a_one_shot_importer_iterable_can_be_reused_for_support_and_resolution(): void
     {
         Storage::fake('imports');

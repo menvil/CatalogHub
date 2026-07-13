@@ -3,12 +3,20 @@
 namespace Tests\Feature\Imports;
 
 use App\Jobs\Imports\ProcessImportDraftsJob;
+use App\Models\CentralCatalog\CentralProduct;
+use App\Models\Imports\DuplicateCandidate;
 use App\Models\Imports\ImportBatch;
 use App\Models\Imports\NormalizedProductDraft;
 use App\Models\Imports\RawProduct;
+use App\Services\Imports\DuplicateDetector;
+use App\Services\Imports\ImportMediaDownloader;
 use App\Services\Imports\ImportService;
+use App\Services\Media\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Tests\TestCase;
 
@@ -20,7 +28,6 @@ class ProcessImportDraftsJobTest extends TestCase
     {
         Queue::fake();
         config()->set('queue.default', 'database');
-        config()->set('imports.post_processing_chunk_size', 1);
         $batch = ImportBatch::factory()->create(['status' => 'processing']);
         $first = $this->createDraft($batch, 'First draft');
         $second = $this->createDraft($batch, 'Second draft');
@@ -54,7 +61,6 @@ class ProcessImportDraftsJobTest extends TestCase
     {
         Queue::fake();
         config()->set('queue.default', 'sync');
-        config()->set('imports.post_processing_chunk_size', 1);
         $batch = ImportBatch::factory()->create(['status' => 'processing']);
         $this->createDraft($batch, 'First draft');
         $this->createDraft($batch, 'Second draft');
@@ -66,6 +72,52 @@ class ProcessImportDraftsJobTest extends TestCase
         Queue::assertNothingPushed();
     }
 
+    public function test_revisits_a_draft_for_each_media_chunk_before_detecting_duplicates(): void
+    {
+        Storage::fake('public');
+        Queue::fake();
+        config()->set('queue.default', 'database');
+        $image = UploadedFile::fake()->image('product.jpg', 100, 100);
+        Http::fake(fn () => Http::response(
+            file_get_contents($image->getRealPath()),
+            200,
+            ['Content-Type' => 'image/jpeg'],
+        ));
+        CentralProduct::factory()->create(['name' => 'Imported Product']);
+        $batch = ImportBatch::factory()->create(['status' => 'processing']);
+        $draft = $this->createDraft($batch, 'Imported Product', [
+            ['source_url' => 'https://cdn.example.test/first.jpg'],
+            ['source_url' => 'https://cdn.example.test/second.jpg'],
+        ]);
+        $service = new ImportService(
+            mediaDownloader: new ImportMediaDownloader(
+                app(MediaService::class),
+                static fn (string $host): array => ['93.184.216.34'],
+            ),
+            duplicateDetector: new DuplicateDetector,
+        );
+
+        (new ProcessImportDraftsJob($batch->id))->handle($service);
+
+        Http::assertSentCount(1);
+        $this->assertSame('downloaded', $draft->fresh()->media_json[0]['status']);
+        $this->assertArrayNotHasKey('status', $draft->fresh()->media_json[1]);
+        $this->assertSame(0, DuplicateCandidate::query()->count());
+        Queue::assertPushed(
+            ProcessImportDraftsJob::class,
+            fn (ProcessImportDraftsJob $job): bool => $job->afterDraftId === 0
+                && $job->draftId === $draft->id
+                && $job->mediaOffset === 1,
+        );
+
+        (new ProcessImportDraftsJob($batch->id, 0, $draft->id, 1))->handle($service);
+
+        Http::assertSentCount(2);
+        $this->assertSame('downloaded', $draft->fresh()->media_json[1]['status']);
+        $this->assertSame($draft->id, DuplicateCandidate::query()->sole()->normalized_product_draft_id);
+        $this->assertSame('completed', $batch->fresh()->status);
+    }
+
     public function test_timeout_stays_below_the_default_retry_window(): void
     {
         $job = new ProcessImportDraftsJob(1);
@@ -74,8 +126,12 @@ class ProcessImportDraftsJobTest extends TestCase
         $this->assertTrue($job->failOnTimeout);
     }
 
-    private function createDraft(ImportBatch $batch, string $title): NormalizedProductDraft
-    {
+    /** @param list<array<string, mixed>> $media */
+    private function createDraft(
+        ImportBatch $batch,
+        string $title,
+        array $media = [],
+    ): NormalizedProductDraft {
         $rawProduct = RawProduct::factory()->for($batch, 'batch')->create();
 
         return $batch->drafts()->create([
@@ -83,7 +139,7 @@ class ProcessImportDraftsJobTest extends TestCase
             'title' => $title,
             'normalized_payload_json' => ['title' => $title],
             'attributes_json' => [],
-            'media_json' => [],
+            'media_json' => $media,
             'confidence' => '1.0000',
             'status' => 'pending_review',
         ]);

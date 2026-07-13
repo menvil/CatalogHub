@@ -43,6 +43,35 @@ final readonly class ImportMediaDownloader
         return $draft->refresh();
     }
 
+    public function downloadChunkForDraft(
+        NormalizedProductDraft $draft,
+        int $candidateOffset,
+        int $limit,
+    ): ?int {
+        $media = $draft->fresh()->media_json ?? [];
+        $candidateCount = count($media);
+        $endOffset = min($candidateCount, $candidateOffset + max(1, $limit));
+
+        for ($index = $candidateOffset; $index < $endOffset; $index++) {
+            $candidate = $this->normalizeCandidate($media[$index]);
+
+            if (! in_array($candidate['status'] ?? null, ['downloaded', 'failed'], true)) {
+                try {
+                    $candidate = $this->downloadCandidate($draft, $candidate);
+                } catch (Throwable $exception) {
+                    $candidate['status'] = 'failed';
+                    $candidate['error'] = $exception->getMessage();
+                    $this->recordError($draft, $candidate, $exception);
+                }
+            }
+
+            $media[$index] = $candidate;
+            $draft->forceFill(['media_json' => $media])->save();
+        }
+
+        return $endOffset < $candidateCount ? $endOffset : null;
+    }
+
     /**
      * @param  array<string, mixed>  $candidate
      * @return array<string, mixed>

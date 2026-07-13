@@ -79,6 +79,8 @@ final class RawProductWriter
      */
     private function extractIdentifier(array $payload, array $keys): array
     {
+        $oversized = null;
+
         foreach ($keys as $key) {
             if (! array_key_exists($key, $payload) || ! is_scalar($payload[$key])) {
                 continue;
@@ -86,15 +88,24 @@ final class RawProductWriter
 
             $identifier = (string) $payload[$key];
 
-            return [
-                'value' => mb_strlen($identifier) <= 255 ? $identifier : null,
+            if (mb_strlen($identifier) <= 255) {
+                return [
+                    'value' => $identifier,
+                    'key' => $key,
+                    'raw_value' => $identifier,
+                    'too_long' => false,
+                ];
+            }
+
+            $oversized ??= [
+                'value' => null,
                 'key' => $key,
                 'raw_value' => $identifier,
-                'too_long' => mb_strlen($identifier) > 255,
+                'too_long' => true,
             ];
         }
 
-        return [
+        return $oversized ?? [
             'value' => null,
             'key' => null,
             'raw_value' => null,

@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\CentralDashboard;
+use App\Filament\Pages\ImportWizard;
 use App\Filament\Pages\TranslationDashboard;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -34,6 +35,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->pages([
                 CentralDashboard::class,
+                ImportWizard::class,
                 TranslationDashboard::class,
             ])
             ->middleware([

@@ -1,0 +1,1 @@
+a:2:{i:0;a:5:{s:2:"id";s:5:"sku-1";s:5:"title";s:9:"Mixer 500";s:5:"brand";s:4:"Acme";s:8:"category";s:6:"Mixers";s:14:"specifications";a:1:{s:5:"Power";s:5:"500 W";}}i:1;a:5:{s:11:"external_id";s:5:"sku-2";s:4:"name";s:10:"Kettle Pro";s:12:"manufacturer";s:4:"Beta";s:13:"category_name";s:7:"Kettles";s:5:"price";s:5:"99.90";}}

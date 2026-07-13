@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property array<string, mixed> $manifest_json
+ * @property list<string>|null $supports_json
+ * @property array<string, string>|null $layouts_json
+ */
 #[Fillable([
     'theme_id',
     'manifest_json',

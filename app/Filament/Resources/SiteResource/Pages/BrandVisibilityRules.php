@@ -35,7 +35,13 @@ final class BrandVisibilityRules extends Page
     { /** @var Site $site */ $site = $this->getRecord();
         $brand = CentralBrand::query()->findOrFail($brandId);
         $service = app(SiteBrandVisibilityService::class);
-        $service->allows($site, $brand) ? $service->hide($site, $brand) : $service->allow($site, $brand);
+
+        if ($service->allows($site, $brand)) {
+            $service->hide($site, $brand);
+        } else {
+            $service->allow($site, $brand);
+        }
+
         $this->record = $site->fresh();
     }
 }

@@ -14,7 +14,7 @@ return new class extends Migration
             $table->string('entity_type');
             $table->unsignedBigInteger('entity_id');
             $table->string('field');
-            $table->string('locale_code')->nullable();
+            $table->string('locale_code')->default('');
             $table->json('value_json');
             $table->text('reason')->nullable();
             $table->string('status')->default('draft')->index();

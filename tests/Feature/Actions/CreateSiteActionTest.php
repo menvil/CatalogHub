@@ -29,4 +29,23 @@ class CreateSiteActionTest extends TestCase
         $this->assertDatabaseHas('site_categories', ['site_id' => $site->id, 'central_category_id' => $category->id]);
         $this->assertDatabaseHas('site_features', ['site_id' => $site->id, 'feature_key' => 'comparison', 'is_enabled' => true]);
     }
+
+    public function test_features_are_optional(): void
+    {
+        $market = Market::factory()->create(['status' => MarketStatus::Active]);
+        $category = CentralCategory::factory()->create(['status' => CentralCategoryStatus::Active]);
+
+        $site = app(CreateSiteAction::class)->handle([
+            'market_id' => $market->id,
+            'code' => 'site-without-features',
+            'name' => 'Site without features',
+            'mode' => 'single_category',
+            'default_locale' => 'en-US',
+            'locales' => ['en-US'],
+            'categories' => [$category->id],
+        ]);
+
+        $this->assertTrue($site->exists);
+        $this->assertDatabaseMissing('site_features', ['site_id' => $site->id]);
+    }
 }

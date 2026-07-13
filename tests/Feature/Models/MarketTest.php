@@ -19,7 +19,7 @@ class MarketTest extends TestCase
         ]);
 
         $this->assertTrue($market->exists);
-        $this->assertNotSame('', $market->code);
+        $this->assertNotSame('', trim($market->code));
         $this->assertSame(['price_sources_enabled' => true], $market->config_json);
         $this->assertSame(MarketStatus::Active, $market->status);
     }

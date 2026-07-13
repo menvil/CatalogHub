@@ -27,6 +27,6 @@ final class SiteDashboard extends Page
     public function getMetrics(): array
     { /** @var Site $site */ $site = $this->getRecord();
 
-        return app(SiteDashboardMetrics::class)->for($site);
+        return app(SiteDashboardMetrics::class)->metricsFor($site);
     }
 }

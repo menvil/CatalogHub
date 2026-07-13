@@ -6,18 +6,18 @@ use App\Actions\Sites\UpsertSiteOverrideAction;
 use App\Enums\UserRole;
 use App\Filament\Resources\SiteResource\Pages\LocalOverrideEditor;
 use App\Models\CentralCatalog\CentralProduct;
-use App\Models\Locale;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
+use Tests\Concerns\EnablesSiteLocales;
 use Tests\Concerns\EnablesSiteProductCategories;
 use Tests\TestCase;
 
 class LocalOverrideEditorTest extends TestCase
 {
+    use EnablesSiteLocales;
     use EnablesSiteProductCategories;
     use RefreshDatabase;
 
@@ -136,17 +136,5 @@ class LocalOverrideEditorTest extends TestCase
             ->set('value', 'Invalid Slug')
             ->call('save')
             ->assertHasErrors(['value']);
-    }
-
-    private function enableLocale(Site $site, string $code): void
-    {
-        Locale::factory()->create(['code' => $code]);
-        DB::table('site_locales')->insert([
-            'site_id' => $site->id,
-            'locale_code' => $code,
-            'is_enabled' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
     }
 }

@@ -4,16 +4,16 @@ namespace Tests\Feature\Sites;
 
 use App\Actions\Sites\UpsertSiteOverrideAction;
 use App\Models\CentralCatalog\CentralProduct;
-use App\Models\Locale;
 use App\Models\Site;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Tests\Concerns\EnablesSiteLocales;
 use Tests\Concerns\EnablesSiteProductCategories;
 use Tests\TestCase;
 
 class LocalSlugOverrideTest extends TestCase
 {
+    use EnablesSiteLocales;
     use EnablesSiteProductCategories;
     use RefreshDatabase;
 
@@ -100,17 +100,5 @@ class LocalSlugOverrideTest extends TestCase
         $action->handle($site, 'product', $products[1]->id, 'local_slug', 'en-US', 'same-slug');
 
         $this->assertDatabaseCount('site_overrides', 2);
-    }
-
-    private function enableLocale(Site $site, string $code): void
-    {
-        Locale::factory()->create(['code' => $code]);
-        DB::table('site_locales')->insert([
-            'site_id' => $site->id,
-            'locale_code' => $code,
-            'is_enabled' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
     }
 }

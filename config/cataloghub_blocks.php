@@ -71,4 +71,17 @@ return [
         ],
         'view_component' => 'blocks.lead-form',
     ],
+    'poll_block' => [
+        'name' => 'Poll Block',
+        'description' => 'Placeholder for polls on home, category, and product pages.',
+        'category' => 'engagement',
+        'supported_page_types_json' => ['home', 'category', 'product'],
+        'required_features_json' => ['polls'],
+        'config_schema_json' => [
+            'title' => 'string',
+            'poll_id' => 'integer',
+            'placement' => 'inline|sidebar|card',
+        ],
+        'view_component' => 'blocks.poll-block',
+    ],
 ];

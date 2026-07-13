@@ -1,0 +1,101 @@
+<?php
+
+namespace Tests\Feature\Database;
+
+use App\Models\Imports\NormalizedProductDraft;
+use Illuminate\Database\QueryException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Tests\TestCase;
+
+class NormalizedProductDraftsMigrationTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_has_normalized_product_drafts_table_with_review_payload(): void
+    {
+        $this->assertTrue(Schema::hasTable('normalized_product_drafts'));
+        $this->assertTrue(Schema::hasColumns('normalized_product_drafts', [
+            'id',
+            'import_batch_id',
+            'raw_product_id',
+            'matched_central_product_id',
+            'brand_id',
+            'category_id',
+            'title',
+            'slug',
+            'normalized_payload_json',
+            'attributes_json',
+            'media_json',
+            'confidence',
+            'status',
+            'review_notes',
+            'approved_by_user_id',
+            'approved_at',
+            'created_at',
+            'updated_at',
+        ]));
+    }
+
+    public function test_normalized_draft_has_expected_relationships_and_unique_raw_product(): void
+    {
+        $foreignKeys = collect(Schema::getForeignKeys('normalized_product_drafts'));
+        $indexes = collect(Schema::getIndexes('normalized_product_drafts'));
+
+        foreach ([
+            'import_batches' => 'import_batch_id',
+            'raw_products' => 'raw_product_id',
+            'central_products' => 'matched_central_product_id',
+            'central_brands' => 'brand_id',
+            'central_categories' => 'category_id',
+            'users' => 'approved_by_user_id',
+        ] as $table => $column) {
+            $this->assertTrue($foreignKeys->contains(
+                fn (array $foreignKey): bool => $foreignKey['columns'] === [$column]
+                    && $foreignKey['foreign_table'] === $table
+            ));
+        }
+
+        $this->assertTrue($indexes->contains(
+            fn (array $index): bool => $index['unique'] === true && $index['columns'] === ['raw_product_id']
+        ));
+    }
+
+    public function test_database_rejects_confidence_outside_normalized_range(): void
+    {
+        try {
+            NormalizedProductDraft::factory()->create(['confidence' => '1.0001']);
+            $this->fail('The database accepted a draft confidence outside the normalized range.');
+        } catch (QueryException $exception) {
+            $this->assertStringContainsString('confidence', strtolower($exception->getMessage()));
+        }
+    }
+
+    public function test_sqlite_rollback_restores_confidence_triggers(): void
+    {
+        if (DB::getDriverName() !== 'sqlite') {
+            $this->markTestSkipped('SQLite-specific table rebuild behavior.');
+        }
+
+        $migration = require database_path(
+            'migrations/2026_07_13_000001_add_published_central_product_id_to_normalized_product_drafts_table.php'
+        );
+
+        $migration->down();
+
+        try {
+            $triggers = DB::table('sqlite_master')
+                ->where('type', 'trigger')
+                ->whereIn('name', [
+                    'normalized_product_drafts_confidence_insert',
+                    'normalized_product_drafts_confidence_update',
+                ])
+                ->count();
+
+            $this->assertSame(2, $triggers);
+        } finally {
+            $migration->up();
+        }
+    }
+}

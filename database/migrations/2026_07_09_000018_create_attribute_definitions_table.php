@@ -27,6 +27,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['central_category_id', 'code']);
+            $table->unique(['id', 'central_category_id'], 'attribute_definitions_id_category_unique');
             $table->index(['central_category_id', 'attribute_section_id', 'position']);
             $table->index(['central_category_id', 'is_filterable']);
             $table->index(['central_category_id', 'is_comparable']);

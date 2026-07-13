@@ -3,6 +3,7 @@
 namespace Tests\Feature\Filament;
 
 use App\Filament\Resources\SiteResource;
+use App\Filament\Resources\SiteResource\Pages\BrandVisibilityRules;
 use App\Filament\Resources\SiteResource\Pages\CreateSite;
 use App\Filament\Resources\SiteResource\Pages\EditSite;
 use App\Filament\Resources\SiteResource\Pages\ListSites;
@@ -25,6 +26,8 @@ class SiteResourceTest extends TestCase
         $this->assertTrue(class_exists(EditSite::class));
         $this->assertTrue(class_exists(ManageSiteProducts::class));
         $this->assertArrayHasKey('products', SiteResource::getPages());
+        $this->assertTrue(class_exists(BrandVisibilityRules::class));
+        $this->assertArrayHasKey('brands', SiteResource::getPages());
         $this->assertContains(SiteFeaturesRelationManager::class, SiteResource::getRelations());
     }
 }

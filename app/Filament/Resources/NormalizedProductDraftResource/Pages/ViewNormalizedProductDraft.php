@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\NormalizedProductDraftResource\Pages;
 
 use App\Actions\Imports\ApproveNormalizedProductDraftAction;
+use App\Actions\Imports\PublishNormalizedProductDraftToCentralAction;
 use App\Actions\Imports\RejectNormalizedProductDraftAction;
 use App\Filament\Resources\ImportBatchResource;
 use App\Filament\Resources\NormalizedProductDraftResource;
@@ -23,6 +24,14 @@ final class ViewNormalizedProductDraft extends ViewRecord
         $draft = $this->getRecord();
 
         return [
+            Action::make('publish')
+                ->label('Publish to Central Catalog')
+                ->color('primary')
+                ->icon(Heroicon::OutlinedArrowUpOnSquare)
+                ->requiresConfirmation()
+                ->visible(fn (): bool => $this->getRecord()->status === 'approved')
+                ->action(fn (NormalizedProductDraft $record): mixed => app(PublishNormalizedProductDraftToCentralAction::class)
+                    ->handle($record, auth()->user())),
             Action::make('approve')
                 ->label('Approve')
                 ->color('success')

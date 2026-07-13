@@ -6,6 +6,7 @@ use App\Actions\Sites\CreateSiteAction;
 use App\Enums\CentralCategoryStatus;
 use App\Enums\MarketStatus;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Models\Locale;
 use App\Models\Market;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
@@ -34,6 +35,7 @@ class SiteModeSelectionTest extends TestCase
     private function data(string $mode, array $categories): array
     {
         $market = Market::factory()->create(['status' => MarketStatus::Active]);
+        Locale::factory()->create(['code' => 'en-US']);
 
         return ['market_id' => $market->id, 'code' => fake()->unique()->slug(), 'name' => 'Site', 'mode' => $mode, 'default_locale' => 'en-US', 'locales' => ['en-US'], 'categories' => $categories, 'features' => []];
     }

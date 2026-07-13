@@ -5,9 +5,11 @@ namespace Tests\Feature\Sites;
 use App\Actions\Sites\UpsertSiteOverrideAction;
 use App\Filament\Resources\SiteResource\Pages\LocalOverrideEditor;
 use App\Models\CentralCatalog\CentralProduct;
+use App\Models\Locale;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -20,6 +22,7 @@ class LocalOverrideEditorTest extends TestCase
     {
         $site = Site::factory()->create();
         $product = CentralProduct::factory()->create();
+        $this->enableLocale($site, 'de-DE');
         $action = app(UpsertSiteOverrideAction::class);
         $action->handle($site, 'product', $product->id, 'local_title', 'de-DE', 'Lokaler Titel');
         $override = $action->handle($site, 'product', $product->id, 'local_title', 'de-DE', 'Neuer Titel');
@@ -38,6 +41,7 @@ class LocalOverrideEditorTest extends TestCase
     {
         $site = Site::factory()->create();
         $product = CentralProduct::factory()->create();
+        $this->enableLocale($site, 'de-DE');
         app(UpsertSiteOverrideAction::class)->handle($site, 'product', $product->id, 'local_title', 'de-DE', 'Local title');
 
         Livewire::actingAs(User::factory()->centralAdmin()->create())
@@ -72,5 +76,17 @@ class LocalOverrideEditorTest extends TestCase
             ->assertSee('for="override-locale"', false)
             ->assertSee('for="override-value"', false)
             ->assertSee('for="override-reason"', false);
+    }
+
+    private function enableLocale(Site $site, string $code): void
+    {
+        Locale::factory()->create(['code' => $code]);
+        DB::table('site_locales')->insert([
+            'site_id' => $site->id,
+            'locale_code' => $code,
+            'is_enabled' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 }

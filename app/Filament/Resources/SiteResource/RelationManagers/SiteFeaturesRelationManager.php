@@ -13,6 +13,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Validation\Rules\Unique;
 
 final class SiteFeaturesRelationManager extends RelationManager
 {
@@ -21,7 +22,16 @@ final class SiteFeaturesRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema->components([
-            Select::make('feature_key')->options(array_combine(SiteFeature::KEYS, array_map(fn (string $key): string => str($key)->headline()->toString(), SiteFeature::KEYS)))->required()->disabledOn('edit'),
+            Select::make('feature_key')
+                ->options(array_combine(SiteFeature::KEYS, array_map(fn (string $key): string => str($key)->headline()->toString(), SiteFeature::KEYS)))
+                ->required()
+                ->unique(
+                    table: 'site_features',
+                    column: 'feature_key',
+                    ignoreRecord: true,
+                    modifyRuleUsing: fn (Unique $rule): Unique => $rule->where('site_id', $this->getOwnerRecord()->getKey()),
+                )
+                ->disabledOn('edit'),
             Toggle::make('is_enabled'), KeyValue::make('config_json'),
         ]);
     }

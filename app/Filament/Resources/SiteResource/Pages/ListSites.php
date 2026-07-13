@@ -2,8 +2,9 @@
 
 namespace App\Filament\Resources\SiteResource\Pages;
 
+use App\Filament\Pages\CreateSiteWizard;
 use App\Filament\Resources\SiteResource;
-use Filament\Actions\CreateAction;
+use Filament\Actions\Action;
 use Filament\Resources\Pages\ListRecords;
 
 final class ListSites extends ListRecords
@@ -12,6 +13,6 @@ final class ListSites extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [CreateAction::make()];
+        return [Action::make('create')->label('Create site')->url(CreateSiteWizard::getUrl())];
     }
 }

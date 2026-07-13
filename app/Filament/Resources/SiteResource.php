@@ -29,10 +29,10 @@ final class SiteResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Select::make('market_id')->relationship('market', 'name')->required(), TextInput::make('code')->required()->unique(ignoreRecord: true),
-            TextInput::make('name')->required(), TextInput::make('domain')->unique(ignoreRecord: true),
+            Select::make('market_id')->relationship('market', 'name')->required(), TextInput::make('code')->required()->maxLength(255)->unique(ignoreRecord: true),
+            TextInput::make('name')->required()->maxLength(255), TextInput::make('domain')->maxLength(255)->unique(ignoreRecord: true),
             Select::make('mode')->required()->options(collect(SiteMode::cases())->mapWithKeys(fn (SiteMode $mode) => [$mode->value => str($mode->value)->headline()])),
-            TextInput::make('default_locale')->required(), Select::make('status')->required()->options(SiteStatus::options())->default(SiteStatus::default()->value),
+            TextInput::make('default_locale')->required()->maxLength(255), Select::make('status')->required()->options(SiteStatus::options())->default(SiteStatus::default()->value),
         ]);
     }
 
@@ -43,7 +43,7 @@ final class SiteResource extends Resource
 
     public static function getPages(): array
     {
-        return ['index' => Pages\ListSites::route('/'), 'create' => Pages\CreateSite::route('/create'), 'dashboard' => Pages\SiteDashboard::route('/{record}/dashboard'), 'edit' => Pages\EditSite::route('/{record}/edit'), 'products' => Pages\ManageSiteProducts::route('/{record}/products'), 'brands' => Pages\BrandVisibilityRules::route('/{record}/brands'), 'overrides' => Pages\LocalOverrideEditor::route('/{record}/overrides'), 'seo' => Pages\LocalSeoOverride::route('/{record}/seo')];
+        return ['index' => Pages\ListSites::route('/'), 'dashboard' => Pages\SiteDashboard::route('/{record}/dashboard'), 'edit' => Pages\EditSite::route('/{record}/edit'), 'products' => Pages\ManageSiteProducts::route('/{record}/products'), 'brands' => Pages\BrandVisibilityRules::route('/{record}/brands'), 'overrides' => Pages\LocalOverrideEditor::route('/{record}/overrides'), 'seo' => Pages\LocalSeoOverride::route('/{record}/seo')];
     }
 
     public static function getRelations(): array

@@ -43,4 +43,18 @@ return [
         ],
         'view_component' => 'blocks.top-products',
     ],
+    'latest_reviews' => [
+        'name' => 'Latest Reviews',
+        'description' => 'Placeholder for recent reviews supplied by the reviews module.',
+        'category' => 'social_proof',
+        'supported_page_types_json' => ['home'],
+        'required_features_json' => ['reviews'],
+        'config_schema_json' => [
+            'title' => 'string',
+            'limit' => 'integer',
+            'min_rating' => 'integer',
+            'layout' => 'cards|compact',
+        ],
+        'view_component' => 'blocks.latest-reviews',
+    ],
 ];

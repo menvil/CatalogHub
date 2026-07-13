@@ -3,6 +3,7 @@
 namespace Tests\Feature\Sites;
 
 use App\Actions\Sites\CreateSiteAction;
+use App\Enums\CentralCategoryStatus;
 use App\Enums\MarketStatus;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Market;
@@ -18,12 +19,12 @@ class SiteModeSelectionTest extends TestCase
     {
         $this->expectException(ValidationException::class);
 
-        app(CreateSiteAction::class)->handle($this->data('single_category', CentralCategory::factory()->count(2)->create()->modelKeys()));
+        app(CreateSiteAction::class)->handle($this->data('single_category', CentralCategory::factory()->count(2)->create(['status' => CentralCategoryStatus::Active])->modelKeys()));
     }
 
     public function test_multi_category_mode_accepts_more_than_one_category(): void
     {
-        $site = app(CreateSiteAction::class)->handle($this->data('multi_category', CentralCategory::factory()->count(2)->create()->modelKeys()));
+        $site = app(CreateSiteAction::class)->handle($this->data('multi_category', CentralCategory::factory()->count(2)->create(['status' => CentralCategoryStatus::Active])->modelKeys()));
 
         $this->assertSame('multi_category', $site->mode->value);
         $this->assertDatabaseCount('site_categories', 2);

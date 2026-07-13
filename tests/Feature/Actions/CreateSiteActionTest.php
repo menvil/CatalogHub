@@ -3,6 +3,7 @@
 namespace Tests\Feature\Actions;
 
 use App\Actions\Sites\CreateSiteAction;
+use App\Enums\CentralCategoryStatus;
 use App\Enums\MarketStatus;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Market;
@@ -16,7 +17,7 @@ class CreateSiteActionTest extends TestCase
     public function test_creates_site_with_locales_categories_and_features(): void
     {
         $market = Market::factory()->create(['status' => MarketStatus::Active]);
-        $category = CentralCategory::factory()->create();
+        $category = CentralCategory::factory()->create(['status' => CentralCategoryStatus::Active]);
 
         $site = app(CreateSiteAction::class)->handle([
             'market_id' => $market->id, 'code' => 'de-monitors', 'name' => 'DE Monitors', 'mode' => 'single_category', 'default_locale' => 'de-DE',

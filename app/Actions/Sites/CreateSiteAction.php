@@ -4,12 +4,23 @@ namespace App\Actions\Sites;
 
 use App\Models\Site;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 final class CreateSiteAction
 {
     /** @param array<string, mixed> $data */
     public function handle(array $data): Site
     {
+        $categoryCount = count($data['categories'] ?? []);
+
+        if (($data['mode'] ?? null) === 'single_category' && $categoryCount !== 1) {
+            throw ValidationException::withMessages(['categories' => 'Single-category sites require exactly one enabled category.']);
+        }
+
+        if (($data['mode'] ?? null) === 'multi_category' && $categoryCount < 1) {
+            throw ValidationException::withMessages(['categories' => 'Multi-category sites require at least one enabled category.']);
+        }
+
         return DB::transaction(function () use ($data): Site {
             $site = Site::query()->create([
                 'market_id' => $data['market_id'], 'code' => $data['code'], 'name' => $data['name'], 'domain' => $data['domain'] ?? null,

@@ -85,12 +85,16 @@ final class CreateSiteWizard extends Page
 
     public function createSite(CreateSiteAction $action): void
     {
+        $categoryRules = $this->mode === SiteMode::SingleCategory->value
+            ? ['required', 'array', 'size:1']
+            : ['required', 'array', 'min:1'];
+
         $data = $this->validate([
             'code' => ['required', 'string', 'max:255', 'unique:sites,code'], 'name' => ['required', 'string', 'max:255'],
             'domain' => ['nullable', 'string', 'max:255', 'unique:sites,domain'], 'marketId' => ['required', 'integer', 'exists:markets,id'],
             'mode' => ['required', 'in:single_category,multi_category'], 'enabledLocales' => ['required', 'array', 'min:1'],
             'enabledLocales.*' => ['string', 'exists:locales,code'], 'defaultLocale' => ['required', 'string', 'in:'.implode(',', $this->enabledLocales)],
-            'enabledCategories' => ['required', 'array', 'min:1'], 'enabledCategories.*' => ['integer', 'exists:central_categories,id'], 'features' => ['array'],
+            'enabledCategories' => $categoryRules, 'enabledCategories.*' => ['integer', 'exists:central_categories,id'], 'features' => ['array'],
         ]);
         $site = $action->handle(['market_id' => $data['marketId'], 'code' => $data['code'], 'name' => $data['name'], 'domain' => $data['domain'], 'mode' => $data['mode'], 'default_locale' => $data['defaultLocale'], 'locales' => $data['enabledLocales'], 'categories' => $data['enabledCategories'], 'features' => $data['features']]);
         $this->createdSiteId = $site->id;

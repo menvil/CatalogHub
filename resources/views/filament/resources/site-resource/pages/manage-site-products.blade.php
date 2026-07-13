@@ -1,0 +1,28 @@
+<x-filament-panels::page>
+    <x-admin.card title="Product visibility" description="Local publication state; central product data is read-only.">
+        @php($products = $this->getProducts())
+        @php($siteProducts = $this->getSiteProductStates($products->pluck('id')->all())->keyBy('central_product_id'))
+        <label for="site-product-search" class="mb-4 block space-y-2">
+            <span>Search products</span>
+            <input id="site-product-search" wire:model.live.debounce.300ms="search" type="search" placeholder="Search by product name">
+        </label>
+        <div class="space-y-3">
+            @foreach($products as $product)
+                @php($state = $siteProducts->get($product->id))
+                <div class="flex items-center justify-between gap-4 border-b border-gray-200 py-3 dark:border-gray-800">
+                    <div>
+                        <strong>{{ $product->name }}</strong>
+                        <div class="text-sm text-gray-500">{{ $product->brand?->name }} · {{ $state?->visibility ?? 'hidden' }}</div>
+                    </div>
+                    <div class="flex gap-2">
+                        @foreach(['visible', 'hidden', 'excluded'] as $visibility)
+                            <x-filament::button size="sm" wire:click="setVisibility({{ $product->id }}, '{{ $visibility }}')">{{ ucfirst($visibility) }}</x-filament::button>
+                        @endforeach
+                        <x-filament::button size="sm" color="warning" wire:click="toggleFeatured({{ $product->id }})">{{ $state?->is_featured ? 'Unfeature' : 'Feature' }}</x-filament::button>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+        <div class="mt-4">{{ $products->links() }}</div>
+    </x-admin.card>
+</x-filament-panels::page>

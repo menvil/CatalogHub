@@ -1,0 +1,82 @@
+<?php
+
+namespace App\Services\Sites;
+
+use App\Models\CentralCatalog\CentralBrand;
+use App\Models\CentralCatalog\CentralProduct;
+use App\Models\Site;
+use Illuminate\Support\Facades\DB;
+
+final class SiteBrandVisibilityService
+{
+    public function hide(Site $site, CentralBrand $brand): void
+    {
+        DB::transaction(function () use ($brand, $site): void {
+            $lockedSite = Site::query()->whereKey($site)->lockForUpdate()->firstOrFail();
+            $this->save($lockedSite, array_values(array_unique([...$this->hiddenIds($lockedSite), $brand->id])));
+        });
+    }
+
+    public function allow(Site $site, CentralBrand $brand): void
+    {
+        DB::transaction(function () use ($brand, $site): void {
+            $lockedSite = Site::query()->whereKey($site)->lockForUpdate()->firstOrFail();
+            $this->save($lockedSite, array_values(array_diff($this->hiddenIds($lockedSite), [$brand->id])));
+        });
+    }
+
+    public function toggle(Site $site, CentralBrand $brand): void
+    {
+        DB::transaction(function () use ($brand, $site): void {
+            $lockedSite = Site::query()->whereKey($site->getKey())->lockForUpdate()->firstOrFail();
+            $hiddenIds = $this->hiddenIds($lockedSite);
+            $updatedIds = in_array($brand->id, $hiddenIds, true)
+                ? array_values(array_diff($hiddenIds, [$brand->id]))
+                : array_values(array_unique([...$hiddenIds, $brand->id]));
+
+            $this->save($lockedSite, $updatedIds);
+        });
+    }
+
+    public function allows(Site $site, CentralBrand $brand): bool
+    {
+        return ! in_array($brand->id, $this->hiddenIds($site), true);
+    }
+
+    /**
+     * @param  iterable<CentralBrand>  $brands
+     * @return array<int, bool>
+     */
+    public function allowsBrands(Site $site, iterable $brands): array
+    {
+        $hiddenIds = $this->hiddenIds($site);
+        $allowedById = [];
+
+        foreach ($brands as $brand) {
+            $allowedById[$brand->id] = ! in_array($brand->id, $hiddenIds, true);
+        }
+
+        return $allowedById;
+    }
+
+    public function allowsProduct(Site $site, CentralProduct $product): bool
+    {
+        $brandId = $product->getAttribute('central_brand_id');
+
+        return $brandId === null || ! in_array((int) $brandId, $this->hiddenIds($site), true);
+    }
+
+    /** @return list<int> */
+    private function hiddenIds(Site $site): array
+    {
+        return array_values(array_map('intval', $site->settings_json['hidden_brand_ids'] ?? []));
+    }
+
+    /** @param list<int> $ids */
+    private function save(Site $site, array $ids): void
+    {
+        $settings = $site->settings_json ?? [];
+        $settings['hidden_brand_ids'] = $ids;
+        $site->update(['settings_json' => $settings]);
+    }
+}

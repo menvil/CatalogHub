@@ -28,7 +28,7 @@ return new class extends Migration
 
             $table->unique(['central_category_id', 'code']);
             $table->unique(['id', 'central_category_id'], 'attribute_definitions_id_category_unique');
-            $table->index(['central_category_id', 'attribute_section_id', 'position']);
+            $table->index(['central_category_id', 'attribute_section_id', 'position'], 'attr_def_category_section_position_idx');
             $table->index(['central_category_id', 'is_filterable']);
             $table->index(['central_category_id', 'is_comparable']);
             $table->foreign(['attribute_section_id', 'central_category_id'], 'attr_def_section_cat_fk')

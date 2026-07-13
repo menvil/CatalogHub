@@ -33,7 +33,7 @@ return new class extends Migration
             $table->unique(['central_product_id', 'attribute_definition_id'], 'cpav_product_attribute_unique');
             $table->index('attribute_definition_id');
             $table->index('value_enum_code');
-            $table->index(['canonical_unit', 'canonical_value']);
+            $table->index(['canonical_unit', 'canonical_value'], 'cpav_unit_value_idx');
             $table->index('source_unit');
         });
     }

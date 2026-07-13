@@ -133,6 +133,7 @@ class CreateSiteActionTest extends TestCase
     public function test_empty_locales_are_rejected(): void
     {
         $market = Market::factory()->create(['status' => MarketStatus::Active]);
+        Locale::factory()->create(['code' => 'en-US']);
 
         try {
             app(CreateSiteAction::class)->handle([
@@ -151,6 +152,42 @@ class CreateSiteActionTest extends TestCase
         }
 
         $this->assertDatabaseMissing('sites', ['code' => 'empty-locales']);
+    }
+
+    public function test_locales_must_be_an_array_before_normalization(): void
+    {
+        $market = Market::factory()->create(['status' => MarketStatus::Active]);
+
+        try {
+            app(CreateSiteAction::class)->handle([
+                'market_id' => $market->id,
+                'locales' => 'en-US',
+            ]);
+
+            $this->fail('A scalar locales payload was accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('locales', $exception->errors());
+        }
+
+        $this->assertDatabaseCount('sites', 0);
+    }
+
+    public function test_locale_members_must_be_strings_before_normalization(): void
+    {
+        $market = Market::factory()->create(['status' => MarketStatus::Active]);
+
+        try {
+            app(CreateSiteAction::class)->handle([
+                'market_id' => $market->id,
+                'locales' => [['en-US']],
+            ]);
+
+            $this->fail('A nested locale payload was accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('locales.0', $exception->errors());
+        }
+
+        $this->assertDatabaseCount('sites', 0);
     }
 
     public function test_default_locale_must_be_in_enabled_locales(): void

@@ -10,6 +10,7 @@ use App\Models\Site;
 use App\Models\User;
 use App\Services\Sites\SiteBrandVisibilityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class BrandVisibilityRulesTest extends TestCase
@@ -65,6 +66,34 @@ class BrandVisibilityRulesTest extends TestCase
             ->get(BrandVisibilityRules::getUrl(['record' => $site]))
             ->assertOk()
             ->assertSee('wire:key="brand-visibility-'.$brand->id.'"', false);
+    }
+
+    public function test_brand_manager_paginates_and_searches_large_catalogs(): void
+    {
+        $site = Site::factory()->create();
+
+        foreach (range(1, 51) as $index) {
+            CentralBrand::factory()->create(['name' => sprintf('Paginated Brand %02d', $index)]);
+        }
+
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
+            ->test(BrandVisibilityRules::class, ['record' => $site->getRouteKey()])
+            ->assertSee('Paginated Brand 01')
+            ->assertDontSee('Paginated Brand 51')
+            ->set('search', 'Paginated Brand 51')
+            ->assertSee('Paginated Brand 51');
+    }
+
+    public function test_page_prepares_allowed_state_and_toggles_through_the_service(): void
+    {
+        $site = Site::factory()->create();
+        $brand = CentralBrand::factory()->create();
+
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
+            ->test(BrandVisibilityRules::class, ['record' => $site->getRouteKey()])
+            ->assertSee('Hide')
+            ->call('toggle', $brand->id)
+            ->assertSee('Allow');
     }
 
     public function test_catalog_editor_cannot_access_brand_visibility_rules(): void

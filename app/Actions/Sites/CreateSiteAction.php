@@ -25,7 +25,17 @@ final class CreateSiteAction
             throw ValidationException::withMessages(['market_id' => 'The selected market must be active.']);
         }
 
-        $locales = array_values(array_unique($data['locales'] ?? []));
+        $localeInput = $data['locales'] ?? [];
+
+        if (! is_array($localeInput)) {
+            throw ValidationException::withMessages(['locales' => 'The locales must be an array of locale codes.']);
+        }
+
+        Validator::make(['locales' => $localeInput], [
+            'locales.*' => ['required', 'string', 'max:32'],
+        ])->validate();
+
+        $locales = array_values(array_unique($localeInput));
 
         if ($locales === []) {
             throw ValidationException::withMessages(['locales' => 'At least one locale must be enabled.']);

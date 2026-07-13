@@ -5,11 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property array<string, mixed> $manifest_json
  * @property list<string>|null $supports_json
  * @property array<string, string>|null $layouts_json
+ * @property string|null $schema_version
+ * @property Carbon|null $validated_at
+ * @property array<string, mixed>|null $validation_errors_json
  */
 #[Fillable([
     'theme_id',

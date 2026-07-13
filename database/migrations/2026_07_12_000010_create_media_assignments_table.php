@@ -30,18 +30,42 @@ return new class extends Migration
             $table->index(['position']);
         });
 
-        DB::statement(
-            "CREATE UNIQUE INDEX media_assignments_primary_context_unique
-            ON media_assignments (
-                entity_type,
-                entity_id,
-                role,
-                COALESCE(locale, ''),
-                COALESCE(site_id, 0),
-                COALESCE(market_id, 0)
-            )
-            WHERE is_primary = true"
-        );
+        $driver = DB::getDriverName();
+
+        if (in_array($driver, ['pgsql', 'sqlite'], true)) {
+            DB::statement(
+                "CREATE UNIQUE INDEX media_assignments_primary_context_unique
+                ON media_assignments (
+                    entity_type,
+                    entity_id,
+                    role,
+                    COALESCE(locale, ''),
+                    COALESCE(site_id, 0),
+                    COALESCE(market_id, 0)
+                )
+                WHERE is_primary = true"
+            );
+        } elseif (in_array($driver, ['mysql', 'mariadb'], true)) {
+            DB::statement(<<<'SQL'
+                ALTER TABLE media_assignments
+                ADD COLUMN primary_locale_key VARCHAR(255)
+                    GENERATED ALWAYS AS (CASE WHEN is_primary = 1 THEN COALESCE(locale, '') ELSE NULL END) STORED,
+                ADD COLUMN primary_site_key BIGINT UNSIGNED
+                    GENERATED ALWAYS AS (CASE WHEN is_primary = 1 THEN COALESCE(site_id, 0) ELSE NULL END) STORED,
+                ADD COLUMN primary_market_key BIGINT UNSIGNED
+                    GENERATED ALWAYS AS (CASE WHEN is_primary = 1 THEN COALESCE(market_id, 0) ELSE NULL END) STORED,
+                ADD UNIQUE INDEX media_assignments_primary_context_unique (
+                    entity_type,
+                    entity_id,
+                    role,
+                    primary_locale_key,
+                    primary_site_key,
+                    primary_market_key
+                )
+                SQL);
+        } else {
+            throw new RuntimeException("Unsupported database driver for media assignment constraints: {$driver}");
+        }
     }
 
     public function down(): void

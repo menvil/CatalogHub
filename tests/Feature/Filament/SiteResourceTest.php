@@ -107,16 +107,32 @@ class SiteResourceTest extends TestCase
         $this->assertSame('en-US', $site->default_locale);
     }
 
-    public function test_create_action_visibility_matches_wizard_access(): void
+    public function test_user_without_sites_permission_cannot_list_or_view_sites(): void
     {
-        $this->actingAs(User::factory()->create())
+        $site = Site::factory()->create();
+        $user = User::factory()->create(['role' => UserRole::CatalogEditor]);
+
+        $this->actingAs($user)
+            ->get(SiteResource::getUrl())
+            ->assertForbidden();
+
+        $this->actingAs($user)
+            ->get(SiteDashboard::getUrl(['record' => $site]))
+            ->assertForbidden();
+    }
+
+    public function test_authorized_site_manager_can_list_sites_and_open_the_wizard(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => UserRole::SiteAdmin]))
             ->get(SiteResource::getUrl())
             ->assertOk()
-            ->assertDontSee('Create site');
+            ->assertSee('Create site');
 
         $this->actingAs(User::factory()->centralAdmin()->create())
             ->get(SiteResource::getUrl())
             ->assertOk()
             ->assertSee('Create site');
+
+        $this->assertFalse(SiteResource::canCreate());
     }
 }

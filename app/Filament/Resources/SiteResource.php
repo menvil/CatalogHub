@@ -36,6 +36,21 @@ final class SiteResource extends Resource
             && ($user->isSuperAdmin() || $user->isCentralAdmin() || $user->hasCatalogHubPermission('site.content.manage'));
     }
 
+    public static function canViewAny(): bool
+    {
+        return self::canViewSites();
+    }
+
+    public static function canView(Model $record): bool
+    {
+        return self::canViewSites();
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
     public static function canManageSettings(): bool
     {
         $user = auth()->user();
@@ -47,6 +62,14 @@ final class SiteResource extends Resource
     public static function canEdit(Model $record): bool
     {
         return self::canManageSettings();
+    }
+
+    private static function canViewSites(): bool
+    {
+        $user = auth()->user();
+
+        return $user instanceof User
+            && ($user->isSuperAdmin() || $user->isCentralAdmin() || $user->hasCatalogHubPermission('sites.manage'));
     }
 
     public static function form(Schema $schema): Schema

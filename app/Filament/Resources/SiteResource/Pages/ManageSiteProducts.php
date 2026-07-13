@@ -48,7 +48,7 @@ final class ManageSiteProducts extends Page
         return CentralProduct::query()
             ->whereIn('central_category_id', $categoryIds)
             ->where('status', CentralProductStatus::Active)
-            ->when($this->search !== '', fn ($query) => $query->where('name', 'like', '%'.$this->search.'%'))
+            ->when($this->search !== '', fn ($query) => $query->whereLike('name', '%'.$this->search.'%'))
             ->with('brand')
             ->orderBy('name')
             ->paginate(50);

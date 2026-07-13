@@ -4,6 +4,7 @@ namespace Tests\Feature\Filament;
 
 use App\Filament\Pages\CreateSiteWizard;
 use App\Models\Locale;
+use App\Models\SiteFeature;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -50,5 +51,12 @@ class CreateSiteWizardTest extends TestCase
         }
 
         $component->assertSet('currentStep', 6);
+    }
+
+    public function test_feature_options_use_the_canonical_feature_keys(): void
+    {
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
+            ->test(CreateSiteWizard::class)
+            ->assertSet('features', array_fill_keys(SiteFeature::KEYS, false));
     }
 }

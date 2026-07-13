@@ -5,6 +5,7 @@ namespace App\Actions\Sites;
 use App\Models\Site;
 use App\Models\SiteFeature;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 final class UpdateSiteFeaturesAction
@@ -16,6 +17,13 @@ final class UpdateSiteFeaturesAction
         if ($invalid !== []) {
             throw ValidationException::withMessages(['features' => 'Unknown site feature: '.reset($invalid)]);
         }
+
+        Validator::make(['features' => $features], [
+            'features' => ['array'],
+            'features.*' => ['required', 'array:is_enabled,config_json'],
+            'features.*.is_enabled' => ['required', 'boolean:strict'],
+            'features.*.config_json' => ['nullable', 'array'],
+        ])->validate();
 
         DB::transaction(function () use ($site, $features): void {
             foreach ($features as $key => $data) {

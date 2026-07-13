@@ -1,0 +1,123 @@
+<?php
+
+namespace Tests\Feature\Actions;
+
+use App\Actions\Sites\UpsertSiteOverrideAction;
+use App\Models\CentralCatalog\CentralProduct;
+use App\Models\Locale;
+use App\Models\Site;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\TestCase;
+
+class UpsertSiteOverrideActionTest extends TestCase
+{
+    use RefreshDatabase;
+
+    #[DataProvider('entityTypes')]
+    public function test_nonexistent_override_target_is_rejected(string $entityType): void
+    {
+        try {
+            app(UpsertSiteOverrideAction::class)->handle(
+                Site::factory()->create(),
+                $entityType,
+                PHP_INT_MAX,
+                'local_title',
+                null,
+                'Ghost override',
+            );
+
+            $this->fail("A nonexistent {$entityType} was accepted.");
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('entity_id', $exception->errors());
+        }
+
+        $this->assertDatabaseCount('site_overrides', 0);
+    }
+
+    public function test_override_locale_must_be_enabled_for_the_site(): void
+    {
+        $site = Site::factory()->create();
+        $product = CentralProduct::factory()->create();
+        Locale::factory()->create(['code' => 'de-DE']);
+        DB::table('site_locales')->insert([
+            'site_id' => $site->id,
+            'locale_code' => 'de-DE',
+            'is_enabled' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        try {
+            app(UpsertSiteOverrideAction::class)->handle(
+                $site,
+                'product',
+                $product->id,
+                'local_title',
+                'de-DE',
+                'Disabled locale override',
+            );
+
+            $this->fail('A disabled site locale was accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('locale_code', $exception->errors());
+        }
+
+        $this->assertDatabaseCount('site_overrides', 0);
+    }
+
+    public function test_unconfigured_override_locale_is_rejected(): void
+    {
+        $site = Site::factory()->create();
+        $product = CentralProduct::factory()->create();
+
+        try {
+            app(UpsertSiteOverrideAction::class)->handle(
+                $site,
+                'product',
+                $product->id,
+                'local_title',
+                'de-DE',
+                'Unconfigured locale override',
+            );
+
+            $this->fail('An unconfigured site locale was accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('locale_code', $exception->errors());
+        }
+
+        $this->assertDatabaseCount('site_overrides', 0);
+    }
+
+    public function test_enabled_and_global_override_locales_are_accepted(): void
+    {
+        $site = Site::factory()->create();
+        $product = CentralProduct::factory()->create();
+        Locale::factory()->create(['code' => 'de-DE']);
+        DB::table('site_locales')->insert([
+            'site_id' => $site->id,
+            'locale_code' => 'de-DE',
+            'is_enabled' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $action = app(UpsertSiteOverrideAction::class);
+        $action->handle($site, 'product', $product->id, 'local_title', 'de-DE', 'German title');
+        $action->handle($site, 'product', $product->id, 'hero_text', null, 'Global hero');
+
+        $this->assertDatabaseCount('site_overrides', 2);
+    }
+
+    /** @return array<string, array{string}> */
+    public static function entityTypes(): array
+    {
+        return [
+            'product' => ['product'],
+            'category' => ['category'],
+            'brand' => ['brand'],
+        ];
+    }
+}

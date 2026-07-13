@@ -34,4 +34,11 @@ class MarketTest extends TestCase
         $this->assertTrue($archived->isArchived());
         $this->assertFalse($archived->isActive());
     }
+
+    public function test_factory_can_create_more_than_two_letter_code_space(): void
+    {
+        $markets = Market::factory()->count(677)->create();
+
+        $this->assertCount(677, $markets->pluck('code')->unique());
+    }
 }

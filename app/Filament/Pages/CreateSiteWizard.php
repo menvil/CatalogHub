@@ -9,6 +9,7 @@ use App\Enums\SiteMode;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Locale;
 use App\Models\Market;
+use App\Models\SiteFeature;
 use App\Models\User;
 use BackedEnum;
 use Filament\Notifications\Notification;
@@ -54,12 +55,9 @@ final class CreateSiteWizard extends Page
 
     public int $currentStep = 0;
 
-    /** @var list<string> */
-    public const FEATURE_KEYS = ['reviews', 'leads', 'price_comparison', 'comparison', 'polls', 'blog', 'guides', 'external_price_widget', 'local_offers'];
-
     public function mount(): void
     {
-        $this->features = array_fill_keys(self::FEATURE_KEYS, false);
+        $this->features = array_fill_keys(SiteFeature::KEYS, false);
     }
 
     public function previousStep(): void

@@ -4,7 +4,7 @@
             <div class="grid gap-4 md:grid-cols-2">
                 <label for="seo-entity-type" class="space-y-2">
                     <span>Entity type</span>
-                    <select id="seo-entity-type" wire:model="entityType">
+                    <select id="seo-entity-type" wire:model.change="entityType">
                         @foreach(\App\Services\Sites\AllowedSiteOverrideFields::ENTITY_TYPES as $entityTypeOption)
                             <option value="{{ $entityTypeOption }}">{{ str($entityTypeOption)->headline() }}</option>
                         @endforeach
@@ -12,11 +12,11 @@
                 </label>
                 <label for="seo-entity-id" class="space-y-2">
                     <span>Entity ID</span>
-                    <input id="seo-entity-id" wire:model="entityId" type="number">
+                    <input id="seo-entity-id" wire:model.change="entityId" type="number">
                 </label>
                 <label for="seo-locale" class="space-y-2">
                     <span>Locale <span aria-hidden="true">*</span><span class="sr-only">required</span></span>
-                    <input id="seo-locale" wire:model="localeCode" placeholder="de-DE" required aria-required="true">
+                    <input id="seo-locale" wire:model.change="localeCode" placeholder="de-DE" required aria-required="true">
                 </label>
                 <label for="seo-meta-title" class="space-y-2">
                     <span>Meta title</span>

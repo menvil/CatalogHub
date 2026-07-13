@@ -3,8 +3,14 @@
 namespace Tests\Feature\Sites;
 
 use App\Actions\Sites\UpdateSiteFeaturesAction;
+use App\Filament\Resources\SiteResource\Pages\EditSite;
+use App\Filament\Resources\SiteResource\RelationManagers\SiteFeaturesRelationManager;
 use App\Models\Site;
+use App\Models\SiteFeature;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class SiteFeatureFlagsTest extends TestCase
@@ -22,5 +28,49 @@ class SiteFeatureFlagsTest extends TestCase
         $feature = $site->features()->sole();
         $this->assertFalse($feature->is_enabled);
         $this->assertSame(['moderation' => false], $feature->config_json);
+    }
+
+    public function test_relation_manager_reports_duplicate_feature_as_validation_error(): void
+    {
+        $site = Site::factory()->create();
+        SiteFeature::query()->create([
+            'site_id' => $site->id,
+            'feature_key' => 'reviews',
+            'is_enabled' => true,
+        ]);
+
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
+            ->test(SiteFeaturesRelationManager::class, [
+                'ownerRecord' => $site,
+                'pageClass' => EditSite::class,
+            ])
+            ->callTableAction('create', data: [
+                'feature_key' => 'reviews',
+                'is_enabled' => false,
+            ])
+            ->assertHasTableActionErrors(['feature_key' => 'unique']);
+
+        $this->assertDatabaseCount('site_features', 1);
+    }
+
+    public function test_malformed_feature_payload_is_rejected_without_mutation(): void
+    {
+        $site = Site::factory()->create();
+        SiteFeature::query()->create([
+            'site_id' => $site->id,
+            'feature_key' => 'reviews',
+            'is_enabled' => true,
+        ]);
+
+        try {
+            /** @phpstan-ignore-next-line Intentionally malformed payload exercises runtime validation. */
+            app(UpdateSiteFeaturesAction::class)->handle($site, ['reviews' => []]);
+
+            $this->fail('A feature without is_enabled was accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('features.reviews.is_enabled', $exception->errors());
+        }
+
+        $this->assertTrue($site->features()->sole()->is_enabled);
     }
 }

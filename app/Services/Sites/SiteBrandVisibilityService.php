@@ -32,7 +32,9 @@ final class SiteBrandVisibilityService
 
     public function allowsProduct(Site $site, CentralProduct $product): bool
     {
-        return $product->brand === null || $this->allows($site, $product->brand);
+        $brandId = $product->getAttribute('central_brand_id');
+
+        return $brandId === null || ! in_array((int) $brandId, $this->hiddenIds($site), true);
     }
 
     /** @return list<int> */

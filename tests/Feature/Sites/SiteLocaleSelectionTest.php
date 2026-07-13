@@ -6,6 +6,7 @@ use App\Actions\Sites\CreateSiteAction;
 use App\Enums\CentralCategoryStatus;
 use App\Enums\MarketStatus;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Models\Locale;
 use App\Models\Market;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
@@ -33,6 +34,10 @@ class SiteLocaleSelectionTest extends TestCase
     /** @param list<string> $locales */
     private function data(array $locales, string $default): array
     {
+        foreach (array_unique($locales) as $locale) {
+            Locale::factory()->create(['code' => $locale]);
+        }
+
         return ['market_id' => Market::factory()->create(['status' => MarketStatus::Active])->id, 'code' => fake()->unique()->slug(), 'name' => 'Locales', 'mode' => 'single_category', 'default_locale' => $default, 'locales' => $locales, 'categories' => [CentralCategory::factory()->create(['status' => CentralCategoryStatus::Active])->id], 'features' => []];
     }
 }

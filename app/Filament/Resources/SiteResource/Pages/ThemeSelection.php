@@ -2,11 +2,14 @@
 
 namespace App\Filament\Resources\SiteResource\Pages;
 
+use App\Domains\Themes\Actions\ActivateThemeAction;
 use App\Domains\Themes\Services\ThemeFeatureCompatibilityChecker;
 use App\Domains\Themes\Services\ThemeRegistry;
+use App\Exceptions\Themes\CannotActivateThemeException;
 use App\Filament\Resources\SiteResource;
 use App\Models\Site;
 use App\Models\Theme;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 
@@ -69,5 +72,23 @@ final class ThemeSelection extends Page
             })
             ->values()
             ->all();
+    }
+
+    public function activate(int $themeId, ActivateThemeAction $action): void
+    {
+        /** @var Site $site */
+        $site = $this->getRecord();
+        $theme = Theme::query()->findOrFail($themeId);
+
+        try {
+            $action->handle($site, $theme);
+        } catch (CannotActivateThemeException $exception) {
+            Notification::make()->title('Theme cannot be activated')->body($exception->getMessage())->danger()->send();
+
+            return;
+        }
+
+        $this->record = $site->fresh();
+        Notification::make()->title('Theme activated')->success()->send();
     }
 }

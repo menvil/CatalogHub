@@ -11,6 +11,7 @@ use App\Models\Theme;
 use App\Models\ThemeManifestRecord;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class ThemeSelectionScreenTest extends TestCase
@@ -71,6 +72,25 @@ class ThemeSelectionScreenTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => UserRole::CatalogEditor]))
             ->get(ThemeSelection::getUrl(['record' => $site]))
             ->assertForbidden();
+    }
+
+    public function test_admin_can_activate_a_compatible_theme_from_the_screen(): void
+    {
+        $site = Site::factory()->create();
+        $theme = Theme::factory()->create(['status' => ThemeStatus::Active]);
+        ThemeManifestRecord::query()->create([
+            'theme_id' => $theme->id,
+            'manifest_json' => $this->manifest($theme->code, []),
+            'supports_json' => [],
+            'layouts_json' => ['home' => 'home-clean'],
+        ]);
+
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
+            ->test(ThemeSelection::class, ['record' => $site->getRouteKey()])
+            ->call('activate', $theme->id)
+            ->assertNotified('Theme activated');
+
+        $this->assertSame($theme->id, $site->fresh()->theme_id);
     }
 
     /** @param list<string> $supports */

@@ -56,6 +56,12 @@ final class Theme extends Model
         return $this->hasMany(LayoutTemplate::class);
     }
 
+    /** @return HasMany<Site, $this> */
+    public function sites(): HasMany
+    {
+        return $this->hasMany(Site::class);
+    }
+
     /**
      * @param  Builder<Theme>  $query
      * @return Builder<Theme>

@@ -9,6 +9,9 @@
                 <select wire:model="mode" class="rounded-md border-gray-300 dark:bg-gray-950"><option value="single_category">Single category</option><option value="multi_category">Multi category</option></select>
                 <select wire:model="defaultLocale" class="rounded-md border-gray-300 dark:bg-gray-950"><option value="">Default locale</option>@foreach($this->getLocales() as $locale)<option value="{{ $locale->code }}">{{ $locale->name }}</option>@endforeach</select>
             </div>
+            @if($this->getSelectedMarket())
+                <p class="mt-3 text-sm text-gray-500">{{ $this->getSelectedMarket()->country_code }} · {{ $this->getSelectedMarket()->currency_code }} · {{ $this->getSelectedMarket()->default_locale }} · {{ $this->getSelectedMarket()->timezone }}</p>
+            @endif
             <p class="mt-2 text-sm text-gray-500">Single category requires exactly one enabled category; multi category requires at least one.</p>
             <div class="mt-5"><strong>Locales</strong>@foreach($this->getLocales() as $locale)<label class="ml-4"><input wire:model="enabledLocales" type="checkbox" value="{{ $locale->code }}"> {{ $locale->code }}</label>@endforeach</div>
             <div class="mt-5"><strong>Categories</strong>@foreach($this->getCategories() as $category)<label class="ml-4"><input wire:model="enabledCategories" type="checkbox" value="{{ $category->id }}"> {{ $category->name }}</label>@endforeach</div>

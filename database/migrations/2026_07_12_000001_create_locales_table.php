@@ -23,7 +23,20 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        DB::statement('CREATE UNIQUE INDEX locales_single_default_unique ON locales (is_default) WHERE is_default = true');
+        $driver = DB::getDriverName();
+
+        if (in_array($driver, ['pgsql', 'sqlite'], true)) {
+            DB::statement('CREATE UNIQUE INDEX locales_single_default_unique ON locales (is_default) WHERE is_default = true');
+        } elseif (in_array($driver, ['mysql', 'mariadb'], true)) {
+            DB::statement(<<<'SQL'
+                ALTER TABLE locales
+                ADD COLUMN default_locale_key TINYINT
+                    GENERATED ALWAYS AS (CASE WHEN is_default = 1 THEN 1 ELSE NULL END) STORED,
+                ADD UNIQUE INDEX locales_single_default_unique (default_locale_key)
+                SQL);
+        } else {
+            throw new RuntimeException("Unsupported database driver for locale constraints: {$driver}");
+        }
     }
 
     public function down(): void

@@ -3,7 +3,9 @@
 namespace Tests\Feature\Localization;
 
 use App\Models\Locale;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class LocaleTest extends TestCase
@@ -36,5 +38,32 @@ class LocaleTest extends TestCase
         $this->assertFalse($english->fresh()->is_default);
         $this->assertTrue($german->fresh()->is_default);
         $this->assertSame(1, Locale::query()->where('is_default', true)->count());
+    }
+
+    public function test_database_rejects_multiple_default_locales(): void
+    {
+        $now = now();
+
+        DB::table('locales')->insert([
+            'code' => 'en-US',
+            'language_code' => 'en',
+            'region_code' => 'US',
+            'name' => 'English (United States)',
+            'is_default' => true,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        $this->expectException(QueryException::class);
+
+        DB::table('locales')->insert([
+            'code' => 'de-DE',
+            'language_code' => 'de',
+            'region_code' => 'DE',
+            'name' => 'German (Germany)',
+            'is_default' => true,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
     }
 }

@@ -4,7 +4,11 @@ namespace App\Services\Sites;
 
 final class AllowedSiteOverrideFields
 {
-    /** @var list<string> */
+    /**
+     * Presentation fields available to current editors and future projection consumers.
+     *
+     * @var list<string>
+     */
     public const FIELDS = ['local_title', 'local_slug', 'meta_title', 'meta_description', 'intro_text', 'hero_text'];
 
     /** @var list<string> */

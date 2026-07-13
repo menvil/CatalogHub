@@ -11,20 +11,21 @@ use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
+use Tests\Concerns\EnablesSiteProductCategories;
 use Tests\TestCase;
 
 class ProductVisibilityManagerTest extends TestCase
 {
+    use EnablesSiteProductCategories;
     use RefreshDatabase;
 
     public function test_visibility_and_featured_state_are_local_to_site(): void
     {
         $site = Site::factory()->create();
         $category = CentralCategory::factory()->create();
-        DB::table('site_categories')->insert(['site_id' => $site->id, 'central_category_id' => $category->id, 'is_enabled' => true, 'position' => 0, 'created_at' => now(), 'updated_at' => now()]);
+        $this->enableSiteCategory($site, $category);
         $product = CentralProduct::factory()->create(['central_category_id' => $category->id, 'status' => CentralProductStatus::Active]);
         $original = $product->only(['name', 'model', 'slug', 'status', 'central_category_id']);
 
@@ -59,7 +60,7 @@ class ProductVisibilityManagerTest extends TestCase
     {
         $site = Site::factory()->create();
         $category = CentralCategory::factory()->create();
-        DB::table('site_categories')->insert(['site_id' => $site->id, 'central_category_id' => $category->id, 'is_enabled' => true, 'position' => 0, 'created_at' => now(), 'updated_at' => now()]);
+        $this->enableSiteCategory($site, $category);
         $product = CentralProduct::factory()->create(['central_category_id' => $category->id, 'status' => CentralProductStatus::Active]);
 
         Livewire::actingAs(User::factory()->centralAdmin()->create())
@@ -88,7 +89,7 @@ class ProductVisibilityManagerTest extends TestCase
     {
         $site = Site::factory()->create();
         $category = CentralCategory::factory()->create();
-        DB::table('site_categories')->insert(['site_id' => $site->id, 'central_category_id' => $category->id, 'is_enabled' => true, 'position' => 0, 'created_at' => now(), 'updated_at' => now()]);
+        $this->enableSiteCategory($site, $category);
         $product = CentralProduct::factory()->create(['central_category_id' => $category->id, 'status' => CentralProductStatus::Active]);
         $action = app(UpdateSiteProductVisibilityAction::class);
 
@@ -108,7 +109,7 @@ class ProductVisibilityManagerTest extends TestCase
     {
         $site = Site::factory()->create();
         $category = CentralCategory::factory()->create();
-        DB::table('site_categories')->insert(['site_id' => $site->id, 'central_category_id' => $category->id, 'is_enabled' => true, 'position' => 0, 'created_at' => now(), 'updated_at' => now()]);
+        $this->enableSiteCategory($site, $category);
         $product = CentralProduct::factory()->create(['central_category_id' => $category->id, 'status' => CentralProductStatus::Active]);
         $action = app(UpdateSiteProductVisibilityAction::class);
 
@@ -127,7 +128,7 @@ class ProductVisibilityManagerTest extends TestCase
     {
         $site = Site::factory()->create();
         $category = CentralCategory::factory()->create();
-        DB::table('site_categories')->insert(['site_id' => $site->id, 'central_category_id' => $category->id, 'is_enabled' => true, 'position' => 0, 'created_at' => now(), 'updated_at' => now()]);
+        $this->enableSiteCategory($site, $category);
         $product = CentralProduct::factory()->create(['central_category_id' => $category->id, 'status' => CentralProductStatus::Active]);
         $action = app(UpdateSiteProductVisibilityAction::class);
 
@@ -146,7 +147,7 @@ class ProductVisibilityManagerTest extends TestCase
     {
         $site = Site::factory()->create();
         $category = CentralCategory::factory()->create();
-        DB::table('site_categories')->insert(['site_id' => $site->id, 'central_category_id' => $category->id, 'is_enabled' => true, 'position' => 0, 'created_at' => now(), 'updated_at' => now()]);
+        $this->enableSiteCategory($site, $category);
         $product = CentralProduct::factory()->create([
             'central_category_id' => $category->id,
             'status' => CentralProductStatus::Archived,
@@ -167,7 +168,7 @@ class ProductVisibilityManagerTest extends TestCase
     {
         $site = Site::factory()->create();
         $category = CentralCategory::factory()->create();
-        DB::table('site_categories')->insert(['site_id' => $site->id, 'central_category_id' => $category->id, 'is_enabled' => true, 'position' => 0, 'created_at' => now(), 'updated_at' => now()]);
+        $this->enableSiteCategory($site, $category);
         $active = CentralProduct::factory()->create(['central_category_id' => $category->id, 'status' => CentralProductStatus::Active]);
         $archived = CentralProduct::factory()->create(['central_category_id' => $category->id, 'status' => CentralProductStatus::Archived]);
 
@@ -181,7 +182,7 @@ class ProductVisibilityManagerTest extends TestCase
     {
         $site = Site::factory()->create();
         $category = CentralCategory::factory()->create();
-        DB::table('site_categories')->insert(['site_id' => $site->id, 'central_category_id' => $category->id, 'is_enabled' => true, 'position' => 0, 'created_at' => now(), 'updated_at' => now()]);
+        $this->enableSiteCategory($site, $category);
 
         foreach (range(1, 51) as $index) {
             CentralProduct::factory()->create([

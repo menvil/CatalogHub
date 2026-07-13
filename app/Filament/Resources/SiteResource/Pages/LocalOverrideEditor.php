@@ -48,9 +48,9 @@ final class LocalOverrideEditor extends Page
 
     public function save(UpsertSiteOverrideAction $action): void
     {
-        $data = $this->validate(['entityType' => ['required', 'in:'.implode(',', AllowedSiteOverrideFields::ENTITY_TYPES)], 'entityId' => ['required', 'integer', 'min:1'], 'field' => ['required', 'in:'.implode(',', AllowedSiteOverrideFields::FIELDS)], 'localeCode' => ['nullable', 'string', 'max:32'], 'value' => ['required', 'string'], 'reason' => ['nullable', 'string', 'max:1000']]);
+        $data = $this->validate(['entityType' => ['required', 'in:'.implode(',', AllowedSiteOverrideFields::ENTITY_TYPES)], 'entityId' => ['required', 'integer', 'min:1'], 'field' => ['required', 'in:'.implode(',', AllowedSiteOverrideFields::FIELDS)], 'localeCode' => ['nullable', 'string', 'max:32'], 'value' => ['nullable', 'string'], 'reason' => ['nullable', 'string', 'max:1000']]);
         /** @var Site $site */ $site = $this->getRecord();
-        $action->handle($site, $data['entityType'], $data['entityId'], $data['field'], $data['localeCode'], $data['value'], $data['reason']);
+        $action->handle($site, $data['entityType'], $data['entityId'], $data['field'], $data['localeCode'], $data['value'] ?? null, $data['reason']);
         Notification::make()->title('Override saved')->success()->send();
     }
 }

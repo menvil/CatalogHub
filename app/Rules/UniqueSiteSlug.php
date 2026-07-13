@@ -9,7 +9,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 
 final class UniqueSiteSlug implements ValidationRule
 {
-    public function __construct(private readonly Site $site, private readonly string $entityType, private readonly ?string $localeCode, private readonly int $entityId) {}
+    public function __construct(private readonly Site $site, private readonly string $entityType, private readonly string $localeCode, private readonly int $entityId) {}
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {

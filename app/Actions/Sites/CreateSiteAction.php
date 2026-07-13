@@ -65,7 +65,7 @@ final class CreateSiteAction
             foreach ($data['categories'] as $position => $categoryId) {
                 DB::table('site_categories')->insert(['site_id' => $site->id, 'central_category_id' => $categoryId, 'is_enabled' => true, 'position' => $position, 'created_at' => now(), 'updated_at' => now()]);
             }
-            foreach ($data['features'] as $feature => $enabled) {
+            foreach (($data['features'] ?? []) as $feature => $enabled) {
                 DB::table('site_features')->insert(['site_id' => $site->id, 'feature_key' => $feature, 'is_enabled' => $enabled, 'created_at' => now(), 'updated_at' => now()]);
             }
 

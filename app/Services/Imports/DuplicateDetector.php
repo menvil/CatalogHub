@@ -58,7 +58,7 @@ final class DuplicateDetector
             && (int) $draft->brand_id === (int) $product->central_brand_id;
         $categoryMatch = $draft->category_id !== null
             && (int) $draft->category_id === (int) $product->central_category_id;
-        $externalIdMatch = filled($draft->rawProduct?->external_id)
+        $externalIdMatch = filled($draft->rawProduct->external_id)
             && filled($product->model)
             && $this->normalize((string) $draft->rawProduct->external_id) === $this->normalize((string) $product->model);
 

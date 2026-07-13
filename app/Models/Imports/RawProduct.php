@@ -10,6 +10,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/**
+ * @property int $id
+ * @property int $import_batch_id
+ * @property int $import_source_id
+ * @property string|null $external_id
+ * @property int|null $source_row_number
+ * @property string|null $raw_title
+ * @property string|null $raw_brand
+ * @property string|null $raw_category
+ * @property array<array-key, mixed> $raw_payload_json
+ * @property string $payload_hash
+ * @property string $status
+ */
 #[Fillable([
     'import_batch_id',
     'import_source_id',

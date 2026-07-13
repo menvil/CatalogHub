@@ -22,10 +22,6 @@ final readonly class ImportMediaDownloader
         foreach ($draft->media_json ?? [] as $candidate) {
             $candidate = is_string($candidate) ? ['source_url' => $candidate] : $candidate;
 
-            if (! is_array($candidate)) {
-                $candidate = ['source_url' => null];
-            }
-
             try {
                 $processed[] = $this->downloadCandidate($draft, $candidate);
             } catch (Throwable $exception) {

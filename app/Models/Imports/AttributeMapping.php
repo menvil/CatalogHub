@@ -8,6 +8,16 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $import_source_id
+ * @property int $category_id
+ * @property string $raw_key
+ * @property string $normalized_raw_key
+ * @property int|null $attribute_definition_id
+ * @property string $confidence
+ * @property string $status
+ */
 #[Fillable([
     'import_source_id',
     'category_id',

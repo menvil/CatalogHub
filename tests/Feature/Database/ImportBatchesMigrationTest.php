@@ -58,14 +58,14 @@ class ImportBatchesMigrationTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $batch = DB::table('import_batches')->find($batchId);
+        $batch = (array) DB::table('import_batches')->find($batchId);
 
-        $this->assertSame('pending', $batch->status);
-        $this->assertSame(0, $batch->total_items);
-        $this->assertSame(0, $batch->raw_items_count);
-        $this->assertSame(0, $batch->drafts_count);
-        $this->assertSame(0, $batch->approved_count);
-        $this->assertSame(0, $batch->rejected_count);
-        $this->assertSame(0, $batch->failed_count);
+        $this->assertSame('pending', $batch['status']);
+        $this->assertSame(0, $batch['total_items']);
+        $this->assertSame(0, $batch['raw_items_count']);
+        $this->assertSame(0, $batch['drafts_count']);
+        $this->assertSame(0, $batch['approved_count']);
+        $this->assertSame(0, $batch['rejected_count']);
+        $this->assertSame(0, $batch['failed_count']);
     }
 }

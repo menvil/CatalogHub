@@ -129,7 +129,13 @@ final class DuplicateCandidateResource extends Resource
     private static function candidateName(DuplicateCandidate $candidate): string
     {
         if ($candidate->candidate_type === 'central_product') {
-            return CentralProduct::query()->find($candidate->candidate_id)?->name ?? "Central product #{$candidate->candidate_id}";
+            $name = CentralProduct::query()
+                ->whereKey($candidate->candidate_id)
+                ->value('name');
+
+            return is_string($name) && $name !== ''
+                ? $name
+                : "Central product #{$candidate->candidate_id}";
         }
 
         return "Draft #{$candidate->candidate_id}";

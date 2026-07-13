@@ -13,6 +13,24 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int $import_batch_id
+ * @property int $raw_product_id
+ * @property int|null $matched_central_product_id
+ * @property int|null $published_central_product_id
+ * @property int|null $brand_id
+ * @property int|null $category_id
+ * @property string $title
+ * @property string|null $slug
+ * @property array<string, mixed> $normalized_payload_json
+ * @property list<array<string, mixed>> $attributes_json
+ * @property list<array<string, mixed>|string> $media_json
+ * @property string $confidence
+ * @property string $status
+ * @property RawProduct $rawProduct
+ * @property ImportBatch $importBatch
+ */
 #[Fillable([
     'import_batch_id',
     'raw_product_id',

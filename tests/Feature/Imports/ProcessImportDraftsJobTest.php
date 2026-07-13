@@ -118,6 +118,29 @@ class ProcessImportDraftsJobTest extends TestCase
         $this->assertSame('completed', $batch->fresh()->status);
     }
 
+    public function test_missing_cursor_draft_falls_back_to_the_next_draft(): void
+    {
+        Queue::fake();
+        config()->set('queue.default', 'database');
+        $batch = ImportBatch::factory()->create(['status' => 'processing']);
+        $deleted = $this->createDraft($batch, 'Deleted draft');
+        $remaining = $this->createDraft($batch, 'Remaining draft');
+        $centralProduct = CentralProduct::factory()->create(['name' => 'Remaining draft']);
+        $deletedId = $deleted->id;
+        $deleted->delete();
+
+        (new ProcessImportDraftsJob($batch->id, 0, $deletedId, 5))->handle(new ImportService(
+            duplicateDetector: new DuplicateDetector,
+        ));
+
+        $this->assertDatabaseHas('duplicate_candidates', [
+            'normalized_product_draft_id' => $remaining->id,
+            'candidate_id' => $centralProduct->id,
+        ]);
+        $this->assertSame('completed', $batch->fresh()->status);
+        Queue::assertNothingPushed();
+    }
+
     public function test_timeout_stays_below_the_default_retry_window(): void
     {
         $job = new ProcessImportDraftsJob(1);

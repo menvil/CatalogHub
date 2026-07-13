@@ -111,6 +111,31 @@ class ImportMediaDownloadTest extends TestCase
         Http::assertSentCount(2);
     }
 
+    public function test_chunked_download_clamps_a_negative_candidate_offset_to_zero(): void
+    {
+        Storage::fake('public');
+        $image = UploadedFile::fake()->image('product.jpg', 100, 100);
+        Http::fake(fn () => Http::response(
+            file_get_contents($image->getRealPath()),
+            200,
+            ['Content-Type' => 'image/jpeg'],
+        ));
+        $draft = NormalizedProductDraft::factory()->create([
+            'media_json' => [
+                ['source_url' => 'https://cdn.example.test/first.jpg'],
+                ['source_url' => 'https://cdn.example.test/second.jpg'],
+            ],
+        ]);
+
+        $nextOffset = $this->downloader()->downloadChunkForDraft($draft, -10, 1);
+
+        $media = $draft->fresh()->media_json;
+        $this->assertSame(1, $nextOffset);
+        $this->assertSame('downloaded', $media[0]['status']);
+        $this->assertArrayNotHasKey('status', $media[1]);
+        Http::assertSentCount(1);
+    }
+
     public function test_malformed_candidate_creates_error_without_aborting_other_candidates(): void
     {
         Storage::fake('public');

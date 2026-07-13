@@ -158,8 +158,13 @@ final readonly class ImportService
         $batch->touch();
 
         $draft = $draftId === null
-            ? $batch->drafts()->where('id', '>', $afterDraftId)->orderBy('id')->first()
+            ? null
             : $batch->drafts()->whereKey($draftId)->first();
+
+        if ($draft === null) {
+            $draft = $batch->drafts()->where('id', '>', $afterDraftId)->orderBy('id')->first();
+            $mediaOffset = 0;
+        }
 
         if ($draft === null) {
             $batch->markFinished();

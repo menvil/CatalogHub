@@ -48,6 +48,7 @@ final readonly class ImportMediaDownloader
         int $candidateOffset,
         int $limit,
     ): ?int {
+        $candidateOffset = max(0, $candidateOffset);
         $media = $draft->fresh()->media_json ?? [];
         $candidateCount = count($media);
         $endOffset = min($candidateCount, $candidateOffset + max(1, $limit));

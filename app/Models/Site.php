@@ -40,6 +40,12 @@ final class Site extends Model
         return $this->hasMany(SiteFeature::class);
     }
 
+    /** @return HasMany<SiteProduct, $this> */
+    public function products(): HasMany
+    {
+        return $this->hasMany(SiteProduct::class);
+    }
+
     public function isSingleCategory(): bool
     {
         return $this->mode === SiteMode::SingleCategory;

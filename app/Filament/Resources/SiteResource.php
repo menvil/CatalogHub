@@ -43,7 +43,7 @@ final class SiteResource extends Resource
 
     public static function getPages(): array
     {
-        return ['index' => Pages\ListSites::route('/'), 'create' => Pages\CreateSite::route('/create'), 'edit' => Pages\EditSite::route('/{record}/edit')];
+        return ['index' => Pages\ListSites::route('/'), 'create' => Pages\CreateSite::route('/create'), 'edit' => Pages\EditSite::route('/{record}/edit'), 'products' => Pages\ManageSiteProducts::route('/{record}/products')];
     }
 
     public static function getRelations(): array

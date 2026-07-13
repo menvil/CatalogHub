@@ -18,6 +18,18 @@ final class CreateSiteAction
             throw ValidationException::withMessages(['market_id' => 'The selected market must be active.']);
         }
 
+        $locales = array_values(array_unique($data['locales'] ?? []));
+
+        if ($locales === []) {
+            throw ValidationException::withMessages(['locales' => 'At least one locale must be enabled.']);
+        }
+
+        if (! in_array($data['default_locale'] ?? null, $locales, true)) {
+            throw ValidationException::withMessages(['default_locale' => 'The default locale must be enabled for the site.']);
+        }
+
+        $data['locales'] = $locales;
+
         $categoryCount = count($data['categories'] ?? []);
 
         if (($data['mode'] ?? null) === 'single_category' && $categoryCount !== 1) {

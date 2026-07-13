@@ -21,7 +21,7 @@ return new class extends Migration
             $table->foreignId('approved_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
-            $table->unique(['attribute_option_id', 'locale_id']);
+            $table->unique(['attribute_option_id', 'locale_id'], 'attr_option_translations_scope_unique');
             $table->index(['locale', 'status']);
         });
     }

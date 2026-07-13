@@ -24,7 +24,7 @@ class MarketSelectionTest extends TestCase
         try {
             app(CreateSiteAction::class)->handle([
                 'market_id' => $market->id, 'code' => 'archived-market', 'name' => 'Archived', 'mode' => 'single_category',
-                'default_locale' => 'en-US', 'locales' => ['en-US'], 'categories' => [CentralCategory::factory()->create(['status' => CentralCategoryStatus::Active])->id], 'features' => [],
+                'default_locale' => 'en-US', 'locales' => ['en-US'], 'categories' => [], 'features' => [],
             ]);
 
             $this->fail('An inactive market was accepted.');

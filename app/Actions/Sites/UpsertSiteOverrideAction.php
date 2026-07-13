@@ -15,6 +15,15 @@ use Illuminate\Validation\ValidationException;
 
 final class UpsertSiteOverrideAction
 {
+    /** @var array<string, int> */
+    private const FIELD_MAX_LENGTHS = [
+        'local_title' => 255,
+        'meta_title' => 255,
+        'meta_description' => 1000,
+        'intro_text' => 5000,
+        'hero_text' => 5000,
+    ];
+
     public function handle(Site $site, string $entityType, int $entityId, string $field, ?string $localeCode, mixed $value, ?string $reason = null): ?SiteOverride
     {
         if (! AllowedSiteOverrideFields::allowsEntityType($entityType)) {
@@ -25,6 +34,12 @@ final class UpsertSiteOverrideAction
         }
 
         $localeCode ??= '';
+
+        if ($value !== null && $value !== '' && isset(self::FIELD_MAX_LENGTHS[$field])) {
+            Validator::make(['value' => $value], [
+                'value' => ['string', 'max:'.self::FIELD_MAX_LENGTHS[$field]],
+            ])->validate();
+        }
 
         return DB::transaction(function () use ($entityId, $entityType, $field, $localeCode, $reason, $site, $value): ?SiteOverride {
             $lockedSite = Site::query()->whereKey($site->getKey())->lockForUpdate()->firstOrFail();

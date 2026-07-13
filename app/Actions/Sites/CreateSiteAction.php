@@ -3,6 +3,7 @@
 namespace App\Actions\Sites;
 
 use App\Enums\CentralCategoryStatus;
+use App\Enums\SiteMode;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Locale;
 use App\Models\Market;
@@ -53,14 +54,22 @@ final class CreateSiteAction
 
         $data['features'] = $features;
 
+        $mode = $data['mode'] ?? null;
+
+        if (! is_string($mode) || SiteMode::tryFrom($mode) === null) {
+            throw ValidationException::withMessages(['mode' => 'The selected site mode is invalid.']);
+        }
+
+        $data['mode'] = $mode;
+
         $categories = array_values(array_unique(array_map('intval', $data['categories'] ?? [])));
         $categoryCount = count($categories);
 
-        if (($data['mode'] ?? null) === 'single_category' && $categoryCount !== 1) {
+        if ($mode === SiteMode::SingleCategory->value && $categoryCount !== 1) {
             throw ValidationException::withMessages(['categories' => 'Single-category sites require exactly one enabled category.']);
         }
 
-        if (($data['mode'] ?? null) === 'multi_category' && $categoryCount < 1) {
+        if ($mode === SiteMode::MultiCategory->value && $categoryCount < 1) {
             throw ValidationException::withMessages(['categories' => 'Multi-category sites require at least one enabled category.']);
         }
 

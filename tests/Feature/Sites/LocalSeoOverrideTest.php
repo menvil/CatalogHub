@@ -87,6 +87,32 @@ class LocalSeoOverrideTest extends TestCase
             ->assertSee('The locale code field is required.');
     }
 
+    public function test_action_validation_errors_are_mapped_to_seo_editor_fields(): void
+    {
+        $site = Site::factory()->create();
+        $product = CentralProduct::factory()->create();
+        $this->enableProductCategory($site, $product);
+        $admin = User::factory()->centralAdmin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(LocalSeoOverride::class, ['record' => $site->getRouteKey()])
+            ->set('entityId', PHP_INT_MAX)
+            ->set('localeCode', 'de-DE')
+            ->set('metaTitle', 'Ghost title')
+            ->call('save')
+            ->assertHasErrors(['entityId'])
+            ->assertSee('The selected override target does not exist.');
+
+        Livewire::actingAs($admin)
+            ->test(LocalSeoOverride::class, ['record' => $site->getRouteKey()])
+            ->set('entityId', $product->id)
+            ->set('localeCode', 'de-DE')
+            ->set('metaTitle', 'Unconfigured locale')
+            ->call('save')
+            ->assertHasErrors(['localeCode'])
+            ->assertSee('The selected locale must be enabled for the site.');
+    }
+
     public function test_editing_one_seo_field_preserves_the_other_existing_fields(): void
     {
         $site = Site::factory()->create();

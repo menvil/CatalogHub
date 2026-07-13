@@ -50,6 +50,18 @@ class MultiEnumNormalizerTest extends TestCase
         $this->assertSame(3, AttributeOption::query()->count());
     }
 
+    public function test_reports_non_scalar_entries_instead_of_discarding_them(): void
+    {
+        $definition = $this->definitionWithOptions();
+        $invalid = ['unexpected' => 'object-like value'];
+
+        $result = $this->normalizer()->normalize($definition, ['Wi-Fi', $invalid]);
+
+        $this->assertFalse($result->isValid);
+        $this->assertSame(['wifi'], $result->value);
+        $this->assertSame([$invalid], $result->metadata['unresolved_tokens']);
+    }
+
     /** @return iterable<string, array{string}> */
     public static function separatedValues(): iterable
     {

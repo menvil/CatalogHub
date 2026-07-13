@@ -69,6 +69,28 @@ class EnumNormalizerTest extends TestCase
         $this->assertCount($queriesAfterFirstCall, DB::getQueryLog());
     }
 
+    public function test_exact_code_wins_and_ambiguous_normalized_codes_are_rejected(): void
+    {
+        $definition = AttributeDefinition::factory()->create(['data_type' => AttributeDataType::Enum]);
+        AttributeOption::factory()->for($definition, 'attribute')->create([
+            'code' => 'red_blue',
+            'label' => 'First',
+        ]);
+        AttributeOption::factory()->for($definition, 'attribute')->create([
+            'code' => 'redblue',
+            'label' => 'Second',
+        ]);
+        $normalizer = new EnumNormalizer;
+
+        $exact = $normalizer->normalize($definition, 'red_blue');
+        $ambiguous = $normalizer->normalize($definition, 'red blue');
+
+        $this->assertTrue($exact->isValid);
+        $this->assertSame('red_blue', $exact->value);
+        $this->assertFalse($ambiguous->isValid);
+        $this->assertSame('ambiguous_enum_option', $ambiguous->errorCode);
+    }
+
     /** @return array{AttributeDefinition, AttributeOption} */
     private function definitionAndOption(): array
     {

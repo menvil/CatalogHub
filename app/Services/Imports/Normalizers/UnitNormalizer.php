@@ -58,6 +58,10 @@ final readonly class UnitNormalizer implements AttributeValueNormalizerInterface
             return $this->failure($rawValue, 'incompatible_unit_dimension', $exception->getMessage());
         }
 
+        if (! is_finite($canonicalValue)) {
+            return $this->failure($rawValue, 'invalid_unit_value', 'The canonical measured value must be finite.');
+        }
+
         if ($definition->data_type === AttributeDataType::Integer) {
             $roundedValue = round($canonicalValue);
             $tolerance = 1e-8;

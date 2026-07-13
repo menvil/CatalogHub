@@ -34,9 +34,28 @@ class ImportWizardTest extends TestCase
             ->assertSee('Start import');
     }
 
+    public function test_hides_active_sources_without_a_registered_importer(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        $supported = ImportSource::factory()->create([
+            'name' => 'Serialized products',
+            'type' => ImportSource::TYPE_SERIALIZED_PHP,
+        ]);
+        $unsupported = ImportSource::factory()->create([
+            'name' => 'Future JSON feed',
+            'type' => ImportSource::TYPE_JSON,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(ImportWizard::getUrl())
+            ->assertOk()
+            ->assertSee($supported->name)
+            ->assertDontSee($unsupported->name);
+    }
+
     public function test_upload_starts_import_through_service_and_creates_batch(): void
     {
-        Storage::fake('local');
+        Storage::fake('imports');
         $admin = User::factory()->centralAdmin()->create();
         $source = ImportSource::factory()->create([
             'type' => ImportSource::TYPE_SERIALIZED_PHP,
@@ -46,7 +65,7 @@ class ImportWizardTest extends TestCase
             file_get_contents(base_path('tests/Fixtures/imports/serialized_products_sample.phpdata')),
         );
 
-        Livewire::actingAs($admin)
+        $component = Livewire::actingAs($admin)
             ->test(ImportWizard::class)
             ->set('sourceId', $source->id)
             ->set('artifact', $upload)
@@ -58,6 +77,11 @@ class ImportWizardTest extends TestCase
         $batch = ImportBatch::query()->sole();
         $this->assertSame('completed', $batch->status);
         $this->assertSame('bg-BG', $batch->metadata_json['locale']);
+        $this->assertSame(2, RawProduct::query()->count());
+
+        $component->call('startImport');
+
+        $this->assertSame(1, ImportBatch::query()->count());
         $this->assertSame(2, RawProduct::query()->count());
     }
 
@@ -92,7 +116,7 @@ class ImportWizardTest extends TestCase
 
     public function test_large_artifact_is_queued_and_exposes_batch_status_for_polling(): void
     {
-        Storage::fake('local');
+        Storage::fake('imports');
         Queue::fake();
         config()->set('imports.queued_artifact_threshold_bytes', 1);
         $admin = User::factory()->centralAdmin()->create();

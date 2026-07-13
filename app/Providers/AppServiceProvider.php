@@ -7,6 +7,8 @@ use App\Models\CentralCatalog\CentralProduct;
 use App\Models\User;
 use App\Observers\CentralProductObserver;
 use App\Services\Imports\AttributeNormalizer;
+use App\Services\Imports\DuplicateDetector;
+use App\Services\Imports\ImportMediaDownloader;
 use App\Services\Imports\ImportService;
 use App\Services\Imports\Normalizers\BooleanNormalizer;
 use App\Services\Imports\Normalizers\EnumNormalizer;
@@ -27,7 +29,7 @@ class AppServiceProvider extends ServiceProvider
             ImportService::class,
             fn ($app): ImportService => new ImportService([
                 $app->make(SerializedPhpProductImporter::class),
-            ])
+            ], $app->make(ImportMediaDownloader::class), $app->make(DuplicateDetector::class))
         );
 
         $this->app->singleton(

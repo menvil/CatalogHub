@@ -19,7 +19,7 @@ class ImportServiceTest extends TestCase
 
     public function test_creates_batch_and_delegates_import_to_matching_adapter(): void
     {
-        Storage::fake('local');
+        Storage::fake('imports');
         $source = ImportSource::factory()->create();
         $upload = UploadedFile::fake()->createWithContent('products.data', 'products');
         $importer = $this->createMock(ProductImporterInterface::class);
@@ -49,7 +49,7 @@ class ImportServiceTest extends TestCase
 
     public function test_marks_batch_failed_when_adapter_throws(): void
     {
-        Storage::fake('local');
+        Storage::fake('imports');
         $source = ImportSource::factory()->create();
         $upload = UploadedFile::fake()->createWithContent('broken.data', 'broken');
         $importer = $this->createMock(ProductImporterInterface::class);

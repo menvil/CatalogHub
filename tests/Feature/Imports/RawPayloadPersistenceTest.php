@@ -6,6 +6,7 @@ use App\Models\Imports\ImportBatch;
 use App\Models\Imports\ImportSource;
 use App\Services\Imports\RawProductWriter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use JsonException;
 use Tests\TestCase;
 
 class RawPayloadPersistenceTest extends TestCase
@@ -52,5 +53,33 @@ class RawPayloadPersistenceTest extends TestCase
 
         $this->assertSame($first->payload_hash, $second->payload_hash);
         $this->assertSame(2, $batch->fresh()->raw_items_count);
+    }
+
+    public function test_limits_extracted_strings_without_losing_the_full_payload(): void
+    {
+        $batch = ImportBatch::factory()->create();
+        $title = str_repeat('Ж', 300);
+
+        $rawProduct = (new RawProductWriter)->write($batch, [
+            'id' => str_repeat('x', 300),
+            'title' => $title,
+            'brand' => str_repeat('b', 300),
+            'category' => str_repeat('c', 300),
+        ]);
+
+        $this->assertSame(255, mb_strlen((string) $rawProduct->external_id));
+        $this->assertSame(255, mb_strlen((string) $rawProduct->raw_title));
+        $this->assertSame($title, $rawProduct->raw_payload_json['title']);
+    }
+
+    public function test_rejects_recursive_payload_before_canonicalization(): void
+    {
+        $batch = ImportBatch::factory()->create();
+        $payload = [];
+        $payload['self'] = &$payload;
+
+        $this->expectException(JsonException::class);
+
+        (new RawProductWriter)->write($batch, $payload);
     }
 }

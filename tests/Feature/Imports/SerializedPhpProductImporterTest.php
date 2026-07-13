@@ -10,6 +10,7 @@ use App\Models\Imports\NormalizationError;
 use App\Models\Imports\RawProduct;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use RuntimeException;
 use Tests\TestCase;
 
 class SerializedPhpProductImporterTest extends TestCase
@@ -55,6 +56,47 @@ class SerializedPhpProductImporterTest extends TestCase
         $this->assertSame('error', $error->severity);
         $this->assertSame(1, $batch->fresh()->failed_count);
         $this->assertSame(0, $batch->raw_items_count);
+        $this->assertSame(0, RawProduct::query()->count());
+    }
+
+    public function test_recursive_serialized_payload_is_rejected_before_product_traversal(): void
+    {
+        $batch = ImportBatch::factory()->create();
+        $product = ['title' => 'Recursive'];
+        $product['self'] = &$product;
+        $file = UploadedFile::fake()->createWithContent('recursive.phpdata', serialize([$product]));
+
+        (new SerializedPhpProductImporter)->import($batch, $file);
+
+        $this->assertSame('invalid_serialized_payload', $batch->errors()->sole()->code);
+        $this->assertSame(1, $batch->fresh()->failed_count);
+        $this->assertSame(0, RawProduct::query()->count());
+    }
+
+    public function test_refuses_to_read_more_than_the_configured_artifact_limit(): void
+    {
+        config()->set('imports.serialized_php_max_bytes', 8);
+        $batch = ImportBatch::factory()->create();
+        $file = UploadedFile::fake()->createWithContent('large.phpdata', serialize([['id' => 1]]));
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('exceeds the configured size limit');
+
+        (new SerializedPhpProductImporter)->import($batch, $file);
+    }
+
+    public function test_rejects_serialized_payload_beyond_the_configured_depth(): void
+    {
+        config()->set('imports.serialized_php_max_depth', 3);
+        $batch = ImportBatch::factory()->create();
+        $file = UploadedFile::fake()->createWithContent('deep.phpdata', serialize([
+            ['specs' => ['nested' => ['too' => ['deep' => true]]]],
+        ]));
+
+        (new SerializedPhpProductImporter)->import($batch, $file);
+
+        $this->assertSame('invalid_serialized_payload', $batch->errors()->sole()->code);
+        $this->assertSame(1, $batch->fresh()->failed_count);
         $this->assertSame(0, RawProduct::query()->count());
     }
 }

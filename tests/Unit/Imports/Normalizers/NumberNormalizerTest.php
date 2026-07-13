@@ -62,6 +62,8 @@ class NumberNormalizerTest extends TestCase
         yield 'repeated comma thousands' => ['1,234,567', '1234567'];
         yield 'repeated dot thousands' => ['1.234.567', '1234567'];
         yield 'negative' => [' -0012,50 ', '-12.5'];
+        yield 'small scientific float' => [1.2e-7, '0.00000012'];
+        yield 'large scientific float' => [1.0e20, '100000000000000000000'];
     }
 
     /** @return iterable<string, array{string}> */

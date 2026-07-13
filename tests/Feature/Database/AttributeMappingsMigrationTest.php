@@ -2,7 +2,12 @@
 
 namespace Tests\Feature\Database;
 
+use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\CentralCategory;
+use App\Models\Imports\ImportSource;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -37,7 +42,6 @@ class AttributeMappingsMigrationTest extends TestCase
         foreach ([
             'import_sources' => 'import_source_id',
             'central_categories' => 'category_id',
-            'attribute_definitions' => 'attribute_definition_id',
         ] as $table => $column) {
             $this->assertTrue($foreignKeys->contains(
                 fn (array $foreignKey): bool => $foreignKey['columns'] === [$column]
@@ -45,9 +49,37 @@ class AttributeMappingsMigrationTest extends TestCase
             ));
         }
 
+        $this->assertTrue($foreignKeys->contains(
+            fn (array $foreignKey): bool => $foreignKey['columns'] === ['attribute_definition_id', 'category_id']
+                && $foreignKey['foreign_table'] === 'attribute_definitions'
+                && $foreignKey['foreign_columns'] === ['id', 'central_category_id']
+        ));
+
         $this->assertTrue($indexes->contains(
             fn (array $index): bool => $index['unique'] === true
                 && $index['columns'] === ['import_source_id', 'category_id', 'raw_key']
         ));
+    }
+
+    public function test_database_rejects_attribute_definition_from_another_category(): void
+    {
+        $source = ImportSource::factory()->create();
+        $mappingCategory = CentralCategory::factory()->create();
+        $definition = AttributeDefinition::factory()->create();
+
+        $this->expectException(QueryException::class);
+
+        DB::table('attribute_mappings')->insert([
+            'import_source_id' => $source->id,
+            'category_id' => $mappingCategory->id,
+            'raw_key' => 'Power',
+            'normalized_raw_key' => 'power',
+            'attribute_definition_id' => $definition->id,
+            'confidence' => 1,
+            'status' => 'reviewed',
+            'mapping_type' => 'attribute',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 }

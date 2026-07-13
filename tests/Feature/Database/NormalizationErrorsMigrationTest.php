@@ -48,7 +48,7 @@ class NormalizationErrorsMigrationTest extends TestCase
             ));
         }
 
-        foreach (['severity', 'code', 'resolved_at'] as $column) {
+        foreach (['raw_product_id', 'normalized_product_draft_id', 'severity', 'code', 'resolved_at'] as $column) {
             $this->assertTrue($indexes->contains(
                 fn (array $index): bool => $index['columns'] === [$column]
             ));

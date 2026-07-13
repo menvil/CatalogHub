@@ -12,6 +12,10 @@ use RuntimeException;
 
 final class SerializedPhpProductImporter implements ProductImporterInterface
 {
+    private const int DEFAULT_MAX_ARTIFACT_BYTES = 50 * 1024 * 1024;
+
+    private const int DEFAULT_MAX_DEPTH = 64;
+
     private readonly RawProductWriter $writer;
 
     public function __construct(?RawProductWriter $writer = null)
@@ -28,7 +32,10 @@ final class SerializedPhpProductImporter implements ProductImporterInterface
     public function import(ImportBatch $batch, UploadedFile|string $artifact, array $options = []): void
     {
         $contents = $this->readArtifact($artifact);
-        $payload = @unserialize($contents, ['allowed_classes' => false]);
+        $payload = @unserialize($contents, [
+            'allowed_classes' => false,
+            'max_depth' => max(1, (int) config('imports.serialized_php_max_depth', self::DEFAULT_MAX_DEPTH)),
+        ]);
 
         if (! is_array($payload)) {
             $this->recordError(
@@ -36,6 +43,20 @@ final class SerializedPhpProductImporter implements ProductImporterInterface
                 'invalid_serialized_payload',
                 'The import artifact does not contain a serialized product array.'
             );
+            $batch->increment('failed_count');
+
+            return;
+        }
+
+        try {
+            // Reject recursive and excessively deep reference graphs before application traversal.
+            json_encode(
+                $payload,
+                JSON_THROW_ON_ERROR,
+                max(1, (int) config('imports.serialized_php_max_depth', self::DEFAULT_MAX_DEPTH)),
+            );
+        } catch (JsonException $exception) {
+            $this->recordError($batch, 'invalid_serialized_payload', $exception->getMessage());
             $batch->increment('failed_count');
 
             return;
@@ -80,10 +101,26 @@ final class SerializedPhpProductImporter implements ProductImporterInterface
     private function readArtifact(UploadedFile|string $artifact): string
     {
         $path = $artifact instanceof UploadedFile ? $artifact->getRealPath() : $artifact;
-        $contents = $path !== false ? file_get_contents($path) : false;
+        $maxBytes = max(1, (int) config('imports.serialized_php_max_bytes', self::DEFAULT_MAX_ARTIFACT_BYTES));
+
+        if ($path === false || ! is_file($path) || ! is_readable($path)) {
+            throw new RuntimeException('The serialized import artifact could not be read.');
+        }
+
+        $fileSize = filesize($path);
+
+        if ($fileSize === false || $fileSize > $maxBytes) {
+            throw new RuntimeException('The serialized import artifact exceeds the configured size limit.');
+        }
+
+        $contents = file_get_contents($path, false, null, 0, $maxBytes + 1);
 
         if ($contents === false) {
             throw new RuntimeException('The serialized import artifact could not be read.');
+        }
+
+        if (strlen($contents) > $maxBytes) {
+            throw new RuntimeException('The serialized import artifact exceeds the configured size limit.');
         }
 
         return $contents;

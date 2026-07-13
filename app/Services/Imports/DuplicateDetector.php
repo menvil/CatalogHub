@@ -6,6 +6,7 @@ use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Imports\DuplicateCandidate;
 use App\Models\Imports\NormalizedProductDraft;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 final class DuplicateDetector
@@ -15,50 +16,56 @@ final class DuplicateDetector
      */
     public function detect(NormalizedProductDraft $draft): Collection
     {
-        $minimumScore = (float) config('imports.duplicate_min_score', 0.55);
-        $candidates = new Collection;
+        return DB::transaction(function () use ($draft): Collection {
+            $minimumScore = (float) config('imports.duplicate_min_score', 0.55);
+            $candidates = new Collection;
 
-        $products = CentralProduct::query()
-            ->with(['brand', 'category'])
-            ->when(
-                $draft->brand_id !== null || $draft->category_id !== null,
-                fn ($query) => $query->where(function ($query) use ($draft): void {
-                    $query
-                        ->when(
-                            $draft->brand_id !== null,
-                            fn ($query) => $query->where('central_brand_id', $draft->brand_id),
-                        )
-                        ->when(
-                            $draft->category_id !== null,
-                            fn ($query) => $query->orWhere('central_category_id', $draft->category_id),
-                        );
-                }),
-            );
+            $draft->duplicateCandidates()
+                ->where('candidate_type', 'central_product')
+                ->where('status', 'pending')
+                ->delete();
 
-        foreach ($products->lazyById() as $product) {
-            [$score, $reason] = $this->score($draft, $product);
+            $products = CentralProduct::query()
+                ->when(
+                    $draft->brand_id !== null || $draft->category_id !== null,
+                    fn ($query) => $query->where(function ($query) use ($draft): void {
+                        $query
+                            ->when(
+                                $draft->brand_id !== null,
+                                fn ($query) => $query->where('central_brand_id', $draft->brand_id),
+                            )
+                            ->when(
+                                $draft->category_id !== null,
+                                fn ($query) => $query->orWhere('central_category_id', $draft->category_id),
+                            );
+                    }),
+                );
 
-            if ($score < $minimumScore) {
-                continue;
+            foreach ($products->lazyById() as $product) {
+                [$score, $reason] = $this->score($draft, $product);
+
+                if ($score < $minimumScore) {
+                    continue;
+                }
+
+                $candidate = DuplicateCandidate::query()->updateOrCreate(
+                    [
+                        'normalized_product_draft_id' => $draft->id,
+                        'candidate_type' => 'central_product',
+                        'candidate_id' => $product->id,
+                    ],
+                    [
+                        'import_batch_id' => $draft->import_batch_id,
+                        'score' => number_format($score, 4, '.', ''),
+                        'reason_json' => $reason,
+                    ]
+                );
+
+                $candidates->push($candidate);
             }
 
-            $candidate = DuplicateCandidate::query()->updateOrCreate(
-                [
-                    'normalized_product_draft_id' => $draft->id,
-                    'candidate_type' => 'central_product',
-                    'candidate_id' => $product->id,
-                ],
-                [
-                    'import_batch_id' => $draft->import_batch_id,
-                    'score' => number_format($score, 4, '.', ''),
-                    'reason_json' => $reason,
-                ]
-            );
-
-            $candidates->push($candidate);
-        }
-
-        return $candidates->sortByDesc('score')->values();
+            return $candidates->sortByDesc('score')->values();
+        });
     }
 
     /**

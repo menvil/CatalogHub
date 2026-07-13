@@ -71,6 +71,10 @@ final class RawProductResource extends Resource
             TextEntry::make('raw_brand')->label('Raw brand')->placeholder('Missing'),
             TextEntry::make('raw_category')->label('Raw category')->placeholder('Missing'),
             TextEntry::make('status')->badge(),
+            TextEntry::make('error_message')
+                ->label('Import error')
+                ->placeholder('None')
+                ->columnSpanFull(),
             TextEntry::make('source.name')->label('Source'),
             TextEntry::make('batch.id')->label('Import batch'),
             TextEntry::make('external_id')->label('External ID')->placeholder('Missing'),

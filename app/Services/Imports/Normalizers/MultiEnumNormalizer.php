@@ -20,9 +20,9 @@ final readonly class MultiEnumNormalizer implements AttributeValueNormalizerInte
         AttributeDefinition $definition,
         mixed $rawValue,
     ): NormalizedAttributeValueData {
-        $tokens = $this->tokens($rawValue);
+        ['tokens' => $tokens, 'invalid' => $invalid] = $this->tokens($rawValue);
         $optionCodes = [];
-        $unresolved = [];
+        $unresolved = $invalid;
 
         foreach ($tokens as $token) {
             $result = $this->enumNormalizer->normalize($definition, $token);
@@ -35,7 +35,7 @@ final readonly class MultiEnumNormalizer implements AttributeValueNormalizerInte
         }
 
         $optionCodes = array_values(array_unique($optionCodes));
-        $unresolved = array_values(array_unique($unresolved));
+        $unresolved = array_values(array_unique($unresolved, SORT_REGULAR));
 
         return new NormalizedAttributeValueData(
             isValid: $unresolved === [],
@@ -47,14 +47,17 @@ final readonly class MultiEnumNormalizer implements AttributeValueNormalizerInte
         );
     }
 
-    /** @return list<string> */
+    /** @return array{tokens: list<string>, invalid: list<mixed>} */
     private function tokens(mixed $rawValue): array
     {
         $values = is_array($rawValue) ? $rawValue : [$rawValue];
         $tokens = [];
+        $invalid = [];
 
         foreach ($values as $value) {
             if (! is_scalar($value)) {
+                $invalid[] = $value;
+
                 continue;
             }
 
@@ -67,6 +70,6 @@ final readonly class MultiEnumNormalizer implements AttributeValueNormalizerInte
             }
         }
 
-        return $tokens;
+        return ['tokens' => $tokens, 'invalid' => $invalid];
     }
 }

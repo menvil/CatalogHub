@@ -104,4 +104,27 @@ class DuplicateDetectorTest extends TestCase
 
         $this->assertSame('confirmed_duplicate', DuplicateCandidate::query()->sole()->status);
     }
+
+    public function test_redetection_removes_pending_candidates_that_no_longer_match(): void
+    {
+        $brand = CentralBrand::factory()->create();
+        $category = CentralCategory::factory()->create();
+        $product = CentralProduct::factory()->for($brand, 'brand')->for($category, 'category')->create([
+            'name' => 'Acme Mixer Pro',
+        ]);
+        $draft = NormalizedProductDraft::factory()->create([
+            'title' => 'Acme Mixer Pro',
+            'brand_id' => $brand->id,
+            'category_id' => $category->id,
+        ]);
+        $detector = new DuplicateDetector;
+        $detector->detect($draft);
+        $this->assertSame(1, DuplicateCandidate::query()->count());
+
+        $product->update(['name' => 'ZZZZZZZZZZZZZZZZ']);
+        $candidates = $detector->detect($draft);
+
+        $this->assertCount(0, $candidates);
+        $this->assertSame(0, DuplicateCandidate::query()->count());
+    }
 }

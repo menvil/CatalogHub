@@ -88,12 +88,24 @@ final class PublishNormalizedProductDraftToCentralAction
 
     private function persistAttributes(NormalizedProductDraft $draft, CentralProduct $product): void
     {
+        $definitionIds = [];
+
         foreach ($draft->attributes_json ?? [] as $candidate) {
             if (($candidate['is_valid'] ?? true) === false) {
                 throw new LogicException("Draft [{$draft->id}] contains an invalid normalized attribute candidate.");
             }
 
-            $definition = $this->resolveAttributeDefinition($draft, $candidate);
+            $definition = $this->resolveAttributeDefinition(
+                $draft,
+                $candidate,
+                (int) $product->central_category_id,
+            );
+
+            if (isset($definitionIds[$definition->id])) {
+                throw new LogicException("Draft [{$draft->id}] contains duplicate candidates for attribute [{$definition->id}].");
+            }
+
+            $definitionIds[$definition->id] = true;
 
             if ((int) $product->central_category_id !== (int) $definition->central_category_id) {
                 throw new LogicException("Attribute [{$definition->id}] does not belong to the published product category.");
@@ -113,14 +125,15 @@ final class PublishNormalizedProductDraftToCentralAction
     private function resolveAttributeDefinition(
         NormalizedProductDraft $draft,
         array $candidate,
+        int $categoryId,
     ): AttributeDefinition {
         $definition = null;
 
         if (isset($candidate['attribute_definition_id'])) {
             $definition = AttributeDefinition::query()->find((int) $candidate['attribute_definition_id']);
-        } elseif (filled($candidate['code'] ?? null) && $draft->category_id !== null) {
+        } elseif (filled($candidate['code'] ?? null)) {
             $definition = AttributeDefinition::query()
-                ->where('central_category_id', $draft->category_id)
+                ->where('central_category_id', $categoryId)
                 ->where('code', $candidate['code'])
                 ->first();
         }
@@ -142,6 +155,13 @@ final class PublishNormalizedProductDraftToCentralAction
         array $candidate,
     ): array {
         $type = (string) ($candidate['value_type'] ?? $definition->data_type->value);
+
+        if ($type !== $definition->data_type->value) {
+            throw new LogicException(
+                "Attribute [{$definition->id}] expects value type [{$definition->data_type->value}], [{$type}] given."
+            );
+        }
+
         $value = $candidate['value'] ?? null;
         $metadata = is_array($candidate['metadata'] ?? null) ? $candidate['metadata'] : [];
         $rawValue = $candidate['raw_value'] ?? null;
@@ -171,16 +191,15 @@ final class PublishNormalizedProductDraftToCentralAction
             ],
         ];
 
-        match ($type) {
-            AttributeDataType::Integer->value,
-            AttributeDataType::Decimal->value => $stored['value_number'] = $candidate['value_number'] ?? $value,
-            AttributeDataType::String->value,
-            AttributeDataType::Text->value => $stored['value_text'] = $candidate['value_text'] ?? $value,
-            AttributeDataType::Boolean->value => $stored['value_bool'] = $candidate['value_bool'] ?? $value,
-            AttributeDataType::Enum->value => $stored['value_enum_code'] = $candidate['value_enum_code'] ?? $value,
-            AttributeDataType::MultiEnum->value,
-            AttributeDataType::Json->value => $stored['value_json'] = $candidate['value_json'] ?? $value,
-            default => throw new LogicException("Unsupported normalized attribute value type [{$type}]."),
+        match ($definition->data_type) {
+            AttributeDataType::Integer,
+            AttributeDataType::Decimal => $stored['value_number'] = $candidate['value_number'] ?? $value,
+            AttributeDataType::String,
+            AttributeDataType::Text => $stored['value_text'] = $candidate['value_text'] ?? $value,
+            AttributeDataType::Boolean => $stored['value_bool'] = $candidate['value_bool'] ?? $value,
+            AttributeDataType::Enum => $stored['value_enum_code'] = $candidate['value_enum_code'] ?? $value,
+            AttributeDataType::MultiEnum,
+            AttributeDataType::Json => $stored['value_json'] = $candidate['value_json'] ?? $value,
         };
 
         if (in_array($type, [AttributeDataType::Integer->value, AttributeDataType::Decimal->value], true)) {

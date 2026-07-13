@@ -75,6 +75,17 @@ class UnitNormalizerTest extends TestCase
         $this->assertSame('invalid_integer', $fraction->errorCode);
     }
 
+    public function test_rejects_non_finite_conversion_result(): void
+    {
+        $result = app(UnitNormalizer::class)->normalize(
+            $this->definition('power', 'watt'),
+            str_repeat('9', 400).' watt',
+        );
+
+        $this->assertFalse($result->isValid);
+        $this->assertSame('invalid_unit_value', $result->errorCode);
+    }
+
     /** @return iterable<string, array{string, string, string, string, float}> */
     public static function measuredValues(): iterable
     {

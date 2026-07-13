@@ -5,6 +5,7 @@ namespace App\Actions\Imports;
 use App\Models\Imports\NormalizationError;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\DB;
 
 final class ResolveNormalizationErrorAction
 {
@@ -14,11 +15,21 @@ final class ResolveNormalizationErrorAction
             throw new AuthorizationException('You are not allowed to resolve normalization errors.');
         }
 
-        $error->forceFill([
-            'resolved_at' => now(),
-            'resolved_by_user_id' => $user->id,
-        ])->save();
+        return DB::transaction(function () use ($error, $user): NormalizationError {
+            $lockedError = NormalizationError::query()
+                ->lockForUpdate()
+                ->findOrFail($error->getKey());
 
-        return $error->refresh();
+            if ($lockedError->resolved_at !== null) {
+                return $lockedError;
+            }
+
+            $lockedError->forceFill([
+                'resolved_at' => now(),
+                'resolved_by_user_id' => $user->id,
+            ])->save();
+
+            return $lockedError->refresh();
+        });
     }
 }

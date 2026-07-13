@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -32,6 +33,31 @@ return new class extends Migration
 
             $table->index(['import_batch_id', 'status']);
         });
+
+        if (DB::getDriverName() === 'sqlite') {
+            DB::unprepared(<<<'SQL'
+                CREATE TRIGGER normalized_product_drafts_confidence_insert
+                BEFORE INSERT ON normalized_product_drafts
+                WHEN NEW.confidence < 0 OR NEW.confidence > 1
+                BEGIN
+                    SELECT RAISE(ABORT, 'normalized_product_drafts confidence must be between 0 and 1');
+                END
+                SQL);
+            DB::unprepared(<<<'SQL'
+                CREATE TRIGGER normalized_product_drafts_confidence_update
+                BEFORE UPDATE OF confidence ON normalized_product_drafts
+                WHEN NEW.confidence < 0 OR NEW.confidence > 1
+                BEGIN
+                    SELECT RAISE(ABORT, 'normalized_product_drafts confidence must be between 0 and 1');
+                END
+                SQL);
+        } else {
+            DB::statement(<<<'SQL'
+                ALTER TABLE normalized_product_drafts
+                ADD CONSTRAINT normalized_product_drafts_confidence_check
+                CHECK (confidence >= 0 AND confidence <= 1)
+                SQL);
+        }
     }
 
     public function down(): void

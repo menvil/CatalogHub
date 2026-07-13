@@ -82,6 +82,19 @@ class MappingRulesEditorTest extends TestCase
             ->assertCanNotSeeTableRecords([$other]);
     }
 
+    public function test_changing_category_clears_the_selected_attribute_definition(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        $mapping = $this->mapping();
+        $newCategory = CentralCategory::factory()->create();
+
+        Livewire::actingAs($admin)
+            ->test(EditAttributeMapping::class, ['record' => $mapping->getRouteKey()])
+            ->assertSet('data.attribute_definition_id', $mapping->attribute_definition_id)
+            ->set('data.category_id', $newCategory->id)
+            ->assertSet('data.attribute_definition_id', null);
+    }
+
     private function mapping(): AttributeMapping
     {
         $source = ImportSource::factory()->create();

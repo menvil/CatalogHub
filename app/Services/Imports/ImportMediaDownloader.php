@@ -4,6 +4,7 @@ namespace App\Services\Imports;
 
 use App\Models\Imports\NormalizationError;
 use App\Models\Imports\NormalizedProductDraft;
+use App\Models\MediaSource;
 use App\Services\Media\MediaService;
 use Closure;
 use Illuminate\Http\Client\Response;
@@ -25,7 +26,7 @@ final readonly class ImportMediaDownloader
         $processed = [];
 
         foreach ($draft->media_json ?? [] as $candidate) {
-            $candidate = is_string($candidate) ? ['source_url' => $candidate] : $candidate;
+            $candidate = $this->normalizeCandidate($candidate);
 
             try {
                 $processed[] = $this->downloadCandidate($draft, $candidate);
@@ -70,7 +71,9 @@ final readonly class ImportMediaDownloader
                 'source' => 'import',
             ]);
 
-            $asset->sources()->create([
+            MediaSource::query()->updateOrCreate([
+                'media_asset_id' => $asset->id,
+            ], [
                 'source_type' => 'import',
                 'source_url' => $url,
                 'source_name' => parse_url($url, PHP_URL_HOST),
@@ -92,6 +95,25 @@ final readonly class ImportMediaDownloader
         unset($candidate['error']);
 
         return $candidate;
+    }
+
+    /** @return array<string, mixed> */
+    private function normalizeCandidate(mixed $candidate): array
+    {
+        if (is_array($candidate)) {
+            return $candidate;
+        }
+
+        if (is_string($candidate)) {
+            return ['source_url' => $candidate];
+        }
+
+        return [
+            'source_url' => '',
+            'raw_value' => is_scalar($candidate) || $candidate === null
+                ? $candidate
+                : get_debug_type($candidate),
+        ];
     }
 
     private function assertSafeUrl(string $url): void

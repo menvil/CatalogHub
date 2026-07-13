@@ -49,6 +49,7 @@ final class AttributeMappingResource extends Resource
                 ->searchable()
                 ->preload()
                 ->live()
+                ->afterStateUpdated(fn (Set $set): mixed => $set('attribute_definition_id', null))
                 ->required(),
             TextInput::make('raw_key')
                 ->required()

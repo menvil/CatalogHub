@@ -53,7 +53,13 @@
         @endif
 
         <div class="flex justify-end">
-            <x-filament::button type="submit" icon="heroicon-o-play">Start import</x-filament::button>
+            <x-filament::button
+                type="submit"
+                icon="heroicon-o-play"
+                :disabled="$createdBatchId !== null && $batchStatus !== 'failed'"
+                wire:loading.attr="disabled"
+                wire:target="startImport"
+            >Start import</x-filament::button>
         </div>
     </form>
 </x-filament-panels::page>

@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Database;
 
+use App\Models\Imports\NormalizedProductDraft;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -57,5 +59,12 @@ class NormalizedProductDraftsMigrationTest extends TestCase
         $this->assertTrue($indexes->contains(
             fn (array $index): bool => $index['unique'] === true && $index['columns'] === ['raw_product_id']
         ));
+    }
+
+    public function test_database_rejects_confidence_outside_normalized_range(): void
+    {
+        $this->expectException(QueryException::class);
+
+        NormalizedProductDraft::factory()->create(['confidence' => '1.0001']);
     }
 }

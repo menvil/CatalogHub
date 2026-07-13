@@ -58,6 +58,30 @@ class AttributeMappingServiceTest extends TestCase
         $this->assertSame($definitionsBefore, AttributeDefinition::query()->count());
     }
 
+    public function test_does_not_resolve_ambiguous_normalized_key_mapping(): void
+    {
+        $source = ImportSource::factory()->create();
+        $category = CentralCategory::factory()->create();
+
+        foreach (['Power (W)', 'Power-W'] as $rawKey) {
+            AttributeMapping::query()->create([
+                'import_source_id' => $source->id,
+                'category_id' => $category->id,
+                'raw_key' => $rawKey,
+                'normalized_raw_key' => 'power_w',
+                'attribute_definition_id' => AttributeDefinition::factory()->for($category, 'category')->create()->id,
+                'confidence' => '1.0000',
+                'status' => 'reviewed',
+                'mapping_type' => 'attribute',
+            ]);
+        }
+
+        $service = new AttributeMappingService;
+
+        $this->assertNull($service->resolve($source->id, $category->id, 'POWER / W'));
+        $this->assertNotNull($service->resolve($source->id, $category->id, 'Power (W)'));
+    }
+
     public function test_counts_source_payloads_containing_the_raw_key_in_the_database(): void
     {
         $source = ImportSource::factory()->create();
@@ -83,7 +107,7 @@ class AttributeMappingServiceTest extends TestCase
         RawProduct::factory()->create([
             'import_batch_id' => $batch->id,
             'import_source_id' => $source->id,
-            'raw_payload_json' => ['Power' => 300],
+            'raw_payload_json' => ['POWER - W' => 300],
         ]);
         RawProduct::factory()->create([
             'import_batch_id' => $otherBatch->id,
@@ -91,6 +115,6 @@ class AttributeMappingServiceTest extends TestCase
             'raw_payload_json' => ['Power (W)' => 700],
         ]);
 
-        $this->assertSame(1, (new AttributeMappingService)->usageCount($mapping));
+        $this->assertSame(2, (new AttributeMappingService)->usageCount($mapping));
     }
 }

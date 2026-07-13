@@ -49,11 +49,22 @@ final class ImportWizard extends Page
     /** @return Collection<int, ImportSource> */
     public function getSources(): Collection
     {
-        return ImportSource::query()->where('status', 'active')->orderBy('name')->get();
+        $importService = app(ImportService::class);
+
+        return ImportSource::query()
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get()
+            ->filter(fn (ImportSource $source): bool => $importService->supports($source))
+            ->values();
     }
 
     public function startImport(): void
     {
+        if ($this->createdBatchId !== null && $this->batchStatus !== 'failed') {
+            return;
+        }
+
         $validated = $this->validate([
             'sourceId' => ['required', 'integer', 'exists:import_sources,id'],
             'artifact' => [
@@ -69,6 +80,13 @@ final class ImportWizard extends Page
             ->whereKey($validated['sourceId'])
             ->where('status', 'active')
             ->firstOrFail();
+        $importService = app(ImportService::class);
+
+        if (! $importService->supports($source)) {
+            $this->addError('sourceId', 'The selected source does not have a registered importer.');
+
+            return;
+        }
 
         /** @var UploadedFile $artifact */
         $artifact = $validated['artifact'];
@@ -79,8 +97,8 @@ final class ImportWizard extends Page
         $shouldQueue = (int) $artifact->getSize()
             > (int) config('imports.queued_artifact_threshold_bytes', 5 * 1024 * 1024);
         $batch = $shouldQueue
-            ? app(ImportService::class)->queueImport($source, $artifact, $options)
-            : app(ImportService::class)->startImport($source, $artifact, $options);
+            ? $importService->queueImport($source, $artifact, $options)
+            : $importService->startImport($source, $artifact, $options);
         $this->createdBatchId = $batch->id;
         $this->batchStatus = $batch->status;
 

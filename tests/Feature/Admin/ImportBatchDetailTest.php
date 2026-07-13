@@ -3,14 +3,17 @@
 namespace Tests\Feature\Admin;
 
 use App\Filament\Resources\ImportBatchResource;
+use App\Filament\Resources\RawProductResource\Pages\ListRawProducts;
 use App\Models\Imports\DuplicateCandidate;
 use App\Models\Imports\ImportArtifact;
 use App\Models\Imports\ImportBatch;
 use App\Models\Imports\ImportSource;
 use App\Models\Imports\NormalizationError;
 use App\Models\Imports\NormalizedProductDraft;
+use App\Models\Imports\RawProduct;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class ImportBatchDetailTest extends TestCase
@@ -64,5 +67,33 @@ class ImportBatchDetailTest extends TestCase
             ->assertSee('Drafts')
             ->assertSee('Errors')
             ->assertSee('Duplicates');
+    }
+
+    public function test_related_list_keeps_batch_scope_after_table_updates(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        $batch = ImportBatch::factory()->create();
+        $otherBatch = ImportBatch::factory()->create();
+        $included = RawProduct::factory()->create([
+            'import_batch_id' => $batch->id,
+            'import_source_id' => $batch->import_source_id,
+            'raw_title' => 'Included product',
+        ]);
+        $excluded = RawProduct::factory()->create([
+            'import_batch_id' => $otherBatch->id,
+            'import_source_id' => $otherBatch->import_source_id,
+            'raw_title' => 'Excluded product',
+        ]);
+
+        $component = Livewire::actingAs($admin)
+            ->withQueryParams(['batch' => $batch->id])
+            ->test(ListRawProducts::class)
+            ->assertCanSeeTableRecords([$included])
+            ->assertCanNotSeeTableRecords([$excluded]);
+
+        $component
+            ->call('sortTable', 'raw_title')
+            ->assertCanSeeTableRecords([$included])
+            ->assertCanNotSeeTableRecords([$excluded]);
     }
 }

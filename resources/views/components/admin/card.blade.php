@@ -15,6 +15,7 @@
     $variantClasses = [
         'default' => 'border-admin-border bg-admin-surface shadow-admin-card',
         'subtle' => 'border-admin-border bg-admin-surface-muted',
+        'success' => 'border-admin-success/30 bg-admin-success-soft',
         'danger' => 'border-admin-danger/30 bg-admin-danger-soft',
     ];
 

@@ -6,6 +6,8 @@ use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\Imports\AttributeMapping;
 use App\Models\Imports\RawProduct;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 final class AttributeMappingService
@@ -14,17 +16,22 @@ final class AttributeMappingService
     {
         $normalizedRawKey = $this->normalizeRawKey($rawKey);
 
-        $mapping = AttributeMapping::query()
+        $query = AttributeMapping::query()
             ->where('import_source_id', $sourceId)
             ->where('category_id', $categoryId)
             ->where('status', 'reviewed')
-            ->whereNotNull('attribute_definition_id')
-            ->where(function (Builder $query) use ($rawKey, $normalizedRawKey): void {
-                $query->where('raw_key', trim($rawKey))
-                    ->orWhere('normalized_raw_key', $normalizedRawKey);
-            })
-            ->orderByRaw('CASE WHEN raw_key = ? THEN 0 ELSE 1 END', [trim($rawKey)])
-            ->first();
+            ->whereNotNull('attribute_definition_id');
+
+        $mapping = (clone $query)->where('raw_key', trim($rawKey))->first();
+
+        if ($mapping === null) {
+            $normalizedMatches = (clone $query)
+                ->where('normalized_raw_key', $normalizedRawKey)
+                ->limit(2)
+                ->get();
+
+            $mapping = $normalizedMatches->count() === 1 ? $normalizedMatches->first() : null;
+        }
 
         return $mapping?->attributeDefinition;
     }
@@ -59,9 +66,51 @@ final class AttributeMappingService
 
     public function usageCount(AttributeMapping $mapping): int
     {
+        $matchingKeys = $this->payloadKeysForSource((int) $mapping->import_source_id)
+            ->filter(fn (string $key): bool => $this->normalizeRawKey($key) === $mapping->normalized_raw_key)
+            ->values();
+
+        if ($matchingKeys->isEmpty()) {
+            return 0;
+        }
+
         return RawProduct::query()
             ->where('import_source_id', $mapping->import_source_id)
-            ->whereJsonContainsKey("raw_payload_json->{$mapping->raw_key}")
+            ->where(function (Builder $query) use ($matchingKeys): void {
+                foreach ($matchingKeys as $key) {
+                    $query->orWhereJsonContainsKey("raw_payload_json->{$key}");
+                }
+            })
             ->count();
+    }
+
+    /** @return Collection<int, string> */
+    private function payloadKeysForSource(int $sourceId): Collection
+    {
+        $connection = RawProduct::query()->getModel()->getConnection();
+
+        return match ($connection->getDriverName()) {
+            'pgsql' => collect($connection->select(
+                'select distinct payload_key from raw_products cross join lateral jsonb_object_keys(raw_payload_json::jsonb) as payload_keys(payload_key) where import_source_id = ?',
+                [$sourceId],
+            ))->pluck('payload_key')->filter(static fn (mixed $key): bool => is_string($key))->values(),
+            'mysql', 'mariadb' => collect($connection->select(
+                "select distinct payload_key from raw_products join json_table(json_keys(raw_payload_json), '$[*]' columns (payload_key varchar(1024) path '$')) as payload_keys where import_source_id = ?",
+                [$sourceId],
+            ))->pluck('payload_key')->filter(static fn (mixed $key): bool => is_string($key))->values(),
+            'sqlite' => DB::connection($connection->getName())
+                ->table('raw_products')
+                ->crossJoin(DB::raw('json_each(raw_products.raw_payload_json)'))
+                ->where('raw_products.import_source_id', $sourceId)
+                ->distinct()
+                ->pluck('json_each.key')
+                ->filter(static fn (mixed $key): bool => is_string($key))
+                ->values(),
+            'sqlsrv' => collect($connection->select(
+                'select distinct payload.[key] as payload_key from raw_products cross apply openjson(raw_payload_json) as payload where import_source_id = ?',
+                [$sourceId],
+            ))->pluck('payload_key')->filter(static fn (mixed $key): bool => is_string($key))->values(),
+            default => collect(),
+        };
     }
 }

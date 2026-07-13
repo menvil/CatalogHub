@@ -18,7 +18,11 @@ final readonly class ImportService
     /**
      * @param  iterable<ProductImporterInterface>  $importers
      */
-    public function __construct(private iterable $importers = []) {}
+    public function __construct(
+        private iterable $importers = [],
+        private ?ImportMediaDownloader $mediaDownloader = null,
+        private ?DuplicateDetector $duplicateDetector = null,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $options
@@ -34,6 +38,7 @@ final readonly class ImportService
             $batch->markStarted();
             $this->storeOriginalArtifact($batch, $artifact);
             $this->resolveImporter($source)->import($batch, $artifact, $options);
+            $this->processDrafts($batch);
             $batch->markFinished();
         } catch (Throwable $exception) {
             $batch->markFailed($exception->getMessage() ?: $exception::class);
@@ -77,6 +82,7 @@ final readonly class ImportService
                 $temporaryPath,
                 $batch->metadata_json ?? [],
             );
+            $this->processDrafts($batch);
             $batch->markFinished();
         } catch (Throwable $exception) {
             $batch->markFailed($exception->getMessage() ?: $exception::class);
@@ -91,6 +97,17 @@ final readonly class ImportService
         return $batch->refresh();
     }
 
+    public function supports(ImportSource $source): bool
+    {
+        foreach ($this->importers as $importer) {
+            if ($importer->supports($source)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function resolveImporter(ImportSource $source): ProductImporterInterface
     {
         foreach ($this->importers as $importer) {
@@ -100,6 +117,18 @@ final readonly class ImportService
         }
 
         throw new RuntimeException("No product importer supports source [{$source->code}].");
+    }
+
+    private function processDrafts(ImportBatch $batch): void
+    {
+        if ($this->mediaDownloader === null && $this->duplicateDetector === null) {
+            return;
+        }
+
+        foreach ($batch->drafts()->lazyById() as $draft) {
+            $this->mediaDownloader?->downloadForDraft($draft);
+            $this->duplicateDetector?->detect($draft);
+        }
     }
 
     private function originalFilename(UploadedFile|string $artifact): string

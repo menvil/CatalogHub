@@ -79,6 +79,59 @@ class ImportMediaDownloadTest extends TestCase
         $this->assertSame('media_download_failed', NormalizationError::query()->sole()->code);
     }
 
+    public function test_malformed_candidate_creates_error_without_aborting_other_candidates(): void
+    {
+        Storage::fake('public');
+        $image = UploadedFile::fake()->image('working.jpg', 100, 100);
+        Http::fake([
+            'https://cdn.example.test/working.jpg' => Http::response(
+                file_get_contents($image->getRealPath()),
+                200,
+                ['Content-Type' => 'image/jpeg'],
+            ),
+        ]);
+        $draft = NormalizedProductDraft::factory()->create([
+            'media_json' => [42, ['source_url' => 'https://cdn.example.test/working.jpg']],
+        ]);
+
+        $this->downloader()->downloadForDraft($draft);
+
+        $media = $draft->fresh()->media_json;
+        $this->assertSame('failed', $media[0]['status']);
+        $this->assertSame(42, $media[0]['raw_value']);
+        $this->assertSame('downloaded', $media[1]['status']);
+        $this->assertSame('media_download_failed', NormalizationError::query()->sole()->code);
+    }
+
+    public function test_reimporting_identical_content_reuses_the_asset_source(): void
+    {
+        Storage::fake('public');
+        $image = UploadedFile::fake()->image('product.jpg', 100, 100);
+        Http::fake(fn () => Http::response(
+            file_get_contents($image->getRealPath()),
+            200,
+            ['Content-Type' => 'image/jpeg'],
+        ));
+        $first = NormalizedProductDraft::factory()->create([
+            'media_json' => [['source_url' => 'https://cdn.example.test/product.jpg']],
+        ]);
+        $second = NormalizedProductDraft::factory()->create([
+            'media_json' => [['source_url' => 'https://cdn.example.test/product.jpg']],
+        ]);
+
+        $this->downloader()->downloadForDraft($first);
+        $this->downloader()->downloadForDraft($second);
+
+        $this->assertSame(1, MediaAsset::query()->count());
+        $this->assertSame(1, MediaSource::query()->count());
+        $this->assertSame('downloaded', $first->fresh()->media_json[0]['status']);
+        $this->assertSame('downloaded', $second->fresh()->media_json[0]['status']);
+        $this->assertSame(
+            $first->fresh()->media_json[0]['media_asset_id'],
+            $second->fresh()->media_json[0]['media_asset_id'],
+        );
+    }
+
     public function test_rejects_dns_resolved_private_addresses_before_requesting_media(): void
     {
         Storage::fake('public');

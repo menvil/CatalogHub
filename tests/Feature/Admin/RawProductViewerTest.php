@@ -26,6 +26,7 @@ class RawProductViewerTest extends TestCase
                 'specifications' => ['Power' => '2200 W'],
             ],
             'status' => 'normalized',
+            'error_message' => 'Legacy row could not be parsed completely',
         ]);
         $draft = NormalizedProductDraft::factory()
             ->for($rawProduct, 'rawProduct')
@@ -49,6 +50,7 @@ class RawProductViewerTest extends TestCase
             ->assertSee('2200 W')
             ->assertSee($rawProduct->payload_hash)
             ->assertSee('unknown_attribute')
+            ->assertSee('Legacy row could not be parsed completely')
             ->assertSee('Normalized draft');
     }
 }

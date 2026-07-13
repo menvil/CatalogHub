@@ -50,6 +50,15 @@ class AdminCardTest extends TestCase
         $this->assertStringContainsString('p-6', $html);
     }
 
+    public function test_admin_card_supports_success_variant(): void
+    {
+        $html = Blade::render('<x-admin.card variant="success">Imported</x-admin.card>');
+
+        $this->assertStringContainsString('data-admin-card="success"', $html);
+        $this->assertStringContainsString('border-admin-success/30', $html);
+        $this->assertStringContainsString('bg-admin-success-soft', $html);
+    }
+
     public function test_admin_card_escapes_title_and_description(): void
     {
         $html = Blade::render(

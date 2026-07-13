@@ -8,6 +8,8 @@ use JsonException;
 
 final class RawProductWriter
 {
+    private const int MAX_PAYLOAD_DEPTH = 64;
+
     /**
      * @param  array<array-key, mixed>  $payload
      *
@@ -15,9 +17,13 @@ final class RawProductWriter
      */
     public function write(ImportBatch $batch, array $payload, ?int $sourceRowNumber = null): RawProduct
     {
+        // Validate recursion and depth before canonicalize() traverses untrusted legacy data.
+        json_encode($payload, JSON_THROW_ON_ERROR, self::MAX_PAYLOAD_DEPTH);
+
         $canonicalPayload = json_encode(
             $this->canonicalize($payload),
-            JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+            JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+            self::MAX_PAYLOAD_DEPTH,
         );
 
         $rawProduct = RawProduct::query()->create([
@@ -65,7 +71,7 @@ final class RawProductWriter
     {
         foreach ($keys as $key) {
             if (array_key_exists($key, $payload) && is_scalar($payload[$key])) {
-                return (string) $payload[$key];
+                return mb_substr((string) $payload[$key], 0, 255);
             }
         }
 

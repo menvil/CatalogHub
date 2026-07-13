@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\Imports\ImportBatch;
-use App\Models\Imports\ImportSource;
 use App\Models\Imports\RawProduct;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -26,7 +25,9 @@ class RawProductFactory extends Factory
 
         return [
             'import_batch_id' => ImportBatch::factory(),
-            'import_source_id' => ImportSource::factory(),
+            'import_source_id' => fn (array $attributes): int => ImportBatch::query()
+                ->findOrFail($attributes['import_batch_id'])
+                ->import_source_id,
             'external_id' => $payload['id'],
             'source_row_number' => fake()->numberBetween(1, 1000),
             'raw_title' => $payload['title'],

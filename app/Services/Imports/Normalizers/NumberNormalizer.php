@@ -52,7 +52,7 @@ final class NumberNormalizer implements AttributeValueNormalizerInterface
                 return null;
             }
 
-            $rawValue = (string) $rawValue;
+            $rawValue = $this->expandScientificNotation((string) $rawValue);
         }
 
         if (! is_string($rawValue)) {
@@ -92,5 +92,29 @@ final class NumberNormalizer implements AttributeValueNormalizerInterface
         $canonical = $integer.($decimal !== null && $decimal !== '' ? ".{$decimal}" : '');
 
         return $negative && $canonical !== '0' ? "-{$canonical}" : $canonical;
+    }
+
+    private function expandScientificNotation(string $value): string
+    {
+        if (! preg_match('/\A([+-]?)(\d+)(?:\.(\d+))?[eE]([+-]?\d+)\z/', $value, $matches)) {
+            return $value;
+        }
+
+        $sign = $matches[1];
+        $integer = $matches[2];
+        $fraction = $matches[3];
+        $exponent = (int) $matches[4];
+        $digits = $integer.$fraction;
+        $decimalPosition = strlen($integer) + $exponent;
+
+        if ($decimalPosition <= 0) {
+            return $sign.'0.'.str_repeat('0', -$decimalPosition).$digits;
+        }
+
+        if ($decimalPosition >= strlen($digits)) {
+            return $sign.$digits.str_repeat('0', $decimalPosition - strlen($digits));
+        }
+
+        return $sign.substr($digits, 0, $decimalPosition).'.'.substr($digits, $decimalPosition);
     }
 }

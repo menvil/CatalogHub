@@ -125,6 +125,37 @@ class PublishNormalizedProductDraftToCentralActionTest extends TestCase
         $this->assertSame(1, CentralProduct::query()->count());
     }
 
+    public function test_matched_product_resolves_code_attribute_from_its_preserved_category(): void
+    {
+        $editor = User::factory()->create(['role' => UserRole::CatalogEditor]);
+        $category = CentralCategory::factory()->create();
+        $definition = AttributeDefinition::factory()->for($category, 'category')->create([
+            'code' => 'material',
+            'data_type' => AttributeDataType::String,
+        ]);
+        $product = CentralProduct::factory()->for($category, 'category')->create();
+        $draft = NormalizedProductDraft::factory()->create([
+            'matched_central_product_id' => $product->id,
+            'category_id' => null,
+            'status' => 'approved',
+            'approved_by_user_id' => $editor->id,
+            'approved_at' => now(),
+            'attributes_json' => [[
+                'code' => 'material',
+                'value_type' => 'string',
+                'value' => 'Steel',
+            ]],
+        ]);
+
+        app(PublishNormalizedProductDraftToCentralAction::class)->handle($draft, $editor);
+
+        $this->assertDatabaseHas('central_product_attribute_values', [
+            'central_product_id' => $product->id,
+            'attribute_definition_id' => $definition->id,
+            'value_text' => 'Steel',
+        ]);
+    }
+
     public function test_unapproved_or_rejected_draft_cannot_be_published(): void
     {
         $editor = User::factory()->create(['role' => UserRole::CatalogEditor]);
@@ -182,6 +213,57 @@ class PublishNormalizedProductDraftToCentralActionTest extends TestCase
 
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('references an unknown attribute definition');
+
+        app(PublishNormalizedProductDraftToCentralAction::class)->handle($draft, $editor);
+    }
+
+    public function test_duplicate_attribute_candidates_abort_publication(): void
+    {
+        $editor = User::factory()->create(['role' => UserRole::CatalogEditor]);
+        $category = CentralCategory::factory()->create();
+        $definition = AttributeDefinition::factory()->for($category, 'category')->create([
+            'data_type' => AttributeDataType::String,
+        ]);
+        $candidate = [
+            'attribute_definition_id' => $definition->id,
+            'value_type' => 'string',
+            'value' => 'Steel',
+        ];
+        $draft = NormalizedProductDraft::factory()->create([
+            'category_id' => $category->id,
+            'status' => 'approved',
+            'approved_by_user_id' => $editor->id,
+            'approved_at' => now(),
+            'attributes_json' => [$candidate, $candidate],
+        ]);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('contains duplicate candidates');
+
+        app(PublishNormalizedProductDraftToCentralAction::class)->handle($draft, $editor);
+    }
+
+    public function test_candidate_cannot_override_attribute_definition_type(): void
+    {
+        $editor = User::factory()->create(['role' => UserRole::CatalogEditor]);
+        $category = CentralCategory::factory()->create();
+        $definition = AttributeDefinition::factory()->for($category, 'category')->create([
+            'data_type' => AttributeDataType::Boolean,
+        ]);
+        $draft = NormalizedProductDraft::factory()->create([
+            'category_id' => $category->id,
+            'status' => 'approved',
+            'approved_by_user_id' => $editor->id,
+            'approved_at' => now(),
+            'attributes_json' => [[
+                'attribute_definition_id' => $definition->id,
+                'value_type' => 'string',
+                'value' => 'yes',
+            ]],
+        ]);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('expects value type [boolean]');
 
         app(PublishNormalizedProductDraftToCentralAction::class)->handle($draft, $editor);
     }

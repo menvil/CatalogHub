@@ -27,6 +27,8 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['import_batch_id', 'severity']);
+            $table->index('raw_product_id');
+            $table->index('normalized_product_draft_id');
         });
     }
 

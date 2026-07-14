@@ -13,7 +13,10 @@ use App\Models\CentralCatalog\CentralProduct;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
 use App\Models\MarketUnitPreference;
 use App\Models\MeasurementUnit;
+use App\Models\MediaAsset;
 use App\Models\Site;
+use App\Services\Media\MediaResolver;
+use App\Services\Media\MediaUrlGenerator;
 use App\Services\Translations\TranslationResolver;
 use App\Services\Units\UnitConverter;
 use App\Services\Units\UnitFormatter;
@@ -25,6 +28,8 @@ final class ProductProjectionBuilder
         private readonly TranslationResolver $translationResolver,
         private readonly UnitConverter $unitConverter,
         private readonly UnitFormatter $unitFormatter,
+        private readonly MediaResolver $mediaResolver,
+        private readonly MediaUrlGenerator $mediaUrlGenerator,
     ) {}
 
     public function build(Site $site, CentralProduct $product, string $locale): ProductProjectionData
@@ -36,6 +41,7 @@ final class ProductProjectionBuilder
         $title = $this->translatedString($product, 'name', $locale, $sourceTitle);
         $slug = (string) $product->getAttribute('slug');
         $status = $product->status === CentralProductStatus::Active ? 'active' : 'pending';
+        $media = $this->buildMediaPayload($site, $product, $locale, $title);
         $payload = [
             'product' => [
                 'id' => (int) $product->getKey(),
@@ -71,9 +77,9 @@ final class ProductProjectionBuilder
                 'locale' => $locale,
             ],
             'spec_sections' => $this->buildSpecSections($product, $site, $locale),
+            'media' => $media,
         ];
         $seo = [];
-        $media = [];
 
         return new ProductProjectionData(
             siteId: (int) $site->getKey(),
@@ -358,5 +364,80 @@ final class ProductProjectionBuilder
         }
 
         return trim($number.' '.($unitCode ?? ''));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildMediaPayload(
+        Site $site,
+        CentralProduct $product,
+        string $locale,
+        string $alt,
+    ): array {
+        $main = $this->resolvedMediaItem($site, $product, 'main', $locale, $alt);
+        $gallery = $this->resolvedMediaItem($site, $product, 'gallery', $locale, $alt, false);
+
+        return [
+            'main' => $main,
+            'gallery' => $gallery === null ? [] : [$gallery],
+            'hero' => $this->resolvedMediaItem($site, $product, 'hero', $locale, $alt),
+            'og' => $this->resolvedMediaItem($site, $product, 'og', $locale, $alt),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function resolvedMediaItem(
+        Site $site,
+        CentralProduct $product,
+        string $role,
+        string $locale,
+        string $alt,
+        bool $includePlaceholder = true,
+    ): ?array {
+        $resolution = $this->mediaResolver->explain(
+            entityType: 'central_product',
+            entityId: (int) $product->getKey(),
+            role: $role,
+            locale: $locale,
+            siteId: (int) $site->getKey(),
+            marketId: (int) $site->getAttribute('market_id'),
+        );
+
+        if ($resolution->asset instanceof MediaAsset) {
+            return $this->mediaAssetPayload($resolution->asset, $alt);
+        }
+
+        if (! $includePlaceholder) {
+            return null;
+        }
+
+        return [
+            'asset_id' => null,
+            'url' => $resolution->placeholderUrl,
+            'alt' => $alt,
+            'width' => null,
+            'height' => null,
+            'mime_type' => null,
+            'is_placeholder' => true,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function mediaAssetPayload(MediaAsset $asset, string $alt): array
+    {
+        return [
+            'asset_id' => (int) $asset->getKey(),
+            'url' => $this->mediaUrlGenerator->forAsset($asset),
+            'alt' => $alt,
+            'width' => $asset->getAttribute('width'),
+            'height' => $asset->getAttribute('height'),
+            'mime_type' => $asset->getAttribute('mime_type'),
+            'is_placeholder' => false,
+        ];
     }
 }

@@ -35,6 +35,10 @@ final class ProductController extends Controller
         $benefits = is_array($benefitPayload)
             ? $benefitPayload
             : (is_string($summary) && $summary !== '' ? [$summary] : []);
+        $seo = $projection->seo_json ?? [];
+        $seo['meta_title'] ??= $projection->title;
+        $seo['meta_description'] ??= data_get($payload, 'product.short_description', data_get($payload, 'product.description'));
+        $seo['canonical_url'] ??= $urls->product($site, $locale, $projection);
 
         return view($layouts->resolve($site, 'product'), [
             'site' => $site,
@@ -53,7 +57,7 @@ final class ProductController extends Controller
             'benefits' => $benefits,
             'rating' => is_array(data_get($payload, 'rating')) ? data_get($payload, 'rating') : null,
             'media' => $projection->media_json ?? [],
-            'seo' => $projection->seo_json ?? [],
+            'seo' => $seo,
         ]);
     }
 }

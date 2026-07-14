@@ -22,6 +22,7 @@
             @if (filled($product['model'] ?? null))
                 <p class="mt-3 text-sm text-slate-500">Model {{ $product['model'] }}</p>
             @endif
+            @include('public.components.product-rating', ['rating' => $rating])
             @if (filled($product['description'] ?? null))
                 <p class="mt-6 text-lg leading-8 text-slate-600">{{ $product['description'] }}</p>
             @endif

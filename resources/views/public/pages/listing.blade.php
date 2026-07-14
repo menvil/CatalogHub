@@ -27,6 +27,11 @@
 
         <div class="mt-8">{{ $products->links() }}</div>
     @else
-        <p class="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-slate-600">No projected products are available in this category yet.</p>
+        @include('public.components.empty-state', [
+            'title' => 'No products here yet',
+            'message' => 'No projected products are available in this category yet.',
+            'actionUrl' => $categoryUrl,
+            'actionLabel' => 'Back to '.$category['title'],
+        ])
     @endif
 @endsection

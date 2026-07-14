@@ -50,6 +50,7 @@ final class SearchController extends Controller
             'locale' => $locale,
             'term' => $term,
             'results' => $results,
+            'homeUrl' => $urls->home($site, $locale),
         ]);
     }
 }

@@ -18,7 +18,12 @@
             @if ($term === '')
                 <p class="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-slate-600">Enter a product name or specification to start.</p>
             @elseif ($results->isEmpty())
-                <p class="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-slate-600">No projected products matched your search.</p>
+                @include('public.components.empty-state', [
+                    'title' => 'No search results',
+                    'message' => 'No projected products matched your search.',
+                    'actionUrl' => $homeUrl,
+                    'actionLabel' => 'Back to home',
+                ])
             @else
                 <p class="mb-4 text-sm text-slate-500">{{ $results->count() }} {{ Str::plural('result', $results->count()) }}</p>
                 <div class="grid gap-4 sm:grid-cols-2">

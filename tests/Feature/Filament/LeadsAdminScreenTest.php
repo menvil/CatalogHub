@@ -80,4 +80,17 @@ class LeadsAdminScreenTest extends TestCase
             ->assertCanSeeTableRecords([$visible])
             ->assertCanNotSeeTableRecords([$hidden]);
     }
+
+    public function test_site_admin_can_update_lead_status_from_table(): void
+    {
+        $site = Site::factory()->create();
+        $lead = Lead::factory()->create(['site_id' => $site->id, 'status' => LeadStatus::New]);
+
+        Livewire::actingAs(User::factory()->siteAdmin($site)->create())
+            ->test(ListLeads::class)
+            ->callTableAction('updateStatus', $lead, data: ['status' => LeadStatus::Contacted->value])
+            ->assertHasNoActionErrors();
+
+        $this->assertSame(LeadStatus::Contacted, $lead->fresh()->status);
+    }
 }

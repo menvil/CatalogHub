@@ -1,9 +1,15 @@
 name: Test coverage
 run-name: Coverage · ${{ github.head_ref || github.ref_name }}
 
+# Coverage mirrors the deploy branches: release/hotfix PRs into main are
+# measured before merge, and pushes to develop/main verify the deployed commit.
 on:
   pull_request:
     branches:
+      - main
+  push:
+    branches:
+      - develop
       - main
   workflow_dispatch:
 
@@ -119,7 +125,7 @@ jobs:
           retention-days: 30
 
   coverage-summary:
-    name: Coverage results
+    name: Summary
     if: always()
     runs-on: ubuntu-latest
     needs: coverage

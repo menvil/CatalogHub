@@ -6,6 +6,7 @@ use App\Enums\AttributeDataType;
 use App\Enums\FacetSourceType;
 use App\Enums\FacetType;
 use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\CentralCategory;
 use App\Models\FacetDefinition;
 use App\Models\FacetOption;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -87,5 +88,31 @@ class FacetDefinitionTest extends TestCase
 
         $this->assertSame(FacetType::Select, $facet->facet_type);
         $this->assertFalse($facet->facet_type->acceptsMultipleValues());
+    }
+
+    public function test_facets_can_be_scoped_to_category_and_ordered_by_position(): void
+    {
+        $category = CentralCategory::factory()->create();
+        $otherCategory = CentralCategory::factory()->create();
+        $later = FacetDefinition::factory()->for($category, 'category')->create(['position' => 20]);
+        $earlier = FacetDefinition::factory()->for($category, 'category')->create(['position' => 10]);
+        FacetDefinition::factory()->for($otherCategory, 'category')->create(['position' => 0]);
+
+        $facets = FacetDefinition::query()->forCategory($category)->ordered()->get();
+
+        $this->assertCount(2, $facets);
+        $this->assertTrue($facets->first()->is($earlier));
+        $this->assertTrue($facets->last()->is($later));
+    }
+
+    public function test_active_scope_excludes_inactive_facets(): void
+    {
+        $active = FacetDefinition::factory()->active()->create();
+        FacetDefinition::factory()->inactive()->create();
+
+        $facets = FacetDefinition::query()->active()->get();
+
+        $this->assertCount(1, $facets);
+        $this->assertTrue($facets->first()->is($active));
     }
 }

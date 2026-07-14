@@ -8,6 +8,7 @@ use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\CentralCategory;
 use Database\Factories\FacetDefinitionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -51,6 +52,33 @@ final class FacetDefinition extends Model
             'position' => 'integer',
             'config_json' => 'array',
         ];
+    }
+
+    /**
+     * @param  Builder<FacetDefinition>  $query
+     * @return Builder<FacetDefinition>
+     */
+    public function scopeForCategory(Builder $query, CentralCategory $category): Builder
+    {
+        return $query->where('category_id', $category->getKey());
+    }
+
+    /**
+     * @param  Builder<FacetDefinition>  $query
+     * @return Builder<FacetDefinition>
+     */
+    public function scopeOrdered(Builder $query): Builder
+    {
+        return $query->orderBy('position')->orderBy($this->getKeyName());
+    }
+
+    /**
+     * @param  Builder<FacetDefinition>  $query
+     * @return Builder<FacetDefinition>
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
     }
 
     /** @return BelongsTo<CentralCategory, $this> */

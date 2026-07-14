@@ -3,8 +3,13 @@
 namespace App\Services\Facets;
 
 use App\Data\Facets\AppliedFacetFilter;
+use App\Data\Facets\FacetDefinitionData;
 use App\Data\Facets\FacetFilterSet;
+use App\Data\Facets\FacetOptionData;
 use App\Domains\Projections\Enums\ProjectionStatus;
+use App\Enums\AttributeDataType;
+use App\Enums\FacetSourceType;
+use App\Enums\FacetType;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Site;
 use App\Models\SiteSearchDocument;
@@ -12,8 +17,12 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
-final class FacetQueryBuilder
+final readonly class FacetQueryBuilder
 {
+    public function __construct(
+        private SiteFacetConfigResolver $siteFacets,
+    ) {}
+
     /**
      * @param  Builder<SiteSearchDocument>  $query
      * @return Builder<SiteSearchDocument>
@@ -24,6 +33,7 @@ final class FacetQueryBuilder
         CentralCategory $category,
         FacetFilterSet $filters,
     ): Builder {
+        $filters->clearAppliedFilters();
         $query
             ->where('site_id', $site->id)
             ->where('document_type', 'product')
@@ -49,7 +59,73 @@ final class FacetQueryBuilder
             }
         }
 
+        $this->applyEnumFilters($query, $site, $category, $filters);
+
         return $query;
+    }
+
+    /** @param Builder<SiteSearchDocument> $query */
+    private function applyEnumFilters(
+        Builder $query,
+        Site $site,
+        CentralCategory $category,
+        FacetFilterSet $filters,
+    ): void {
+        $facets = $this->siteFacets->resolve($site, $category)
+            ->filter(fn (FacetDefinitionData $facet): bool => $facet->sourceType === FacetSourceType::Attribute
+                && in_array($facet->attributeDataType, [AttributeDataType::Enum, AttributeDataType::MultiEnum], true)
+                && in_array($facet->type, [FacetType::Checkbox, FacetType::Select], true));
+
+        foreach ($facets as $facet) {
+            if (preg_match('/^[a-zA-Z0-9_]+$/', $facet->code) !== 1) {
+                continue;
+            }
+
+            $values = $this->allowedOptionValues($facet, $this->listValues($filters->get($facet->code)));
+
+            if ($facet->type === FacetType::Select) {
+                $values = array_slice($values, 0, 1);
+            }
+
+            if ($values === []) {
+                continue;
+            }
+
+            $query->where(function (Builder $facetQuery) use ($facet, $values): void {
+                foreach ($values as $value) {
+                    $facetQuery
+                        ->orWhere("filter_values_json->{$facet->code}", $value)
+                        ->orWhereJsonContains("filter_values_json->{$facet->code}", $value);
+                }
+            });
+
+            foreach ($values as $value) {
+                $option = collect($facet->options)->first(
+                    fn (FacetOptionData $option): bool => $option->value === $value,
+                );
+                $filters->recordAppliedFilter(new AppliedFacetFilter(
+                    code: $facet->code,
+                    label: $option?->label ?? Str::headline($value),
+                    value: $value,
+                    queryKeys: [$facet->code],
+                ));
+            }
+        }
+    }
+
+    /**
+     * @param  list<string>  $values
+     * @return list<string>
+     */
+    private function allowedOptionValues(FacetDefinitionData $facet, array $values): array
+    {
+        if ($facet->options === []) {
+            return $values;
+        }
+
+        $allowed = collect($facet->options)->pluck('value')->all();
+
+        return array_values(array_intersect($values, $allowed));
     }
 
     /** @return list<string> */

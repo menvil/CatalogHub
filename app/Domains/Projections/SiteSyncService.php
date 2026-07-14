@@ -96,17 +96,27 @@ final class SiteSyncService
     /**
      * @return array{categories: int, products: int, locales: int}
      */
-    public function syncSite(Site $site): array
-    {
-        $job = $this->startJob($site, 'site', 'site', (int) $site->getKey(), null);
-        $locales = DB::table('site_locales')
-            ->where('site_id', $site->getKey())
-            ->where('is_enabled', true)
-            ->orderBy('position')
-            ->orderBy('id')
-            ->pluck('locale_code')
-            ->map(fn (mixed $locale): string => (string) $locale)
-            ->all();
+    public function syncSite(
+        Site $site,
+        ?string $locale = null,
+        bool $productsOnly = false,
+        bool $categoriesOnly = false,
+    ): array {
+        if ($productsOnly && $categoriesOnly) {
+            throw new \InvalidArgumentException('Products-only and categories-only cannot be used together.');
+        }
+
+        $job = $this->startJob($site, 'site', 'site', (int) $site->getKey(), $locale);
+        $locales = $locale === null || $locale === ''
+            ? DB::table('site_locales')
+                ->where('site_id', $site->getKey())
+                ->where('is_enabled', true)
+                ->orderBy('position')
+                ->orderBy('id')
+                ->pluck('locale_code')
+                ->map(fn (mixed $locale): string => (string) $locale)
+                ->all()
+            : [$this->locale($site, $locale)];
 
         if ($locales === []) {
             $locales = [$this->locale($site, null)];
@@ -130,14 +140,18 @@ final class SiteSyncService
 
         try {
             foreach ($locales as $locale) {
-                foreach ($categories as $category) {
-                    $this->syncCategory($site, $category, $locale);
-                    $counts['categories']++;
+                if (! $productsOnly) {
+                    foreach ($categories as $category) {
+                        $this->syncCategory($site, $category, $locale);
+                        $counts['categories']++;
+                    }
                 }
 
-                foreach ($products as $product) {
-                    $this->syncProduct($site, $product, $locale);
-                    $counts['products']++;
+                if (! $categoriesOnly) {
+                    foreach ($products as $product) {
+                        $this->syncProduct($site, $product, $locale);
+                        $counts['products']++;
+                    }
                 }
             }
 

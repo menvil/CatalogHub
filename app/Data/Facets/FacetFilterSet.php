@@ -68,6 +68,11 @@ final class FacetFilterSet
         $this->appliedFilters[] = $filter;
     }
 
+    public function clearAppliedFilters(): void
+    {
+        $this->appliedFilters = [];
+    }
+
     private static function normalizeValue(mixed $value): mixed
     {
         if (is_string($value)) {

@@ -8,10 +8,13 @@ use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Site;
 use App\Models\SiteSearchDocument;
 use App\Services\Facets\FacetQueryBuilder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class FacetQueryBuilderTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_no_op_apply_returns_same_query_builder(): void
     {
         $query = SiteSearchDocument::query();
@@ -19,8 +22,8 @@ class FacetQueryBuilderTest extends TestCase
 
         $result = app(FacetQueryBuilder::class)->apply(
             $query,
-            Site::factory()->make(['market_id' => 1]),
-            CentralCategory::factory()->make(),
+            Site::factory()->create(),
+            CentralCategory::factory()->create(),
             $filters,
         );
 

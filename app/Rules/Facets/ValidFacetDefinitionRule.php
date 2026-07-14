@@ -47,6 +47,11 @@ final class ValidFacetDefinitionRule implements DataAwareRule, ValidationRule
         if ($facetType === FacetType::Boolean) {
             $this->validateBoolean($sourceType, $fail);
         }
+
+        if ($facetType === FacetType::Select
+            && ! in_array($sourceType, [FacetSourceType::Attribute, FacetSourceType::Brand], true)) {
+            $fail('Select facets require an attribute or brand source.');
+        }
     }
 
     private function validateRange(FacetSourceType $sourceType, Closure $fail): void

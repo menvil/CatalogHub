@@ -80,4 +80,12 @@ class FacetDefinitionTest extends TestCase
         $this->assertSame(AttributeDataType::Boolean, $facet->attributeDefinition->data_type);
         $this->assertTrue($facet->attributeDefinition->category->is($facet->category));
     }
+
+    public function test_factory_supports_single_value_select_facet_type(): void
+    {
+        $facet = FacetDefinition::factory()->select()->create();
+
+        $this->assertSame(FacetType::Select, $facet->facet_type);
+        $this->assertFalse($facet->facet_type->acceptsMultipleValues());
+    }
 }

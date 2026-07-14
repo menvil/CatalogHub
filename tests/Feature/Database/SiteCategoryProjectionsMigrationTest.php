@@ -51,5 +51,9 @@ class SiteCategoryProjectionsMigrationTest extends TestCase
         $this->assertTrue($indexes->contains(
             fn (array $index): bool => $index['columns'] === ['central_category_id'],
         ));
+        $this->assertTrue($indexes->contains(
+            fn (array $index): bool => $index['unique'] === false
+                && $index['columns'] === ['checksum'],
+        ));
     }
 }

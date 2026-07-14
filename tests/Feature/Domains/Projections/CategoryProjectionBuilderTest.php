@@ -3,6 +3,7 @@
 namespace Tests\Feature\Domains\Projections;
 
 use App\Domains\Projections\Builders\CategoryProjectionBuilder;
+use App\Domains\Projections\Enums\ProjectionStatus;
 use App\Enums\CategorySchemaStatus;
 use App\Enums\CentralCategoryStatus;
 use App\Models\CentralCatalog\AttributeDefinition;
@@ -82,7 +83,7 @@ class CategoryProjectionBuilderTest extends TestCase
         $this->assertSame('refresh_rate', $first->comparison[0]['code']);
         $this->assertSame('Monitore kaufen', $first->seo['meta_title']);
         $this->assertSame('https://catalog.example/categories/monitore', $first->seo['canonical_url']);
-        $this->assertSame('active', $first->status);
+        $this->assertSame(ProjectionStatus::Active, $first->status);
         $this->assertSame($first->checksum, $second->checksum);
     }
 }

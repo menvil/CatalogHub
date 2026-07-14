@@ -10,6 +10,7 @@ use App\Models\SiteCategoryProjection;
 use App\Models\SiteProductProjection;
 use App\Models\SiteSearchDocument;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class ProjectionStaleDetectorTest extends TestCase
@@ -85,6 +86,9 @@ class ProjectionStaleDetectorTest extends TestCase
         $site = Site::factory()->create();
         $changed = CentralProduct::factory()->create();
         $current = CentralProduct::factory()->create();
+        $unversioned = CentralProduct::factory()->create();
+        DB::table('central_products')->where('id', $unversioned->id)->update(['updated_at' => null]);
+        $changedCategory = CentralCategory::factory()->create();
         $changedProjection = SiteProductProjection::create([
             'site_id' => $site->id,
             'locale' => 'en',
@@ -103,12 +107,32 @@ class ProjectionStaleDetectorTest extends TestCase
             'status' => 'active',
             'payload_json' => [],
         ]);
+        $unversionedProjection = SiteProductProjection::create([
+            'site_id' => $site->id,
+            'locale' => 'en',
+            'central_product_id' => $unversioned->id,
+            'central_product_version' => null,
+            'slug' => $unversioned->slug,
+            'status' => 'active',
+            'payload_json' => [],
+        ]);
+        $changedCategoryProjection = SiteCategoryProjection::create([
+            'site_id' => $site->id,
+            'locale' => 'en',
+            'central_category_id' => $changedCategory->id,
+            'central_category_version' => max(0, (int) $changedCategory->updated_at?->timestamp - 1),
+            'slug' => $changedCategory->slug,
+            'status' => 'active',
+            'payload_json' => [],
+        ]);
 
         $counts = app(ProjectionStaleDetector::class)->detectStaleForSite($site);
 
-        $this->assertSame(['products' => 1, 'categories' => 0], $counts);
+        $this->assertSame(['products' => 1, 'categories' => 1], $counts);
         $this->assertSame('stale', $changedProjection->refresh()->getRawOriginal('status'));
         $this->assertSame('active', $currentProjection->refresh()->getRawOriginal('status'));
+        $this->assertSame('active', $unversionedProjection->refresh()->getRawOriginal('status'));
+        $this->assertSame('stale', $changedCategoryProjection->refresh()->getRawOriginal('status'));
     }
 
     public function test_it_can_mark_all_site_projections_stale(): void

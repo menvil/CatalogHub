@@ -45,5 +45,9 @@ class SiteSearchDocumentsMigrationTest extends TestCase
         $this->assertTrue($indexes->contains(
             fn (array $index): bool => $index['columns'] === ['site_id', 'locale', 'document_type'],
         ));
+        $this->assertTrue($indexes->contains(
+            fn (array $index): bool => $index['unique'] === false
+                && $index['columns'] === ['checksum'],
+        ));
     }
 }

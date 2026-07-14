@@ -2,6 +2,7 @@
 
 namespace App\Domains\Projections\DTO;
 
+use App\Domains\Projections\Enums\ProjectionStatus;
 use Carbon\CarbonImmutable;
 
 final readonly class CategoryProjectionData
@@ -19,7 +20,7 @@ final readonly class CategoryProjectionData
         public ?int $parentCategoryId,
         public string $slug,
         public string $title,
-        public string $status,
+        public ProjectionStatus $status,
         public array $payload,
         public array $seo,
         public array $facets,

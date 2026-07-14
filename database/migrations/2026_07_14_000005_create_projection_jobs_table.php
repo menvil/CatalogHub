@@ -14,8 +14,7 @@ return new class extends Migration
             $table->foreignId('site_id')->nullable()->constrained()->nullOnDelete();
             $table->string('job_type');
             $table->string('status')->default('pending')->index();
-            $table->string('target_type')->nullable();
-            $table->unsignedBigInteger('target_id')->nullable();
+            $table->nullableMorphs('target');
             $table->string('locale', 20)->nullable();
             $table->foreignId('requested_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->json('payload_json')->nullable();
@@ -27,7 +26,6 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['site_id', 'status']);
-            $table->index(['target_type', 'target_id']);
         });
     }
 

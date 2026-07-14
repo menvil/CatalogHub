@@ -11,10 +11,10 @@ final class SearchDocumentBuilder
     public function fromProductProjection(ProductProjectionData $projection): SearchDocumentData
     {
         $attributes = $this->attributesFromPayload($projection->payload);
-        $filterValues = array_filter([
+        $filterValues = [
             'brand_id' => data_get($projection->payload, 'brand.id'),
             'category_id' => data_get($projection->payload, 'category.id'),
-        ], fn (mixed $value): bool => $value !== null);
+        ];
         $sortValues = [
             'title' => $projection->title,
             'rating' => null,
@@ -48,6 +48,11 @@ final class SearchDocumentBuilder
             }
         }
 
+        $filterValues = array_filter(
+            $filterValues,
+            fn (mixed $value): bool => $value !== null,
+        );
+
         return $this->make(
             siteId: $projection->siteId,
             locale: $projection->locale,
@@ -55,7 +60,7 @@ final class SearchDocumentBuilder
             documentId: $projection->centralProductId,
             title: $projection->title,
             slug: $projection->slug,
-            status: $projection->status,
+            status: $projection->status->value,
             searchText: $this->searchText($searchParts),
             filterValues: $filterValues,
             sortValues: $sortValues,
@@ -86,7 +91,7 @@ final class SearchDocumentBuilder
             documentId: $projection->centralCategoryId,
             title: $projection->title,
             slug: $projection->slug,
-            status: $projection->status,
+            status: $projection->status->value,
             searchText: $this->searchText($searchParts),
             filterValues: array_filter([
                 'category_id' => $projection->centralCategoryId,

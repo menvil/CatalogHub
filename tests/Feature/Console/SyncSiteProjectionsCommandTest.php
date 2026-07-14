@@ -83,9 +83,8 @@ class SyncSiteProjectionsCommandTest extends TestCase
             'site' => $site->id,
             '--locale' => 'en',
             '--products-only' => true,
-            '--force' => true,
         ])
-            ->expectsOutputToContain('categories=0 products=1 force=yes')
+            ->expectsOutputToContain('categories=0 products=1')
             ->assertSuccessful();
 
         $this->assertDatabaseMissing('site_category_projections', [

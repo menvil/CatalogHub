@@ -5,6 +5,7 @@ namespace App\Domains\Projections\Builders;
 use App\Domains\Projections\DTO\CategoryProjectionData;
 use App\Domains\Projections\DTO\ProductProjectionData;
 use App\Domains\Projections\DTO\SitemapUrlData;
+use App\Domains\Projections\Enums\ProjectionStatus;
 use App\Models\Site;
 use Carbon\CarbonImmutable;
 
@@ -25,7 +26,7 @@ final class SitemapBuilder
             changefreq: 'weekly',
             priority: 0.8,
             lastmodAt: $projection->builtAt,
-            active: $projection->status === 'active',
+            active: $projection->status === ProjectionStatus::Active,
         );
     }
 
@@ -44,7 +45,7 @@ final class SitemapBuilder
             changefreq: 'daily',
             priority: 0.7,
             lastmodAt: $projection->builtAt,
-            active: $projection->status === 'active',
+            active: $projection->status === ProjectionStatus::Active,
         );
     }
 

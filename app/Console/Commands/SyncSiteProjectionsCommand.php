@@ -13,8 +13,7 @@ final class SyncSiteProjectionsCommand extends Command
                             {site : Site ID or code}
                             {--locale= : Sync only this locale}
                             {--products-only : Sync product projections only}
-                            {--categories-only : Sync category projections only}
-                            {--force : Rebuild selected projections regardless of their current status}';
+                            {--categories-only : Sync category projections only}';
 
     protected $description = 'Build and persist all selected projections for a site';
 
@@ -53,12 +52,11 @@ final class SyncSiteProjectionsCommand extends Command
         }
 
         $this->info(sprintf(
-            'Site projections synced: site=%s locales=%d categories=%d products=%d%s',
+            'Site projections synced: site=%s locales=%d categories=%d products=%d',
             $site->code,
             $counts['locales'],
             $counts['categories'],
             $counts['products'],
-            $this->option('force') ? ' force=yes' : '',
         ));
 
         return self::SUCCESS;

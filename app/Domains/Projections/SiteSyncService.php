@@ -19,6 +19,7 @@ use App\Models\SiteCategoryProjection;
 use App\Models\SiteProductProjection;
 use App\Models\SiteSearchDocument;
 use App\Models\SiteSitemapUrl;
+use Closure;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +27,8 @@ use Throwable;
 
 final class SiteSyncService
 {
+    private const SYNC_CHUNK_SIZE = 100;
+
     public function __construct(
         private readonly ProductProjectionBuilder $productProjectionBuilder,
         private readonly CategoryProjectionBuilder $categoryProjectionBuilder,
@@ -45,12 +48,15 @@ final class SiteSyncService
             $projection = $this->productProjectionBuilder->build($site, $product, $locale);
             $searchDocument = $this->searchDocumentBuilder->fromProductProjection($projection);
             $sitemapUrl = $this->sitemapBuilder->fromProductProjection($site, $projection);
-            $record = DB::transaction(fn (): SiteProductProjection => $this->persistProductBundle(
-                $product,
-                $projection,
-                $searchDocument,
-                $sitemapUrl,
-            ));
+            $record = $this->persistAtomically(
+                $projection->siteId,
+                fn (): SiteProductProjection => $this->persistProductBundle(
+                    $product,
+                    $projection,
+                    $searchDocument,
+                    $sitemapUrl,
+                ),
+            );
 
             $this->completeJob($job, 'product', (int) $product->getKey());
 
@@ -75,12 +81,15 @@ final class SiteSyncService
             $projection = $this->categoryProjectionBuilder->build($site, $category, $locale);
             $searchDocument = $this->searchDocumentBuilder->fromCategoryProjection($projection);
             $sitemapUrl = $this->sitemapBuilder->fromCategoryProjection($site, $projection);
-            $record = DB::transaction(fn (): SiteCategoryProjection => $this->persistCategoryBundle(
-                $category,
-                $projection,
-                $searchDocument,
-                $sitemapUrl,
-            ));
+            $record = $this->persistAtomically(
+                $projection->siteId,
+                fn (): SiteCategoryProjection => $this->persistCategoryBundle(
+                    $category,
+                    $projection,
+                    $searchDocument,
+                    $sitemapUrl,
+                ),
+            );
 
             $this->completeJob($job, 'category', (int) $category->getKey());
 
@@ -94,7 +103,12 @@ final class SiteSyncService
     }
 
     /**
-     * @return array{categories: int, products: int, locales: int}
+     * @return array{
+     *     categories: int,
+     *     products: int,
+     *     locales: int,
+     *     failures: list<array{locale: string, entity_type: string, entity_id: int, message: string}>
+     * }
      */
     public function syncSite(
         Site $site,
@@ -122,36 +136,73 @@ final class SiteSyncService
             $locales = [$this->locale($site, null)];
         }
 
-        $categoryIds = DB::table('site_categories')
-            ->where('site_id', $site->getKey())
-            ->where('is_enabled', true)
-            ->orderBy('position')
-            ->orderBy('id')
-            ->pluck('central_category_id');
-        $productIds = DB::table('site_products')
-            ->where('site_id', $site->getKey())
-            ->where('visibility', 'visible')
-            ->orderBy('position')
-            ->orderBy('id')
-            ->pluck('central_product_id');
-        $categories = CentralCategory::query()->whereKey($categoryIds)->orderBy('id')->get();
-        $products = CentralProduct::query()->whereKey($productIds)->orderBy('id')->get();
-        $counts = ['categories' => 0, 'products' => 0, 'locales' => count($locales)];
+        $counts = [
+            'categories' => 0,
+            'products' => 0,
+            'locales' => count($locales),
+            'failures' => [],
+        ];
 
         try {
             foreach ($locales as $locale) {
                 if (! $productsOnly) {
-                    foreach ($categories as $category) {
-                        $this->syncCategory($site, $category, $locale);
-                        $counts['categories']++;
-                    }
+                    CentralCategory::query()
+                        ->whereIn('id', DB::table('site_categories')
+                            ->select('central_category_id')
+                            ->where('site_id', $site->getKey())
+                            ->where('is_enabled', true))
+                        ->chunkById(self::SYNC_CHUNK_SIZE, function ($categories) use (
+                            $site,
+                            $locale,
+                            $job,
+                            &$counts,
+                        ): void {
+                            foreach ($categories as $category) {
+                                try {
+                                    $this->syncCategory($site, $category, $locale);
+                                    $counts['categories']++;
+                                } catch (Throwable $exception) {
+                                    $this->recordItemFailure(
+                                        $job,
+                                        $counts,
+                                        $locale,
+                                        'category',
+                                        (int) $category->getKey(),
+                                        $exception,
+                                    );
+                                }
+                            }
+                        });
                 }
 
                 if (! $categoriesOnly) {
-                    foreach ($products as $product) {
-                        $this->syncProduct($site, $product, $locale);
-                        $counts['products']++;
-                    }
+                    CentralProduct::query()
+                        ->whereIn('id', DB::table('site_products')
+                            ->select('central_product_id')
+                            ->where('site_id', $site->getKey())
+                            ->where('visibility', 'visible'))
+                        ->chunkById(self::SYNC_CHUNK_SIZE, function ($products) use (
+                            $site,
+                            $locale,
+                            $job,
+                            &$counts,
+                        ): void {
+                            foreach ($products as $product) {
+                                try {
+                                    $this->syncProduct($site, $product, $locale);
+                                    $counts['products']++;
+                                } catch (Throwable $exception) {
+                                    $this->recordItemFailure(
+                                        $job,
+                                        $counts,
+                                        $locale,
+                                        'product',
+                                        (int) $product->getKey(),
+                                        $exception,
+                                    );
+                                }
+                            }
+                        });
                 }
             }
 
@@ -284,6 +335,21 @@ final class SiteSyncService
         ]);
     }
 
+    /**
+     * @template T
+     *
+     * @param  Closure(): T  $callback
+     * @return T
+     */
+    private function persistAtomically(int $siteId, Closure $callback): mixed
+    {
+        return DB::transaction(function () use ($siteId, $callback): mixed {
+            Site::query()->whereKey($siteId)->lockForUpdate()->firstOrFail();
+
+            return $callback();
+        }, 3);
+    }
+
     private function startJob(
         Site $site,
         string $jobType,
@@ -368,6 +434,40 @@ final class SiteSyncService
             'entity_type' => $entityType,
             'entity_id' => $entityId,
         ]);
+    }
+
+    /**
+     * @param  array{
+     *     categories: int,
+     *     products: int,
+     *     locales: int,
+     *     failures: list<array{locale: string, entity_type: string, entity_id: int, message: string}>
+     * }  $counts
+     */
+    private function recordItemFailure(
+        ProjectionJob $job,
+        array &$counts,
+        string $locale,
+        string $entityType,
+        int $entityId,
+        Throwable $exception,
+    ): void {
+        $failure = [
+            'locale' => $locale,
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'message' => $exception->getMessage(),
+        ];
+        $counts['failures'][] = $failure;
+        $this->log(
+            $job,
+            'warning',
+            'item_failed',
+            ucfirst($entityType).' projection sync failed; site sync continued.',
+            $entityType,
+            $entityId,
+            $failure,
+        );
     }
 
     private function markExistingProjectionFailed(

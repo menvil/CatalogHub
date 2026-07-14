@@ -2,9 +2,13 @@
 
 namespace Tests\Feature\Livewire;
 
+use App\Domains\Projections\Enums\ProjectionStatus;
+use App\Enums\ReviewStatus;
 use App\Livewire\Public\Reviews\ReviewForm;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Site;
+use App\Models\SiteFeature;
+use App\Models\SiteProductProjection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -48,5 +52,42 @@ class ReviewFormTest extends TestCase
             ->assertHasNoErrors('rating');
 
         $this->assertDatabaseCount('reviews', 0);
+    }
+
+    public function test_review_form_submits_pros_and_cons_as_a_pending_review(): void
+    {
+        $site = Site::factory()->create();
+        $product = CentralProduct::factory()->create();
+        SiteFeature::query()->create([
+            'site_id' => $site->id,
+            'feature_key' => 'reviews',
+            'is_enabled' => true,
+        ]);
+        SiteProductProjection::query()->create([
+            'site_id' => $site->id,
+            'locale' => 'en-US',
+            'central_product_id' => $product->id,
+            'slug' => 'test-product',
+            'status' => ProjectionStatus::Active,
+            'payload_json' => [],
+        ]);
+
+        Livewire::test(ReviewForm::class, compact('site', 'product'))
+            ->set('authorName', 'Ivan')
+            ->set('authorEmail', 'ivan@example.com')
+            ->set('rating', 5)
+            ->set('pros', 'Fast and quiet.')
+            ->set('cons', 'Expensive.')
+            ->call('submit')
+            ->assertHasNoErrors()
+            ->assertSet('submitted', true);
+
+        $this->assertDatabaseHas('reviews', [
+            'site_id' => $site->id,
+            'central_product_id' => $product->id,
+            'pros' => 'Fast and quiet.',
+            'cons' => 'Expensive.',
+            'status' => ReviewStatus::Pending->value,
+        ]);
     }
 }

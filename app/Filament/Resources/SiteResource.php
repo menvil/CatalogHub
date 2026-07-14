@@ -89,7 +89,7 @@ final class SiteResource extends Resource
 
     public static function getPages(): array
     {
-        return ['index' => Pages\ListSites::route('/'), 'dashboard' => Pages\SiteDashboard::route('/{record}/dashboard'), 'edit' => Pages\EditSite::route('/{record}/edit'), 'products' => Pages\ManageSiteProducts::route('/{record}/products'), 'brands' => Pages\BrandVisibilityRules::route('/{record}/brands'), 'overrides' => Pages\LocalOverrideEditor::route('/{record}/overrides'), 'seo' => Pages\LocalSeoOverride::route('/{record}/seo')];
+        return ['index' => Pages\ListSites::route('/'), 'dashboard' => Pages\SiteDashboard::route('/{record}/dashboard'), 'edit' => Pages\EditSite::route('/{record}/edit'), 'products' => Pages\ManageSiteProducts::route('/{record}/products'), 'brands' => Pages\BrandVisibilityRules::route('/{record}/brands'), 'overrides' => Pages\LocalOverrideEditor::route('/{record}/overrides'), 'seo' => Pages\LocalSeoOverride::route('/{record}/seo'), 'themes' => Pages\ThemeSelection::route('/{record}/themes'), 'home-blocks' => Pages\HomepageBlocksEditor::route('/{record}/home-blocks')];
     }
 
     public static function getRelations(): array

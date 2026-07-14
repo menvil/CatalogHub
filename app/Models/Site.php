@@ -15,9 +15,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * @property SiteMode $mode
  * @property SiteStatus $status
+ * @property int|null $theme_id
  * @property array<string, mixed>|null $settings_json
+ * @property-read Theme|null $theme
  */
-#[Fillable(['market_id', 'code', 'name', 'domain', 'mode', 'default_locale', 'status', 'settings_json'])]
+#[Fillable(['market_id', 'theme_id', 'code', 'name', 'domain', 'mode', 'default_locale', 'status', 'settings_json'])]
 final class Site extends Model
 {
     /** @use HasFactory<SiteFactory> */
@@ -39,6 +41,12 @@ final class Site extends Model
         return $this->belongsTo(Market::class);
     }
 
+    /** @return BelongsTo<Theme, $this> */
+    public function theme(): BelongsTo
+    {
+        return $this->belongsTo(Theme::class);
+    }
+
     /** @return HasMany<SiteFeature, $this> */
     public function features(): HasMany
     {
@@ -55,6 +63,12 @@ final class Site extends Model
     public function overrides(): HasMany
     {
         return $this->hasMany(SiteOverride::class);
+    }
+
+    /** @return HasMany<SiteHomeBlock, $this> */
+    public function homeBlocks(): HasMany
+    {
+        return $this->hasMany(SiteHomeBlock::class);
     }
 
     public function isSingleCategory(): bool

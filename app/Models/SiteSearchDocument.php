@@ -3,16 +3,31 @@
 namespace App\Models;
 
 use App\Domains\Projections\Enums\ProjectionStatus;
+use Database\Factories\SiteSearchDocumentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property array<string, mixed>|null $filter_values_json
+ * @property array<string, mixed>|null $sort_values_json
+ * @property array<string, mixed>|null $payload_json
+ */
 #[Fillable([
     'site_id', 'locale', 'document_type', 'document_id', 'title', 'slug', 'status', 'search_text',
     'filter_values_json', 'sort_values_json', 'payload_json', 'checksum', 'built_at', 'stale_at',
 ])]
 final class SiteSearchDocument extends Model
 {
+    /** @use HasFactory<SiteSearchDocumentFactory> */
+    use HasFactory;
+
+    protected static function newFactory(): SiteSearchDocumentFactory
+    {
+        return SiteSearchDocumentFactory::new();
+    }
+
     protected function casts(): array
     {
         return [

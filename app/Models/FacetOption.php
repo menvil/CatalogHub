@@ -1,0 +1,64 @@
+<?php
+
+namespace App\Models;
+
+use Database\Factories\FacetOptionFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Validation\ValidationException;
+
+/**
+ * @property array<string, mixed>|null $config_json
+ * @property int $position
+ * @property bool $is_active
+ */
+#[Fillable([
+    'facet_definition_id',
+    'value',
+    'label_override',
+    'position',
+    'is_active',
+    'config_json',
+])]
+final class FacetOption extends Model
+{
+    /** @use HasFactory<FacetOptionFactory> */
+    use HasFactory;
+
+    protected static function booted(): void
+    {
+        self::saving(function (FacetOption $option): void {
+            $value = trim((string) $option->getAttribute('value'));
+
+            if (str_contains($value, ',')) {
+                throw ValidationException::withMessages([
+                    'value' => 'Facet option values cannot contain commas.',
+                ]);
+            }
+
+            $option->setAttribute('value', $value);
+        });
+    }
+
+    protected static function newFactory(): FacetOptionFactory
+    {
+        return FacetOptionFactory::new();
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'position' => 'integer',
+            'is_active' => 'boolean',
+            'config_json' => 'array',
+        ];
+    }
+
+    /** @return BelongsTo<FacetDefinition, $this> */
+    public function facetDefinition(): BelongsTo
+    {
+        return $this->belongsTo(FacetDefinition::class);
+    }
+}

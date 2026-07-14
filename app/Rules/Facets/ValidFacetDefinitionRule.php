@@ -1,0 +1,120 @@
+<?php
+
+namespace App\Rules\Facets;
+
+use App\Enums\AttributeDataType;
+use App\Enums\FacetSourceType;
+use App\Enums\FacetType;
+use App\Models\CentralCatalog\AttributeDefinition;
+use Closure;
+use Illuminate\Contracts\Validation\DataAwareRule;
+use Illuminate\Contracts\Validation\ValidationRule;
+
+final class ValidFacetDefinitionRule implements DataAwareRule, ValidationRule
+{
+    /** @var array<string, mixed> */
+    private array $data = [];
+
+    /** @param array<string, mixed> $data */
+    public function setData(array $data): static
+    {
+        $this->data = $data;
+
+        return $this;
+    }
+
+    public function validate(string $attribute, mixed $value, Closure $fail): void
+    {
+        $facetType = is_string($value) ? FacetType::tryFrom($value) : null;
+        $sourceValue = data_get($this->data, 'source_type', data_get($this->data, 'data.source_type'));
+        $sourceType = is_string($sourceValue) ? FacetSourceType::tryFrom($sourceValue) : null;
+
+        if ($facetType === null || $sourceType === null) {
+            $fail('The facet type and source type must be valid.');
+
+            return;
+        }
+
+        if ($facetType === FacetType::Checkbox) {
+            $this->validateOptionFacet($facetType, $sourceType, $fail);
+        }
+
+        if ($facetType === FacetType::Range) {
+            $this->validateRange($sourceType, $fail);
+        }
+
+        if ($facetType === FacetType::Boolean) {
+            $this->validateBoolean($sourceType, $fail);
+        }
+
+        if ($facetType === FacetType::Select) {
+            $this->validateOptionFacet($facetType, $sourceType, $fail);
+        }
+    }
+
+    private function validateOptionFacet(FacetType $facetType, FacetSourceType $sourceType, Closure $fail): void
+    {
+        $label = $facetType === FacetType::Checkbox ? 'Checkbox' : 'Select';
+
+        if (! in_array($sourceType, [FacetSourceType::Attribute, FacetSourceType::Brand], true)) {
+            $fail("{$label} facets require an attribute or brand source.");
+
+            return;
+        }
+
+        if ($sourceType !== FacetSourceType::Attribute) {
+            return;
+        }
+
+        $attribute = $this->attribute();
+
+        if ($attribute === null
+            || ! in_array($attribute->data_type, [AttributeDataType::Enum, AttributeDataType::MultiEnum], true)) {
+            $fail("{$label} facets require an enum or multi-enum attribute from the selected category.");
+        }
+    }
+
+    private function validateRange(FacetSourceType $sourceType, Closure $fail): void
+    {
+        if ($sourceType === FacetSourceType::Rating) {
+            return;
+        }
+
+        if ($sourceType !== FacetSourceType::Attribute) {
+            $fail('Range facets require a numeric attribute or rating source.');
+
+            return;
+        }
+
+        $attribute = $this->attribute();
+
+        if ($attribute === null
+            || ! in_array($attribute->data_type, [AttributeDataType::Integer, AttributeDataType::Decimal], true)) {
+            $fail('Range facets require an integer or decimal attribute from the selected category.');
+        }
+    }
+
+    private function validateBoolean(FacetSourceType $sourceType, Closure $fail): void
+    {
+        $attribute = $sourceType === FacetSourceType::Attribute ? $this->attribute() : null;
+
+        if ($attribute?->data_type !== AttributeDataType::Boolean) {
+            $fail('Boolean facets require a boolean attribute from the selected category.');
+        }
+    }
+
+    private function attribute(): ?AttributeDefinition
+    {
+        $attributeId = $this->value('attribute_definition_id');
+        $categoryId = $this->value('category_id');
+
+        return AttributeDefinition::query()
+            ->when(filled($categoryId), fn ($query) => $query->where('central_category_id', $categoryId))
+            ->find($attributeId);
+    }
+
+    private function value(string $key): mixed
+    {
+        return data_get($this->data, $key, data_get($this->data, "data.{$key}"));
+    }
+}

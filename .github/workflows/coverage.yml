@@ -42,13 +42,13 @@ jobs:
           coverage: pcov
 
       - name: Setup Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 26
           cache: npm
 
       - name: Cache Composer packages
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: vendor
           key: composer-${{ runner.os }}-php-8.3-${{ hashFiles('composer.lock') }}
@@ -135,7 +135,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Publish coverage results
-        uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           COVERAGE_RESULT: ${{ needs.coverage.result }}
           COVERAGE_PERCENTAGE: ${{ needs.coverage.outputs.percentage }}

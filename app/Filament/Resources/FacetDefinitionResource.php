@@ -138,6 +138,7 @@ final class FacetDefinitionResource extends Resource
                 TextColumn::make('updated_at')->dateTime()->sortable(),
             ])
             ->defaultSort('position')
+            ->reorderable('position')
             ->recordActions([
                 EditAction::make(),
             ]);

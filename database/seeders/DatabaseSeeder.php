@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use Database\Seeders\Demo\MonitorsSiteSeeder;
 use Database\Seeders\Demo\MultiCategorySiteSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -22,6 +23,7 @@ class DatabaseSeeder extends Seeder
             ImperialMeasurementUnitsSeeder::class,
             BlockRegistrySeeder::class,
             MultiCategorySiteSeeder::class,
+            MonitorsSiteSeeder::class,
         ]);
 
         // User::factory(10)->create();

@@ -7,7 +7,7 @@
         <a href="/{{ $locale }}" class="hover:text-slate-950">Home</a>
         @if ($category)
             <span aria-hidden="true" class="px-2">/</span>
-            <a href="/{{ $locale }}/categories/{{ $category['slug'] }}" class="hover:text-slate-950">{{ $category['label'] ?? $category['name'] ?? 'Category' }}</a>
+            <a href="{{ $categoryUrl }}" class="hover:text-slate-950">{{ $category['label'] ?? $category['name'] ?? 'Category' }}</a>
         @endif
     </div>
 

@@ -14,7 +14,10 @@ use Illuminate\Support\Facades\View;
 
 final readonly class HomepageBlockRenderer
 {
-    public function __construct(private TemplateSlotRenderer $templates) {}
+    public function __construct(
+        private TemplateSlotRenderer $templates,
+        private LocalizedUrlResolver $urls,
+    ) {}
 
     /**
      * @return Collection<int, array{
@@ -70,6 +73,7 @@ final readonly class HomepageBlockRenderer
                     ->map(fn (SiteCategoryProjection $category): array => [
                         'title' => $category->title,
                         'slug' => $category->slug,
+                        'url' => $this->urls->category($site, $locale, $category),
                         'description' => data_get($category->payload_json, 'category.description'),
                     ])
                     ->all(),
@@ -85,11 +89,13 @@ final readonly class HomepageBlockRenderer
                     ->map(fn (SiteProductProjection $product): array => [
                         'title' => $product->title,
                         'slug' => $product->slug,
+                        'url' => $this->urls->product($site, $locale, $product),
                         'media' => $product->media_json ?? [],
                         'summary' => $product->search_summary_json ?? [],
                     ])
                     ->all(),
             ],
+            'hero_search' => ['search_url' => $this->urls->search($site, $locale)],
             default => [],
         };
     }

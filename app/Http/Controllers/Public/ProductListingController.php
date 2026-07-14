@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Public;
 
 use App\Domains\Projections\Enums\ProjectionStatus;
+use App\Domains\PublicSite\LocalizedUrlResolver;
 use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Http\Controllers\Controller;
@@ -19,6 +20,7 @@ final class ProductListingController extends Controller
         string $slug,
         SiteContextResolver $sites,
         ThemeLayoutResolver $layouts,
+        LocalizedUrlResolver $urls,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
         $category = SiteCategoryProjection::query()
@@ -44,7 +46,7 @@ final class ProductListingController extends Controller
             fn (SiteProductProjection $product): array => [
                 'title' => $product->title,
                 'slug' => $product->slug,
-                'url' => "/{$locale}/products/{$product->slug}",
+                'url' => $urls->product($site, $locale, $product),
                 'media' => $product->media_json ?? [],
                 'summary' => $product->search_summary_json ?? [],
             ],

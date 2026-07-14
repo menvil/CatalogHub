@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Public;
 
 use App\Domains\Projections\Enums\ProjectionStatus;
+use App\Domains\PublicSite\LocalizedUrlResolver;
 use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Http\Controllers\Controller;
@@ -17,6 +18,7 @@ final class SearchController extends Controller
         string $locale,
         SiteContextResolver $sites,
         ThemeLayoutResolver $layouts,
+        LocalizedUrlResolver $urls,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
         $term = trim($request->string('q')->toString());
@@ -38,7 +40,7 @@ final class SearchController extends Controller
                 ->map(fn (SiteSearchDocument $document): array => [
                     'title' => $document->title,
                     'slug' => $document->slug,
-                    'url' => "/{$locale}/products/{$document->slug}",
+                    'url' => $urls->product($site, $locale, (string) $document->slug),
                     'payload' => $document->payload_json ?? [],
                 ]);
         }

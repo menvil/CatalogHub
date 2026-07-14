@@ -84,4 +84,18 @@ class ReviewsModerationScreenTest extends TestCase
 
         $this->assertSame(ReviewStatus::Approved, $review->fresh()->status);
     }
+
+    public function test_site_admin_can_reject_pending_review_from_table(): void
+    {
+        $site = Site::factory()->create();
+        $review = Review::factory()->pending()->create(['site_id' => $site->id]);
+
+        Livewire::actingAs(User::factory()->siteAdmin($site)->create())
+            ->test(ListReviews::class)
+            ->callTableAction('reject', $review, data: ['reason' => 'Does not meet review guidelines.'])
+            ->assertHasNoActionErrors();
+
+        $this->assertSame(ReviewStatus::Rejected, $review->fresh()->status);
+        $this->assertSame('Does not meet review guidelines.', $review->fresh()->rejection_reason);
+    }
 }

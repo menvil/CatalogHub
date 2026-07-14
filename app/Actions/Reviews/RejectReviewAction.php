@@ -8,26 +8,32 @@ use App\Exceptions\Reviews\CannotModerateReviewException;
 use App\Models\Review;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
-final class ApproveReviewAction
+final class RejectReviewAction
 {
     use AuthorizesReviewModeration;
 
-    public function handle(User $user, Review $review): Review
+    public function handle(User $user, Review $review, string $reason): Review
     {
-        return DB::transaction(function () use ($review, $user): Review {
+        $data = Validator::make(['reason' => trim($reason)], [
+            'reason' => ['required', 'string', 'max:2000'],
+        ])->validate();
+
+        return DB::transaction(function () use ($data, $review, $user): Review {
             $lockedReview = Review::query()->lockForUpdate()->findOrFail($review->getKey());
 
             $this->authorize($user, $lockedReview);
 
             if ($lockedReview->status !== ReviewStatus::Pending) {
-                throw CannotModerateReviewException::because('Only pending reviews can be approved.');
+                throw CannotModerateReviewException::because('Only pending reviews can be rejected.');
             }
 
             $lockedReview->forceFill([
-                'status' => ReviewStatus::Approved,
-                'approved_at' => now(),
-                'rejected_at' => null,
+                'status' => ReviewStatus::Rejected,
+                'approved_at' => null,
+                'rejected_at' => now(),
+                'rejection_reason' => $data['reason'],
                 'spam_marked_at' => null,
             ])->save();
 

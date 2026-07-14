@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * @property ReviewStatus $status
  * @property array<string, mixed>|null $metadata
+ * @property string|null $rejection_reason
  */
 #[Fillable([
     'site_id',
@@ -28,6 +29,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'locale',
     'approved_at',
     'rejected_at',
+    'rejection_reason',
     'spam_marked_at',
     'metadata',
 ])]

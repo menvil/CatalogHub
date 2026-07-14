@@ -1,15 +1,11 @@
 name: Test coverage
 run-name: Coverage · ${{ github.head_ref || github.ref_name }}
 
-# Coverage mirrors the deploy branches: release/hotfix PRs into main are
-# measured before merge, and pushes to develop/main verify the deployed commit.
+# Coverage is a pre-merge gate for release and hotfix pull requests into main.
+# Manual runs remain available for ad hoc verification.
 on:
   pull_request:
     branches:
-      - main
-  push:
-    branches:
-      - develop
       - main
   workflow_dispatch:
 

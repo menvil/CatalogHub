@@ -25,7 +25,7 @@
             @endforeach
         </div>
 
-        <div class="mt-8">{{ $products->links() }}</div>
+        <div class="mt-8">{{ $products->links('pagination::tailwind') }}</div>
     @else
         @include('public.components.empty-state', [
             'title' => 'No products here yet',

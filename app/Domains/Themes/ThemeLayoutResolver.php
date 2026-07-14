@@ -46,6 +46,6 @@ final readonly class ThemeLayoutResolver
 
         $layout = $this->templates->resolveLayout($site, $pageType);
 
-        return $layout?->view_path ?? self::DEFAULT_LAYOUTS[$pageType];
+        return $layout->view_path ?? self::DEFAULT_LAYOUTS[$pageType];
     }
 }

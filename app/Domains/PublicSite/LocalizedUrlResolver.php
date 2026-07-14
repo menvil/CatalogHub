@@ -46,7 +46,7 @@ final class LocalizedUrlResolver
     {
         $url = $this->absolute($site, route('public.compare', ['locale' => $locale], false));
 
-        return $productSlugs === [] ? $url : $url.'?'.http_build_query(['products' => array_values($productSlugs)]);
+        return $productSlugs === [] ? $url : $url.'?'.http_build_query(['products' => $productSlugs]);
     }
 
     public function article(Site $site, string $locale, string $slug): string

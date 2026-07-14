@@ -2,11 +2,13 @@
 
 namespace App\Filament\Resources;
 
+use App\Actions\Reviews\ApproveReviewAction;
 use App\Enums\ReviewStatus;
 use App\Filament\Resources\ReviewResource\Pages;
 use App\Models\Review;
 use App\Models\User;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -81,6 +83,23 @@ final class ReviewResource extends Resource
                         ->mapWithKeys(fn (ReviewStatus $status): array => [$status->value => $status->label()])
                         ->all(),
                 ),
+            ])
+            ->recordActions([
+                Action::make('approve')
+                    ->label('Approve')
+                    ->color('success')
+                    ->icon(Heroicon::OutlinedCheckCircle)
+                    ->requiresConfirmation()
+                    ->visible(fn (Review $record): bool => $record->status === ReviewStatus::Pending)
+                    ->action(function (Review $record): Review {
+                        $user = auth()->user();
+
+                        if (! $user instanceof User) {
+                            return $record;
+                        }
+
+                        return app(ApproveReviewAction::class)->handle($user, $record);
+                    }),
             ])
             ->defaultSort('created_at', 'desc');
     }

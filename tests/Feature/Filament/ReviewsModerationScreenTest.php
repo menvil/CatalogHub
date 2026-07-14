@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Filament;
 
+use App\Enums\ReviewStatus;
 use App\Enums\UserRole;
 use App\Filament\Resources\ReviewResource;
 use App\Filament\Resources\ReviewResource\Pages\ListReviews;
@@ -69,5 +70,18 @@ class ReviewsModerationScreenTest extends TestCase
             ->filterTable('status', 'pending')
             ->assertCanSeeTableRecords([$pending])
             ->assertCanNotSeeTableRecords([$approved]);
+    }
+
+    public function test_site_admin_can_approve_pending_review_from_table(): void
+    {
+        $site = Site::factory()->create();
+        $review = Review::factory()->pending()->create(['site_id' => $site->id]);
+
+        Livewire::actingAs(User::factory()->siteAdmin($site)->create())
+            ->test(ListReviews::class)
+            ->callTableAction('approve', $review)
+            ->assertHasNoActionErrors();
+
+        $this->assertSame(ReviewStatus::Approved, $review->fresh()->status);
     }
 }

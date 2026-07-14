@@ -6,6 +6,7 @@ use App\Enums\ContentType;
 use App\Filament\Resources\ContentItemResource\Pages;
 use App\Models\ContentItem;
 use App\Models\User;
+use App\Support\Content\ContentForm;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
@@ -88,6 +89,7 @@ final class ContentItemResource extends Resource
                 ->default('draft')
                 ->required(),
             DateTimePicker::make('published_at'),
+            ...ContentForm::translationFields(),
         ]);
     }
 

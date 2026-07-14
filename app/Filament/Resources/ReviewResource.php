@@ -3,12 +3,14 @@
 namespace App\Filament\Resources;
 
 use App\Actions\Reviews\ApproveReviewAction;
+use App\Actions\Reviews\RejectReviewAction;
 use App\Enums\ReviewStatus;
 use App\Filament\Resources\ReviewResource\Pages;
 use App\Models\Review;
 use App\Models\User;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -99,6 +101,26 @@ final class ReviewResource extends Resource
                         }
 
                         return app(ApproveReviewAction::class)->handle($user, $record);
+                    }),
+                Action::make('reject')
+                    ->label('Reject')
+                    ->color('danger')
+                    ->icon(Heroicon::OutlinedXCircle)
+                    ->visible(fn (Review $record): bool => $record->status === ReviewStatus::Pending)
+                    ->schema([
+                        Textarea::make('reason')
+                            ->label('Rejection reason')
+                            ->required()
+                            ->maxLength(2000),
+                    ])
+                    ->action(function (array $data, Review $record): Review {
+                        $user = auth()->user();
+
+                        if (! $user instanceof User) {
+                            return $record;
+                        }
+
+                        return app(RejectReviewAction::class)->handle($user, $record, (string) $data['reason']);
                     }),
             ])
             ->defaultSort('created_at', 'desc');

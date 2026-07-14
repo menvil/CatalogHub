@@ -3,6 +3,7 @@
 namespace App\Support\Facets;
 
 use App\Data\Facets\AppliedFacetFilter;
+use App\Data\Facets\FacetFilterSet;
 
 final class FacetUrlBuilder
 {
@@ -47,13 +48,16 @@ final class FacetUrlBuilder
 
     public function clearAll(string $baseUrl): string
     {
-        return preg_split('/[?#]/', $baseUrl, 2)[0] ?: $baseUrl;
+        $parts = preg_split('/[?#]/', $baseUrl, 2);
+
+        return is_array($parts) && filled($parts[0] ?? null) ? $parts[0] : $baseUrl;
     }
 
-    /** @param array<string, mixed> $query */
-    public function toUrl(string $baseUrl, array $query): string
+    /** @param array<string, mixed>|FacetFilterSet $query */
+    public function toUrl(string $baseUrl, array|FacetFilterSet $query): string
     {
         $baseUrl = $this->clearAll($baseUrl);
+        $query = $query instanceof FacetFilterSet ? $query->toQueryArray() : $query;
         $query = array_filter($query, fn (mixed $value): bool => $value !== null && $value !== '' && $value !== []);
         ksort($query, SORT_STRING);
         $parts = [];
@@ -71,9 +75,14 @@ final class FacetUrlBuilder
     {
         $values = is_array($value) ? $value : explode(',', (string) $value);
 
-        return array_values(array_filter(array_map(
+        $values = array_values(array_filter(array_map(
             fn (mixed $item): string => trim((string) $item),
             $values,
         )));
+
+        $values = array_values(array_unique($values));
+        sort($values, SORT_STRING);
+
+        return $values;
     }
 }

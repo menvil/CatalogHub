@@ -14,6 +14,17 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property FacetType $facet_type
+ * @property FacetSourceType $source_type
+ * @property array<string, mixed>|null $config_json
+ * @property bool $is_active
+ * @property bool $is_filterable
+ * @property bool $is_visible
+ * @property bool $is_collapsible
+ * @property bool $default_collapsed
+ * @property int $position
+ */
 #[Fillable([
     'category_id',
     'attribute_definition_id',
@@ -97,6 +108,15 @@ final class FacetDefinition extends Model
     public function options(): HasMany
     {
         return $this->hasMany(FacetOption::class)->orderBy('position')->orderBy('id');
+    }
+
+    /** @return HasMany<FacetOption, $this> */
+    public function activeOptions(): HasMany
+    {
+        return $this->hasMany(FacetOption::class)
+            ->where('is_active', true)
+            ->orderBy('position')
+            ->orderBy('id');
     }
 
     /** @return HasMany<SiteFacetOverride, $this> */

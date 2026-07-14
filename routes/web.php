@@ -8,6 +8,7 @@ use App\Http\Controllers\CentralAdmin\MissingTranslationsController;
 use App\Http\Controllers\CentralAdmin\OutdatedTranslationsController;
 use App\Http\Controllers\CentralAdmin\TranslationDashboardController;
 use App\Http\Controllers\CentralAdmin\TranslationEditorController;
+use App\Http\Controllers\Public\HomeController as PublicHomeController;
 use Illuminate\Support\Facades\Route;
 
 require __DIR__.'/health.php';
@@ -15,6 +16,10 @@ require __DIR__.'/health.php';
 Route::get('/', function () {
     return view('pages.home');
 });
+
+Route::get('/{locale}', PublicHomeController::class)
+    ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
+    ->name('public.home');
 
 if (app()->environment(['local', 'testing'])) {
     Route::get('/dev/ui-kit', function () {

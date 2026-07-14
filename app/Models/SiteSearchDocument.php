@@ -1,0 +1,34 @@
+<?php
+
+namespace App\Models;
+
+use App\Domains\Projections\Enums\ProjectionStatus;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+#[Fillable([
+    'site_id', 'locale', 'document_type', 'document_id', 'title', 'slug', 'status', 'search_text',
+    'filter_values_json', 'sort_values_json', 'payload_json', 'checksum', 'built_at', 'stale_at',
+])]
+final class SiteSearchDocument extends Model
+{
+    protected function casts(): array
+    {
+        return [
+            'document_id' => 'integer',
+            'status' => ProjectionStatus::class,
+            'filter_values_json' => 'array',
+            'sort_values_json' => 'array',
+            'payload_json' => 'array',
+            'built_at' => 'datetime',
+            'stale_at' => 'datetime',
+        ];
+    }
+
+    /** @return BelongsTo<Site, $this> */
+    public function site(): BelongsTo
+    {
+        return $this->belongsTo(Site::class);
+    }
+}

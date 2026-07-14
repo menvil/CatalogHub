@@ -58,6 +58,7 @@ final class ProductListingController extends Controller
             'category' => ['title' => $category->title, 'slug' => $category->slug],
             'products' => $products,
             'sort' => $request->string('sort')->toString() === 'title' ? 'title' : 'latest',
+            'categoryUrl' => $urls->category($site, $locale, $category),
         ]);
     }
 }

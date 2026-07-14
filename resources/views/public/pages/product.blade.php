@@ -30,6 +30,8 @@
 
     @include('public.components.product-specs', ['sections' => $specSections])
 
+    @include('public.components.related-content', ['items' => $relatedContent])
+
     @if ($leadsEnabled)
         @include('public.products.partials.lead-block')
     @endif

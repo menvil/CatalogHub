@@ -67,6 +67,19 @@
                 class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-950"></textarea>
         </div>
 
+        <div>
+            <label class="flex items-start gap-3 text-sm leading-6 text-slate-700">
+                <input type="checkbox" wire:model="consentAccepted" class="mt-1 rounded border-slate-300 text-blue-600">
+                <span>
+                    I agree to be contacted about this request and accept the
+                    <a href="{{ url('/privacy') }}" class="font-medium text-blue-700 underline">privacy policy</a>.
+                </span>
+            </label>
+            @error('consentAccepted')
+                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+            @enderror
+        </div>
+
         <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700">
             Send request
         </button>

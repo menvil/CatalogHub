@@ -58,12 +58,16 @@
 
                 <div class="mt-8">{{ $products->links('pagination::tailwind') }}</div>
             @else
-                @include('public.components.empty-state', [
-                    'title' => 'No products here yet',
-                    'message' => 'No projected products are available in this category yet.',
-                    'actionUrl' => $categoryUrl,
-                    'actionLabel' => 'Back to '.$category['title'],
-                ])
+                @if ($appliedFilters !== [])
+                    <x-public.facets.no-results :clear-url="$clearFiltersUrl" :category-title="$category['title']" />
+                @else
+                    @include('public.components.empty-state', [
+                        'title' => 'No products here yet',
+                        'message' => 'No projected products are available in this category yet.',
+                        'actionUrl' => $categoryUrl,
+                        'actionLabel' => 'Back to '.$category['title'],
+                    ])
+                @endif
             @endif
         </div>
     </div>

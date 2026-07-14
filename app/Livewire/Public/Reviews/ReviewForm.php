@@ -30,6 +30,13 @@ final class ReviewForm extends Component
         $this->product = $product;
     }
 
+    public function submit(): void
+    {
+        $this->validate([
+            'rating' => ['required', 'integer', 'min:1', 'max:5'],
+        ]);
+    }
+
     public function render(): View
     {
         return view('livewire.public.reviews.review-form');

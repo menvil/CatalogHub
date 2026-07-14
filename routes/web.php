@@ -10,6 +10,7 @@ use App\Http\Controllers\CentralAdmin\TranslationDashboardController;
 use App\Http\Controllers\CentralAdmin\TranslationEditorController;
 use App\Http\Controllers\Public\CategoryController as PublicCategoryController;
 use App\Http\Controllers\Public\HomeController as PublicHomeController;
+use App\Http\Controllers\Public\ProductController as PublicProductController;
 use App\Http\Controllers\Public\ProductListingController as PublicProductListingController;
 use Illuminate\Support\Facades\Route;
 
@@ -30,6 +31,10 @@ Route::get('/{locale}/categories/{slug}', [PublicCategoryController::class, 'sho
 Route::get('/{locale}/categories/{slug}/products', PublicProductListingController::class)
     ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
     ->name('public.categories.products');
+
+Route::get('/{locale}/products/{slug}', [PublicProductController::class, 'show'])
+    ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
+    ->name('public.products.show');
 
 if (app()->environment(['local', 'testing'])) {
     Route::get('/dev/ui-kit', function () {

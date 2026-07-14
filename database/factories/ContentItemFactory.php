@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ContentType;
 use App\Models\ContentItem;
 use App\Models\Site;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -15,7 +16,7 @@ class ContentItemFactory extends Factory
     {
         return [
             'site_id' => Site::factory(),
-            'type' => 'article',
+            'type' => ContentType::Article,
             'status' => 'draft',
             'published_at' => null,
             'archived_at' => null,

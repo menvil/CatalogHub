@@ -83,6 +83,12 @@ final class Site extends Model
         return $this->hasMany(User::class);
     }
 
+    /** @return HasMany<Lead, $this> */
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class);
+    }
+
     public function isSingleCategory(): bool
     {
         return $this->mode === SiteMode::SingleCategory;

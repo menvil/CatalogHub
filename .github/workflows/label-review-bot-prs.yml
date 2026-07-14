@@ -10,11 +10,11 @@ permissions:
   pull-requests: write
 
 jobs:
-  label-review-bot-pr:
-    name: Label review bot PRs
+  apply-release-hotfix-labels:
+    name: Apply release/hotfix labels
     runs-on: ubuntu-latest
     steps:
-      - name: Sync review bot labels
+      - name: Sync release/hotfix labels
         uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
         with:
           script: |

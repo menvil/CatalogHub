@@ -39,6 +39,18 @@ final class ProductController extends Controller
         $seo['meta_title'] ??= $projection->title;
         $seo['meta_description'] ??= data_get($payload, 'product.short_description', data_get($payload, 'product.description'));
         $seo['canonical_url'] ??= $urls->product($site, $locale, $projection);
+        $category = is_array(data_get($payload, 'category')) ? data_get($payload, 'category') : null;
+        $categoryUrl = is_string(data_get($payload, 'category.slug'))
+            ? $urls->category($site, $locale, data_get($payload, 'category.slug'))
+            : null;
+        $breadcrumbs = [['label' => 'Home', 'url' => $urls->home($site, $locale)]];
+        if ($category !== null) {
+            $breadcrumbs[] = [
+                'label' => $category['label'] ?? $category['name'] ?? 'Category',
+                'url' => $categoryUrl,
+            ];
+        }
+        $breadcrumbs[] = ['label' => $projection->title, 'url' => null];
 
         return view($layouts->resolve($site, 'product'), [
             'site' => $site,
@@ -49,15 +61,14 @@ final class ProductController extends Controller
                 'slug' => $projection->slug,
             ],
             'brand' => is_array(data_get($payload, 'brand')) ? data_get($payload, 'brand') : null,
-            'category' => is_array(data_get($payload, 'category')) ? data_get($payload, 'category') : null,
-            'categoryUrl' => is_string(data_get($payload, 'category.slug'))
-                ? $urls->category($site, $locale, data_get($payload, 'category.slug'))
-                : null,
+            'category' => $category,
+            'categoryUrl' => $categoryUrl,
             'specSections' => is_array(data_get($payload, 'spec_sections')) ? data_get($payload, 'spec_sections') : [],
             'benefits' => $benefits,
             'rating' => is_array(data_get($payload, 'rating')) ? data_get($payload, 'rating') : null,
             'media' => $projection->media_json ?? [],
             'seo' => $seo,
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 }

@@ -3,13 +3,7 @@
 @section('title', $product['title'])
 
 @section('content')
-    <div class="text-sm text-slate-500">
-        <a href="/{{ $locale }}" class="hover:text-slate-950">Home</a>
-        @if ($category)
-            <span aria-hidden="true" class="px-2">/</span>
-            <a href="{{ $categoryUrl }}" class="hover:text-slate-950">{{ $category['label'] ?? $category['name'] ?? 'Category' }}</a>
-        @endif
-    </div>
+    @include('public.components.breadcrumbs', ['items' => $breadcrumbs])
 
     <div class="mt-6 grid gap-8 lg:grid-cols-2">
         @include('public.components.product-media-gallery', ['media' => $media])

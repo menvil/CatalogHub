@@ -3,11 +3,7 @@
 @section('title', $category['title'])
 
 @section('content')
-    <div data-breadcrumb-placeholder class="text-sm text-slate-500">
-        <a href="/{{ $locale }}" class="hover:text-slate-950">Home</a>
-        <span aria-hidden="true" class="px-2">/</span>
-        <span aria-current="page">{{ $category['title'] }}</span>
-    </div>
+    @include('public.components.breadcrumbs', ['items' => $breadcrumbs])
 
     <section class="mt-6 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-10">
         <p class="text-sm font-semibold uppercase tracking-[0.2em] text-blue-600">Category</p>

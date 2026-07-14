@@ -28,6 +28,11 @@ final class ProductController extends Controller
             ->firstOrFail();
         $payload = $projection->payload_json ?? [];
         $productPayload = data_get($payload, 'product', []);
+        $benefitPayload = data_get($payload, 'benefits', data_get($payload, 'product.benefits'));
+        $summary = data_get($payload, 'summary', data_get($payload, 'product.summary'));
+        $benefits = is_array($benefitPayload)
+            ? $benefitPayload
+            : (is_string($summary) && $summary !== '' ? [$summary] : []);
 
         return view($layouts->resolve($site, 'product'), [
             'site' => $site,
@@ -40,7 +45,7 @@ final class ProductController extends Controller
             'brand' => is_array(data_get($payload, 'brand')) ? data_get($payload, 'brand') : null,
             'category' => is_array(data_get($payload, 'category')) ? data_get($payload, 'category') : null,
             'specSections' => is_array(data_get($payload, 'spec_sections')) ? data_get($payload, 'spec_sections') : [],
-            'benefits' => is_array(data_get($payload, 'benefits')) ? data_get($payload, 'benefits') : [],
+            'benefits' => $benefits,
             'rating' => is_array(data_get($payload, 'rating')) ? data_get($payload, 'rating') : null,
             'media' => $projection->media_json ?? [],
             'seo' => $projection->seo_json ?? [],

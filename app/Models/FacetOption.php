@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Validation\ValidationException;
 
 /**
  * @property array<string, mixed>|null $config_json
@@ -25,6 +26,21 @@ final class FacetOption extends Model
 {
     /** @use HasFactory<FacetOptionFactory> */
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        self::saving(function (FacetOption $option): void {
+            $value = trim((string) $option->getAttribute('value'));
+
+            if (str_contains($value, ',')) {
+                throw ValidationException::withMessages([
+                    'value' => 'Facet option values cannot contain commas.',
+                ]);
+            }
+
+            $option->setAttribute('value', $value);
+        });
+    }
 
     protected static function newFactory(): FacetOptionFactory
     {

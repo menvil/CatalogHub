@@ -8,6 +8,7 @@ use App\Enums\FacetSourceType;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\FacetDefinition;
+use App\Models\FacetOption;
 use App\Models\Site;
 use App\Models\SiteSearchDocument;
 use App\Services\Facets\FacetQueryBuilder;
@@ -73,6 +74,60 @@ class FacetQueryBuilderEnumTest extends TestCase
 
         $this->assertCount(1, $results);
         $this->assertTrue($results->first()->is($document));
+    }
+
+    public function test_matches_mixed_case_configured_option_values_after_normalization(): void
+    {
+        $site = Site::factory()->create();
+        $category = CentralCategory::factory()->create();
+        $attribute = AttributeDefinition::factory()->for($category, 'category')->create([
+            'code' => 'panel_type',
+            'data_type' => AttributeDataType::Enum,
+        ]);
+        $facet = FacetDefinition::factory()->for($category, 'category')->checkbox()->create([
+            'attribute_definition_id' => $attribute->id,
+            'source_type' => FacetSourceType::Attribute,
+            'code' => 'panel_type',
+        ]);
+        FacetOption::factory()->for($facet)->create([
+            'value' => 'IPS',
+            'label_override' => 'In-plane switching',
+        ]);
+        $matching = $this->document($site, $category, ['panel_type' => 'ips']);
+
+        $filters = FacetFilterSet::fromArray(['panel_type' => ['IPS']]);
+        $results = app(FacetQueryBuilder::class)
+            ->apply(SiteSearchDocument::query(), $site, $category, $filters)
+            ->get();
+
+        $this->assertCount(1, $results);
+        $this->assertTrue($results->first()->is($matching));
+        $this->assertSame('In-plane switching', $filters->appliedFilters()[0]->label);
+    }
+
+    public function test_discards_configured_but_unsupported_facet_filter_keys(): void
+    {
+        $site = Site::factory()->create();
+        $category = CentralCategory::factory()->create();
+        $attribute = AttributeDefinition::factory()->for($category, 'category')->create([
+            'code' => 'description',
+            'data_type' => AttributeDataType::String,
+        ]);
+        FacetDefinition::factory()->for($category, 'category')->checkbox()->create([
+            'attribute_definition_id' => $attribute->id,
+            'source_type' => FacetSourceType::Attribute,
+            'code' => 'description',
+        ]);
+        $document = $this->document($site, $category, ['description' => 'premium']);
+        $filters = FacetFilterSet::fromArray(['description' => ['premium']]);
+
+        $results = app(FacetQueryBuilder::class)
+            ->apply(SiteSearchDocument::query(), $site, $category, $filters)
+            ->get();
+
+        $this->assertCount(1, $results);
+        $this->assertTrue($results->first()->is($document));
+        $this->assertFalse($filters->has('description'));
     }
 
     private function configureEnumFacet(

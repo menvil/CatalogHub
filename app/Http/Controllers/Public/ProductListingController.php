@@ -40,6 +40,7 @@ final class ProductListingController extends Controller
             ->where('status', ProjectionStatus::Active)
             ->firstOrFail();
 
+        // Facet resolvers only require the category key; avoid hydrating central data in public runtime.
         $centralCategory = new CentralCategory;
         $centralCategory->setAttribute($centralCategory->getKeyName(), $category->central_category_id);
         $centralCategory->exists = true;
@@ -72,7 +73,9 @@ final class ProductListingController extends Controller
                 return [
                     'title' => $document->title,
                     'slug' => $document->slug,
-                    'url' => $urls->product($site, $locale, (string) $document->slug),
+                    'url' => filled($document->slug)
+                        ? $urls->product($site, $locale, $document->slug)
+                        : null,
                     'media' => data_get($document->payload_json, 'media', []),
                     'summary' => ['rating' => data_get($document->payload_json, 'rating')],
                 ];

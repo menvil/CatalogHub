@@ -21,6 +21,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\Rules\Unique;
 use UnitEnum;
 
 final class FacetDefinitionResource extends Resource
@@ -69,7 +70,14 @@ final class FacetDefinitionResource extends Resource
                 ->preload(),
             TextInput::make('code')
                 ->required()
-                ->maxLength(255),
+                ->maxLength(255)
+                ->unique(
+                    table: 'facet_definitions',
+                    column: 'code',
+                    ignoreRecord: true,
+                    modifyRuleUsing: fn (Unique $rule, Get $get): Unique => $rule
+                        ->where('category_id', $get('category_id')),
+                ),
             TextInput::make('label_override')
                 ->label('Label override')
                 ->maxLength(255),
@@ -137,8 +145,8 @@ final class FacetDefinitionResource extends Resource
                 TextColumn::make('position')->sortable(),
                 TextColumn::make('updated_at')->dateTime()->sortable(),
             ])
+            ->defaultGroup('category.name')
             ->defaultSort('position')
-            ->reorderable('position')
             ->recordActions([
                 EditAction::make(),
             ]);

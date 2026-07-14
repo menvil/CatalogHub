@@ -17,16 +17,20 @@ class FacetDefinitionValidationTest extends TestCase
 
     public function test_checkbox_accepts_attribute_and_brand_sources(): void
     {
-        foreach ([FacetSourceType::Attribute, FacetSourceType::Brand] as $source) {
-            $validator = Validator::make([
-                'source_type' => $source->value,
-                'facet_type' => FacetType::Checkbox->value,
-            ], [
-                'facet_type' => [new ValidFacetDefinitionRule],
-            ]);
+        $attribute = AttributeDefinition::factory()->create([
+            'data_type' => AttributeDataType::Enum,
+        ]);
 
-            $this->assertTrue($validator->passes());
-        }
+        $this->assertTrue($this->validator([
+            'category_id' => $attribute->central_category_id,
+            'attribute_definition_id' => $attribute->id,
+            'source_type' => FacetSourceType::Attribute->value,
+            'facet_type' => FacetType::Checkbox->value,
+        ])->passes());
+        $this->assertTrue($this->validator([
+            'source_type' => FacetSourceType::Brand->value,
+            'facet_type' => FacetType::Checkbox->value,
+        ])->passes());
     }
 
     public function test_checkbox_rejects_rating_source(): void
@@ -111,13 +115,48 @@ class FacetDefinitionValidationTest extends TestCase
 
     public function test_select_accepts_brand_or_attribute_source(): void
     {
-        foreach ([FacetSourceType::Brand, FacetSourceType::Attribute] as $source) {
-            $validator = $this->validator([
-                'source_type' => $source->value,
-                'facet_type' => FacetType::Select->value,
-            ]);
+        $attribute = AttributeDefinition::factory()->create([
+            'data_type' => AttributeDataType::MultiEnum,
+        ]);
 
-            $this->assertTrue($validator->passes());
+        $this->assertTrue($this->validator([
+            'source_type' => FacetSourceType::Brand->value,
+            'facet_type' => FacetType::Select->value,
+        ])->passes());
+        $this->assertTrue($this->validator([
+            'category_id' => $attribute->central_category_id,
+            'attribute_definition_id' => $attribute->id,
+            'source_type' => FacetSourceType::Attribute->value,
+            'facet_type' => FacetType::Select->value,
+        ])->passes());
+    }
+
+    public function test_option_facets_reject_missing_incompatible_or_cross_category_attributes(): void
+    {
+        $attribute = AttributeDefinition::factory()->create([
+            'data_type' => AttributeDataType::String,
+        ]);
+        $otherAttribute = AttributeDefinition::factory()->create([
+            'data_type' => AttributeDataType::Enum,
+        ]);
+
+        foreach ([FacetType::Checkbox, FacetType::Select] as $facetType) {
+            $this->assertTrue($this->validator([
+                'source_type' => FacetSourceType::Attribute->value,
+                'facet_type' => $facetType->value,
+            ])->fails());
+            $this->assertTrue($this->validator([
+                'category_id' => $attribute->central_category_id,
+                'attribute_definition_id' => $attribute->id,
+                'source_type' => FacetSourceType::Attribute->value,
+                'facet_type' => $facetType->value,
+            ])->fails());
+            $this->assertTrue($this->validator([
+                'category_id' => $attribute->central_category_id,
+                'attribute_definition_id' => $otherAttribute->id,
+                'source_type' => FacetSourceType::Attribute->value,
+                'facet_type' => $facetType->value,
+            ])->fails());
         }
     }
 

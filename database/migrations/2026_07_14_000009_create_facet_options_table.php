@@ -18,7 +18,6 @@ return new class extends Migration
             $table->json('config_json')->nullable();
             $table->timestamps();
 
-            $table->index('facet_definition_id');
             $table->unique(['facet_definition_id', 'value']);
             $table->index(['facet_definition_id', 'position']);
         });

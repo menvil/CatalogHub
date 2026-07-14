@@ -25,7 +25,6 @@ return new class extends Migration
             $table->json('config_json')->nullable();
             $table->timestamps();
 
-            $table->index('category_id');
             $table->index('attribute_definition_id');
             $table->unique(['category_id', 'code']);
             $table->index(['category_id', 'position']);

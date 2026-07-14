@@ -10,6 +10,7 @@ use App\Models\CentralCatalog\CentralCategory;
 use App\Models\FacetDefinition;
 use App\Models\FacetOption;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class FacetDefinitionTest extends TestCase
@@ -38,6 +39,13 @@ class FacetDefinitionTest extends TestCase
         $this->assertTrue($facet->options->first()->is($earlier));
         $this->assertTrue($facet->options->last()->is($later));
         $this->assertTrue($earlier->facetDefinition->is($facet));
+    }
+
+    public function test_facet_option_value_rejects_comma_separator(): void
+    {
+        $this->expectException(ValidationException::class);
+
+        FacetOption::factory()->create(['value' => 'usb-c,thunderbolt']);
     }
 
     public function test_facet_definition_casts_enums_flags_and_config(): void

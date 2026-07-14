@@ -28,9 +28,6 @@ class FacetOptionsSchemaTest extends TestCase
         $indexes = collect(Schema::getIndexes('facet_options'));
 
         $this->assertTrue($indexes->contains(
-            fn (array $index): bool => $index['columns'] === ['facet_definition_id'],
-        ));
-        $this->assertTrue($indexes->contains(
             fn (array $index): bool => $index['unique'] === true
                 && $index['columns'] === ['facet_definition_id', 'value'],
         ));

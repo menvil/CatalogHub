@@ -35,9 +35,6 @@ class FacetDefinitionsSchemaTest extends TestCase
         $indexes = collect(Schema::getIndexes('facet_definitions'));
 
         $this->assertTrue($indexes->contains(
-            fn (array $index): bool => $index['columns'] === ['category_id'],
-        ));
-        $this->assertTrue($indexes->contains(
             fn (array $index): bool => $index['columns'] === ['attribute_definition_id'],
         ));
         $this->assertTrue($indexes->contains(

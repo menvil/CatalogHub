@@ -84,6 +84,34 @@ class ProductListingPageTest extends TestCase
             ->assertSee('<link rel="canonical" href="https://tech-compare.test/en-US/categories/monitors/products">', false);
     }
 
+    public function test_search_document_without_projection_or_slug_uses_safe_link_fallback(): void
+    {
+        $this->seed(MultiCategorySiteSeeder::class);
+        $site = Site::query()->where('code', 'tech-compare-global')->firstOrFail();
+        $category = CentralCategory::query()->where('slug', 'monitors')->firstOrFail();
+        SiteCategoryProjection::query()->create([
+            'site_id' => $site->id,
+            'locale' => 'en-US',
+            'central_category_id' => $category->id,
+            'slug' => 'monitors',
+            'title' => 'Monitors',
+            'status' => ProjectionStatus::Active,
+            'payload_json' => [],
+        ]);
+        SiteSearchDocument::factory()->create([
+            'site_id' => $site->id,
+            'locale' => 'en-US',
+            'title' => 'Document without slug',
+            'slug' => null,
+            'filter_values_json' => ['category_id' => $category->id],
+        ]);
+
+        $response = $this->get('http://tech-compare.test/en-US/categories/monitors/products');
+
+        $response->assertOk()->assertSee('Document without slug');
+        $this->assertMatchesRegularExpression('/data-product-card.*?href="#"/s', $response->getContent());
+    }
+
     private function productProjection(
         Site $site,
         CentralCategory $category,

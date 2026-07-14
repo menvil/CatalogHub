@@ -18,6 +18,11 @@ final readonly class SiteFacetConfigResolver
     public function resolve(Site $site, CentralCategory $category): Collection
     {
         $facets = $this->categoryFacets->resolve($category);
+
+        if ($facets->isEmpty()) {
+            return $facets;
+        }
+
         $overrides = SiteFacetOverride::query()
             ->where('site_id', $site->id)
             ->whereIn('facet_definition_id', $facets->pluck('id'))

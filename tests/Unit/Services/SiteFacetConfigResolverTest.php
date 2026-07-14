@@ -8,6 +8,7 @@ use App\Models\Site;
 use App\Models\SiteFacetOverride;
 use App\Services\Facets\SiteFacetConfigResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class SiteFacetConfigResolverTest extends TestCase
@@ -53,5 +54,22 @@ class SiteFacetConfigResolverTest extends TestCase
         $this->assertSame('Display', $facets->first()->label);
         $this->assertTrue($facets->first()->defaultCollapsed);
         $this->assertTrue($facets->first()->config['searchable']);
+    }
+
+    public function test_empty_category_config_skips_site_override_query(): void
+    {
+        $site = Site::factory()->create();
+        $category = CentralCategory::factory()->create();
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $facets = app(SiteFacetConfigResolver::class)->resolve($site, $category);
+
+        $queries = DB::getQueryLog();
+        DB::disableQueryLog();
+        $this->assertTrue($facets->isEmpty());
+        $this->assertFalse(collect($queries)->contains(
+            fn (array $query): bool => str_contains($query['query'], 'site_facet_overrides'),
+        ));
     }
 }

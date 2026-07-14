@@ -39,14 +39,14 @@ class FacetDefinitionFactory extends Factory
 
     public function checkbox(): static
     {
-        return $this->state(fn (array $attributes): array => [
+        return $this->state(fn (): array => [
             'facet_type' => FacetType::Checkbox,
         ]);
     }
 
     public function range(): static
     {
-        return $this->state(fn (array $attributes): array => [
+        return $this->state(fn (): array => [
             'facet_type' => FacetType::Range,
             'source_type' => FacetSourceType::Rating,
         ]);
@@ -54,7 +54,7 @@ class FacetDefinitionFactory extends Factory
 
     public function boolean(): static
     {
-        return $this->state(fn (array $attributes): array => [
+        return $this->state(fn (): array => [
             'facet_type' => FacetType::Boolean,
             'source_type' => FacetSourceType::Attribute,
         ])->afterMaking(function (FacetDefinition $facet): void {
@@ -71,7 +71,7 @@ class FacetDefinitionFactory extends Factory
 
     public function select(): static
     {
-        return $this->state(fn (array $attributes): array => [
+        return $this->state(fn (): array => [
             'facet_type' => FacetType::Select,
             'source_type' => FacetSourceType::Brand,
         ]);
@@ -79,11 +79,11 @@ class FacetDefinitionFactory extends Factory
 
     public function active(): static
     {
-        return $this->state(fn (array $attributes): array => ['is_active' => true]);
+        return $this->state(fn (): array => ['is_active' => true]);
     }
 
     public function inactive(): static
     {
-        return $this->state(fn (array $attributes): array => ['is_active' => false]);
+        return $this->state(fn (): array => ['is_active' => false]);
     }
 }

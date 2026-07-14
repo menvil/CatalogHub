@@ -85,12 +85,12 @@ final readonly class FacetQueryBuilder
         $keys = ['brand', 'rating_min', 'sort'];
 
         foreach ($facets as $facet) {
-            if ($facet->type === FacetType::Range && $facet->sourceType !== FacetSourceType::Rating) {
+            if ($this->isNumericRangeFacet($facet)) {
                 $keys[] = "{$facet->code}_min";
                 $keys[] = "{$facet->code}_max";
             } elseif ($facet->sourceType === FacetSourceType::Rating) {
                 $keys[] = 'rating_min';
-            } else {
+            } elseif ($this->isEnumFacet($facet) || $this->isBooleanFacet($facet)) {
                 $keys[] = $facet->code;
             }
         }
@@ -105,9 +105,7 @@ final readonly class FacetQueryBuilder
         FacetFilterSet $filters,
     ): void {
         $facets = $facets
-            ->filter(fn (FacetDefinitionData $facet): bool => $facet->sourceType === FacetSourceType::Attribute
-                && in_array($facet->attributeDataType, [AttributeDataType::Enum, AttributeDataType::MultiEnum], true)
-                && in_array($facet->type, [FacetType::Checkbox, FacetType::Select], true));
+            ->filter(fn (FacetDefinitionData $facet): bool => $this->isEnumFacet($facet));
 
         foreach ($facets as $facet) {
             if (preg_match('/^[a-zA-Z0-9_]+$/', $facet->code) !== 1) {
@@ -141,7 +139,7 @@ final readonly class FacetQueryBuilder
 
             foreach ($values as $value) {
                 $option = collect($facet->options)->first(
-                    fn (FacetOptionData $option): bool => $option->value === $value,
+                    fn (FacetOptionData $option): bool => Str::lower(trim($option->value)) === $value,
                 );
                 $filters->recordAppliedFilter(new AppliedFacetFilter(
                     code: $facet->code,
@@ -163,9 +161,7 @@ final readonly class FacetQueryBuilder
         FacetFilterSet $filters,
     ): void {
         $booleanFacets = $facets->filter(
-            fn (FacetDefinitionData $facet): bool => $facet->type === FacetType::Boolean
-                && $facet->sourceType === FacetSourceType::Attribute
-                && $facet->attributeDataType === AttributeDataType::Boolean,
+            fn (FacetDefinitionData $facet): bool => $this->isBooleanFacet($facet),
         );
 
         foreach ($booleanFacets as $facet) {
@@ -202,9 +198,7 @@ final readonly class FacetQueryBuilder
         FacetFilterSet $filters,
     ): void {
         $rangeFacets = $facets->filter(
-            fn (FacetDefinitionData $facet): bool => $facet->type === FacetType::Range
-                && $facet->sourceType === FacetSourceType::Attribute
-                && in_array($facet->attributeDataType, [AttributeDataType::Integer, AttributeDataType::Decimal], true),
+            fn (FacetDefinitionData $facet): bool => $this->isNumericRangeFacet($facet),
         );
 
         foreach ($rangeFacets as $facet) {
@@ -348,9 +342,30 @@ final readonly class FacetQueryBuilder
             return $values;
         }
 
-        $allowed = collect($facet->options)->pluck('value')->all();
+        $allowed = $this->listValues(collect($facet->options)->pluck('value')->all());
 
         return array_values(array_intersect($values, $allowed));
+    }
+
+    private function isEnumFacet(FacetDefinitionData $facet): bool
+    {
+        return $facet->sourceType === FacetSourceType::Attribute
+            && in_array($facet->attributeDataType, [AttributeDataType::Enum, AttributeDataType::MultiEnum], true)
+            && in_array($facet->type, [FacetType::Checkbox, FacetType::Select], true);
+    }
+
+    private function isBooleanFacet(FacetDefinitionData $facet): bool
+    {
+        return $facet->type === FacetType::Boolean
+            && $facet->sourceType === FacetSourceType::Attribute
+            && $facet->attributeDataType === AttributeDataType::Boolean;
+    }
+
+    private function isNumericRangeFacet(FacetDefinitionData $facet): bool
+    {
+        return $facet->type === FacetType::Range
+            && $facet->sourceType === FacetSourceType::Attribute
+            && in_array($facet->attributeDataType, [AttributeDataType::Integer, AttributeDataType::Decimal], true);
     }
 
     /** @return list<string> */

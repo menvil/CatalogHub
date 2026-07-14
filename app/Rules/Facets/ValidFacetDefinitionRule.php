@@ -35,9 +35,8 @@ final class ValidFacetDefinitionRule implements DataAwareRule, ValidationRule
             return;
         }
 
-        if ($facetType === FacetType::Checkbox
-            && ! in_array($sourceType, [FacetSourceType::Attribute, FacetSourceType::Brand], true)) {
-            $fail('Checkbox facets require an attribute or brand source.');
+        if ($facetType === FacetType::Checkbox) {
+            $this->validateOptionFacet($facetType, $sourceType, $fail);
         }
 
         if ($facetType === FacetType::Range) {
@@ -48,9 +47,30 @@ final class ValidFacetDefinitionRule implements DataAwareRule, ValidationRule
             $this->validateBoolean($sourceType, $fail);
         }
 
-        if ($facetType === FacetType::Select
-            && ! in_array($sourceType, [FacetSourceType::Attribute, FacetSourceType::Brand], true)) {
-            $fail('Select facets require an attribute or brand source.');
+        if ($facetType === FacetType::Select) {
+            $this->validateOptionFacet($facetType, $sourceType, $fail);
+        }
+    }
+
+    private function validateOptionFacet(FacetType $facetType, FacetSourceType $sourceType, Closure $fail): void
+    {
+        $label = $facetType === FacetType::Checkbox ? 'Checkbox' : 'Select';
+
+        if (! in_array($sourceType, [FacetSourceType::Attribute, FacetSourceType::Brand], true)) {
+            $fail("{$label} facets require an attribute or brand source.");
+
+            return;
+        }
+
+        if ($sourceType !== FacetSourceType::Attribute) {
+            return;
+        }
+
+        $attribute = $this->attribute();
+
+        if ($attribute === null
+            || ! in_array($attribute->data_type, [AttributeDataType::Enum, AttributeDataType::MultiEnum], true)) {
+            $fail("{$label} facets require an enum or multi-enum attribute from the selected category.");
         }
     }
 

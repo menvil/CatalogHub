@@ -132,7 +132,7 @@ class ProductProjectionBuilderTest extends TestCase
         $this->assertSame(['refresh_rate', 'brightness'], array_column($sections[1]['attributes'], 'code'));
         $this->assertSame(165, $sections[1]['attributes'][0]['canonical_value']);
         $this->assertSame('hertz', $sections[1]['attributes'][0]['canonical_unit']);
-        $this->assertNull($sections[1]['attributes'][0]['display_value']);
+        $this->assertSame('165 hertz', $sections[1]['attributes'][0]['display_value']);
         $this->assertTrue($sections[1]['attributes'][0]['is_filterable']);
         $this->assertNotContains('internal_code', array_column($sections[1]['attributes'], 'code'));
     }

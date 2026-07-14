@@ -90,10 +90,11 @@ jobs:
           }
 
           if (is_file("junit.xml") && ($junit = simplexml_load_file("junit.xml")) !== false) {
-              $tests = (string) ($junit["tests"] ?? "n/a");
-              $assertions = (string) ($junit["assertions"] ?? "n/a");
-              $failures = (string) ($junit["failures"] ?? "n/a");
-              $errors = (string) ($junit["errors"] ?? "n/a");
+              $summary = isset($junit->testsuite[0]) ? $junit->testsuite[0] : $junit;
+              $tests = (string) ($summary["tests"] ?? "n/a");
+              $assertions = (string) ($summary["assertions"] ?? "n/a");
+              $failures = (string) ($summary["failures"] ?? "n/a");
+              $errors = (string) ($summary["errors"] ?? "n/a");
           }
 
           file_put_contents(getenv("GITHUB_OUTPUT"), sprintf(
@@ -152,9 +153,11 @@ jobs:
               marker,
               '## Test coverage',
               '',
-              '| Result | Line coverage | Tests | Assertions | Failures / errors |',
-              '|---|---:|---:|---:|---:|',
-              `| ${status} | **${percentage}%** | ${tests} | ${assertions} | ${failures} / ${errors} |`,
+              `**${status}**`,
+              '',
+              '| Line coverage | Tests | Assertions | Failures / errors |',
+              '|---:|---:|---:|---:|',
+              `| **${percentage}%** | ${tests} | ${assertions} | ${failures} / ${errors} |`,
               '',
               'Coverage engine: PCOV · Report: Clover XML artifact',
               '',

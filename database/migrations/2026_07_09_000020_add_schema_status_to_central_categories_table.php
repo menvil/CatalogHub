@@ -20,6 +20,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('central_categories', function (Blueprint $table): void {
+            $table->dropIndex(['schema_status']);
             $table->dropColumn('schema_status');
         });
     }

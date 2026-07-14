@@ -74,6 +74,9 @@ jobs:
   frontend-build:
     name: Frontend build (Vite)
     runs-on: ubuntu-latest
+    outputs:
+      files: ${{ steps.build-metrics.outputs.files }}
+      size: ${{ steps.build-metrics.outputs.size }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -90,6 +93,12 @@ jobs:
       - name: Build assets
         run: npm run build
 
+      - name: Collect build metrics
+        id: build-metrics
+        run: |
+          echo "files=$(find public/build -type f | wc -l | tr -d ' ')" >> "$GITHUB_OUTPUT"
+          echo "size=$(du -sh public/build | cut -f1)" >> "$GITHUB_OUTPUT"
+
       - name: Upload built assets
         uses: actions/upload-artifact@v7
         with:
@@ -103,6 +112,7 @@ jobs:
     needs: frontend-build
     outputs:
       assertions: ${{ steps.test-results.outputs.assertions }}
+      migrations: ${{ steps.sqlite-migrations.outputs.migrations }}
       tests: ${{ steps.test-results.outputs.tests }}
     steps:
       - name: Checkout
@@ -137,10 +147,16 @@ jobs:
           touch database/database.sqlite
 
       - name: Run SQLite migration and seed smoke check
+        id: sqlite-migrations
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: database/database.sqlite
-        run: php artisan migrate:fresh --seed --force
+        run: |
+          set -o pipefail
+          php artisan migrate:fresh --seed --force
+          php artisan migrate:status --no-ansi \
+            | awk '/ Ran / { count++ } END { print "migrations=" count }' \
+            >> "$GITHUB_OUTPUT"
 
       - name: Run tests
         id: phpunit
@@ -193,6 +209,9 @@ jobs:
   migrations-mariadb:
     name: Migrations (MariaDB)
     runs-on: ubuntu-latest
+    outputs:
+      migrations: ${{ steps.migration-metrics.outputs.migrations }}
+      rollback: ${{ steps.rollback.outcome }}
     services:
       mariadb:
         image: mariadb:11.4
@@ -243,7 +262,23 @@ jobs:
           DB_PASSWORD: cataloghub
         run: php artisan migrate:fresh --seed --force
 
+      - name: Collect MariaDB migration metrics
+        id: migration-metrics
+        env:
+          DB_CONNECTION: mariadb
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: cataloghub
+          DB_USERNAME: cataloghub
+          DB_PASSWORD: cataloghub
+        run: |
+          set -o pipefail
+          php artisan migrate:status --no-ansi \
+            | awk '/ Ran / { count++ } END { print "migrations=" count }' \
+            >> "$GITHUB_OUTPUT"
+
       - name: Check rollback path (non-blocking)
+        id: rollback
         continue-on-error: true
         env:
           DB_CONNECTION: mariadb
@@ -259,6 +294,9 @@ jobs:
   migrations-postgres:
     name: Migrations (PostgreSQL)
     runs-on: ubuntu-latest
+    outputs:
+      migrations: ${{ steps.migration-metrics.outputs.migrations }}
+      rollback: ${{ steps.rollback.outcome }}
     services:
       postgres:
         image: postgres:17-alpine
@@ -308,7 +346,23 @@ jobs:
           DB_PASSWORD: cataloghub
         run: php artisan migrate:fresh --seed --force
 
+      - name: Collect PostgreSQL migration metrics
+        id: migration-metrics
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: cataloghub
+          DB_USERNAME: cataloghub
+          DB_PASSWORD: cataloghub
+        run: |
+          set -o pipefail
+          php artisan migrate:status --no-ansi \
+            | awk '/ Ran / { count++ } END { print "migrations=" count }' \
+            >> "$GITHUB_OUTPUT"
+
       - name: Check rollback path (non-blocking)
+        id: rollback
         continue-on-error: true
         env:
           DB_CONNECTION: pgsql
@@ -324,6 +378,13 @@ jobs:
   dependency-audit:
     name: Dependency audit
     runs-on: ubuntu-latest
+    outputs:
+      composer-advisories: ${{ steps.dependency-metrics.outputs.composer-advisories }}
+      composer-packages: ${{ steps.dependency-metrics.outputs.composer-packages }}
+      npm-critical: ${{ steps.dependency-metrics.outputs.npm-critical }}
+      npm-high: ${{ steps.dependency-metrics.outputs.npm-high }}
+      npm-packages: ${{ steps.dependency-metrics.outputs.npm-packages }}
+      npm-vulnerabilities: ${{ steps.dependency-metrics.outputs.npm-vulnerabilities }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -342,12 +403,55 @@ jobs:
           cache: npm
 
       - name: Audit Composer dependencies
-        run: composer audit --locked
+        shell: bash
+        run: |
+          set -o pipefail
+          composer audit --locked --format=json | tee composer-audit.json
 
       - name: Audit npm dependencies
+        shell: bash
         run: |
+          set -o pipefail
           npm ci --ignore-scripts
-          npm audit --audit-level=high
+          npm audit --audit-level=high --json | tee npm-audit.json
+
+      - name: Collect dependency metrics
+        id: dependency-metrics
+        if: always()
+        run: |
+          php -r '
+          $lock = json_decode(file_get_contents("composer.lock"), true) ?: [];
+          $audit = is_file("composer-audit.json")
+              ? (json_decode(file_get_contents("composer-audit.json"), true) ?: [])
+              : [];
+          $packages = count($lock["packages"] ?? []) + count($lock["packages-dev"] ?? []);
+          $advisories = 0;
+
+          foreach ($audit["advisories"] ?? [] as $items) {
+              $advisories += is_array($items) ? count($items) : 0;
+          }
+
+          file_put_contents(getenv("GITHUB_OUTPUT"), sprintf(
+              "composer-packages=%d\ncomposer-advisories=%d\n",
+              $packages,
+              $advisories,
+          ), FILE_APPEND);
+          '
+          node -e '
+          const fs = require("fs");
+          const report = fs.existsSync("npm-audit.json")
+            ? JSON.parse(fs.readFileSync("npm-audit.json", "utf8"))
+            : {};
+          const dependencies = report.metadata?.dependencies ?? {};
+          const vulnerabilities = report.metadata?.vulnerabilities ?? {};
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, [
+            `npm-packages=${dependencies.total ?? "n/a"}`,
+            `npm-vulnerabilities=${vulnerabilities.total ?? "n/a"}`,
+            `npm-high=${vulnerabilities.high ?? "n/a"}`,
+            `npm-critical=${vulnerabilities.critical ?? "n/a"}`,
+            "",
+          ].join("\n"));
+          '
 
   ci-summary:
     name: CI results
@@ -372,12 +476,25 @@ jobs:
           CODE_STYLE_RESULT: ${{ needs['code-style'].result }}
           STATIC_ANALYSIS_RESULT: ${{ needs['static-analysis'].result }}
           FRONTEND_BUILD_RESULT: ${{ needs['frontend-build'].result }}
+          BUILD_FILES: ${{ needs['frontend-build'].outputs.files }}
+          BUILD_SIZE: ${{ needs['frontend-build'].outputs.size }}
           TESTS_RESULT: ${{ needs.tests.result }}
           TEST_COUNT: ${{ needs.tests.outputs.tests }}
           ASSERTION_COUNT: ${{ needs.tests.outputs.assertions }}
+          SQLITE_MIGRATIONS: ${{ needs.tests.outputs.migrations }}
           MARIADB_RESULT: ${{ needs['migrations-mariadb'].result }}
+          MARIADB_MIGRATIONS: ${{ needs['migrations-mariadb'].outputs.migrations }}
+          MARIADB_ROLLBACK: ${{ needs['migrations-mariadb'].outputs.rollback }}
           POSTGRES_RESULT: ${{ needs['migrations-postgres'].result }}
+          POSTGRES_MIGRATIONS: ${{ needs['migrations-postgres'].outputs.migrations }}
+          POSTGRES_ROLLBACK: ${{ needs['migrations-postgres'].outputs.rollback }}
           DEPENDENCY_AUDIT_RESULT: ${{ needs['dependency-audit'].result }}
+          COMPOSER_PACKAGES: ${{ needs['dependency-audit'].outputs.composer-packages }}
+          COMPOSER_ADVISORIES: ${{ needs['dependency-audit'].outputs.composer-advisories }}
+          NPM_PACKAGES: ${{ needs['dependency-audit'].outputs.npm-packages }}
+          NPM_VULNERABILITIES: ${{ needs['dependency-audit'].outputs.npm-vulnerabilities }}
+          NPM_HIGH: ${{ needs['dependency-audit'].outputs.npm-high }}
+          NPM_CRITICAL: ${{ needs['dependency-audit'].outputs.npm-critical }}
         with:
           script: |
             const fs = require('fs');
@@ -388,9 +505,9 @@ jobs:
               cancelled: '⚪',
               skipped: '➖',
             }[result] ?? '❔');
-            const status = (result) => `${icon(result)} ${result}`;
-            const onSuccess = (result, successText, fallback = 'See workflow log') =>
-              result === 'success' ? successText : fallback;
+            const details = (result, successText) =>
+              result === 'success' ? successText : `${icon(result)} ${result} · see workflow log`;
+            const value = (name) => process.env[name] || 'n/a';
             const tests = process.env.TEST_COUNT || 'n/a';
             const assertions = process.env.ASSERTION_COUNT || 'n/a';
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
@@ -398,15 +515,15 @@ jobs:
               marker,
               '## CatalogHub CI',
               '',
-              '| Check | Result | Details |',
-              '|---|---:|---|',
-              `| Code style | ${status(process.env.CODE_STYLE_RESULT)} | ${onSuccess(process.env.CODE_STYLE_RESULT, 'Pint: no changes required')} |`,
-              `| Static analysis | ${status(process.env.STATIC_ANALYSIS_RESULT)} | ${onSuccess(process.env.STATIC_ANALYSIS_RESULT, 'PHPStan: 0 errors')} |`,
-              `| Frontend build | ${status(process.env.FRONTEND_BUILD_RESULT)} | ${onSuccess(process.env.FRONTEND_BUILD_RESULT, 'Vite production build completed')} |`,
-              `| Tests & SQLite | ${status(process.env.TESTS_RESULT)} | ${tests} tests · ${assertions} assertions · migrate:fresh --seed |`,
-              `| MariaDB | ${status(process.env.MARIADB_RESULT)} | ${onSuccess(process.env.MARIADB_RESULT, 'Migrations and seed completed')} |`,
-              `| PostgreSQL | ${status(process.env.POSTGRES_RESULT)} | ${onSuccess(process.env.POSTGRES_RESULT, 'Migrations and seed completed')} |`,
-              `| Dependencies | ${status(process.env.DEPENDENCY_AUDIT_RESULT)} | ${onSuccess(process.env.DEPENDENCY_AUDIT_RESULT, 'Composer: 0 advisories · npm: 0 high/critical vulnerabilities')} |`,
+              '| Check | Summary |',
+              '|---|---|',
+              `| Code style | ${details(process.env.CODE_STYLE_RESULT, 'Pint: no changes required')} |`,
+              `| Static analysis | ${details(process.env.STATIC_ANALYSIS_RESULT, 'PHPStan: 0 errors')} |`,
+              `| Frontend build | ${details(process.env.FRONTEND_BUILD_RESULT, `${value('BUILD_FILES')} files · ${value('BUILD_SIZE')}`)} |`,
+              `| Tests & SQLite | ${details(process.env.TESTS_RESULT, `${tests} tests · ${assertions} assertions · ${value('SQLITE_MIGRATIONS')} migrations · seed passed`)} |`,
+              `| MariaDB | ${details(process.env.MARIADB_RESULT, `${value('MARIADB_MIGRATIONS')} migrations · seed passed · rollback ${value('MARIADB_ROLLBACK')}`)} |`,
+              `| PostgreSQL | ${details(process.env.POSTGRES_RESULT, `${value('POSTGRES_MIGRATIONS')} migrations · seed passed · rollback ${value('POSTGRES_ROLLBACK')}`)} |`,
+              `| Dependencies | ${details(process.env.DEPENDENCY_AUDIT_RESULT, `Composer: ${value('COMPOSER_PACKAGES')} packages · ${value('COMPOSER_ADVISORIES')} advisories; npm: ${value('NPM_PACKAGES')} packages · ${value('NPM_VULNERABILITIES')} vulnerabilities (${value('NPM_HIGH')} high / ${value('NPM_CRITICAL')} critical)`)} |`,
               '',
               `[Open workflow run](${runUrl})`,
             ];

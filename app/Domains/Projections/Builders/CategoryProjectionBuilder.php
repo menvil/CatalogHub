@@ -10,6 +10,8 @@ use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Site;
 use App\Services\Sites\SiteOverrideResolver;
 use App\Services\Translations\TranslationResolver;
+use Carbon\CarbonImmutable;
+use DateTimeInterface;
 
 final class CategoryProjectionBuilder
 {
@@ -127,6 +129,9 @@ final class CategoryProjectionBuilder
             facets: $facets,
             comparison: $comparison,
             checksum: $checksum,
+            builtAt: $category->getAttribute('updated_at') instanceof DateTimeInterface
+                ? CarbonImmutable::instance($category->getAttribute('updated_at'))
+                : null,
         );
     }
 

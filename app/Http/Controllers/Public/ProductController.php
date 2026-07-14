@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Public;
 
 use App\Domains\Projections\Enums\ProjectionStatus;
+use App\Domains\PublicSite\LocalizedUrlResolver;
 use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Http\Controllers\Controller;
@@ -18,6 +19,7 @@ final class ProductController extends Controller
         string $slug,
         SiteContextResolver $sites,
         ThemeLayoutResolver $layouts,
+        LocalizedUrlResolver $urls,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
         $projection = SiteProductProjection::query()
@@ -44,6 +46,9 @@ final class ProductController extends Controller
             ],
             'brand' => is_array(data_get($payload, 'brand')) ? data_get($payload, 'brand') : null,
             'category' => is_array(data_get($payload, 'category')) ? data_get($payload, 'category') : null,
+            'categoryUrl' => is_string(data_get($payload, 'category.slug'))
+                ? $urls->category($site, $locale, data_get($payload, 'category.slug'))
+                : null,
             'specSections' => is_array(data_get($payload, 'spec_sections')) ? data_get($payload, 'spec_sections') : [],
             'benefits' => $benefits,
             'rating' => is_array(data_get($payload, 'rating')) ? data_get($payload, 'rating') : null,

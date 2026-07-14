@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Public;
 
 use App\Domains\Projections\Enums\ProjectionStatus;
+use App\Domains\PublicSite\LocalizedUrlResolver;
 use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Http\Controllers\Controller;
@@ -18,6 +19,7 @@ final class CategoryController extends Controller
         string $slug,
         SiteContextResolver $sites,
         ThemeLayoutResolver $layouts,
+        LocalizedUrlResolver $urls,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
         $projection = SiteCategoryProjection::query()
@@ -37,7 +39,7 @@ final class CategoryController extends Controller
                 'intro' => data_get($projection->payload_json, 'category.intro_text'),
                 'seo' => $projection->seo_json ?? [],
             ],
-            'listingUrl' => "/{$locale}/categories/{$projection->slug}/products",
+            'listingUrl' => $urls->listing($site, $locale, $projection),
         ]);
     }
 }

@@ -5,7 +5,7 @@
     @if (($data['categories'] ?? []) !== [])
         <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             @foreach ($data['categories'] as $category)
-                <a href="/{{ $locale }}/categories/{{ $category['slug'] }}" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                <a href="{{ $category['url'] }}" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                     <h3 class="font-semibold">{{ $category['title'] }}</h3>
                     @if (filled($category['description']))
                         <p class="mt-2 text-sm text-slate-600">{{ $category['description'] }}</p>

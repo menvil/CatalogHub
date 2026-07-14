@@ -1,0 +1,28 @@
+<?php
+
+namespace App\Services\Facets;
+
+use App\Data\Facets\FacetDefinitionData;
+use App\Models\CentralCatalog\CentralCategory;
+use App\Models\FacetDefinition;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
+
+final class CategoryFacetConfigResolver
+{
+    /** @return Collection<int, FacetDefinitionData> */
+    public function resolve(CentralCategory $category): Collection
+    {
+        return FacetDefinition::query()
+            ->forCategory($category)
+            ->active()
+            ->where('is_visible', true)
+            ->with([
+                'attributeDefinition',
+                'options' => fn (HasMany $query): HasMany => $query->where('is_active', true),
+            ])
+            ->ordered()
+            ->get()
+            ->map(fn (FacetDefinition $facet): FacetDefinitionData => FacetDefinitionData::fromModel($facet));
+    }
+}

@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\ContentRelationTargetType;
+use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\ContentItem;
 use App\Models\ContentRelation;
@@ -30,6 +31,14 @@ class ContentRelationFactory extends Factory
         return $this->state(fn (): array => [
             'related_type' => ContentRelationTargetType::Product,
             'related_id' => $product?->getKey() ?? CentralProduct::factory(),
+        ]);
+    }
+
+    public function category(?CentralCategory $category = null): static
+    {
+        return $this->state(fn (): array => [
+            'related_type' => ContentRelationTargetType::Category,
+            'related_id' => $category?->getKey() ?? CentralCategory::factory(),
         ]);
     }
 }

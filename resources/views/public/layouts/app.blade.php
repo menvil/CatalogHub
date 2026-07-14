@@ -4,7 +4,8 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>@yield('title', $title ?? ($site->name ?? config('app.name', 'CatalogHub')))</title>
+        @php($fallbackTitle = trim($__env->yieldContent('title', $title ?? ($site->name ?? config('app.name', 'CatalogHub')))))
+        @include('public.partials.seo', ['seo' => $seo ?? [], 'fallbackTitle' => $fallbackTitle])
 
         @stack('head')
         @vite(['resources/css/public.css', 'resources/js/app.js'])

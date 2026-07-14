@@ -3,6 +3,7 @@
 namespace App\Domains\Projections\Builders;
 
 use App\Domains\Projections\DTO\ProductProjectionData;
+use App\Domains\Seo\SeoProjectionBuilder;
 use App\Enums\AttributeDataType;
 use App\Enums\CentralProductStatus;
 use App\Exceptions\Units\CannotConvertUnitException;
@@ -32,6 +33,7 @@ final class ProductProjectionBuilder
         private readonly MediaResolver $mediaResolver,
         private readonly MediaUrlGenerator $mediaUrlGenerator,
         private readonly SiteOverrideResolver $siteOverrideResolver,
+        private readonly SeoProjectionBuilder $seoProjectionBuilder,
     ) {}
 
     public function build(Site $site, CentralProduct $product, string $locale): ProductProjectionData
@@ -109,7 +111,16 @@ final class ProductProjectionBuilder
             'spec_sections' => $this->buildSpecSections($product, $site, $locale),
             'media' => $media,
         ];
-        $seo = [];
+        $seo = $this->seoProjectionBuilder->forProduct(
+            $site,
+            $product,
+            $locale,
+            $title,
+            $slug,
+            $status === 'active',
+            $media,
+        );
+        $payload['seo'] = $seo;
 
         return new ProductProjectionData(
             siteId: (int) $site->getKey(),

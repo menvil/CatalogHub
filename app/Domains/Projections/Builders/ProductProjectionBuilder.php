@@ -17,6 +17,7 @@ use App\Models\MediaAsset;
 use App\Models\Site;
 use App\Services\Media\MediaResolver;
 use App\Services\Media\MediaUrlGenerator;
+use App\Services\Sites\SiteOverrideResolver;
 use App\Services\Translations\TranslationResolver;
 use App\Services\Units\UnitConverter;
 use App\Services\Units\UnitFormatter;
@@ -30,6 +31,7 @@ final class ProductProjectionBuilder
         private readonly UnitFormatter $unitFormatter,
         private readonly MediaResolver $mediaResolver,
         private readonly MediaUrlGenerator $mediaUrlGenerator,
+        private readonly SiteOverrideResolver $siteOverrideResolver,
     ) {}
 
     public function build(Site $site, CentralProduct $product, string $locale): ProductProjectionData
@@ -38,9 +40,34 @@ final class ProductProjectionBuilder
         $site->loadMissing('market');
 
         $sourceTitle = (string) $product->getAttribute('name');
-        $title = $this->translatedString($product, 'name', $locale, $sourceTitle);
-        $slug = (string) $product->getAttribute('slug');
-        $status = $product->status === CentralProductStatus::Active ? 'active' : 'pending';
+        $translatedTitle = $this->translatedString($product, 'name', $locale, $sourceTitle);
+        $title = $this->overrideString(
+            $site,
+            $product,
+            ['title', 'local_title'],
+            $locale,
+            $translatedTitle,
+        );
+        $slug = $this->overrideString(
+            $site,
+            $product,
+            ['slug', 'local_slug'],
+            $locale,
+            (string) $product->getAttribute('slug'),
+        );
+        $introText = $this->overrideString($site, $product, ['intro_text'], $locale);
+        $heroText = $this->overrideString($site, $product, ['hero_text'], $locale);
+        $visibility = $this->siteOverrideResolver->resolve(
+            $site,
+            'product',
+            (int) $product->getKey(),
+            'visibility',
+            $locale,
+            fallbackValue: 'visible',
+        );
+        $status = $product->status === CentralProductStatus::Active && $this->isVisible($visibility)
+            ? 'active'
+            : 'pending';
         $media = $this->buildMediaPayload($site, $product, $locale, $title);
         $payload = [
             'product' => [
@@ -50,9 +77,12 @@ final class ProductProjectionBuilder
                 'slug' => $slug,
                 'model' => $product->getAttribute('model'),
                 'status' => $product->status->value,
+                'visibility' => $visibility,
                 'subtitle' => $this->translatedString($product, 'subtitle', $locale),
                 'short_description' => $this->translatedString($product, 'short_description', $locale),
                 'description' => $this->translatedString($product, 'description', $locale),
+                'intro_text' => $introText,
+                'hero_text' => $heroText,
             ],
             'brand' => $product->brand === null ? null : [
                 'id' => (int) $product->brand->getKey(),
@@ -439,5 +469,45 @@ final class ProductProjectionBuilder
             'mime_type' => $asset->getAttribute('mime_type'),
             'is_placeholder' => false,
         ];
+    }
+
+    /**
+     * @param  list<string>  $fields
+     */
+    private function overrideString(
+        Site $site,
+        CentralProduct $product,
+        array $fields,
+        string $locale,
+        ?string $fallback = null,
+    ): ?string {
+        $value = $fallback;
+
+        foreach ($fields as $field) {
+            $resolved = $this->siteOverrideResolver->resolve(
+                $site,
+                'product',
+                (int) $product->getKey(),
+                $field,
+                $locale,
+                fallbackValue: $value,
+            );
+            $value = is_scalar($resolved) ? (string) $resolved : $value;
+        }
+
+        return $value;
+    }
+
+    private function isVisible(mixed $visibility): bool
+    {
+        if (is_bool($visibility)) {
+            return $visibility;
+        }
+
+        return ! in_array(
+            mb_strtolower((string) $visibility),
+            ['0', 'false', 'hidden', 'disabled', 'inactive'],
+            true,
+        );
     }
 }

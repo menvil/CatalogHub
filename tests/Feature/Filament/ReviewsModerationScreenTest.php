@@ -98,4 +98,18 @@ class ReviewsModerationScreenTest extends TestCase
         $this->assertSame(ReviewStatus::Rejected, $review->fresh()->status);
         $this->assertSame('Does not meet review guidelines.', $review->fresh()->rejection_reason);
     }
+
+    public function test_site_admin_can_mark_review_as_spam_from_table(): void
+    {
+        $site = Site::factory()->create();
+        $review = Review::factory()->pending()->create(['site_id' => $site->id]);
+
+        Livewire::actingAs(User::factory()->siteAdmin($site)->create())
+            ->test(ListReviews::class)
+            ->callTableAction('markSpam', $review)
+            ->assertHasNoActionErrors();
+
+        $this->assertSame(ReviewStatus::Spam, $review->fresh()->status);
+        $this->assertNotNull($review->fresh()->spam_marked_at);
+    }
 }

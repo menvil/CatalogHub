@@ -45,4 +45,41 @@ final readonly class RelatedContentResolver
                 publishedDate: $translation->contentItem->published_at?->toFormattedDateString(),
             ));
     }
+
+    /** @return Collection<int, RelatedContentData> */
+    public function resolveForProduct(
+        Site $site,
+        string $locale,
+        int $productId,
+        ?int $categoryId = null,
+        ?int $brandId = null,
+        int $limit = 4,
+    ): Collection {
+        $limit = max(1, min($limit, 20));
+        $targets = [
+            ['type' => ContentRelationTargetType::Product, 'id' => $productId],
+            ['type' => ContentRelationTargetType::Category, 'id' => $categoryId],
+            ['type' => ContentRelationTargetType::Brand, 'id' => $brandId],
+        ];
+        /** @var Collection<int, RelatedContentData> $items */
+        $items = collect();
+
+        foreach ($targets as $target) {
+            if ($target['id'] === null) {
+                continue;
+            }
+
+            foreach ($this->resolve($site, $locale, $target['type'], $target['id'], $limit) as $candidate) {
+                if (! $items->contains(fn (RelatedContentData $item): bool => $item->url === $candidate->url)) {
+                    $items->push($candidate);
+                }
+
+                if ($items->count() === $limit) {
+                    return $items->values();
+                }
+            }
+        }
+
+        return $items->values();
+    }
 }

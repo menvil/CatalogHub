@@ -9,6 +9,7 @@ use App\Domains\Themes\ThemeLayoutResolver;
 use App\Http\Controllers\Controller;
 use App\Models\Review;
 use App\Models\SiteProductProjection;
+use App\Services\Content\RelatedContentResolver;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -21,6 +22,7 @@ final class ProductController extends Controller
         SiteContextResolver $sites,
         ThemeLayoutResolver $layouts,
         LocalizedUrlResolver $urls,
+        RelatedContentResolver $relatedContent,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
         $projection = SiteProductProjection::query()
@@ -92,6 +94,26 @@ final class ProductController extends Controller
             'reviewsEnabled' => $reviewsEnabled,
             'reviews' => $reviews,
             'leadsEnabled' => $leadsEnabled,
+            'relatedContent' => $relatedContent->resolveForProduct(
+                site: $site,
+                locale: $locale,
+                productId: (int) $projection->central_product_id,
+                categoryId: $this->canonicalId(data_get($payload, 'category.id')),
+                brandId: $this->canonicalId(data_get($payload, 'brand.id')),
+            ),
         ]);
+    }
+
+    private function canonicalId(mixed $value): ?int
+    {
+        if (is_int($value) && $value > 0) {
+            return $value;
+        }
+
+        if (is_string($value) && ctype_digit($value) && (int) $value > 0) {
+            return (int) $value;
+        }
+
+        return null;
     }
 }

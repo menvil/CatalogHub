@@ -16,7 +16,7 @@ final class ReviewForm extends Component
     public Site $site;
 
     #[Locked]
-    public CentralProduct $product;
+    public int $productId;
 
     public string $authorName = '';
 
@@ -34,10 +34,10 @@ final class ReviewForm extends Component
 
     public bool $submitted = false;
 
-    public function mount(Site $site, CentralProduct $product): void
+    public function mount(Site $site, CentralProduct|int $product): void
     {
         $this->site = $site;
-        $this->product = $product;
+        $this->productId = (int) ($product instanceof CentralProduct ? $product->getKey() : $product);
         $this->locale = $site->default_locale;
     }
 
@@ -55,7 +55,7 @@ final class ReviewForm extends Component
         try {
             $createReview->handle(
                 site: $this->site,
-                product: $this->product,
+                product: $this->productId,
                 authorName: $data['authorName'],
                 authorEmail: $data['authorEmail'] ?: null,
                 rating: $data['rating'],

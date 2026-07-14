@@ -29,4 +29,13 @@
     @include('public.components.product-benefits', ['benefits' => $benefits])
 
     @include('public.components.product-specs', ['sections' => $specSections])
+
+    @if ($reviewsEnabled)
+        @include('public.products.partials.reviews', ['reviews' => $reviews])
+
+        <div class="mt-8">
+            <livewire:public.reviews.review-form :site="$site" :product="$centralProductId"
+                :key="'review-form-'.$site->id.'-'.$centralProductId" />
+        </div>
+    @endif
 @endsection

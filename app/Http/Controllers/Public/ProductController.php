@@ -7,6 +7,7 @@ use App\Domains\PublicSite\LocalizedUrlResolver;
 use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Http\Controllers\Controller;
+use App\Models\Review;
 use App\Models\SiteProductProjection;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -54,6 +55,20 @@ final class ProductController extends Controller
             ];
         }
         $breadcrumbs[] = ['label' => $projection->title, 'url' => null];
+        $reviewsEnabled = $site->features()
+            ->where('feature_key', 'reviews')
+            ->where('is_enabled', true)
+            ->exists();
+        $reviews = $reviewsEnabled
+            ? Review::query()
+                ->visiblePublicly()
+                ->forSite($site)
+                ->where('central_product_id', $projection->central_product_id)
+                ->latest('approved_at')
+                ->latest('id')
+                ->limit(50)
+                ->get()
+            : collect();
 
         return view($layouts->resolve($site, 'product'), [
             'site' => $site,
@@ -72,6 +87,9 @@ final class ProductController extends Controller
             'media' => $projection->media_json ?? [],
             'seo' => $seo,
             'breadcrumbs' => $breadcrumbs,
+            'centralProductId' => (int) $projection->central_product_id,
+            'reviewsEnabled' => $reviewsEnabled,
+            'reviews' => $reviews,
         ]);
     }
 }

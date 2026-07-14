@@ -10,7 +10,7 @@ final class FacetFilterSet
      */
     private function __construct(
         private readonly array $values,
-        private readonly array $appliedFilters = [],
+        private array $appliedFilters = [],
     ) {}
 
     /** @param array<string, mixed> $values */
@@ -61,6 +61,11 @@ final class FacetFilterSet
     public function appliedFilters(): array
     {
         return $this->appliedFilters;
+    }
+
+    public function recordAppliedFilter(AppliedFacetFilter $filter): void
+    {
+        $this->appliedFilters[] = $filter;
     }
 
     private static function normalizeValue(mixed $value): mixed

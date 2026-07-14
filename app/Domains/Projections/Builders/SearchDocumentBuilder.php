@@ -13,6 +13,7 @@ final class SearchDocumentBuilder
         $attributes = $this->attributesFromPayload($projection->payload);
         $filterValues = [
             'brand_id' => data_get($projection->payload, 'brand.id'),
+            'brand_slug' => data_get($projection->payload, 'brand.slug'),
             'category_id' => data_get($projection->payload, 'category.id'),
         ];
         $sortValues = [

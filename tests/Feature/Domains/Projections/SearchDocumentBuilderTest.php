@@ -21,7 +21,7 @@ class SearchDocumentBuilderTest extends TestCase
             status: ProjectionStatus::Active,
             payload: [
                 'product' => ['id' => 123, 'title' => 'LG UltraGear 27GP850-B', 'model' => '27GP850-B'],
-                'brand' => ['id' => 10, 'name' => 'LG'],
+                'brand' => ['id' => 10, 'name' => 'LG', 'slug' => 'lg'],
                 'category' => ['id' => 20, 'label' => 'Monitors'],
                 'spec_sections' => [[
                     'attributes' => [
@@ -67,6 +67,7 @@ class SearchDocumentBuilderTest extends TestCase
         $this->assertStringContainsString('Monitors', $first->searchText);
         $this->assertStringContainsString('165 Hz', $first->searchText);
         $this->assertSame(10, $first->filterValues['brand_id']);
+        $this->assertSame('lg', $first->filterValues['brand_slug']);
         $this->assertSame(20, $first->filterValues['category_id']);
         $this->assertSame(165, $first->filterValues['refresh_rate']);
         $this->assertArrayNotHasKey('internal_code', $first->filterValues);

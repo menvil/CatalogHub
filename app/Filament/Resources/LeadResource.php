@@ -2,13 +2,16 @@
 
 namespace App\Filament\Resources;
 
+use App\Actions\Leads\UpdateLeadStatusAction;
 use App\Enums\LeadStatus;
 use App\Enums\LeadType;
 use App\Filament\Resources\LeadResource\Pages;
 use App\Models\Lead;
 use App\Models\User;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -91,6 +94,30 @@ final class LeadResource extends Resource
                     ->query(fn (Builder $query, array $data): Builder => $query
                         ->when(filled($data['from'] ?? null), fn (Builder $query): Builder => $query->whereDate('created_at', '>=', $data['from']))
                         ->when(filled($data['until'] ?? null), fn (Builder $query): Builder => $query->whereDate('created_at', '<=', $data['until']))),
+            ])
+            ->recordActions([
+                Action::make('updateStatus')
+                    ->label('Update status')
+                    ->icon(Heroicon::OutlinedArrowPath)
+                    ->fillForm(fn (Lead $record): array => ['status' => $record->status->value])
+                    ->schema([
+                        Select::make('status')
+                            ->options(LeadStatus::options())
+                            ->required(),
+                    ])
+                    ->action(function (array $data, Lead $record): Lead {
+                        $user = auth()->user();
+
+                        if (! $user instanceof User) {
+                            return $record;
+                        }
+
+                        return app(UpdateLeadStatusAction::class)->handle(
+                            $user,
+                            $record,
+                            LeadStatus::from((string) $data['status']),
+                        );
+                    }),
             ])
             ->defaultSort('created_at', 'desc');
     }

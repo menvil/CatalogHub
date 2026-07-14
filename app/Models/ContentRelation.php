@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ContentRelationTargetType;
+use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use Database\Factories\ContentRelationFactory;
@@ -32,6 +33,7 @@ final class ContentRelation extends Model
             $targetExists = match ($type) {
                 ContentRelationTargetType::Product => CentralProduct::query()->whereKey($relation->related_id)->exists(),
                 ContentRelationTargetType::Category => CentralCategory::query()->whereKey($relation->related_id)->exists(),
+                ContentRelationTargetType::Brand => CentralBrand::query()->whereKey($relation->related_id)->exists(),
                 default => true,
             };
 

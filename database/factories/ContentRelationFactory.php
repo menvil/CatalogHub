@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\ContentRelationTargetType;
+use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\ContentItem;
@@ -39,6 +40,14 @@ class ContentRelationFactory extends Factory
         return $this->state(fn (): array => [
             'related_type' => ContentRelationTargetType::Category,
             'related_id' => $category?->getKey() ?? CentralCategory::factory(),
+        ]);
+    }
+
+    public function brand(?CentralBrand $brand = null): static
+    {
+        return $this->state(fn (): array => [
+            'related_type' => ContentRelationTargetType::Brand,
+            'related_id' => $brand?->getKey() ?? CentralBrand::factory(),
         ]);
     }
 }

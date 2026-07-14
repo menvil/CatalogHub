@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ContentItemResource\RelationManagers;
 
 use App\Enums\ContentRelationTargetType;
+use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\ContentItem;
@@ -30,6 +31,7 @@ final class RelationsRelationManager extends RelationManager
                 ->options([
                     ContentRelationTargetType::Product->value => ContentRelationTargetType::Product->label(),
                     ContentRelationTargetType::Category->value => ContentRelationTargetType::Category->label(),
+                    ContentRelationTargetType::Brand->value => ContentRelationTargetType::Brand->label(),
                 ])
                 ->default(ContentRelationTargetType::Product->value)
                 ->live()
@@ -89,6 +91,7 @@ final class RelationsRelationManager extends RelationManager
         return match (ContentRelationTargetType::tryFrom($type)) {
             ContentRelationTargetType::Product => CentralProduct::query()->orderBy('name')->pluck('name', 'id')->all(),
             ContentRelationTargetType::Category => CentralCategory::query()->orderBy('name')->pluck('name', 'id')->all(),
+            ContentRelationTargetType::Brand => CentralBrand::query()->orderBy('name')->pluck('name', 'id')->all(),
             default => [],
         };
     }

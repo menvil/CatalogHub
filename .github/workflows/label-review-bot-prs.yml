@@ -1,4 +1,5 @@
-name: Label review bot PRs
+name: PR automation
+run-name: Label review bot PRs
 
 on:
   pull_request_target:
@@ -10,10 +11,11 @@ permissions:
 
 jobs:
   label-review-bot-pr:
+    name: Label review bot PRs
     runs-on: ubuntu-latest
     steps:
       - name: Sync review bot labels
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.0.1
+        uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
         with:
           script: |
             const headRef = context.payload.pull_request.head.ref;

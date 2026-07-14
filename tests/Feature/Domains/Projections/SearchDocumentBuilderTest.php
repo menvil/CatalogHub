@@ -23,6 +23,7 @@ class SearchDocumentBuilderTest extends TestCase
                 'product' => ['id' => 123, 'title' => 'LG UltraGear 27GP850-B', 'model' => '27GP850-B'],
                 'brand' => ['id' => 10, 'name' => 'LG', 'slug' => 'lg'],
                 'category' => ['id' => 20, 'label' => 'Monitors'],
+                'rating' => ['value' => 4.7, 'review_count' => 42],
                 'spec_sections' => [[
                     'attributes' => [
                         [
@@ -73,6 +74,7 @@ class SearchDocumentBuilderTest extends TestCase
         $this->assertArrayNotHasKey('internal_code', $first->filterValues);
         $this->assertArrayNotHasKey('nullable_filter', $first->filterValues);
         $this->assertSame(165, $first->sortValues['refresh_rate']);
+        $this->assertSame(4.7, $first->sortValues['rating']);
         $this->assertSame($first->checksum, $second->checksum);
     }
 

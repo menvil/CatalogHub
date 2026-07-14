@@ -18,7 +18,7 @@ final class SearchDocumentBuilder
         ];
         $sortValues = [
             'title' => $projection->title,
-            'rating' => null,
+            'rating' => $this->ratingFromPayload($projection->payload),
             'price' => null,
         ];
         $searchParts = [
@@ -192,5 +192,13 @@ final class SearchDocumentBuilder
             ->map(fn (mixed $value): string => trim((string) $value))
             ->unique()
             ->implode(' ');
+    }
+
+    /** @param array<string, mixed> $payload */
+    private function ratingFromPayload(array $payload): ?float
+    {
+        $rating = data_get($payload, 'rating.value', data_get($payload, 'rating'));
+
+        return is_numeric($rating) ? (float) $rating : null;
     }
 }

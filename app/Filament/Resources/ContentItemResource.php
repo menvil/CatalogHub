@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Enums\ContentType;
 use App\Filament\Resources\ContentItemResource\Pages;
+use App\Filament\Resources\ContentItemResource\RelationManagers\TranslationsRelationManager;
 use App\Models\ContentItem;
 use App\Models\User;
 use App\Support\Content\ContentForm;
@@ -125,6 +126,11 @@ final class ContentItemResource extends Resource
             'create' => Pages\CreateContentItem::route('/create'),
             'edit' => Pages\EditContentItem::route('/{record}/edit'),
         ];
+    }
+
+    public static function getRelations(): array
+    {
+        return [TranslationsRelationManager::class];
     }
 
     private static function canManage(): bool

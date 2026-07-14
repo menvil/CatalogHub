@@ -10,6 +10,9 @@ use App\Models\Lead;
 use App\Models\Site;
 use App\Models\SiteCategoryProjection;
 use App\Models\SiteProductProjection;
+use App\Models\User;
+use App\Notifications\NewLeadCreatedNotification;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -68,12 +71,21 @@ final class CreateLeadAction
 
         $this->ensureContextIsVisible($site, $data['central_product_id'], $data['central_category_id'], $data['locale']);
 
-        return Lead::query()->create([
+        $lead = Lead::query()->create([
             'site_id' => $site->getKey(),
             ...$data,
             'status' => LeadStatus::New,
             'consent_accepted_at' => now(),
         ]);
+
+        $recipients = User::query()
+            ->where('site_id', $site->getKey())
+            ->get()
+            ->filter(fn (User $user): bool => $user->hasCatalogHubPermission('leads.manage'));
+
+        Notification::send($recipients, new NewLeadCreatedNotification($lead));
+
+        return $lead;
     }
 
     private function ensureContextIsVisible(Site $site, ?int $productId, ?int $categoryId, ?string $locale): void

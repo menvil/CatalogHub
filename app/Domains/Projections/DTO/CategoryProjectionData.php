@@ -2,6 +2,8 @@
 
 namespace App\Domains\Projections\DTO;
 
+use Carbon\CarbonImmutable;
+
 final readonly class CategoryProjectionData
 {
     /**
@@ -23,5 +25,6 @@ final readonly class CategoryProjectionData
         public array $facets,
         public array $comparison,
         public string $checksum,
+        public ?CarbonImmutable $builtAt = null,
     ) {}
 }

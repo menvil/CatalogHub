@@ -2,6 +2,8 @@
 
 namespace App\Domains\Projections\DTO;
 
+use Carbon\CarbonImmutable;
+
 final readonly class ProductProjectionData
 {
     /**
@@ -20,5 +22,6 @@ final readonly class ProductProjectionData
         public array $seo,
         public array $media,
         public ?string $checksum,
+        public ?CarbonImmutable $builtAt = null,
     ) {}
 }

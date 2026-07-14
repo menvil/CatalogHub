@@ -22,6 +22,8 @@ use App\Services\Sites\SiteOverrideResolver;
 use App\Services\Translations\TranslationResolver;
 use App\Services\Units\UnitConverter;
 use App\Services\Units\UnitFormatter;
+use Carbon\CarbonImmutable;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 
 final class ProductProjectionBuilder
@@ -133,6 +135,9 @@ final class ProductProjectionBuilder
             seo: $seo,
             media: $media,
             checksum: $this->checksumFor($status, $payload, $seo, $media),
+            builtAt: $product->getAttribute('updated_at') instanceof DateTimeInterface
+                ? CarbonImmutable::instance($product->getAttribute('updated_at'))
+                : null,
         );
     }
 

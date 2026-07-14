@@ -17,7 +17,7 @@
 @endphp
 
 <aside data-desktop-filter-sidebar class="hidden w-72 shrink-0 lg:block" aria-label="Product filters">
-    <form method="get" action="{{ $action ?: url()->current() }}" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <form method="get" action="{{ $action ?: url()->current() }}" data-facet-form class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
             <h2 class="text-lg font-bold text-slate-950">Filters</h2>
         </div>

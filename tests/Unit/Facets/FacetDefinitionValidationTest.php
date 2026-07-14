@@ -132,7 +132,7 @@ class FacetDefinitionValidationTest extends TestCase
     }
 
     /** @param array<string, mixed> $data */
-    private function validator(array $data): \Illuminate\Contracts\Validation\Validator
+    private function validator(array $data): \Illuminate\Validation\Validator
     {
         return Validator::make($data, [
             'facet_type' => [new ValidFacetDefinitionRule],

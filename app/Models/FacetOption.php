@@ -8,6 +8,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property array<string, mixed>|null $config_json
+ * @property int $position
+ * @property bool $is_active
+ */
 #[Fillable([
     'facet_definition_id',
     'value',

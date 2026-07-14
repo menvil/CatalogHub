@@ -34,7 +34,7 @@
         aria-label="Product filters"
         class="m-0 ml-auto h-dvh max-h-dvh w-[min(92vw,26rem)] max-w-none overflow-hidden bg-white p-0 text-slate-950 shadow-2xl backdrop:bg-slate-950/50"
     >
-        <form method="get" action="{{ $action ?: url()->current() }}" class="flex h-full flex-col">
+        <form method="get" action="{{ $action ?: url()->current() }}" data-facet-form class="flex h-full flex-col">
             <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
                 <h2 class="text-xl font-bold">Filters</h2>
                 <button

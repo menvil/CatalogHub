@@ -44,7 +44,7 @@ final readonly class FacetDefinitionData
             isCollapsible: $facet->is_collapsible,
             defaultCollapsed: $facet->default_collapsed,
             config: $facet->config_json ?? [],
-            options: $facet->options
+            options: ($facet->relationLoaded('activeOptions') ? $facet->activeOptions : $facet->options)
                 ->map(fn ($option): FacetOptionData => FacetOptionData::fromModel($option))
                 ->values()
                 ->all(),

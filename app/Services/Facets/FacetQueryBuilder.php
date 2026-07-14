@@ -46,9 +46,12 @@ final readonly class FacetQueryBuilder
             ->where('status', ProjectionStatus::Active)
             ->where('filter_values_json->category_id', $category->id);
 
+        $facets = $this->siteFacets->resolve($site, $category);
+        $this->retainKnownFilters($filters, $facets);
         $brands = $this->listValues($filters->get('brand'));
 
         if ($brands !== []) {
+            $filters->replace('brand', $brands);
             $query->where(function (Builder $brandQuery) use ($brands): void {
                 foreach ($brands as $brand) {
                     $brandQuery->orWhere('filter_values_json->brand_slug', $brand);
@@ -58,14 +61,15 @@ final readonly class FacetQueryBuilder
             foreach ($brands as $brand) {
                 $filters->recordAppliedFilter(new AppliedFacetFilter(
                     code: 'brand',
-                    label: Str::headline($brand),
+                    label: strlen($brand) <= 3 ? Str::upper($brand) : Str::headline($brand),
                     value: $brand,
                     queryKeys: ['brand'],
                 ));
             }
+        } else {
+            $filters->forget('brand');
         }
 
-        $facets = $this->siteFacets->resolve($site, $category);
         $this->applyEnumFilters($query, $facets, $filters);
         $this->applyBooleanFilters($query, $facets, $filters);
         $this->applyNumericRangeFilters($query, $facets, $filters);
@@ -73,6 +77,25 @@ final readonly class FacetQueryBuilder
         $this->applySorting($query, $filters);
 
         return $query;
+    }
+
+    /** @param Collection<int, FacetDefinitionData> $facets */
+    private function retainKnownFilters(FacetFilterSet $filters, Collection $facets): void
+    {
+        $keys = ['brand', 'rating_min', 'sort'];
+
+        foreach ($facets as $facet) {
+            if ($facet->type === FacetType::Range && $facet->sourceType !== FacetSourceType::Rating) {
+                $keys[] = "{$facet->code}_min";
+                $keys[] = "{$facet->code}_max";
+            } elseif ($facet->sourceType === FacetSourceType::Rating) {
+                $keys[] = 'rating_min';
+            } else {
+                $keys[] = $facet->code;
+            }
+        }
+
+        $filters->retain(array_values(array_unique($keys)));
     }
 
     /** @param Builder<SiteSearchDocument> $query */
@@ -98,8 +121,15 @@ final readonly class FacetQueryBuilder
             }
 
             if ($values === []) {
+                $filters->forget($facet->code);
+
                 continue;
             }
+
+            $filters->replace(
+                $facet->code,
+                $facet->type === FacetType::Select ? $values[0] : $values,
+            );
 
             $query->where(function (Builder $facetQuery) use ($facet, $values): void {
                 foreach ($values as $value) {
@@ -115,7 +145,7 @@ final readonly class FacetQueryBuilder
                 );
                 $filters->recordAppliedFilter(new AppliedFacetFilter(
                     code: $facet->code,
-                    label: $option?->label ?? Str::headline($value),
+                    label: $option instanceof FacetOptionData ? $option->label : Str::headline($value),
                     value: $value,
                     queryKeys: [$facet->code],
                 ));
@@ -146,9 +176,12 @@ final readonly class FacetQueryBuilder
             $value = $this->booleans->parse($filters->get($facet->code));
 
             if ($value === null) {
+                $filters->forget($facet->code);
+
                 continue;
             }
 
+            $filters->replace($facet->code, $this->booleans->serialize($value));
             $query->where("filter_values_json->{$facet->code}", $value);
             $filters->recordAppliedFilter(new AppliedFacetFilter(
                 code: $facet->code,
@@ -189,7 +222,21 @@ final readonly class FacetQueryBuilder
             );
 
             if ($range === null) {
+                $filters->forget($minimumKey, $maximumKey);
+
                 continue;
+            }
+
+            if ($range['min'] === null) {
+                $filters->forget($minimumKey);
+            } else {
+                $filters->replace($minimumKey, $this->ranges->serialize($range['min']));
+            }
+
+            if ($range['max'] === null) {
+                $filters->forget($maximumKey);
+            } else {
+                $filters->replace($maximumKey, $this->ranges->serialize($range['max']));
             }
 
             if ($range['min'] !== null) {
@@ -222,10 +269,13 @@ final readonly class FacetQueryBuilder
         $range = $this->ranges->parse($filters->get('rating_min'), null);
 
         if ($range === null || $range['min'] === null) {
+            $filters->forget('rating_min');
+
             return;
         }
 
         $minimum = max(0.0, min(5.0, $range['min']));
+        $filters->replace('rating_min', $this->ranges->serialize($minimum));
         $this->applyNumericConstraint($query, 'sort_values_json', 'rating', '>=', $minimum);
         $filters->recordAppliedFilter(new AppliedFacetFilter(
             code: 'rating',
@@ -239,6 +289,10 @@ final readonly class FacetQueryBuilder
     private function applySorting(Builder $query, FacetFilterSet $filters): void
     {
         $sort = PublicProductSort::fromInput($filters->get('sort'));
+
+        if ($filters->has('sort')) {
+            $filters->replace('sort', $sort->value);
+        }
 
         match ($sort) {
             PublicProductSort::RatingDesc => $query
@@ -260,7 +314,7 @@ final readonly class FacetQueryBuilder
         float $value,
     ): void {
         $serialized = $this->ranges->serialize($value);
-        $driver = $query->getConnection()->getDriverName();
+        $driver = $query->getModel()->getConnection()->getDriverName();
 
         $valueExpression = $this->numericJsonValueExpression($query, $column, $code);
         $placeholder = match ($driver) {
@@ -276,7 +330,7 @@ final readonly class FacetQueryBuilder
     /** @param Builder<SiteSearchDocument> $query */
     private function numericJsonValueExpression(Builder $query, string $column, string $code): string
     {
-        return match ($query->getConnection()->getDriverName()) {
+        return match ($query->getModel()->getConnection()->getDriverName()) {
             'mysql', 'mariadb' => "CAST(JSON_UNQUOTE(JSON_EXTRACT(`{$column}`, '$.\"{$code}\"')) AS DECIMAL(65, 20))",
             'pgsql' => "CAST(\"{$column}\"->>'{$code}' AS NUMERIC)",
             'sqlsrv' => "TRY_CAST(JSON_VALUE([{$column}], '$.{$code}') AS FLOAT)",

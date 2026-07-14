@@ -3,6 +3,7 @@
 namespace Tests\Unit\Support;
 
 use App\Data\Facets\AppliedFacetFilter;
+use App\Data\Facets\FacetFilterSet;
 use App\Support\Facets\FacetUrlBuilder;
 use Tests\TestCase;
 
@@ -36,5 +37,17 @@ class FacetUrlBuilderTest extends TestCase
         );
 
         $this->assertSame('/monitors', $url);
+    }
+
+    public function test_serializes_filter_set_into_deterministic_url(): void
+    {
+        $filters = FacetFilterSet::fromArray([
+            'panel_type' => ['ips'],
+            'brand' => ['samsung', 'lg'],
+        ]);
+
+        $url = app(FacetUrlBuilder::class)->toUrl('/monitors', $filters);
+
+        $this->assertSame('/monitors?brand=lg,samsung&panel_type=ips', $url);
     }
 }

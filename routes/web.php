@@ -8,6 +8,7 @@ use App\Http\Controllers\CentralAdmin\MissingTranslationsController;
 use App\Http\Controllers\CentralAdmin\OutdatedTranslationsController;
 use App\Http\Controllers\CentralAdmin\TranslationDashboardController;
 use App\Http\Controllers\CentralAdmin\TranslationEditorController;
+use App\Http\Controllers\Public\CategoryController as PublicCategoryController;
 use App\Http\Controllers\Public\HomeController as PublicHomeController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,6 +21,10 @@ Route::get('/', function () {
 Route::get('/{locale}', PublicHomeController::class)
     ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
     ->name('public.home');
+
+Route::get('/{locale}/categories/{slug}', [PublicCategoryController::class, 'show'])
+    ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
+    ->name('public.categories.show');
 
 if (app()->environment(['local', 'testing'])) {
     Route::get('/dev/ui-kit', function () {

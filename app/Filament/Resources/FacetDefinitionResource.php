@@ -105,6 +105,14 @@ final class FacetDefinitionResource extends Resource
                 ->label('Unit code')
                 ->maxLength(64)
                 ->visible(fn (Get $get): bool => $get('facet_type') === FacetType::Range->value),
+            Select::make('config_json.display_mode')
+                ->label('Display mode')
+                ->options([
+                    'toggle' => 'Toggle',
+                    'checkbox' => 'Checkbox',
+                ])
+                ->default('toggle')
+                ->visible(fn (Get $get): bool => $get('facet_type') === FacetType::Boolean->value),
         ]);
     }
 

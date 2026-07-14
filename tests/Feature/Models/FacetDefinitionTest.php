@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Models;
 
+use App\Enums\AttributeDataType;
 use App\Enums\FacetSourceType;
 use App\Enums\FacetType;
 use App\Models\CentralCatalog\AttributeDefinition;
@@ -69,5 +70,14 @@ class FacetDefinitionTest extends TestCase
 
         $this->assertSame(FacetType::Range, $facet->facet_type);
         $this->assertSame(240, $facet->config_json['max']);
+    }
+
+    public function test_factory_supports_boolean_facet_type(): void
+    {
+        $facet = FacetDefinition::factory()->boolean()->create();
+
+        $this->assertSame(FacetType::Boolean, $facet->facet_type);
+        $this->assertSame(AttributeDataType::Boolean, $facet->attributeDefinition->data_type);
+        $this->assertTrue($facet->attributeDefinition->category->is($facet->category));
     }
 }

@@ -2,8 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Enums\AttributeDataType;
 use App\Enums\FacetSourceType;
 use App\Enums\FacetType;
+use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\FacetDefinition;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -48,5 +50,22 @@ class FacetDefinitionFactory extends Factory
             'facet_type' => FacetType::Range,
             'source_type' => FacetSourceType::Rating,
         ]);
+    }
+
+    public function boolean(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'facet_type' => FacetType::Boolean,
+            'source_type' => FacetSourceType::Attribute,
+        ])->afterMaking(function (FacetDefinition $facet): void {
+            if ($facet->attribute_definition_id !== null) {
+                return;
+            }
+
+            $facet->attribute_definition_id = AttributeDefinition::factory()->create([
+                'central_category_id' => $facet->category_id,
+                'data_type' => AttributeDataType::Boolean,
+            ])->id;
+        });
     }
 }

@@ -49,10 +49,14 @@ final class CreateContentItem extends CreateRecord
             'excerpt' => $data['translation_excerpt'] ?? null,
             'body' => $isFaq ? null : $data['translation_body'],
             'body_json' => $isFaq ? $this->faqItems($data['translation_body_json']) : null,
+            'meta_title' => $data['translation_meta_title'] ?? null,
+            'meta_description' => $data['translation_meta_description'] ?? null,
+            'og_title' => $data['translation_og_title'] ?? null,
+            'og_description' => $data['translation_og_description'] ?? null,
             'status' => $data['status'] === 'published' ? 'published' : 'draft',
         ];
 
-        foreach (['locale', 'title', 'slug', 'excerpt', 'body', 'body_json'] as $key) {
+        foreach (['locale', 'title', 'slug', 'excerpt', 'body', 'body_json', 'meta_title', 'meta_description', 'og_title', 'og_description'] as $key) {
             unset($data['translation_'.$key]);
         }
 

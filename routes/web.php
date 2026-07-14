@@ -14,6 +14,7 @@ use App\Http\Controllers\Public\CompareController as PublicCompareController;
 use App\Http\Controllers\Public\HomeController as PublicHomeController;
 use App\Http\Controllers\Public\ProductController as PublicProductController;
 use App\Http\Controllers\Public\ProductListingController as PublicProductListingController;
+use App\Http\Controllers\Public\SearchController as PublicSearchController;
 use Illuminate\Support\Facades\Route;
 
 require __DIR__.'/health.php';
@@ -45,6 +46,10 @@ Route::get('/{locale}/compare', PublicCompareController::class)
 Route::get('/{locale}/articles/{slug}', PublicArticleStubController::class)
     ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
     ->name('public.articles.show');
+
+Route::get('/{locale}/search', PublicSearchController::class)
+    ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
+    ->name('public.search');
 
 if (app()->environment(['local', 'testing'])) {
     Route::get('/dev/ui-kit', function () {

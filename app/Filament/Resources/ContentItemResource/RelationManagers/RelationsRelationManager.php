@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ContentItemResource\RelationManagers;
 
 use App\Enums\ContentRelationTargetType;
+use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
@@ -32,6 +33,7 @@ final class RelationsRelationManager extends RelationManager
                     ContentRelationTargetType::Product->value => ContentRelationTargetType::Product->label(),
                     ContentRelationTargetType::Category->value => ContentRelationTargetType::Category->label(),
                     ContentRelationTargetType::Brand->value => ContentRelationTargetType::Brand->label(),
+                    ContentRelationTargetType::Attribute->value => ContentRelationTargetType::Attribute->label(),
                 ])
                 ->default(ContentRelationTargetType::Product->value)
                 ->live()
@@ -92,7 +94,22 @@ final class RelationsRelationManager extends RelationManager
             ContentRelationTargetType::Product => CentralProduct::query()->orderBy('name')->pluck('name', 'id')->all(),
             ContentRelationTargetType::Category => CentralCategory::query()->orderBy('name')->pluck('name', 'id')->all(),
             ContentRelationTargetType::Brand => CentralBrand::query()->orderBy('name')->pluck('name', 'id')->all(),
+            ContentRelationTargetType::Attribute => $this->attributeOptions(),
             default => [],
         };
+    }
+
+    /** @return array<int|string, string> */
+    private function attributeOptions(): array
+    {
+        return AttributeDefinition::query()
+            ->with('category')
+            ->orderBy('central_category_id')
+            ->orderBy('position')
+            ->get()
+            ->mapWithKeys(fn (AttributeDefinition $attribute): array => [
+                $attribute->getKey() => $attribute->category->name.' — '.$attribute->name,
+            ])
+            ->all();
     }
 }

@@ -13,14 +13,17 @@ use App\Enums\FacetType;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Site;
 use App\Models\SiteSearchDocument;
+use App\Support\Facets\BooleanFacetValueParser;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 final readonly class FacetQueryBuilder
 {
     public function __construct(
         private SiteFacetConfigResolver $siteFacets,
+        private BooleanFacetValueParser $booleans,
     ) {}
 
     /**
@@ -59,7 +62,9 @@ final readonly class FacetQueryBuilder
             }
         }
 
-        $this->applyEnumFilters($query, $site, $category, $filters);
+        $facets = $this->siteFacets->resolve($site, $category);
+        $this->applyEnumFilters($query, $facets, $filters);
+        $this->applyBooleanFilters($query, $facets, $filters);
 
         return $query;
     }
@@ -67,11 +72,10 @@ final readonly class FacetQueryBuilder
     /** @param Builder<SiteSearchDocument> $query */
     private function applyEnumFilters(
         Builder $query,
-        Site $site,
-        CentralCategory $category,
+        Collection $facets,
         FacetFilterSet $filters,
     ): void {
-        $facets = $this->siteFacets->resolve($site, $category)
+        $facets = $facets
             ->filter(fn (FacetDefinitionData $facet): bool => $facet->sourceType === FacetSourceType::Attribute
                 && in_array($facet->attributeDataType, [AttributeDataType::Enum, AttributeDataType::MultiEnum], true)
                 && in_array($facet->type, [FacetType::Checkbox, FacetType::Select], true));
@@ -110,6 +114,42 @@ final readonly class FacetQueryBuilder
                     queryKeys: [$facet->code],
                 ));
             }
+        }
+    }
+
+    /**
+     * @param  Builder<SiteSearchDocument>  $query
+     * @param  Collection<int, FacetDefinitionData>  $facets
+     */
+    private function applyBooleanFilters(
+        Builder $query,
+        Collection $facets,
+        FacetFilterSet $filters,
+    ): void {
+        $booleanFacets = $facets->filter(
+            fn (FacetDefinitionData $facet): bool => $facet->type === FacetType::Boolean
+                && $facet->sourceType === FacetSourceType::Attribute
+                && $facet->attributeDataType === AttributeDataType::Boolean,
+        );
+
+        foreach ($booleanFacets as $facet) {
+            if (preg_match('/^[a-zA-Z0-9_]+$/', $facet->code) !== 1 || ! $filters->has($facet->code)) {
+                continue;
+            }
+
+            $value = $this->booleans->parse($filters->get($facet->code));
+
+            if ($value === null) {
+                continue;
+            }
+
+            $query->where("filter_values_json->{$facet->code}", $value);
+            $filters->recordAppliedFilter(new AppliedFacetFilter(
+                code: $facet->code,
+                label: $value ? 'Yes' : 'No',
+                value: $this->booleans->serialize($value),
+                queryKeys: [$facet->code],
+            ));
         }
     }
 

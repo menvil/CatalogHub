@@ -6,7 +6,7 @@ Laravel monolith for Central Catalog and localized portal projections.
 
 ## Local Development
 
-Node.js 24 LTS is required for frontend tooling. The repository includes an `.nvmrc` file for local version selection.
+Node.js 26 is required for frontend tooling. The repository includes an `.nvmrc` file for local version selection.
 
 ```bash
 nvm use

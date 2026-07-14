@@ -130,7 +130,7 @@ final class DemoSiteSeederSupport
                 [
                     'name' => str($pageType)->headline().' Default',
                     'view_path' => $pageType === 'article'
-                        ? 'public.pages.article-stub'
+                        ? 'public.content.show'
                         : "public.pages.{$pageType}",
                     'slots_json' => ['main'],
                     'status' => 'active',

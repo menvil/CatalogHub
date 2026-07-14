@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Public;
 
+use App\Domains\PublicSite\LocalizedUrlResolver;
 use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Http\Controllers\Controller;
@@ -28,6 +29,7 @@ final class ArticleStubController extends Controller
         string $slug,
         SiteContextResolver $sites,
         ThemeLayoutResolver $layouts,
+        LocalizedUrlResolver $urls,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
         abort_unless(isset(self::ARTICLES[$slug]), 404);
@@ -36,6 +38,10 @@ final class ArticleStubController extends Controller
             'site' => $site,
             'locale' => $locale,
             'article' => [...self::ARTICLES[$slug], 'slug' => $slug],
+            'breadcrumbs' => [
+                ['label' => 'Home', 'url' => $urls->home($site, $locale)],
+                ['label' => self::ARTICLES[$slug]['title'], 'url' => null],
+            ],
         ]);
     }
 }

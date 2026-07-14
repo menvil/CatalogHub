@@ -44,6 +44,10 @@ final class CategoryController extends Controller
             ],
             'listingUrl' => $urls->listing($site, $locale, $projection),
             'seo' => $seo,
+            'breadcrumbs' => [
+                ['label' => 'Home', 'url' => $urls->home($site, $locale)],
+                ['label' => $projection->title, 'url' => null],
+            ],
         ]);
     }
 }

@@ -24,6 +24,6 @@ class ProductRatingComponentTest extends TestCase
         $html = Blade::render("@include('public.components.product-rating', ['rating' => null])");
 
         $this->assertStringContainsString('Not rated yet', $html);
-        $this->assertStringNotContainsString('reviews backend', strtolower($html));
+        $this->assertStringNotContainsString('review', strtolower($html));
     }
 }

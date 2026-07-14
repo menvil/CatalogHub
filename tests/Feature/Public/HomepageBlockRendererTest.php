@@ -17,15 +17,14 @@ class HomepageBlockRendererTest extends TestCase
         $site = Site::query()->where('code', 'tech-compare-global')->firstOrFail();
         $site->homeBlocks()->where('block_code', 'popular_categories')->update(['enabled' => false]);
 
-        $response = $this->get('http://tech-compare.test/en-US')->assertOk();
-        $content = $response->getContent();
-
-        $this->assertStringContainsString('data-theme-block="hero_search"', $content);
-        $this->assertStringNotContainsString('data-theme-block="popular_categories"', $content);
-        $this->assertStringContainsString('data-theme-block="top_products"', $content);
-        $this->assertLessThan(
-            strpos($content, 'data-theme-block="top_products"'),
-            strpos($content, 'data-theme-block="hero_search"'),
-        );
+        $this->get('http://tech-compare.test/en-US')
+            ->assertOk()
+            ->assertSee('data-theme-block="hero_search"', false)
+            ->assertDontSee('data-theme-block="popular_categories"', false)
+            ->assertSee('data-theme-block="top_products"', false)
+            ->assertSeeInOrder([
+                'data-theme-block="hero_search"',
+                'data-theme-block="top_products"',
+            ], false);
     }
 }

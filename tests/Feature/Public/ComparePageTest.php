@@ -47,6 +47,25 @@ class ComparePageTest extends TestCase
             ->assertDontSee('data-comparison-table', false);
     }
 
+    public function test_compare_blocks_products_with_a_missing_category_id(): void
+    {
+        $this->seed(MultiCategorySiteSeeder::class);
+        $site = Site::query()->where('code', 'tech-compare-global')->firstOrFail();
+        $monitors = CentralCategory::query()->where('slug', 'monitors')->firstOrFail();
+        $this->projection($site, $monitors, 'aurora', 'Aurora 27', '4K');
+        $projection = $this->projection($site, $monitors, 'horizon', 'Horizon 32', 'QHD');
+        $projection->update([
+            'payload_json' => [
+                'spec_sections' => data_get($projection->payload_json, 'spec_sections'),
+            ],
+        ]);
+
+        $this->get('http://tech-compare.test/en-US/compare?products=aurora,horizon')
+            ->assertOk()
+            ->assertSee('Products must belong to the same category')
+            ->assertDontSee('data-comparison-table', false);
+    }
+
     private function projection(
         Site $site,
         CentralCategory $category,

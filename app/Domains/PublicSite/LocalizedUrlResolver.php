@@ -16,27 +16,21 @@ final class LocalizedUrlResolver
 
     public function category(Site $site, string $locale, SiteCategoryProjection|string $category): string
     {
-        $slug = $category instanceof SiteCategoryProjection
-            ? $this->projectionSlug($site, $locale, $category)
-            : $category;
+        $slug = $this->resolveSlug($site, $locale, $category);
 
         return $this->absolute($site, route('public.categories.show', ['locale' => $locale, 'slug' => $slug], false));
     }
 
     public function listing(Site $site, string $locale, SiteCategoryProjection|string $category): string
     {
-        $slug = $category instanceof SiteCategoryProjection
-            ? $this->projectionSlug($site, $locale, $category)
-            : $category;
+        $slug = $this->resolveSlug($site, $locale, $category);
 
         return $this->absolute($site, route('public.categories.products', ['locale' => $locale, 'slug' => $slug], false));
     }
 
     public function product(Site $site, string $locale, SiteProductProjection|string $product): string
     {
-        $slug = $product instanceof SiteProductProjection
-            ? $this->projectionSlug($site, $locale, $product)
-            : $product;
+        $slug = $this->resolveSlug($site, $locale, $product);
 
         return $this->absolute($site, route('public.products.show', ['locale' => $locale, 'slug' => $slug], false));
     }
@@ -71,11 +65,26 @@ final class LocalizedUrlResolver
         return $projection->slug;
     }
 
+    private function resolveSlug(
+        Site $site,
+        string $locale,
+        SiteCategoryProjection|SiteProductProjection|string $resource,
+    ): string {
+        return is_string($resource) ? $resource : $this->projectionSlug($site, $locale, $resource);
+    }
+
     private function absolute(Site $site, string $path): string
     {
-        $domain = $site->domain ?: parse_url((string) config('app.url'), PHP_URL_HOST);
+        $siteDomain = trim(trim((string) $site->domain), '/');
+        $configuredHost = parse_url((string) config('app.url'), PHP_URL_HOST);
+        $domain = $siteDomain !== '' ? $siteDomain : (is_string($configuredHost) ? trim($configuredHost, '/') : '');
+
+        if ($domain === '') {
+            throw new InvalidArgumentException('Cannot generate a public URL without a domain.');
+        }
+
         $scheme = data_get($site->settings_json, 'url_scheme', 'https');
 
-        return rtrim((string) $scheme, ':/').'://'.trim((string) $domain, '/').'/'.ltrim($path, '/');
+        return rtrim((string) $scheme, ':/').'://'.$domain.'/'.ltrim($path, '/');
     }
 }

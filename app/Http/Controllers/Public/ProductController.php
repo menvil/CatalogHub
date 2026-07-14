@@ -55,10 +55,11 @@ final class ProductController extends Controller
             ];
         }
         $breadcrumbs[] = ['label' => $projection->title, 'url' => null];
-        $reviewsEnabled = $site->features()
-            ->where('feature_key', 'reviews')
+        $enabledFeatures = $site->features()
             ->where('is_enabled', true)
-            ->exists();
+            ->pluck('feature_key');
+        $reviewsEnabled = $enabledFeatures->contains('reviews');
+        $leadsEnabled = $enabledFeatures->contains('leads');
         $reviews = $reviewsEnabled
             ? Review::query()
                 ->visiblePublicly()
@@ -90,6 +91,7 @@ final class ProductController extends Controller
             'centralProductId' => (int) $projection->central_product_id,
             'reviewsEnabled' => $reviewsEnabled,
             'reviews' => $reviews,
+            'leadsEnabled' => $leadsEnabled,
         ]);
     }
 }

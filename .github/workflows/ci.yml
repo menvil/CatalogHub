@@ -31,7 +31,7 @@ jobs:
           coverage: none
 
       - name: Cache Composer packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: vendor
           key: composer-${{ runner.os }}-php-8.3-${{ hashFiles('composer.lock') }}
@@ -60,7 +60,7 @@ jobs:
           coverage: none
 
       - name: Cache Composer packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: vendor
           key: composer-${{ runner.os }}-php-8.3-${{ hashFiles('composer.lock') }}
@@ -91,7 +91,7 @@ jobs:
         run: npm run build
 
       - name: Upload built assets
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: public-build
           path: public/build
@@ -116,7 +116,7 @@ jobs:
           coverage: none
 
       - name: Cache Composer packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: vendor
           key: composer-${{ runner.os }}-php-8.3-${{ hashFiles('composer.lock') }}
@@ -125,7 +125,7 @@ jobs:
         run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Download built assets
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: public-build
           path: public/build
@@ -152,21 +152,39 @@ jobs:
       - name: Collect test results
         id: test-results
         if: always()
-        shell: bash
         run: |
-          result="$(grep -E '^\{"tool":"phpunit"' test-output.txt 2>/dev/null | tail -n 1 || true)"
           php -r '
-          $result = json_decode($argv[1], true) ?: [];
+          $output = is_file("test-output.txt") ? file_get_contents("test-output.txt") : "";
+          $tests = "n/a";
+          $assertions = "n/a";
+
+          foreach (array_reverse(preg_split("/\R/", $output) ?: []) as $line) {
+              $result = json_decode($line, true);
+
+              if (is_array($result) && ($result["tool"] ?? null) === "phpunit") {
+                  $tests = $result["tests"] ?? $tests;
+                  $assertions = $result["assertions"] ?? $assertions;
+                  break;
+              }
+          }
+
+          $plainOutput = preg_replace("/\e\[[0-9;]*m/", "", $output) ?? $output;
+
+          if ($tests === "n/a" && preg_match("/Tests:\s+(\d+) passed\s+\((\d+) assertions\)/", $plainOutput, $matches) === 1) {
+              $tests = $matches[1];
+              $assertions = $matches[2];
+          }
+
           file_put_contents(getenv("GITHUB_OUTPUT"), sprintf(
               "tests=%s\nassertions=%s\n",
-              $result["tests"] ?? "n/a",
-              $result["assertions"] ?? "n/a",
+              $tests,
+              $assertions,
           ), FILE_APPEND);
-          ' "$result"
+          '
 
       - name: Upload Laravel logs on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: laravel-logs
           path: storage/logs
@@ -202,7 +220,7 @@ jobs:
           coverage: none
 
       - name: Cache Composer packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: vendor
           key: composer-${{ runner.os }}-php-8.3-${{ hashFiles('composer.lock') }}
@@ -267,7 +285,7 @@ jobs:
           coverage: none
 
       - name: Cache Composer packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: vendor
           key: composer-${{ runner.os }}-php-8.3-${{ hashFiles('composer.lock') }}
@@ -349,7 +367,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Publish CI results
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.0.1
+        uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
         env:
           CODE_STYLE_RESULT: ${{ needs['code-style'].result }}
           STATIC_ANALYSIS_RESULT: ${{ needs['static-analysis'].result }}

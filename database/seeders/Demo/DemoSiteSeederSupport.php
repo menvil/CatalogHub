@@ -175,18 +175,20 @@ final class DemoSiteSeederSupport
             ['is_default' => true, 'is_enabled' => true, 'position' => 0, 'created_at' => now(), 'updated_at' => now()],
         );
 
-        DB::table('site_categories')->where('site_id', $site->id)->delete();
-        foreach ($categorySlugs as $position => $slug) {
-            DB::table('site_categories')->insert([
-                'site_id' => $site->id,
-                'central_category_id' => $categories[$slug]->id,
-                'is_enabled' => true,
-                'position' => $position,
-                'settings_json' => json_encode(['demo' => true], JSON_THROW_ON_ERROR),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
+        DB::transaction(function () use ($categories, $categorySlugs, $site): void {
+            DB::table('site_categories')->where('site_id', $site->id)->delete();
+            foreach ($categorySlugs as $position => $slug) {
+                DB::table('site_categories')->insert([
+                    'site_id' => $site->id,
+                    'central_category_id' => $categories[$slug]->id,
+                    'is_enabled' => true,
+                    'position' => $position,
+                    'settings_json' => json_encode(['demo' => true], JSON_THROW_ON_ERROR),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        });
 
         foreach ($blocks as $position => $block) {
             SiteHomeBlock::query()->updateOrCreate(

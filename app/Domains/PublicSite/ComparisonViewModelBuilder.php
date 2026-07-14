@@ -30,11 +30,9 @@ final class ComparisonViewModelBuilder
 
         $categoryIds = $projections
             ->map(fn (SiteProductProjection $projection): mixed => data_get($projection->payload_json, 'category.id'))
-            ->filter(fn (mixed $id): bool => $id !== null)
-            ->unique()
             ->values();
 
-        if ($categoryIds->count() !== 1) {
+        if ($categoryIds->containsStrict(null) || $categoryIds->unique()->count() !== 1) {
             return ['products' => $products, 'sections' => [], 'error' => 'Products must belong to the same category.'];
         }
 

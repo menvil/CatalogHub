@@ -11,6 +11,7 @@ use App\Models\SiteCategoryProjection;
 use App\Models\SiteProductProjection;
 use Database\Seeders\Demo\MultiCategorySiteSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use InvalidArgumentException;
 use Tests\TestCase;
 
 class LocalizedUrlResolverTest extends TestCase
@@ -49,5 +50,27 @@ class LocalizedUrlResolverTest extends TestCase
         $this->assertSame('https://tech-compare.test/en-US/products/aurora-27-pro', $urls->product($site, 'en-US', $productProjection));
         $this->assertSame('https://tech-compare.test/en-US/search', $urls->search($site, 'en-US'));
         $this->assertSame('https://tech-compare.test/en-US/articles/demo-guide', $urls->article($site, 'en-US', 'demo-guide'));
+    }
+
+    public function test_it_uses_the_application_host_when_the_site_domain_is_empty(): void
+    {
+        config(['app.url' => 'https://fallback.catalog.test/base']);
+        $site = new Site(['domain' => ' / ', 'settings_json' => []]);
+
+        $this->assertSame(
+            'https://fallback.catalog.test/en-US',
+            app(LocalizedUrlResolver::class)->home($site, 'en-US'),
+        );
+    }
+
+    public function test_it_rejects_url_generation_when_no_domain_can_be_resolved(): void
+    {
+        config(['app.url' => '']);
+        $site = new Site(['domain' => '', 'settings_json' => []]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Cannot generate a public URL without a domain.');
+
+        app(LocalizedUrlResolver::class)->home($site, 'en-US');
     }
 }

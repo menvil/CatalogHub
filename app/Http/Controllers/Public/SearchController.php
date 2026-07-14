@@ -25,14 +25,16 @@ final class SearchController extends Controller
         $results = collect();
 
         if ($term !== '') {
+            $escapedTerm = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $term);
+            $pattern = "%{$escapedTerm}%";
             $results = SiteSearchDocument::query()
                 ->where('site_id', $site->id)
                 ->where('locale', $locale)
                 ->where('document_type', 'product')
                 ->where('status', ProjectionStatus::Active)
-                ->where(function ($query) use ($term): void {
-                    $query->where('search_text', 'like', "%{$term}%")
-                        ->orWhere('title', 'like', "%{$term}%");
+                ->where(function ($query) use ($pattern): void {
+                    $query->whereRaw("search_text LIKE ? ESCAPE '!'", [$pattern])
+                        ->orWhereRaw("title LIKE ? ESCAPE '!'", [$pattern]);
                 })
                 ->orderBy('title')
                 ->limit(24)

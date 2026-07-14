@@ -1,0 +1,84 @@
+name: Test coverage
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - develop
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coverage-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coverage:
+    name: Coverage (PHPUnit + PCOV)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: gd, mbstring, pdo_sqlite, pcov
+          coverage: pcov
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ runner.os }}-php-8.3-${{ hashFiles('composer.lock') }}
+
+      - name: Install dependencies
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          npm ci
+
+      - name: Prepare application
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          touch database/database.sqlite
+          npm run build
+
+      - name: Run tests with coverage
+        shell: bash
+        run: |
+          set -o pipefail
+          php -d memory_limit=1G vendor/bin/phpunit \
+            --coverage-clover coverage.xml \
+            --coverage-text \
+            --only-summary-for-coverage-text \
+            | tee coverage-output.txt
+
+      - name: Publish coverage summary
+        if: always()
+        run: |
+          echo '## Test coverage' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          tail -n 25 coverage-output.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-clover
+          path: coverage.xml
+          if-no-files-found: ignore
+          retention-days: 30

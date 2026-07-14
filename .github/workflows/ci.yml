@@ -4,14 +4,157 @@ on:
   pull_request:
     branches:
       - develop
+      - main
   push:
     branches:
       - develop
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
+  code-style:
+    name: Code style (Pint)
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
 
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: gd, mbstring
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ runner.os }}-php-8.3-${{ hashFiles('composer.lock') }}
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Check code style
+        run: composer format:test
+
+  static-analysis:
+    name: Static analysis (PHPStan)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: gd, mbstring
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ runner.os }}-php-8.3-${{ hashFiles('composer.lock') }}
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Run PHPStan
+        run: composer analyse -- --no-progress
+
+  frontend-build:
+    name: Frontend build (Vite)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build assets
+        run: npm run build
+
+      - name: Upload built assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-build
+          path: public/build
+          retention-days: 1
+
+  tests:
+    name: Tests (PHPUnit)
+    runs-on: ubuntu-latest
+    needs: frontend-build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: gd, mbstring, pdo_sqlite
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ runner.os }}-php-8.3-${{ hashFiles('composer.lock') }}
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Download built assets
+        uses: actions/download-artifact@v4
+        with:
+          name: public-build
+          path: public/build
+
+      - name: Prepare application
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          touch database/database.sqlite
+
+      - name: Run SQLite migration and seed smoke check
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+        run: php artisan migrate:fresh --seed --force
+
+      - name: Run tests
+        run: composer test
+
+      - name: Upload Laravel logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: laravel-logs
+          path: storage/logs
+          retention-days: 5
+
+  migrations-mariadb:
+    name: Migrations (MariaDB)
+    runs-on: ubuntu-latest
     services:
       mariadb:
         image: mariadb:11.4
@@ -27,6 +170,58 @@ jobs:
           --health-interval=5s
           --health-timeout=5s
           --health-retries=10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: gd, mbstring, pdo_mysql
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ runner.os }}-php-8.3-${{ hashFiles('composer.lock') }}
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare application
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+
+      - name: Run migrations and seed on MariaDB
+        env:
+          DB_CONNECTION: mariadb
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: cataloghub
+          DB_USERNAME: cataloghub
+          DB_PASSWORD: cataloghub
+        run: php artisan migrate:fresh --seed --force
+
+      - name: Check rollback path (non-blocking)
+        continue-on-error: true
+        env:
+          DB_CONNECTION: mariadb
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: cataloghub
+          DB_USERNAME: cataloghub
+          DB_PASSWORD: cataloghub
+        run: |
+          php artisan migrate:reset --force
+          php artisan migrate --force
+
+  migrations-postgres:
+    name: Migrations (PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
       postgres:
         image: postgres:17-alpine
         env:
@@ -40,7 +235,6 @@ jobs:
           --health-interval=5s
           --health-timeout=5s
           --health-retries=10
-
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -49,27 +243,24 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: mbstring, pdo_mysql, pdo_pgsql, redis
+          extensions: gd, mbstring, pdo_pgsql
           coverage: none
 
-      - name: Setup Node
-        uses: actions/setup-node@v5
+      - name: Cache Composer packages
+        uses: actions/cache@v4
         with:
-          node-version: 23
-          cache: npm
+          path: vendor
+          key: composer-${{ runner.os }}-php-8.3-${{ hashFiles('composer.lock') }}
 
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
-
-      - name: Install Node dependencies
-        run: npm ci
 
       - name: Prepare application
         run: |
           cp .env.example .env
           php artisan key:generate --force
 
-      - name: Run PostgreSQL migration smoke check
+      - name: Run migrations and seed on PostgreSQL
         env:
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
@@ -77,26 +268,45 @@ jobs:
           DB_DATABASE: cataloghub
           DB_USERNAME: cataloghub
           DB_PASSWORD: cataloghub
-        run: php artisan migrate:fresh --force
+        run: php artisan migrate:fresh --seed --force
 
-      - name: Run MariaDB migration smoke check
+      - name: Check rollback path (non-blocking)
+        continue-on-error: true
         env:
-          DB_CONNECTION: mariadb
+          DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
-          DB_PORT: 3306
+          DB_PORT: 5432
           DB_DATABASE: cataloghub
           DB_USERNAME: cataloghub
           DB_PASSWORD: cataloghub
-        run: php artisan migrate:fresh --force
+        run: |
+          php artisan migrate:reset --force
+          php artisan migrate --force
 
-      - name: Build frontend assets
-        run: npm run build
+  dependency-audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
 
-      - name: Run Composer test command
-        run: composer test
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: gd, mbstring
+          coverage: none
 
-      - name: Run Pint
-        run: vendor/bin/pint --test
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
 
-      - name: Run PHPStan
-        run: php -d memory_limit=1G vendor/bin/phpstan analyse
+      - name: Audit Composer dependencies
+        run: composer audit --locked
+
+      - name: Audit npm dependencies
+        run: |
+          npm ci --ignore-scripts
+          npm audit --audit-level=high

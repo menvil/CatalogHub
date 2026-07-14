@@ -5,6 +5,7 @@ namespace Tests\Feature\Demo;
 use App\Enums\SiteMode;
 use App\Enums\SiteStatus;
 use App\Models\Site;
+use Database\Seeders\Demo\DemoSiteSeederSupport;
 use Database\Seeders\Demo\MultiCategorySiteSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -32,5 +33,37 @@ class MultiCategorySiteSeederTest extends TestCase
             'is_default' => true,
             'is_enabled' => true,
         ]);
+    }
+
+    public function test_category_reset_is_rolled_back_when_an_insert_fails(): void
+    {
+        $this->seed(MultiCategorySiteSeeder::class);
+        $site = Site::query()->where('code', 'tech-compare-global')->firstOrFail();
+        $before = DB::table('site_categories')
+            ->where('site_id', $site->id)
+            ->orderBy('position')
+            ->pluck('central_category_id')
+            ->all();
+        $failed = false;
+
+        try {
+            app(DemoSiteSeederSupport::class)->site(
+                code: 'tech-compare-global',
+                name: 'Tech Compare Global',
+                domain: 'tech-compare.test',
+                mode: SiteMode::MultiCategory,
+                categorySlugs: ['monitors', 'missing-category'],
+                blocks: [],
+            );
+        } catch (\Throwable) {
+            $failed = true;
+        }
+
+        $this->assertTrue($failed);
+        $this->assertSame($before, DB::table('site_categories')
+            ->where('site_id', $site->id)
+            ->orderBy('position')
+            ->pluck('central_category_id')
+            ->all());
     }
 }

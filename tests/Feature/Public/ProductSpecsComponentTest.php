@@ -18,6 +18,8 @@ class ProductSpecsComponentTest extends TestCase
                 ]],
                 ['label' => 'Connectivity', 'attributes' => [
                     ['label' => 'Ports', 'display_value' => '2 × HDMI'],
+                    ['label' => 'Legacy value', 'value' => 'Fallback value'],
+                    ['label' => 'Unavailable'],
                 ]],
                 ['label' => 'Empty', 'attributes' => []],
             ]],
@@ -26,6 +28,8 @@ class ProductSpecsComponentTest extends TestCase
         $this->assertStringContainsString('Display', $html);
         $this->assertStringContainsString('3840 × 2160', $html);
         $this->assertStringNotContainsString('raw-resolution', $html);
+        $this->assertStringContainsString('Fallback value', $html);
+        $this->assertStringContainsString('—', $html);
         $this->assertStringNotContainsString('Empty', $html);
         $this->assertLessThan(strpos($html, 'Connectivity'), strpos($html, 'Display'));
         $this->assertLessThan(strpos($html, 'Refresh rate'), strpos($html, 'Resolution'));

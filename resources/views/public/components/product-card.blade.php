@@ -1,5 +1,5 @@
 @php
-    $cardVariant = in_array($variant ?? 'grid', ['grid', 'list'], true) ? ($variant ?? 'grid') : 'grid';
+    $cardVariant = ($variant ?? null) === 'list' ? 'list' : 'grid';
     $mediaPayload = is_array($product['media'] ?? null)
         ? $product['media']
         : (is_array(data_get($product, 'payload.media')) ? data_get($product, 'payload.media') : []);

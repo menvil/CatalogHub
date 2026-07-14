@@ -16,7 +16,7 @@
                             @if (is_array($attribute))
                                 <div class="grid gap-1 px-5 py-4 sm:grid-cols-2 sm:gap-6">
                                     <dt class="text-sm font-medium text-slate-600">{{ $attribute['label'] ?? $attribute['code'] ?? 'Specification' }}</dt>
-                                    <dd class="text-sm font-semibold text-slate-950">{{ $attribute['display_value'] ?? '—' }}</dd>
+                                    <dd class="text-sm font-semibold text-slate-950">{{ $attribute['display_value'] ?? $attribute['value'] ?? '—' }}</dd>
                                 </div>
                             @endif
                         @endforeach

@@ -2,10 +2,12 @@
 
 namespace App\Domains\Seo;
 
+use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Site;
 use App\Services\Sites\SiteOverrideResolver;
 use App\Services\Translations\TranslationResolver;
+use Illuminate\Database\Eloquent\Model;
 
 final class SeoProjectionBuilder
 {
@@ -34,6 +36,7 @@ final class SeoProjectionBuilder
         $metaTitle = $this->overrideString(
             $site,
             $product,
+            'product',
             'meta_title',
             $locale,
             $translatedTitle,
@@ -41,6 +44,7 @@ final class SeoProjectionBuilder
         $metaDescription = $this->overrideString(
             $site,
             $product,
+            'product',
             'meta_description',
             $locale,
             $translatedDescription,
@@ -59,24 +63,70 @@ final class SeoProjectionBuilder
         ];
     }
 
-    private function translatedString(CentralProduct $product, string $field, string $locale): ?string
+    /**
+     * @return array<string, mixed>
+     */
+    public function forCategory(
+        Site $site,
+        CentralCategory $category,
+        string $locale,
+        string $title,
+        string $slug,
+        bool $indexable,
+    ): array {
+        $translatedTitle = $this->translatedString($category, 'seo_title', $locale) ?? $title;
+        $translatedDescription = $this->translatedString($category, 'seo_description', $locale)
+            ?? $this->translatedString($category, 'description', $locale)
+            ?? $title;
+        $metaTitle = $this->overrideString(
+            $site,
+            $category,
+            'category',
+            'meta_title',
+            $locale,
+            $translatedTitle,
+        );
+        $metaDescription = $this->overrideString(
+            $site,
+            $category,
+            'category',
+            'meta_description',
+            $locale,
+            $translatedDescription,
+        );
+
+        return [
+            'meta_title' => $metaTitle,
+            'meta_description' => $metaDescription,
+            'h1' => $title,
+            'canonical_url' => $this->baseUrl($site).'/categories/'.rawurlencode($slug),
+            'robots' => $indexable ? 'index,follow' : 'noindex,nofollow',
+            'og_title' => $metaTitle,
+            'og_description' => $metaDescription,
+            'og_image' => null,
+            'hreflang' => [],
+        ];
+    }
+
+    private function translatedString(Model $entity, string $field, string $locale): ?string
     {
-        $value = $this->translationResolver->resolve($product, $field, $locale)->value;
+        $value = $this->translationResolver->resolve($entity, $field, $locale)->value;
 
         return is_scalar($value) && (string) $value !== '' ? (string) $value : null;
     }
 
     private function overrideString(
         Site $site,
-        CentralProduct $product,
+        Model $entity,
+        string $entityType,
         string $field,
         string $locale,
         string $fallback,
     ): string {
         $value = $this->siteOverrideResolver->resolve(
             $site,
-            'product',
-            (int) $product->getKey(),
+            $entityType,
+            (int) $entity->getKey(),
             $field,
             $locale,
             fallbackValue: $fallback,

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use Database\Seeders\Demo\KeyboardsSiteSeeder;
 use Database\Seeders\Demo\MonitorsSiteSeeder;
 use Database\Seeders\Demo\MultiCategorySiteSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -24,6 +25,7 @@ class DatabaseSeeder extends Seeder
             BlockRegistrySeeder::class,
             MultiCategorySiteSeeder::class,
             MonitorsSiteSeeder::class,
+            KeyboardsSiteSeeder::class,
         ]);
 
         // User::factory(10)->create();

@@ -3,9 +3,7 @@
     @if (($data['products'] ?? []) !== [])
         <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             @foreach ($data['products'] as $product)
-                <a href="{{ $product['url'] }}" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                    <h3 class="font-semibold">{{ $product['title'] }}</h3>
-                </a>
+                @include('public.components.product-card', ['product' => $product, 'variant' => 'grid'])
             @endforeach
         </div>
     @else

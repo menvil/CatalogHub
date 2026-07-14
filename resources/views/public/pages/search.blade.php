@@ -23,9 +23,7 @@
                 <p class="mb-4 text-sm text-slate-500">{{ $results->count() }} {{ Str::plural('result', $results->count()) }}</p>
                 <div class="grid gap-4 sm:grid-cols-2">
                     @foreach ($results as $result)
-                        <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                            <h2 class="font-semibold"><a href="{{ $result['url'] }}" class="hover:text-blue-600">{{ $result['title'] }}</a></h2>
-                        </article>
+                        @include('public.components.product-card', ['product' => $result, 'variant' => 'list'])
                     @endforeach
                 </div>
             @endif

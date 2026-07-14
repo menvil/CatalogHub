@@ -21,17 +21,7 @@
     @if ($products->isNotEmpty())
         <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             @foreach ($products as $product)
-                <article class="flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <div class="aspect-[4/3] rounded-xl bg-slate-100" aria-hidden="true"></div>
-                    <h2 class="mt-4 font-semibold"><a href="{{ $product['url'] }}" class="hover:text-blue-600">{{ $product['title'] }}</a></h2>
-                    @if (($product['summary']['key_specs'] ?? []) !== [])
-                        <ul class="mt-3 space-y-1 text-sm text-slate-600">
-                            @foreach (array_slice($product['summary']['key_specs'], 0, 3) as $spec)
-                                <li>{{ is_array($spec) ? ($spec['display_value'] ?? $spec['value'] ?? '') : $spec }}</li>
-                            @endforeach
-                        </ul>
-                    @endif
-                </article>
+                @include('public.components.product-card', ['product' => $product, 'variant' => 'grid'])
             @endforeach
         </div>
 

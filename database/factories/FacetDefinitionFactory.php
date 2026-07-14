@@ -34,4 +34,11 @@ class FacetDefinitionFactory extends Factory
             'config_json' => null,
         ];
     }
+
+    public function checkbox(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'facet_type' => FacetType::Checkbox,
+        ]);
+    }
 }

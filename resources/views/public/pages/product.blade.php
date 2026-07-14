@@ -31,5 +31,7 @@
         </section>
     </div>
 
+    @include('public.components.product-benefits', ['benefits' => $benefits])
+
     @include('public.components.product-specs', ['sections' => $specSections])
 @endsection

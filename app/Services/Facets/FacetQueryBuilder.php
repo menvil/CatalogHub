@@ -68,6 +68,7 @@ final readonly class FacetQueryBuilder
         $this->applyEnumFilters($query, $facets, $filters);
         $this->applyBooleanFilters($query, $facets, $filters);
         $this->applyNumericRangeFilters($query, $facets, $filters);
+        $this->applyRatingFilter($query, $filters);
 
         return $query;
     }
@@ -190,11 +191,11 @@ final readonly class FacetQueryBuilder
             }
 
             if ($range['min'] !== null) {
-                $this->applyNumericConstraint($query, $facet->code, '>=', $range['min']);
+                $this->applyNumericConstraint($query, 'filter_values_json', $facet->code, '>=', $range['min']);
             }
 
             if ($range['max'] !== null) {
-                $this->applyNumericConstraint($query, $facet->code, '<=', $range['max']);
+                $this->applyNumericConstraint($query, 'filter_values_json', $facet->code, '<=', $range['max']);
             }
 
             $filters->recordAppliedFilter(new AppliedFacetFilter(
@@ -210,8 +211,32 @@ final readonly class FacetQueryBuilder
     }
 
     /** @param Builder<SiteSearchDocument> $query */
+    private function applyRatingFilter(Builder $query, FacetFilterSet $filters): void
+    {
+        if (! $filters->has('rating_min')) {
+            return;
+        }
+
+        $range = $this->ranges->parse($filters->get('rating_min'), null);
+
+        if ($range === null || $range['min'] === null) {
+            return;
+        }
+
+        $minimum = max(0.0, min(5.0, $range['min']));
+        $this->applyNumericConstraint($query, 'sort_values_json', 'rating', '>=', $minimum);
+        $filters->recordAppliedFilter(new AppliedFacetFilter(
+            code: 'rating',
+            label: 'Rating',
+            value: $this->ranges->serialize($minimum),
+            queryKeys: ['rating_min'],
+        ));
+    }
+
+    /** @param Builder<SiteSearchDocument> $query */
     private function applyNumericConstraint(
         Builder $query,
+        string $column,
         string $code,
         string $operator,
         float $value,
@@ -220,10 +245,10 @@ final readonly class FacetQueryBuilder
         $driver = $query->getConnection()->getDriverName();
 
         $expression = match ($driver) {
-            'mysql', 'mariadb' => "CAST(JSON_UNQUOTE(JSON_EXTRACT(`filter_values_json`, '$.\"{$code}\"')) AS DECIMAL(65, 20)) {$operator} CAST(? AS DECIMAL(65, 20))",
-            'pgsql' => "CAST(\"filter_values_json\"->>'{$code}' AS NUMERIC) {$operator} CAST(? AS NUMERIC)",
-            'sqlsrv' => "TRY_CAST(JSON_VALUE([filter_values_json], '$.{$code}') AS FLOAT) {$operator} TRY_CAST(? AS FLOAT)",
-            default => "CAST(json_extract(\"filter_values_json\", '$.\"{$code}\"') AS REAL) {$operator} CAST(? AS REAL)",
+            'mysql', 'mariadb' => "CAST(JSON_UNQUOTE(JSON_EXTRACT(`{$column}`, '$.\"{$code}\"')) AS DECIMAL(65, 20)) {$operator} CAST(? AS DECIMAL(65, 20))",
+            'pgsql' => "CAST(\"{$column}\"->>'{$code}' AS NUMERIC) {$operator} CAST(? AS NUMERIC)",
+            'sqlsrv' => "TRY_CAST(JSON_VALUE([{$column}], '$.{$code}') AS FLOAT) {$operator} TRY_CAST(? AS FLOAT)",
+            default => "CAST(json_extract(\"{$column}\", '$.\"{$code}\"') AS REAL) {$operator} CAST(? AS REAL)",
         };
 
         $query->whereRaw($expression, [$serialized]);

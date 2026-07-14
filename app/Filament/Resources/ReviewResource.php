@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Actions\Reviews\ApproveReviewAction;
+use App\Actions\Reviews\MarkReviewAsSpamAction;
 use App\Actions\Reviews\RejectReviewAction;
 use App\Enums\ReviewStatus;
 use App\Filament\Resources\ReviewResource\Pages;
@@ -121,6 +122,21 @@ final class ReviewResource extends Resource
                         }
 
                         return app(RejectReviewAction::class)->handle($user, $record, (string) $data['reason']);
+                    }),
+                Action::make('markSpam')
+                    ->label('Mark as spam')
+                    ->color('danger')
+                    ->icon(Heroicon::OutlinedExclamationTriangle)
+                    ->requiresConfirmation()
+                    ->visible(fn (Review $record): bool => $record->status !== ReviewStatus::Spam)
+                    ->action(function (Review $record): Review {
+                        $user = auth()->user();
+
+                        if (! $user instanceof User) {
+                            return $record;
+                        }
+
+                        return app(MarkReviewAsSpamAction::class)->handle($user, $record);
                     }),
             ])
             ->defaultSort('created_at', 'desc');

@@ -75,6 +75,7 @@ final readonly class HomepageBlockRenderer
                         'slug' => $category->slug,
                         'url' => $this->urls->category($site, $locale, $category),
                         'description' => data_get($category->payload_json, 'category.description'),
+                        'image' => data_get($category->payload_json, 'category.image', data_get($category->payload_json, 'image')),
                     ])
                     ->all(),
             ],

@@ -99,6 +99,21 @@ return [
         ],
         'view_component' => 'blocks.buying-guides',
     ],
+    'content_block' => [
+        'name' => 'Content Block',
+        'description' => 'Published articles and guides for the current site and locale.',
+        'category' => 'content',
+        'supported_page_types_json' => ['home'],
+        'required_features_json' => [],
+        'config_schema_json' => [
+            'title' => 'string',
+            'content_types' => ['type' => 'array', 'nullable' => true],
+            'limit' => 'integer',
+            'category_id' => ['type' => 'integer', 'nullable' => true],
+            'show_excerpt' => 'boolean',
+        ],
+        'view_component' => 'blocks.content-block',
+    ],
     'price_block' => [
         'name' => 'Price Block',
         'description' => 'Placeholder for future offer and price comparison data.',

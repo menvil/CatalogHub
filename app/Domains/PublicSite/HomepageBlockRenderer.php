@@ -5,9 +5,11 @@ namespace App\Domains\PublicSite;
 use App\Domains\Projections\Enums\ProjectionStatus;
 use App\Domains\Themes\DTO\RenderedBlock;
 use App\Domains\Themes\Services\TemplateSlotRenderer;
+use App\Enums\ContentType;
 use App\Models\Site;
 use App\Models\SiteCategoryProjection;
 use App\Models\SiteProductProjection;
+use App\Services\Content\HomepageContentResolver;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
@@ -17,6 +19,7 @@ final readonly class HomepageBlockRenderer
     public function __construct(
         private TemplateSlotRenderer $templates,
         private LocalizedUrlResolver $urls,
+        private HomepageContentResolver $content,
     ) {}
 
     /**
@@ -97,7 +100,35 @@ final readonly class HomepageBlockRenderer
                     ->all(),
             ],
             'hero_search' => ['search_url' => $this->urls->search($site, $locale)],
+            'content_block' => [
+                'items' => $this->content->resolve(
+                    site: $site,
+                    locale: $locale,
+                    types: $this->contentTypes($block->config),
+                    limit: $limit,
+                    categoryId: is_numeric($block->config['category_id'] ?? null)
+                        ? (int) $block->config['category_id']
+                        : null,
+                )->all(),
+            ],
             default => [],
         };
+    }
+
+    /**
+     * @param  array<string, mixed>  $config
+     * @return list<ContentType>
+     */
+    private function contentTypes(array $config): array
+    {
+        $configured = $config['content_types'] ?? $config['content_type'] ?? [];
+        $values = is_array($configured) ? $configured : [$configured];
+
+        return collect($values)
+            ->filter(fn (mixed $value): bool => is_string($value))
+            ->map(fn (string $value): ?ContentType => ContentType::tryFrom($value))
+            ->filter(fn (?ContentType $type): bool => $type instanceof ContentType)
+            ->values()
+            ->all();
     }
 }

@@ -61,11 +61,8 @@ final class ProjectionLogResource extends Resource
                     'warning' => 'Warning',
                     'error' => 'Error',
                 ]),
-                SelectFilter::make('event')->options(fn (): array => ProjectionLog::query()
-                    ->distinct()->orderBy('event')->pluck('event', 'event')->all()),
-                SelectFilter::make('entity_type')->options(fn (): array => ProjectionLog::query()
-                    ->whereNotNull('entity_type')->distinct()->orderBy('entity_type')
-                    ->pluck('entity_type', 'entity_type')->all()),
+                SelectFilter::make('event')->options(ProjectionLog::EVENT_OPTIONS),
+                SelectFilter::make('entity_type')->options(ProjectionLog::ENTITY_TYPE_OPTIONS),
                 SelectFilter::make('job_status')->label('Job status')->options([
                     'pending' => 'Pending',
                     'building' => 'Building',

@@ -5,6 +5,7 @@ namespace Tests\Feature\Domains\Projections;
 use App\Domains\Projections\Builders\SearchDocumentBuilder;
 use App\Domains\Projections\DTO\CategoryProjectionData;
 use App\Domains\Projections\DTO\ProductProjectionData;
+use App\Domains\Projections\Enums\ProjectionStatus;
 use Tests\TestCase;
 
 class SearchDocumentBuilderTest extends TestCase
@@ -17,7 +18,7 @@ class SearchDocumentBuilderTest extends TestCase
             centralProductId: 123,
             slug: 'lg-ultragear-27gp850-b',
             title: 'LG UltraGear 27GP850-B',
-            status: 'active',
+            status: ProjectionStatus::Active,
             payload: [
                 'product' => ['id' => 123, 'title' => 'LG UltraGear 27GP850-B', 'model' => '27GP850-B'],
                 'brand' => ['id' => 10, 'name' => 'LG'],
@@ -38,6 +39,13 @@ class SearchDocumentBuilderTest extends TestCase
                             'canonical_value' => 'secret',
                             'display_value' => 'Secret',
                             'is_filterable' => false,
+                            'is_sortable' => false,
+                            'is_searchable' => false,
+                        ],
+                        [
+                            'code' => 'nullable_filter',
+                            'canonical_value' => null,
+                            'is_filterable' => true,
                             'is_sortable' => false,
                             'is_searchable' => false,
                         ],
@@ -62,6 +70,7 @@ class SearchDocumentBuilderTest extends TestCase
         $this->assertSame(20, $first->filterValues['category_id']);
         $this->assertSame(165, $first->filterValues['refresh_rate']);
         $this->assertArrayNotHasKey('internal_code', $first->filterValues);
+        $this->assertArrayNotHasKey('nullable_filter', $first->filterValues);
         $this->assertSame(165, $first->sortValues['refresh_rate']);
         $this->assertSame($first->checksum, $second->checksum);
     }
@@ -75,7 +84,7 @@ class SearchDocumentBuilderTest extends TestCase
             parentCategoryId: 5,
             slug: 'monitors',
             title: 'Monitors',
-            status: 'active',
+            status: ProjectionStatus::Active,
             payload: [
                 'category' => ['id' => 20, 'title' => 'Monitors'],
                 'parent' => ['id' => 5, 'title' => 'Electronics'],

@@ -4,6 +4,7 @@ namespace Tests\Unit\Domains\Projections;
 
 use App\Domains\Projections\Builders\ProductProjectionBuilder;
 use App\Domains\Projections\DTO\ProductProjectionData;
+use App\Domains\Projections\Enums\ProjectionStatus;
 use ReflectionMethod;
 use Tests\TestCase;
 
@@ -27,7 +28,7 @@ class ProductProjectionBuilderSkeletonTest extends TestCase
             centralProductId: 2,
             slug: null,
             title: null,
-            status: 'pending',
+            status: ProjectionStatus::Pending,
             payload: [],
             seo: [],
             media: [],
@@ -37,6 +38,6 @@ class ProductProjectionBuilderSkeletonTest extends TestCase
         $this->assertSame(1, $projection->siteId);
         $this->assertSame('en', $projection->locale);
         $this->assertSame(2, $projection->centralProductId);
-        $this->assertSame('pending', $projection->status);
+        $this->assertSame(ProjectionStatus::Pending, $projection->status);
     }
 }

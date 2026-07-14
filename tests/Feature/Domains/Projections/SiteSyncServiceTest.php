@@ -8,6 +8,7 @@ use App\Enums\CentralProductStatus;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Site;
+use App\Models\SiteProduct;
 use App\Models\SiteProductProjection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use JsonException;
@@ -146,6 +147,51 @@ class SiteSyncServiceTest extends TestCase
             'level' => 'error',
             'entity_type' => 'product',
             'entity_id' => $product->id,
+        ]);
+    }
+
+    public function test_site_sync_records_item_failures_and_continues_with_remaining_products(): void
+    {
+        $site = Site::factory()->create(['default_locale' => 'en']);
+        $invalid = CentralProduct::factory()->create([
+            'name' => "Invalid \xB1 UTF-8",
+            'status' => CentralProductStatus::Active,
+        ]);
+        $valid = CentralProduct::factory()->create([
+            'status' => CentralProductStatus::Active,
+        ]);
+
+        foreach ([$invalid, $valid] as $product) {
+            SiteProduct::create([
+                'site_id' => $site->id,
+                'central_product_id' => $product->id,
+                'visibility' => 'visible',
+            ]);
+        }
+
+        $counts = app(SiteSyncService::class)->syncSite(
+            $site,
+            locale: 'en',
+            productsOnly: true,
+        );
+
+        $this->assertSame(1, $counts['products']);
+        $this->assertCount(1, $counts['failures']);
+        $this->assertSame($invalid->id, $counts['failures'][0]['entity_id']);
+        $this->assertDatabaseHas('site_product_projections', [
+            'site_id' => $site->id,
+            'central_product_id' => $valid->id,
+        ]);
+        $this->assertDatabaseHas('projection_jobs', [
+            'site_id' => $site->id,
+            'job_type' => 'site',
+            'status' => 'completed',
+        ]);
+        $this->assertDatabaseHas('projection_logs', [
+            'site_id' => $site->id,
+            'event' => 'item_failed',
+            'entity_type' => 'product',
+            'entity_id' => $invalid->id,
         ]);
     }
 }

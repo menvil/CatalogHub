@@ -3,6 +3,7 @@
 namespace Tests\Feature\Domains\Projections;
 
 use App\Domains\Projections\Builders\ProductProjectionBuilder;
+use App\Domains\Projections\Enums\ProjectionStatus;
 use App\Enums\CentralProductStatus;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Site;
@@ -37,7 +38,7 @@ class ProductProjectionBuilderOverrideTest extends TestCase
         $this->assertSame('local-product-name', $projection->payload['product']['slug']);
         $this->assertSame('Local introduction', $projection->payload['product']['intro_text']);
         $this->assertSame('hidden', $projection->payload['product']['visibility']);
-        $this->assertSame('pending', $projection->status);
+        $this->assertSame(ProjectionStatus::Pending, $projection->status);
         $this->assertSame('Central Product Name', $product->fresh()->name);
         $this->assertSame('central-product-name', $product->fresh()->slug);
     }

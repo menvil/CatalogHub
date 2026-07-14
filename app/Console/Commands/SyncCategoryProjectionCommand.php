@@ -13,6 +13,8 @@ use Throwable;
 
 final class SyncCategoryProjectionCommand extends Command
 {
+    private const PARTIAL_SUCCESS = 2;
+
     protected $signature = 'cataloghub:sync-category
                             {site : Site ID or code}
                             {category : Central category ID}
@@ -48,36 +50,47 @@ final class SyncCategoryProjectionCommand extends Command
 
         $localeOption = $this->option('locale');
         $locale = is_string($localeOption) && $localeOption !== '' ? $localeOption : null;
-        $productCount = 0;
 
         try {
             $projection = $syncService->syncCategory($site, $category, $locale);
-
-            if ($this->option('with-products')) {
-                $productIds = SiteProduct::query()
-                    ->where('site_id', $site->getKey())
-                    ->where('visibility', 'visible')
-                    ->pluck('central_product_id');
-                $products = CentralProduct::query()
-                    ->where('central_category_id', $category->getKey())
-                    ->whereKey($productIds)
-                    ->orderBy('id')
-                    ->get();
-
-                foreach ($products as $product) {
-                    $syncService->syncProduct($site, $product, $projection->locale);
-                    $productCount++;
-                }
-            }
         } catch (Throwable $exception) {
             $this->error('Category projection sync failed: '.$exception->getMessage());
 
             return self::FAILURE;
         }
 
+        $productCount = 0;
+        $productFailures = [];
+
+        if ($this->option('with-products')) {
+            $productIds = SiteProduct::query()
+                ->where('site_id', $site->getKey())
+                ->where('visibility', 'visible')
+                ->pluck('central_product_id');
+            $products = CentralProduct::query()
+                ->where('central_category_id', $category->getKey())
+                ->whereKey($productIds)
+                ->orderBy('id')
+                ->get();
+
+            foreach ($products as $product) {
+                try {
+                    $syncService->syncProduct($site, $product, $projection->locale);
+                    $productCount++;
+                } catch (Throwable $exception) {
+                    $productFailures[] = (int) $product->getKey();
+                    $this->warn(sprintf(
+                        'Product projection failed: product=%d error=%s',
+                        $product->getKey(),
+                        $exception->getMessage(),
+                    ));
+                }
+            }
+        }
+
         $projectionStatus = $projection->getAttribute('status');
         $this->info(sprintf(
-            'Category projection synced: site=%s category=%d locale=%s status=%s products=%d',
+            'Category projection synced: site=%s category=%d locale=%s status=%s products=%d failures=%d',
             $site->code,
             $category->getKey(),
             $projection->locale,
@@ -85,8 +98,9 @@ final class SyncCategoryProjectionCommand extends Command
                 ? $projectionStatus->value
                 : (string) $projectionStatus,
             $productCount,
+            count($productFailures),
         ));
 
-        return self::SUCCESS;
+        return $productFailures === [] ? self::SUCCESS : self::PARTIAL_SUCCESS;
     }
 }

@@ -12,6 +12,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 final class ProjectionLog extends Model
 {
+    /** @var array<string, string> */
+    public const EVENT_OPTIONS = [
+        'started' => 'Started',
+        'completed' => 'Completed',
+        'failed' => 'Failed',
+        'stale' => 'Stale',
+        'item_failed' => 'Item failed',
+    ];
+
+    /** @var array<string, string> */
+    public const ENTITY_TYPE_OPTIONS = [
+        'product' => 'Product',
+        'category' => 'Category',
+        'site' => 'Site',
+    ];
+
     public const UPDATED_AT = null;
 
     protected function casts(): array

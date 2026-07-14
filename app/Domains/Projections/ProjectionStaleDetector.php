@@ -9,12 +9,13 @@ use App\Models\Site;
 use App\Models\SiteCategoryProjection;
 use App\Models\SiteProductProjection;
 use App\Models\SiteSearchDocument;
-use DateTimeInterface;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use LogicException;
 
 final class ProjectionStaleDetector
 {
+    private const DETECTION_CHUNK_SIZE = 500;
+
     public function markStaleForProduct(
         CentralProduct $product,
         ?string $reason = null,
@@ -71,50 +72,183 @@ final class ProjectionStaleDetector
     /** @return array{products: int, categories: int} */
     public function detectStaleForSite(Site $site): array
     {
-        $productIds = SiteProductProjection::query()
-            ->with('product')
-            ->where('site_id', $site->getKey())
-            ->get()
-            ->filter(function (SiteProductProjection $projection): bool {
-                $product = $projection->product;
-
-                return $product instanceof CentralProduct
-                    && $projection->central_product_version !== $this->sourceVersion($product);
-            })
-            ->pluck('central_product_id')
-            ->unique();
-        $categoryIds = SiteCategoryProjection::query()
-            ->with('category')
-            ->where('site_id', $site->getKey())
-            ->get()
-            ->filter(function (SiteCategoryProjection $projection): bool {
-                $category = $projection->category;
-
-                return $category instanceof CentralCategory
-                    && $projection->central_category_version !== $this->sourceVersion($category);
-            })
-            ->pluck('central_category_id')
-            ->unique();
-
         $counts = ['products' => 0, 'categories' => 0];
+        $siteId = (int) $site->getKey();
+        $productVersion = $this->sourceVersionExpression('central_products.updated_at');
+        $categoryVersion = $this->sourceVersionExpression('central_categories.updated_at');
 
-        foreach ($productIds as $productId) {
-            $counts['products'] += $this->markProductIdStale(
-                (int) $productId,
-                (int) $site->getKey(),
-                'central_product_updated',
+        SiteProductProjection::query()
+            ->join(
+                'central_products',
+                'central_products.id',
+                '=',
+                'site_product_projections.central_product_id',
+            )
+            ->where('site_product_projections.site_id', $site->getKey())
+            ->whereRaw($this->versionMismatchSql(
+                'site_product_projections.central_product_version',
+                'central_products.updated_at',
+                $productVersion,
+            ))
+            ->select([
+                'site_product_projections.id as projection_id',
+                'site_product_projections.central_product_id',
+            ])
+            ->chunkById(
+                self::DETECTION_CHUNK_SIZE,
+                function ($projections) use ($siteId, &$counts): void {
+                    $projectionIds = $projections->pluck('projection_id')
+                        ->map(fn (mixed $id): int => (int) $id)
+                        ->all();
+                    $productIds = $projections->pluck('central_product_id')
+                        ->map(fn (mixed $id): int => (int) $id)
+                        ->unique()
+                        ->values()
+                        ->all();
+                    $counts['products'] += $this->markProductProjectionBatchStale(
+                        $siteId,
+                        $projectionIds,
+                        $productIds,
+                    );
+                },
+                'site_product_projections.id',
+                'projection_id',
             );
-        }
 
-        foreach ($categoryIds as $categoryId) {
-            $counts['categories'] += $this->markCategoryIdStale(
-                (int) $categoryId,
-                (int) $site->getKey(),
-                'category_schema_updated',
+        SiteCategoryProjection::query()
+            ->join(
+                'central_categories',
+                'central_categories.id',
+                '=',
+                'site_category_projections.central_category_id',
+            )
+            ->where('site_category_projections.site_id', $site->getKey())
+            ->whereRaw($this->versionMismatchSql(
+                'site_category_projections.central_category_version',
+                'central_categories.updated_at',
+                $categoryVersion,
+            ))
+            ->select([
+                'site_category_projections.id as projection_id',
+                'site_category_projections.central_category_id',
+            ])
+            ->chunkById(
+                self::DETECTION_CHUNK_SIZE,
+                function ($projections) use ($siteId, &$counts): void {
+                    $projectionIds = $projections->pluck('projection_id')
+                        ->map(fn (mixed $id): int => (int) $id)
+                        ->all();
+                    $categoryIds = $projections->pluck('central_category_id')
+                        ->map(fn (mixed $id): int => (int) $id)
+                        ->unique()
+                        ->values()
+                        ->all();
+                    $counts['categories'] += $this->markCategoryProjectionBatchStale(
+                        $siteId,
+                        $projectionIds,
+                        $categoryIds,
+                    );
+                },
+                'site_category_projections.id',
+                'projection_id',
             );
-        }
 
         return $counts;
+    }
+
+    /**
+     * @param  list<int>  $projectionIds
+     * @param  list<int>  $productIds
+     */
+    private function markProductProjectionBatchStale(
+        int $siteId,
+        array $projectionIds,
+        array $productIds,
+    ): int {
+        return DB::transaction(function () use ($siteId, $projectionIds, $productIds): int {
+            $staleAt = now();
+            $count = SiteProductProjection::query()
+                ->whereIn('id', $projectionIds)
+                ->update(['status' => 'stale', 'stale_at' => $staleAt]);
+            SiteSearchDocument::query()
+                ->where('site_id', $siteId)
+                ->where('document_type', 'product')
+                ->whereIn('document_id', $productIds)
+                ->update(['status' => 'stale', 'stale_at' => $staleAt]);
+            $this->insertStaleLogs($siteId, 'product', $productIds, 'central_product_updated', $staleAt);
+
+            return $count;
+        });
+    }
+
+    /**
+     * @param  list<int>  $projectionIds
+     * @param  list<int>  $categoryIds
+     */
+    private function markCategoryProjectionBatchStale(
+        int $siteId,
+        array $projectionIds,
+        array $categoryIds,
+    ): int {
+        return DB::transaction(function () use ($siteId, $projectionIds, $categoryIds): int {
+            $staleAt = now();
+            $count = SiteCategoryProjection::query()
+                ->whereIn('id', $projectionIds)
+                ->update(['status' => 'stale', 'stale_at' => $staleAt]);
+            SiteSearchDocument::query()
+                ->where('site_id', $siteId)
+                ->where('document_type', 'category')
+                ->whereIn('document_id', $categoryIds)
+                ->update(['status' => 'stale', 'stale_at' => $staleAt]);
+            $this->insertStaleLogs($siteId, 'category', $categoryIds, 'category_schema_updated', $staleAt);
+
+            return $count;
+        });
+    }
+
+    /** @param list<int> $entityIds */
+    private function insertStaleLogs(
+        int $siteId,
+        string $entityType,
+        array $entityIds,
+        string $reason,
+        mixed $createdAt,
+    ): void {
+        ProjectionLog::query()->insert(array_map(
+            fn (int $entityId): array => [
+                'site_id' => $siteId,
+                'level' => 'warning',
+                'event' => 'stale',
+                'message' => $reason,
+                'context_json' => json_encode(['reason' => $reason], JSON_THROW_ON_ERROR),
+                'entity_type' => $entityType,
+                'entity_id' => $entityId,
+                'created_at' => $createdAt,
+            ],
+            $entityIds,
+        ));
+    }
+
+    private function sourceVersionExpression(string $updatedAtColumn): string
+    {
+        return match (DB::getDriverName()) {
+            'pgsql' => "CAST(EXTRACT(EPOCH FROM {$updatedAtColumn}) AS BIGINT)",
+            'mysql', 'mariadb' => "UNIX_TIMESTAMP({$updatedAtColumn})",
+            'sqlite' => "CAST(strftime('%s', {$updatedAtColumn}) AS INTEGER)",
+            'sqlsrv' => "DATEDIFF_BIG(second, '1970-01-01', {$updatedAtColumn})",
+            default => throw new LogicException('Unsupported database driver for projection stale detection.'),
+        };
+    }
+
+    private function versionMismatchSql(
+        string $projectionVersionColumn,
+        string $sourceUpdatedAtColumn,
+        string $sourceVersionExpression,
+    ): string {
+        return "(({$projectionVersionColumn} IS NULL AND {$sourceUpdatedAtColumn} IS NOT NULL)"
+            ." OR ({$projectionVersionColumn} IS NOT NULL AND {$sourceUpdatedAtColumn} IS NULL)"
+            ." OR ({$projectionVersionColumn} IS NOT NULL AND {$sourceUpdatedAtColumn} IS NOT NULL"
+            ." AND {$projectionVersionColumn} <> {$sourceVersionExpression}))";
     }
 
     private function markProductIdStale(int $productId, ?int $siteId, string $reason): int
@@ -196,12 +330,5 @@ final class ProjectionStaleDetector
             'entity_type' => $entityType,
             'entity_id' => $entityId,
         ]);
-    }
-
-    private function sourceVersion(Model $model): ?int
-    {
-        $updatedAt = $model->getAttribute('updated_at');
-
-        return $updatedAt instanceof DateTimeInterface ? (int) $updatedAt->format('U') : null;
     }
 }

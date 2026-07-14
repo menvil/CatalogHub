@@ -13,8 +13,7 @@ return new class extends Migration
             $table->foreignId('site_id')->constrained()->cascadeOnDelete();
             $table->string('locale', 20);
             $table->string('url');
-            $table->string('entity_type')->nullable();
-            $table->unsignedBigInteger('entity_id')->nullable();
+            $table->nullableMorphs('entity');
             $table->string('changefreq')->nullable();
             $table->decimal('priority', 2, 1)->nullable();
             $table->timestamp('lastmod_at')->nullable();
@@ -27,7 +26,6 @@ return new class extends Migration
                 'site_sitemap_urls_identity_unique',
             );
             $table->index(['site_id', 'locale', 'status']);
-            $table->index(['entity_type', 'entity_id']);
         });
     }
 

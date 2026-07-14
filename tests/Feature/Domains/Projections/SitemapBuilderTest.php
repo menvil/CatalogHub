@@ -5,6 +5,7 @@ namespace Tests\Feature\Domains\Projections;
 use App\Domains\Projections\Builders\SitemapBuilder;
 use App\Domains\Projections\DTO\CategoryProjectionData;
 use App\Domains\Projections\DTO\ProductProjectionData;
+use App\Domains\Projections\Enums\ProjectionStatus;
 use App\Models\Site;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -24,7 +25,7 @@ class SitemapBuilderTest extends TestCase
             centralProductId: 123,
             slug: 'lg-ultragear-27gp850-b',
             title: 'LG UltraGear 27GP850-B',
-            status: 'active',
+            status: ProjectionStatus::Active,
             payload: [],
             seo: ['canonical_url' => 'https://example.test/products/lg-ultragear-27gp850-b'],
             media: [],
@@ -55,7 +56,7 @@ class SitemapBuilderTest extends TestCase
             parentCategoryId: null,
             slug: 'monitore',
             title: 'Monitore',
-            status: 'pending',
+            status: ProjectionStatus::Pending,
             payload: [],
             seo: [],
             facets: [],

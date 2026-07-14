@@ -3,6 +3,8 @@
 namespace App\Domains\Projections\Builders;
 
 use App\Domains\Projections\DTO\CategoryProjectionData;
+use App\Domains\Projections\Enums\ProjectionStatus;
+use App\Domains\Projections\Support\ProjectionVisibility;
 use App\Domains\Seo\SeoProjectionBuilder;
 use App\Enums\CentralCategoryStatus;
 use App\Models\CentralCatalog\AttributeDefinition;
@@ -48,9 +50,9 @@ final class CategoryProjectionBuilder
             $locale,
             fallbackValue: 'visible',
         );
-        $status = $category->status === CentralCategoryStatus::Active && $this->isVisible($visibility)
-            ? 'active'
-            : 'pending';
+        $status = $category->status === CentralCategoryStatus::Active && ProjectionVisibility::isVisible($visibility)
+            ? ProjectionStatus::Active
+            : ProjectionStatus::Pending;
         $definitions = AttributeDefinition::query()
             ->where('central_category_id', $category->getKey())
             ->visible()
@@ -81,7 +83,7 @@ final class CategoryProjectionBuilder
             $locale,
             $title,
             $slug,
-            $status === 'active',
+            $status === ProjectionStatus::Active,
         );
         $payload = [
             'category' => [
@@ -110,7 +112,13 @@ final class CategoryProjectionBuilder
             ],
         ];
         $checksum = hash('sha256', json_encode(
-            compact('status', 'payload', 'seo', 'facets', 'comparison'),
+            [
+                'status' => $status->value,
+                'payload' => $payload,
+                'seo' => $seo,
+                'facets' => $facets,
+                'comparison' => $comparison,
+            ],
             JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
         ));
 
@@ -224,18 +232,5 @@ final class CategoryProjectionBuilder
         }
 
         return $value;
-    }
-
-    private function isVisible(mixed $visibility): bool
-    {
-        if (is_bool($visibility)) {
-            return $visibility;
-        }
-
-        return ! in_array(
-            mb_strtolower((string) $visibility),
-            ['0', 'false', 'hidden', 'disabled', 'inactive'],
-            true,
-        );
     }
 }

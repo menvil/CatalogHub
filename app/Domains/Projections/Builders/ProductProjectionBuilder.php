@@ -3,6 +3,8 @@
 namespace App\Domains\Projections\Builders;
 
 use App\Domains\Projections\DTO\ProductProjectionData;
+use App\Domains\Projections\Enums\ProjectionStatus;
+use App\Domains\Projections\Support\ProjectionVisibility;
 use App\Domains\Seo\SeoProjectionBuilder;
 use App\Enums\AttributeDataType;
 use App\Enums\CentralProductStatus;
@@ -28,6 +30,15 @@ use Illuminate\Database\Eloquent\Model;
 
 final class ProductProjectionBuilder
 {
+    /** @var array<string, MeasurementUnit|null> */
+    private array $measurementUnits = [];
+
+    /** @var array<string, AttributeDisplayRule|null> */
+    private array $displayRules = [];
+
+    /** @var array<string, MarketUnitPreference|null> */
+    private array $marketUnitPreferences = [];
+
     public function __construct(
         private readonly TranslationResolver $translationResolver,
         private readonly UnitConverter $unitConverter,
@@ -69,9 +80,9 @@ final class ProductProjectionBuilder
             $locale,
             fallbackValue: 'visible',
         );
-        $status = $product->status === CentralProductStatus::Active && $this->isVisible($visibility)
-            ? 'active'
-            : 'pending';
+        $status = $product->status === CentralProductStatus::Active && ProjectionVisibility::isVisible($visibility)
+            ? ProjectionStatus::Active
+            : ProjectionStatus::Pending;
         $media = $this->buildMediaPayload($site, $product, $locale, $title);
         $payload = [
             'product' => [
@@ -119,7 +130,7 @@ final class ProductProjectionBuilder
             $locale,
             $title,
             $slug,
-            $status === 'active',
+            $status === ProjectionStatus::Active,
             $media,
         );
         $payload['seo'] = $seo;
@@ -146,10 +157,18 @@ final class ProductProjectionBuilder
      * @param  array<string, mixed>  $seo
      * @param  array<string, mixed>  $media
      */
-    private function checksumFor(string $status, array $payload, array $seo, array $media): string
-    {
-        return hash('sha256', json_encode(
-            compact('status', 'payload', 'seo', 'media'),
+    private function checksumFor(
+        ProjectionStatus $status,
+        array $payload,
+        array $seo,
+        array $media,
+    ): string {
+        return hash('sha256', json_encode([
+            'status' => $status->value,
+            'payload' => $payload,
+            'seo' => $seo,
+            'media' => $media,
+        ],
             JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
         ));
     }
@@ -191,12 +210,16 @@ final class ProductProjectionBuilder
                 $canonicalUnit = $value->getAttribute('canonical_unit')
                     ?: $attribute->getAttribute('canonical_unit');
                 $canonicalValue = $this->canonicalValue($attribute, $value);
+                $sourceUnit = is_string($canonicalUnit) && $canonicalUnit !== ''
+                    ? $this->measurementUnit($canonicalUnit)
+                    : null;
                 $display = $this->displayValue(
                     $attribute,
                     $canonicalValue,
                     $canonicalUnit,
                     $site,
                     $locale,
+                    $sourceUnit,
                 );
                 $attributes[] = [
                     'code' => (string) $attribute->getAttribute('code'),
@@ -209,10 +232,14 @@ final class ProductProjectionBuilder
                     'data_type' => $attribute->data_type->value,
                     'canonical_value' => $canonicalValue,
                     'canonical_unit' => $canonicalUnit,
-                    'canonical_unit_label' => $this->unitLabel($canonicalUnit, $locale),
+                    'canonical_unit_label' => $this->unitLabel($canonicalUnit, $locale, $sourceUnit),
                     'display_value' => $display['value'],
                     'display_unit' => $display['unit'],
-                    'display_unit_label' => $this->unitLabel($display['unit'], $locale),
+                    'display_unit_label' => $this->unitLabel(
+                        $display['unit'],
+                        $locale,
+                        $display['unit_model'],
+                    ),
                     'options' => $attribute->options
                         ->map(fn ($option): array => [
                             'code' => (string) $option->getAttribute('code'),
@@ -290,13 +317,16 @@ final class ProductProjectionBuilder
         return is_scalar($value) ? (string) $value : $fallback;
     }
 
-    private function unitLabel(mixed $unitCode, string $locale): ?string
-    {
+    private function unitLabel(
+        mixed $unitCode,
+        string $locale,
+        ?MeasurementUnit $unit = null,
+    ): ?string {
         if (! is_string($unitCode) || $unitCode === '') {
             return null;
         }
 
-        $unit = MeasurementUnit::query()->where('code', $unitCode)->first();
+        $unit ??= $this->measurementUnit($unitCode);
 
         if (! $unit instanceof MeasurementUnit) {
             return $unitCode;
@@ -311,7 +341,7 @@ final class ProductProjectionBuilder
     }
 
     /**
-     * @return array{value: ?string, unit: ?string}
+     * @return array{value: ?string, unit: ?string, unit_model: ?MeasurementUnit}
      */
     private function displayValue(
         AttributeDefinition $attribute,
@@ -319,6 +349,7 @@ final class ProductProjectionBuilder
         mixed $canonicalUnit,
         Site $site,
         string $locale,
+        ?MeasurementUnit $sourceUnit,
     ): array {
         $unitCode = is_string($canonicalUnit) && $canonicalUnit !== '' ? $canonicalUnit : null;
 
@@ -326,28 +357,39 @@ final class ProductProjectionBuilder
             ! in_array($attribute->data_type, [AttributeDataType::Integer, AttributeDataType::Decimal], true)
             || ! is_numeric($canonicalValue)
         ) {
-            return ['value' => null, 'unit' => $unitCode];
+            return ['value' => null, 'unit' => $unitCode, 'unit_model' => $sourceUnit];
         }
 
         $rule = $this->displayRule($attribute, $site, $locale);
-        $sourceUnit = $unitCode === null
-            ? null
-            : MeasurementUnit::query()->where('code', $unitCode)->active()->first();
-        $displayUnit = $rule?->displayUnit()->first()
-            ?? $this->preferredMarketUnit($sourceUnit, $site)
-            ?? $sourceUnit;
+        $activeSourceUnit = $sourceUnit instanceof MeasurementUnit
+            && (bool) $sourceUnit->getAttribute('is_active')
+                ? $sourceUnit
+                : null;
+        $displayUnit = $rule instanceof AttributeDisplayRule ? $rule->displayUnit : null;
+        $displayUnit ??= $this->preferredMarketUnit($activeSourceUnit, $site) ?? $activeSourceUnit;
 
         if (! $displayUnit instanceof MeasurementUnit || $unitCode === null) {
             return [
                 'value' => $this->rawDisplayValue($canonicalValue, $unitCode, $locale),
                 'unit' => $unitCode,
+                'unit_model' => $sourceUnit,
+            ];
+        }
+
+        $requiresConversion = $displayUnit->getAttribute('code') !== $unitCode;
+
+        if ($requiresConversion && ! $activeSourceUnit instanceof MeasurementUnit) {
+            return [
+                'value' => $this->rawDisplayValue($canonicalValue, $unitCode, $locale),
+                'unit' => $unitCode,
+                'unit_model' => $sourceUnit,
             ];
         }
 
         try {
-            $value = $displayUnit->getAttribute('code') === $unitCode
-                ? $canonicalValue
-                : $this->unitConverter->convert($canonicalValue, $unitCode, $displayUnit);
+            $value = $requiresConversion
+                ? $this->unitConverter->convert($canonicalValue, $activeSourceUnit, $displayUnit)
+                : $canonicalValue;
 
             return [
                 'value' => $this->unitFormatter->format(
@@ -357,11 +399,13 @@ final class ProductProjectionBuilder
                     $locale,
                 ),
                 'unit' => (string) $displayUnit->getAttribute('code'),
+                'unit_model' => $displayUnit,
             ];
         } catch (CannotConvertUnitException) {
             return [
                 'value' => $this->rawDisplayValue($canonicalValue, $unitCode, $locale),
                 'unit' => $unitCode,
+                'unit_model' => $sourceUnit,
             ];
         }
     }
@@ -374,7 +418,14 @@ final class ProductProjectionBuilder
         $marketCode = $site->market === null
             ? AttributeDisplayRule::GLOBAL_MARKET_CODE
             : (string) $site->market->getAttribute('code');
+        $cacheKey = implode('|', [(string) $attribute->getKey(), $marketCode, $locale]);
+
+        if (array_key_exists($cacheKey, $this->displayRules)) {
+            return $this->displayRules[$cacheKey];
+        }
+
         $rule = AttributeDisplayRule::query()
+            ->with('displayUnit')
             ->where('attribute_definition_id', $attribute->getKey())
             ->whereIn('market_code', array_unique([$marketCode, AttributeDisplayRule::GLOBAL_MARKET_CODE]))
             ->whereIn('locale', [$locale, AttributeDisplayRule::GLOBAL_LOCALE])
@@ -383,7 +434,7 @@ final class ProductProjectionBuilder
                 + ($candidate->getAttribute('locale') === $locale ? 1 : 0))
             ->first();
 
-        return $rule instanceof AttributeDisplayRule ? $rule : null;
+        return $this->displayRules[$cacheKey] = $rule instanceof AttributeDisplayRule ? $rule : null;
     }
 
     private function preferredMarketUnit(?MeasurementUnit $sourceUnit, Site $site): ?MeasurementUnit
@@ -392,12 +443,23 @@ final class ProductProjectionBuilder
             return null;
         }
 
+        $marketCode = (string) $site->market->getAttribute('code');
+        $dimensionId = (int) $sourceUnit->getAttribute('dimension_id');
+        $cacheKey = $marketCode.'|'.$dimensionId;
+
+        if (array_key_exists($cacheKey, $this->marketUnitPreferences)) {
+            return $this->marketUnitPreferences[$cacheKey]?->preferredUnit;
+        }
+
         $preference = MarketUnitPreference::query()
-            ->where('market_code', $site->market->getAttribute('code'))
-            ->where('dimension_id', $sourceUnit->getAttribute('dimension_id'))
+            ->with('preferredUnit')
+            ->where('market_code', $marketCode)
+            ->where('dimension_id', $dimensionId)
             ->first();
 
-        return $preference?->preferredUnit()->first();
+        $this->marketUnitPreferences[$cacheKey] = $preference;
+
+        return $preference?->preferredUnit;
     }
 
     private function rawDisplayValue(mixed $value, ?string $unitCode, string $locale): string
@@ -405,7 +467,7 @@ final class ProductProjectionBuilder
         $number = (string) $value;
         $language = mb_strtolower(str($locale)->before('_')->before('-')->toString());
 
-        if (in_array($language, ['bg', 'de', 'fr', 'es', 'it'], true)) {
+        if (in_array($language, ['bg', 'de', 'es', 'fr', 'it', 'nl', 'pl', 'pt', 'ru', 'sv'], true)) {
             $number = str_replace('.', ',', $number);
         }
 
@@ -514,16 +576,14 @@ final class ProductProjectionBuilder
         return $value;
     }
 
-    private function isVisible(mixed $visibility): bool
+    private function measurementUnit(string $unitCode): ?MeasurementUnit
     {
-        if (is_bool($visibility)) {
-            return $visibility;
+        if (! array_key_exists($unitCode, $this->measurementUnits)) {
+            $this->measurementUnits[$unitCode] = MeasurementUnit::query()
+                ->where('code', $unitCode)
+                ->first();
         }
 
-        return ! in_array(
-            mb_strtolower((string) $visibility),
-            ['0', 'false', 'hidden', 'disabled', 'inactive'],
-            true,
-        );
+        return $this->measurementUnits[$unitCode];
     }
 }

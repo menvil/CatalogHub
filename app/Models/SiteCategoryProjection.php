@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/** @property array<string, mixed>|null $seo_json */
 #[Fillable([
     'site_id', 'locale', 'central_category_id', 'central_category_version', 'parent_category_id',
     'slug', 'title', 'status', 'payload_json', 'seo_json', 'facets_json', 'comparison_json',

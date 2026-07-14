@@ -18,7 +18,9 @@ class HomePageTest extends TestCase
             ->assertOk()
             ->assertSee('Tech Compare Global')
             ->assertSee('Find the right technology')
-            ->assertSee('data-homepage-blocks', false);
+            ->assertSee('data-homepage-blocks', false)
+            ->assertSee('<a href="https://tech-compare.test/en-US"', false)
+            ->assertSee('<a href="https://tech-compare.test/en-US/search"', false);
     }
 
     public function test_home_returns_not_found_for_unknown_site_or_disabled_locale(): void

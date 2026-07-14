@@ -28,10 +28,13 @@ final class CategoryController extends Controller
             ->where('slug', $slug)
             ->where('status', ProjectionStatus::Active)
             ->firstOrFail();
-        $seo = $projection->seo_json ?? [];
-        $seo['meta_title'] ??= $projection->title;
-        $seo['meta_description'] ??= data_get($projection->payload_json, 'category.description');
-        $seo['canonical_url'] ??= $urls->category($site, $locale, $projection);
+        $projectionSeo = $projection->seo_json;
+        $seo = is_array($projectionSeo) ? $projectionSeo : [];
+        $seo = array_replace([
+            'meta_title' => $projection->title,
+            'meta_description' => data_get($projection->payload_json, 'category.description'),
+            'canonical_url' => $urls->category($site, $locale, $projection),
+        ], array_filter($seo, fn (mixed $value): bool => $value !== null));
 
         return view($layouts->resolve($site, 'category'), [
             'site' => $site,

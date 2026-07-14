@@ -17,8 +17,10 @@ use App\Services\Imports\Normalizers\EnumNormalizer;
 use App\Services\Imports\Normalizers\MultiEnumNormalizer;
 use App\Services\Imports\Normalizers\NumberNormalizer;
 use App\Services\Imports\Normalizers\UnitNormalizer;
+use App\View\Composers\PublicNavigationComposer;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -62,5 +64,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('translations.manage', fn (User $user): bool => $user->hasCatalogHubPermission('translations.manage'));
 
         CentralProduct::observe(CentralProductObserver::class);
+
+        View::composer('public.partials.header', PublicNavigationComposer::class);
     }
 }

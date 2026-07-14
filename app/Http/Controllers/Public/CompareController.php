@@ -23,12 +23,10 @@ final class CompareController extends Controller
         $site = $sites->resolve($request->getHost(), $locale);
         $rawSlugs = $request->query('products', []);
         $rawSlugs = is_string($rawSlugs) ? explode(',', $rawSlugs) : $rawSlugs;
-        $slugs = is_array($rawSlugs)
-            ? array_slice(array_values(array_unique(array_filter(array_map(
-                fn (mixed $slug): string => is_string($slug) ? trim($slug) : '',
-                $rawSlugs,
-            )))), 0, 4)
-            : [];
+        $slugs = array_slice(array_values(array_unique(array_filter(array_map(
+            fn (mixed $slug): string => is_string($slug) ? trim($slug) : '',
+            $rawSlugs,
+        )))), 0, 4);
         $available = SiteProductProjection::query()
             ->where('site_id', $site->id)
             ->where('locale', $locale)

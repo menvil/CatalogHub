@@ -35,10 +35,13 @@ final class ProductController extends Controller
         $benefits = is_array($benefitPayload)
             ? $benefitPayload
             : (is_string($summary) && $summary !== '' ? [$summary] : []);
-        $seo = $projection->seo_json ?? [];
-        $seo['meta_title'] ??= $projection->title;
-        $seo['meta_description'] ??= data_get($payload, 'product.short_description', data_get($payload, 'product.description'));
-        $seo['canonical_url'] ??= $urls->product($site, $locale, $projection);
+        $projectionSeo = $projection->seo_json;
+        $seo = is_array($projectionSeo) ? $projectionSeo : [];
+        $seo = array_replace([
+            'meta_title' => $projection->title,
+            'meta_description' => data_get($payload, 'product.short_description', data_get($payload, 'product.description')),
+            'canonical_url' => $urls->product($site, $locale, $projection),
+        ], array_filter($seo, fn (mixed $value): bool => $value !== null));
         $category = is_array(data_get($payload, 'category')) ? data_get($payload, 'category') : null;
         $categoryUrl = is_string(data_get($payload, 'category.slug'))
             ? $urls->category($site, $locale, data_get($payload, 'category.slug'))

@@ -25,6 +25,16 @@ enum ContentType: string
         };
     }
 
+    public function isGuide(): bool
+    {
+        return in_array($this, [
+            self::BuyingGuide,
+            self::HowToGuide,
+            self::TroubleshootingGuide,
+            self::Manual,
+        ], true);
+    }
+
     /** @return array<string, string> */
     public static function options(): array
     {

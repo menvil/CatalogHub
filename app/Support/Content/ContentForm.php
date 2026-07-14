@@ -53,6 +53,18 @@ final class ContentForm
                 ->required()
                 ->visible(fn (Get $get): bool => $get('type') === ContentType::Faq->value)
                 ->columnSpanFull(),
+            TextInput::make('translation_meta_title')
+                ->label('Meta title')
+                ->maxLength(255),
+            Textarea::make('translation_meta_description')
+                ->label('Meta description')
+                ->maxLength(2000),
+            TextInput::make('translation_og_title')
+                ->label('Open Graph title')
+                ->maxLength(255),
+            Textarea::make('translation_og_description')
+                ->label('Open Graph description')
+                ->maxLength(2000),
         ];
     }
 }

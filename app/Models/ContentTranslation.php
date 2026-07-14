@@ -50,4 +50,14 @@ final class ContentTranslation extends Model
 
         return filled($description) ? (string) $description : null;
     }
+
+    public function openGraphTitle(): string
+    {
+        return filled($this->og_title) ? (string) $this->og_title : $this->seoTitle();
+    }
+
+    public function openGraphDescription(): ?string
+    {
+        return filled($this->og_description) ? (string) $this->og_description : $this->seoDescription();
+    }
 }

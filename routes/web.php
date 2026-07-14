@@ -8,6 +8,7 @@ use App\Http\Controllers\CentralAdmin\MissingTranslationsController;
 use App\Http\Controllers\CentralAdmin\OutdatedTranslationsController;
 use App\Http\Controllers\CentralAdmin\TranslationDashboardController;
 use App\Http\Controllers\CentralAdmin\TranslationEditorController;
+use App\Http\Controllers\Public\ArticleStubController as PublicArticleStubController;
 use App\Http\Controllers\Public\CategoryController as PublicCategoryController;
 use App\Http\Controllers\Public\CompareController as PublicCompareController;
 use App\Http\Controllers\Public\HomeController as PublicHomeController;
@@ -40,6 +41,10 @@ Route::get('/{locale}/products/{slug}', [PublicProductController::class, 'show']
 Route::get('/{locale}/compare', PublicCompareController::class)
     ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
     ->name('public.compare');
+
+Route::get('/{locale}/articles/{slug}', PublicArticleStubController::class)
+    ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
+    ->name('public.articles.show');
 
 if (app()->environment(['local', 'testing'])) {
     Route::get('/dev/ui-kit', function () {

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ContentRelationTargetType;
+use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use Database\Factories\ContentRelationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -27,12 +28,16 @@ final class ContentRelation extends Model
     protected static function booted(): void
     {
         self::saving(function (self $relation): void {
-            if (
-                $relation->targetType() === ContentRelationTargetType::Product
-                && ! CentralProduct::query()->whereKey($relation->related_id)->exists()
-            ) {
+            $type = $relation->targetType();
+            $targetExists = match ($type) {
+                ContentRelationTargetType::Product => CentralProduct::query()->whereKey($relation->related_id)->exists(),
+                ContentRelationTargetType::Category => CentralCategory::query()->whereKey($relation->related_id)->exists(),
+                default => true,
+            };
+
+            if (! $targetExists) {
                 throw ValidationException::withMessages([
-                    'related_id' => 'The selected product does not exist.',
+                    'related_id' => 'The selected '.($type?->label() ?? 'target').' does not exist.',
                 ]);
             }
         });

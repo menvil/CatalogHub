@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ContentItemResource\RelationManagers;
 
 use App\Enums\ContentRelationTargetType;
+use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\ContentItem;
 use Filament\Actions\CreateAction;
@@ -28,12 +29,16 @@ final class RelationsRelationManager extends RelationManager
             Select::make('related_type')
                 ->options([
                     ContentRelationTargetType::Product->value => ContentRelationTargetType::Product->label(),
+                    ContentRelationTargetType::Category->value => ContentRelationTargetType::Category->label(),
                 ])
                 ->default(ContentRelationTargetType::Product->value)
+                ->live()
                 ->required(),
             Select::make('related_id')
-                ->label('Product')
-                ->options(fn (): array => CentralProduct::query()->orderBy('name')->pluck('name', 'id')->all())
+                ->label(fn (Get $get): string => ContentRelationTargetType::tryFrom(
+                    (string) $get('related_type'),
+                )?->label() ?? 'Target')
+                ->options(fn (Get $get): array => $this->targetOptions((string) $get('related_type')))
                 ->searchable()
                 ->preload()
                 ->unique(
@@ -76,5 +81,15 @@ final class RelationsRelationManager extends RelationManager
         }
 
         return $record;
+    }
+
+    /** @return array<int|string, string> */
+    private function targetOptions(string $type): array
+    {
+        return match (ContentRelationTargetType::tryFrom($type)) {
+            ContentRelationTargetType::Product => CentralProduct::query()->orderBy('name')->pluck('name', 'id')->all(),
+            ContentRelationTargetType::Category => CentralCategory::query()->orderBy('name')->pluck('name', 'id')->all(),
+            default => [],
+        };
     }
 }

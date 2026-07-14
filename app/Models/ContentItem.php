@@ -11,10 +11,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property ContentType $type
  * @property array<string, mixed>|null $metadata
+ * @property Carbon|null $published_at
+ * @property Carbon|null $archived_at
  */
 #[Fillable([
     'site_id', 'type', 'status', 'published_at', 'archived_at',

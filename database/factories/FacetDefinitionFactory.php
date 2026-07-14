@@ -41,4 +41,12 @@ class FacetDefinitionFactory extends Factory
             'facet_type' => FacetType::Checkbox,
         ]);
     }
+
+    public function range(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'facet_type' => FacetType::Range,
+            'source_type' => FacetSourceType::Rating,
+        ]);
+    }
 }

@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Domains\Projections\Enums\ProjectionStatus;
+use Database\Factories\SiteSearchDocumentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -13,6 +15,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 final class SiteSearchDocument extends Model
 {
+    /** @use HasFactory<SiteSearchDocumentFactory> */
+    use HasFactory;
+
+    protected static function newFactory(): SiteSearchDocumentFactory
+    {
+        return SiteSearchDocumentFactory::new();
+    }
+
     protected function casts(): array
     {
         return [

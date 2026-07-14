@@ -10,6 +10,7 @@ use App\Domains\Projections\Enums\ProjectionStatus;
 use App\Enums\AttributeDataType;
 use App\Enums\FacetSourceType;
 use App\Enums\FacetType;
+use App\Enums\PublicProductSort;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Site;
 use App\Models\SiteSearchDocument;
@@ -69,6 +70,7 @@ final readonly class FacetQueryBuilder
         $this->applyBooleanFilters($query, $facets, $filters);
         $this->applyNumericRangeFilters($query, $facets, $filters);
         $this->applyRatingFilter($query, $filters);
+        $this->applySorting($query, $filters);
 
         return $query;
     }
@@ -234,6 +236,22 @@ final readonly class FacetQueryBuilder
     }
 
     /** @param Builder<SiteSearchDocument> $query */
+    private function applySorting(Builder $query, FacetFilterSet $filters): void
+    {
+        $sort = PublicProductSort::fromInput($filters->get('sort'));
+
+        match ($sort) {
+            PublicProductSort::RatingDesc => $query
+                ->orderByRaw($this->numericJsonValueExpression($query, 'sort_values_json', 'rating').' DESC')
+                ->orderByDesc('id'),
+            PublicProductSort::NameAsc => $query->orderBy('title')->orderBy('id'),
+            PublicProductSort::NameDesc => $query->orderByDesc('title')->orderByDesc('id'),
+            PublicProductSort::Default,
+            PublicProductSort::Newest => $query->orderByDesc('built_at')->orderByDesc('id'),
+        };
+    }
+
+    /** @param Builder<SiteSearchDocument> $query */
     private function applyNumericConstraint(
         Builder $query,
         string $column,
@@ -244,14 +262,26 @@ final readonly class FacetQueryBuilder
         $serialized = $this->ranges->serialize($value);
         $driver = $query->getConnection()->getDriverName();
 
-        $expression = match ($driver) {
-            'mysql', 'mariadb' => "CAST(JSON_UNQUOTE(JSON_EXTRACT(`{$column}`, '$.\"{$code}\"')) AS DECIMAL(65, 20)) {$operator} CAST(? AS DECIMAL(65, 20))",
-            'pgsql' => "CAST(\"{$column}\"->>'{$code}' AS NUMERIC) {$operator} CAST(? AS NUMERIC)",
-            'sqlsrv' => "TRY_CAST(JSON_VALUE([{$column}], '$.{$code}') AS FLOAT) {$operator} TRY_CAST(? AS FLOAT)",
-            default => "CAST(json_extract(\"{$column}\", '$.\"{$code}\"') AS REAL) {$operator} CAST(? AS REAL)",
+        $valueExpression = $this->numericJsonValueExpression($query, $column, $code);
+        $placeholder = match ($driver) {
+            'mysql', 'mariadb' => 'CAST(? AS DECIMAL(65, 20))',
+            'pgsql' => 'CAST(? AS NUMERIC)',
+            'sqlsrv' => 'TRY_CAST(? AS FLOAT)',
+            default => 'CAST(? AS REAL)',
         };
 
-        $query->whereRaw($expression, [$serialized]);
+        $query->whereRaw("{$valueExpression} {$operator} {$placeholder}", [$serialized]);
+    }
+
+    /** @param Builder<SiteSearchDocument> $query */
+    private function numericJsonValueExpression(Builder $query, string $column, string $code): string
+    {
+        return match ($query->getConnection()->getDriverName()) {
+            'mysql', 'mariadb' => "CAST(JSON_UNQUOTE(JSON_EXTRACT(`{$column}`, '$.\"{$code}\"')) AS DECIMAL(65, 20))",
+            'pgsql' => "CAST(\"{$column}\"->>'{$code}' AS NUMERIC)",
+            'sqlsrv' => "TRY_CAST(JSON_VALUE([{$column}], '$.{$code}') AS FLOAT)",
+            default => "CAST(json_extract(\"{$column}\", '$.\"{$code}\"') AS REAL)",
+        };
     }
 
     /**

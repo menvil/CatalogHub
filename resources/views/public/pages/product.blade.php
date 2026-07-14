@@ -12,9 +12,7 @@
     </div>
 
     <div class="mt-6 grid gap-8 lg:grid-cols-2">
-        <section data-product-media class="flex aspect-square items-center justify-center rounded-3xl bg-white text-slate-400 shadow-sm ring-1 ring-slate-200">
-            Product media
-        </section>
+        @include('public.components.product-media-gallery', ['media' => $media])
 
         <section class="py-2">
             @if ($brand)

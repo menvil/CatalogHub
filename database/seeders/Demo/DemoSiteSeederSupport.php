@@ -100,6 +100,11 @@ final class DemoSiteSeederSupport
             ],
         );
         $supports = ['hero_search', 'popular_categories', 'top_products', 'buying_guides', 'lead_form'];
+        $manifestLayouts = array_filter(
+            self::LAYOUTS,
+            fn (string $pageType): bool => $pageType !== 'listing',
+            ARRAY_FILTER_USE_KEY,
+        );
 
         ThemeManifestRecord::query()->updateOrCreate(
             ['theme_id' => $theme->id],
@@ -108,11 +113,11 @@ final class DemoSiteSeederSupport
                     'code' => $theme->code,
                     'name' => $theme->name,
                     'supports' => $supports,
-                    'layouts' => self::LAYOUTS,
+                    'layouts' => $manifestLayouts,
                     'version' => '1.0.0',
                 ],
                 'supports_json' => $supports,
-                'layouts_json' => self::LAYOUTS,
+                'layouts_json' => $manifestLayouts,
                 'schema_version' => '1.0',
                 'validated_at' => now(),
                 'validation_errors_json' => [],

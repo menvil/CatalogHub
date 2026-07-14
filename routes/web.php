@@ -8,6 +8,13 @@ use App\Http\Controllers\CentralAdmin\MissingTranslationsController;
 use App\Http\Controllers\CentralAdmin\OutdatedTranslationsController;
 use App\Http\Controllers\CentralAdmin\TranslationDashboardController;
 use App\Http\Controllers\CentralAdmin\TranslationEditorController;
+use App\Http\Controllers\Public\ArticleStubController as PublicArticleStubController;
+use App\Http\Controllers\Public\CategoryController as PublicCategoryController;
+use App\Http\Controllers\Public\CompareController as PublicCompareController;
+use App\Http\Controllers\Public\HomeController as PublicHomeController;
+use App\Http\Controllers\Public\ProductController as PublicProductController;
+use App\Http\Controllers\Public\ProductListingController as PublicProductListingController;
+use App\Http\Controllers\Public\SearchController as PublicSearchController;
 use Illuminate\Support\Facades\Route;
 
 require __DIR__.'/health.php';
@@ -15,6 +22,34 @@ require __DIR__.'/health.php';
 Route::get('/', function () {
     return view('pages.home');
 });
+
+Route::get('/{locale}', PublicHomeController::class)
+    ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
+    ->name('public.home');
+
+Route::get('/{locale}/categories/{slug}', [PublicCategoryController::class, 'show'])
+    ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
+    ->name('public.categories.show');
+
+Route::get('/{locale}/categories/{slug}/products', PublicProductListingController::class)
+    ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
+    ->name('public.categories.products');
+
+Route::get('/{locale}/products/{slug}', [PublicProductController::class, 'show'])
+    ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
+    ->name('public.products.show');
+
+Route::get('/{locale}/compare', PublicCompareController::class)
+    ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
+    ->name('public.compare');
+
+Route::get('/{locale}/articles/{slug}', PublicArticleStubController::class)
+    ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
+    ->name('public.articles.show');
+
+Route::get('/{locale}/search', PublicSearchController::class)
+    ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
+    ->name('public.search');
 
 if (app()->environment(['local', 'testing'])) {
     Route::get('/dev/ui-kit', function () {

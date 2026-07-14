@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use Database\Seeders\Demo\PublicDemoSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -20,13 +21,12 @@ class DatabaseSeeder extends Seeder
             MetricMeasurementUnitsSeeder::class,
             ImperialMeasurementUnitsSeeder::class,
             BlockRegistrySeeder::class,
+            PublicDemoSeeder::class,
         ]);
 
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        User::query()->firstOrCreate(
+            ['email' => 'test@example.com'],
+            ['name' => 'Test User', 'password' => 'password'],
+        );
     }
 }

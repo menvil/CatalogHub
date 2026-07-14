@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Enums\ContentType;
 use App\Filament\Resources\ContentItemResource\Pages;
+use App\Filament\Resources\ContentItemResource\RelationManagers\RelationsRelationManager;
 use App\Filament\Resources\ContentItemResource\RelationManagers\TranslationsRelationManager;
 use App\Models\ContentItem;
 use App\Models\User;
@@ -130,7 +131,7 @@ final class ContentItemResource extends Resource
 
     public static function getRelations(): array
     {
-        return [TranslationsRelationManager::class];
+        return [TranslationsRelationManager::class, RelationsRelationManager::class];
     }
 
     private static function canManage(): bool

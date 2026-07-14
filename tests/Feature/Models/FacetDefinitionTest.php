@@ -60,4 +60,14 @@ class FacetDefinitionTest extends TestCase
         $this->assertSame(FacetType::Checkbox, $facet->facet_type);
         $this->assertTrue($facet->facet_type->acceptsMultipleValues());
     }
+
+    public function test_factory_supports_range_facet_config(): void
+    {
+        $facet = FacetDefinition::factory()->range()->create([
+            'config_json' => ['min' => 0, 'max' => 240, 'step' => 1, 'unit_code' => 'hz'],
+        ]);
+
+        $this->assertSame(FacetType::Range, $facet->facet_type);
+        $this->assertSame(240, $facet->config_json['max']);
+    }
 }

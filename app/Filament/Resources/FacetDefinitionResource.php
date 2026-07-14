@@ -10,11 +10,11 @@ use App\Models\User;
 use App\Rules\Facets\ValidFacetDefinitionRule;
 use BackedEnum;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -76,6 +76,7 @@ final class FacetDefinitionResource extends Resource
             Select::make('facet_type')
                 ->options(FacetType::options())
                 ->rules([new ValidFacetDefinitionRule])
+                ->live()
                 ->required(),
             TextInput::make('position')
                 ->required()
@@ -87,9 +88,23 @@ final class FacetDefinitionResource extends Resource
             Toggle::make('is_visible')->default(true),
             Toggle::make('is_collapsible')->default(true),
             Toggle::make('default_collapsed')->default(false),
-            KeyValue::make('config_json')
-                ->label('Configuration')
-                ->columnSpanFull(),
+            TextInput::make('config_json.min')
+                ->label('Minimum')
+                ->numeric()
+                ->visible(fn (Get $get): bool => $get('facet_type') === FacetType::Range->value),
+            TextInput::make('config_json.max')
+                ->label('Maximum')
+                ->numeric()
+                ->visible(fn (Get $get): bool => $get('facet_type') === FacetType::Range->value),
+            TextInput::make('config_json.step')
+                ->label('Step')
+                ->numeric()
+                ->minValue(0)
+                ->visible(fn (Get $get): bool => $get('facet_type') === FacetType::Range->value),
+            TextInput::make('config_json.unit_code')
+                ->label('Unit code')
+                ->maxLength(64)
+                ->visible(fn (Get $get): bool => $get('facet_type') === FacetType::Range->value),
         ]);
     }
 

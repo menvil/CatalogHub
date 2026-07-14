@@ -113,6 +113,14 @@ final class FacetDefinitionResource extends Resource
                 ])
                 ->default('toggle')
                 ->visible(fn (Get $get): bool => $get('facet_type') === FacetType::Boolean->value),
+            TextInput::make('config_json.placeholder')
+                ->label('Placeholder')
+                ->maxLength(255)
+                ->visible(fn (Get $get): bool => $get('facet_type') === FacetType::Select->value),
+            Toggle::make('config_json.searchable')
+                ->label('Searchable options')
+                ->default(false)
+                ->visible(fn (Get $get): bool => $get('facet_type') === FacetType::Select->value),
         ]);
     }
 

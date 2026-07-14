@@ -68,4 +68,12 @@ class FacetDefinitionFactory extends Factory
             ])->id;
         });
     }
+
+    public function select(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'facet_type' => FacetType::Select,
+            'source_type' => FacetSourceType::Brand,
+        ]);
+    }
 }

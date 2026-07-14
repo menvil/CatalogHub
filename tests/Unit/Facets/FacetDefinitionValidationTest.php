@@ -109,6 +109,28 @@ class FacetDefinitionValidationTest extends TestCase
         $this->assertTrue($validator->fails());
     }
 
+    public function test_select_accepts_brand_or_attribute_source(): void
+    {
+        foreach ([FacetSourceType::Brand, FacetSourceType::Attribute] as $source) {
+            $validator = $this->validator([
+                'source_type' => $source->value,
+                'facet_type' => FacetType::Select->value,
+            ]);
+
+            $this->assertTrue($validator->passes());
+        }
+    }
+
+    public function test_select_rejects_rating_source(): void
+    {
+        $validator = $this->validator([
+            'source_type' => FacetSourceType::Rating->value,
+            'facet_type' => FacetType::Select->value,
+        ]);
+
+        $this->assertTrue($validator->fails());
+    }
+
     /** @param array<string, mixed> $data */
     private function validator(array $data): \Illuminate\Contracts\Validation\Validator
     {

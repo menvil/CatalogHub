@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ContentType;
 use Database\Factories\ContentItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,7 +12,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-/** @property array<string, mixed>|null $metadata */
+/**
+ * @property ContentType $type
+ * @property array<string, mixed>|null $metadata
+ */
 #[Fillable([
     'site_id', 'type', 'status', 'published_at', 'archived_at',
     'created_by_user_id', 'updated_by_user_id', 'metadata',
@@ -29,6 +33,7 @@ final class ContentItem extends Model
     protected function casts(): array
     {
         return [
+            'type' => ContentType::class,
             'published_at' => 'datetime',
             'archived_at' => 'datetime',
             'metadata' => 'array',
@@ -54,9 +59,9 @@ final class ContentItem extends Model
     }
 
     /** @param Builder<ContentItem> $query */
-    public function scopeOfType(Builder $query, string $type): Builder
+    public function scopeOfType(Builder $query, ContentType|string $type): Builder
     {
-        return $query->where('type', $type);
+        return $query->where('type', $type instanceof ContentType ? $type->value : $type);
     }
 
     /** @return BelongsTo<Site, $this> */

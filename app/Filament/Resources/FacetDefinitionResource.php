@@ -7,6 +7,7 @@ use App\Enums\FacetType;
 use App\Filament\Resources\FacetDefinitionResource\Pages;
 use App\Models\FacetDefinition;
 use App\Models\User;
+use App\Rules\Facets\ValidFacetDefinitionRule;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\KeyValue;
@@ -74,6 +75,7 @@ final class FacetDefinitionResource extends Resource
                 ->maxLength(255),
             Select::make('facet_type')
                 ->options(FacetType::options())
+                ->rules([new ValidFacetDefinitionRule])
                 ->required(),
             TextInput::make('position')
                 ->required()

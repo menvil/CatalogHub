@@ -26,4 +26,9 @@ enum FacetType: string
             self::Select => 'Select',
         };
     }
+
+    public function acceptsMultipleValues(): bool
+    {
+        return $this === self::Checkbox;
+    }
 }

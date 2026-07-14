@@ -52,4 +52,12 @@ class FacetDefinitionTest extends TestCase
         $this->assertTrue($facet->is_active);
         $this->assertSame(['searchable' => true], $facet->config_json);
     }
+
+    public function test_factory_supports_checkbox_facet_type(): void
+    {
+        $facet = FacetDefinition::factory()->checkbox()->create();
+
+        $this->assertSame(FacetType::Checkbox, $facet->facet_type);
+        $this->assertTrue($facet->facet_type->acceptsMultipleValues());
+    }
 }

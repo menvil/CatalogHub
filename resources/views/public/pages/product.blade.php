@@ -31,8 +31,5 @@
         </section>
     </div>
 
-    <section data-product-specs class="mt-12 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <h2 class="text-2xl font-bold tracking-tight">Specifications</h2>
-        <p class="mt-2 text-slate-600">{{ count($specSections) }} projected {{ Str::plural('section', count($specSections)) }}</p>
-    </section>
+    @include('public.components.product-specs', ['sections' => $specSections])
 @endsection

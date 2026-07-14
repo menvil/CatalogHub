@@ -53,6 +53,10 @@ final class CreateLeadAction
             'source' => ['nullable', 'string', 'max:255'],
         ])->validate();
 
+        if (! $consentAccepted) {
+            throw CannotCreateLeadException::because('Consent is required to create a lead.');
+        }
+
         $leadsEnabled = $site->features()
             ->where('feature_key', 'leads')
             ->where('is_enabled', true)
@@ -68,7 +72,7 @@ final class CreateLeadAction
             'site_id' => $site->getKey(),
             ...$data,
             'status' => LeadStatus::New,
-            'consent_accepted_at' => $consentAccepted ? now() : null,
+            'consent_accepted_at' => now(),
         ]);
     }
 

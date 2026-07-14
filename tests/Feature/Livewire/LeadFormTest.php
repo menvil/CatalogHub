@@ -79,4 +79,26 @@ class LeadFormTest extends TestCase
             'status' => LeadStatus::New->value,
         ]);
     }
+
+    public function test_lead_form_requires_consent_before_creating_lead(): void
+    {
+        $site = Site::factory()->create();
+        SiteFeature::query()->create([
+            'site_id' => $site->id,
+            'feature_key' => 'leads',
+            'is_enabled' => true,
+        ]);
+
+        Livewire::test(LeadForm::class, ['site' => $site])
+            ->assertSee('privacy policy')
+            ->set('type', LeadType::Other->value)
+            ->set('name', 'Ivan')
+            ->set('email', 'ivan@example.com')
+            ->set('message', 'Help me.')
+            ->set('consentAccepted', false)
+            ->call('submit')
+            ->assertHasErrors(['consentAccepted' => 'accepted']);
+
+        $this->assertDatabaseCount('leads', 0);
+    }
 }

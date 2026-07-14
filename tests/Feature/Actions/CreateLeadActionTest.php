@@ -99,6 +99,33 @@ class CreateLeadActionTest extends TestCase
         );
     }
 
+    public function test_it_does_not_create_a_lead_without_consent(): void
+    {
+        [$site] = $this->leadContext();
+
+        try {
+            app(CreateLeadAction::class)->handle(
+                $site,
+                null,
+                null,
+                LeadType::BuyingAdvice,
+                'Ivan',
+                'ivan@example.com',
+                null,
+                null,
+                'Help me.',
+                false,
+                'en-US',
+                'site_form',
+            );
+            $this->fail('Consent is required to create a lead.');
+        } catch (CannotCreateLeadException $exception) {
+            $this->assertSame('Consent is required to create a lead.', $exception->getMessage());
+        }
+
+        $this->assertDatabaseCount('leads', 0);
+    }
+
     /** @return array{Site, CentralProduct} */
     private function leadContext(bool $featureEnabled = true): array
     {

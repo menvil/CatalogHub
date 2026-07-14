@@ -65,6 +65,7 @@ final class LeadForm extends Component
             'phone' => ['nullable', 'string', 'max:64', 'required_without:email'],
             'city' => ['nullable', 'string', 'max:255'],
             'message' => ['nullable', 'string', 'max:3000'],
+            'consentAccepted' => ['accepted'],
         ]);
 
         try {

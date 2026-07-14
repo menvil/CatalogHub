@@ -15,7 +15,7 @@ final class CreateReviewAction
 {
     public function handle(
         Site $site,
-        CentralProduct $product,
+        CentralProduct|int $product,
         string $authorName,
         ?string $authorEmail,
         int $rating,
@@ -24,6 +24,7 @@ final class CreateReviewAction
         ?string $comment,
         ?string $locale,
     ): Review {
+        $productId = $product instanceof CentralProduct ? $product->getKey() : $product;
         $data = Validator::make([
             'author_name' => trim($authorName),
             'author_email' => $this->nullableText($authorEmail),
@@ -53,7 +54,7 @@ final class CreateReviewAction
 
         $visibleProduct = SiteProductProjection::query()
             ->where('site_id', $site->getKey())
-            ->where('central_product_id', $product->getKey())
+            ->where('central_product_id', $productId)
             ->where('status', ProjectionStatus::Active)
             ->when(
                 $data['locale'] !== null,
@@ -67,7 +68,7 @@ final class CreateReviewAction
 
         return Review::query()->create([
             'site_id' => $site->getKey(),
-            'central_product_id' => $product->getKey(),
+            'central_product_id' => $productId,
             ...$data,
             'status' => ReviewStatus::Pending,
         ]);

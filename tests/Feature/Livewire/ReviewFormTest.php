@@ -27,7 +27,7 @@ class ReviewFormTest extends TestCase
             'product' => $product,
         ])
             ->assertSet('site.id', $site->id)
-            ->assertSet('product.id', $product->id)
+            ->assertSet('productId', $product->id)
             ->assertSee('Leave a review')
             ->assertSee('Your name')
             ->assertSee('Your review');

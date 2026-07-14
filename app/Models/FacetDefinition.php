@@ -98,4 +98,10 @@ final class FacetDefinition extends Model
     {
         return $this->hasMany(FacetOption::class)->orderBy('position')->orderBy('id');
     }
+
+    /** @return HasMany<SiteFacetOverride, $this> */
+    public function siteOverrides(): HasMany
+    {
+        return $this->hasMany(SiteFacetOverride::class);
+    }
 }

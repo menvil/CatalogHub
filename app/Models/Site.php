@@ -71,6 +71,12 @@ final class Site extends Model
         return $this->hasMany(SiteHomeBlock::class);
     }
 
+    /** @return HasMany<SiteFacetOverride, $this> */
+    public function facetOverrides(): HasMany
+    {
+        return $this->hasMany(SiteFacetOverride::class);
+    }
+
     public function isSingleCategory(): bool
     {
         return $this->mode === SiteMode::SingleCategory;

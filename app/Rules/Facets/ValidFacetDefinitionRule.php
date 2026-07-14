@@ -43,6 +43,10 @@ final class ValidFacetDefinitionRule implements DataAwareRule, ValidationRule
         if ($facetType === FacetType::Range) {
             $this->validateRange($sourceType, $fail);
         }
+
+        if ($facetType === FacetType::Boolean) {
+            $this->validateBoolean($sourceType, $fail);
+        }
     }
 
     private function validateRange(FacetSourceType $sourceType, Closure $fail): void
@@ -57,16 +61,31 @@ final class ValidFacetDefinitionRule implements DataAwareRule, ValidationRule
             return;
         }
 
-        $attributeId = $this->value('attribute_definition_id');
-        $categoryId = $this->value('category_id');
-        $attribute = AttributeDefinition::query()
-            ->when(filled($categoryId), fn ($query) => $query->where('central_category_id', $categoryId))
-            ->find($attributeId);
+        $attribute = $this->attribute();
 
         if ($attribute === null
             || ! in_array($attribute->data_type, [AttributeDataType::Integer, AttributeDataType::Decimal], true)) {
             $fail('Range facets require an integer or decimal attribute from the selected category.');
         }
+    }
+
+    private function validateBoolean(FacetSourceType $sourceType, Closure $fail): void
+    {
+        $attribute = $sourceType === FacetSourceType::Attribute ? $this->attribute() : null;
+
+        if ($attribute?->data_type !== AttributeDataType::Boolean) {
+            $fail('Boolean facets require a boolean attribute from the selected category.');
+        }
+    }
+
+    private function attribute(): ?AttributeDefinition
+    {
+        $attributeId = $this->value('attribute_definition_id');
+        $categoryId = $this->value('category_id');
+
+        return AttributeDefinition::query()
+            ->when(filled($categoryId), fn ($query) => $query->where('central_category_id', $categoryId))
+            ->find($attributeId);
     }
 
     private function value(string $key): mixed

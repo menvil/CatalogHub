@@ -77,6 +77,38 @@ class FacetDefinitionValidationTest extends TestCase
         $this->assertTrue($validator->fails());
     }
 
+    public function test_boolean_accepts_boolean_attribute_from_selected_category(): void
+    {
+        $attribute = AttributeDefinition::factory()->create([
+            'data_type' => AttributeDataType::Boolean,
+        ]);
+
+        $validator = $this->validator([
+            'category_id' => $attribute->central_category_id,
+            'attribute_definition_id' => $attribute->id,
+            'source_type' => FacetSourceType::Attribute->value,
+            'facet_type' => FacetType::Boolean->value,
+        ]);
+
+        $this->assertTrue($validator->passes());
+    }
+
+    public function test_boolean_rejects_non_boolean_attribute(): void
+    {
+        $attribute = AttributeDefinition::factory()->create([
+            'data_type' => AttributeDataType::String,
+        ]);
+
+        $validator = $this->validator([
+            'category_id' => $attribute->central_category_id,
+            'attribute_definition_id' => $attribute->id,
+            'source_type' => FacetSourceType::Attribute->value,
+            'facet_type' => FacetType::Boolean->value,
+        ]);
+
+        $this->assertTrue($validator->fails());
+    }
+
     /** @param array<string, mixed> $data */
     private function validator(array $data): \Illuminate\Contracts\Validation\Validator
     {

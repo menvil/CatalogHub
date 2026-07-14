@@ -66,6 +66,24 @@ final class Review extends Model
     }
 
     /** @param Builder<Review> $query */
+    public function scopeRejected(Builder $query): Builder
+    {
+        return $query->where('status', ReviewStatus::Rejected);
+    }
+
+    /** @param Builder<Review> $query */
+    public function scopeSpam(Builder $query): Builder
+    {
+        return $query->where('status', ReviewStatus::Spam);
+    }
+
+    /** @param Builder<Review> $query */
+    public function scopeVisiblePublicly(Builder $query): Builder
+    {
+        return $query->where('status', ReviewStatus::Approved);
+    }
+
+    /** @param Builder<Review> $query */
     public function scopeForSite(Builder $query, Site|int $site): Builder
     {
         return $query->where('site_id', $site instanceof Site ? $site->getKey() : $site);

@@ -14,6 +14,7 @@ use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Site;
 use App\Models\SiteSearchDocument;
 use App\Support\Facets\BooleanFacetValueParser;
+use App\Support\Facets\NumericRangeFacetParser;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
@@ -24,6 +25,7 @@ final readonly class FacetQueryBuilder
     public function __construct(
         private SiteFacetConfigResolver $siteFacets,
         private BooleanFacetValueParser $booleans,
+        private NumericRangeFacetParser $ranges,
     ) {}
 
     /**
@@ -65,6 +67,7 @@ final readonly class FacetQueryBuilder
         $facets = $this->siteFacets->resolve($site, $category);
         $this->applyEnumFilters($query, $facets, $filters);
         $this->applyBooleanFilters($query, $facets, $filters);
+        $this->applyNumericRangeFilters($query, $facets, $filters);
 
         return $query;
     }
@@ -151,6 +154,79 @@ final readonly class FacetQueryBuilder
                 queryKeys: [$facet->code],
             ));
         }
+    }
+
+    /**
+     * @param  Builder<SiteSearchDocument>  $query
+     * @param  Collection<int, FacetDefinitionData>  $facets
+     */
+    private function applyNumericRangeFilters(
+        Builder $query,
+        Collection $facets,
+        FacetFilterSet $filters,
+    ): void {
+        $rangeFacets = $facets->filter(
+            fn (FacetDefinitionData $facet): bool => $facet->type === FacetType::Range
+                && $facet->sourceType === FacetSourceType::Attribute
+                && in_array($facet->attributeDataType, [AttributeDataType::Integer, AttributeDataType::Decimal], true),
+        );
+
+        foreach ($rangeFacets as $facet) {
+            $minimumKey = "{$facet->code}_min";
+            $maximumKey = "{$facet->code}_max";
+
+            if (preg_match('/^[a-zA-Z0-9_]+$/', $facet->code) !== 1
+                || (! $filters->has($minimumKey) && ! $filters->has($maximumKey))) {
+                continue;
+            }
+
+            $range = $this->ranges->parse(
+                $filters->get($minimumKey),
+                $filters->get($maximumKey),
+            );
+
+            if ($range === null) {
+                continue;
+            }
+
+            if ($range['min'] !== null) {
+                $this->applyNumericConstraint($query, $facet->code, '>=', $range['min']);
+            }
+
+            if ($range['max'] !== null) {
+                $this->applyNumericConstraint($query, $facet->code, '<=', $range['max']);
+            }
+
+            $filters->recordAppliedFilter(new AppliedFacetFilter(
+                code: $facet->code,
+                label: $facet->label,
+                value: array_filter([
+                    'min' => $range['min'] === null ? null : $this->ranges->serialize($range['min']),
+                    'max' => $range['max'] === null ? null : $this->ranges->serialize($range['max']),
+                ], fn (?string $value): bool => $value !== null),
+                queryKeys: [$minimumKey, $maximumKey],
+            ));
+        }
+    }
+
+    /** @param Builder<SiteSearchDocument> $query */
+    private function applyNumericConstraint(
+        Builder $query,
+        string $code,
+        string $operator,
+        float $value,
+    ): void {
+        $serialized = $this->ranges->serialize($value);
+        $driver = $query->getConnection()->getDriverName();
+
+        $expression = match ($driver) {
+            'mysql', 'mariadb' => "CAST(JSON_UNQUOTE(JSON_EXTRACT(`filter_values_json`, '$.\"{$code}\"')) AS DECIMAL(65, 20)) {$operator} CAST(? AS DECIMAL(65, 20))",
+            'pgsql' => "CAST(\"filter_values_json\"->>'{$code}' AS NUMERIC) {$operator} CAST(? AS NUMERIC)",
+            'sqlsrv' => "TRY_CAST(JSON_VALUE([filter_values_json], '$.{$code}') AS FLOAT) {$operator} TRY_CAST(? AS FLOAT)",
+            default => "CAST(json_extract(\"filter_values_json\", '$.\"{$code}\"') AS REAL) {$operator} CAST(? AS REAL)",
+        };
+
+        $query->whereRaw($expression, [$serialized]);
     }
 
     /**

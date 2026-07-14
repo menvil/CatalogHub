@@ -4,6 +4,7 @@
     'action' => null,
     'sort' => null,
     'id' => 'mobile-filter-drawer',
+    'clearUrl' => null,
 ])
 
 @php
@@ -114,7 +115,7 @@
             </div>
 
             <div class="sticky bottom-0 grid grid-cols-2 gap-3 border-t border-slate-200 bg-white p-4 shadow-[0_-8px_24px_rgba(15,23,42,0.08)]">
-                <button type="reset" class="rounded-xl border border-slate-300 px-4 py-3 font-semibold text-slate-700">Clear filters</button>
+                <a href="{{ $clearUrl ?: app(\App\Support\Facets\FacetUrlBuilder::class)->clearAll($action ?: url()->current()) }}" class="rounded-xl border border-slate-300 px-4 py-3 text-center font-semibold text-slate-700">Clear filters</a>
                 <button type="submit" class="rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white">Apply filters</button>
             </div>
         </form>

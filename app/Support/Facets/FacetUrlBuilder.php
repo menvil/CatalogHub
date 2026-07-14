@@ -6,6 +6,15 @@ use App\Data\Facets\AppliedFacetFilter;
 
 final class FacetUrlBuilder
 {
+    public function removeFilter(string $currentUrl, string $filterKey): string
+    {
+        $query = [];
+        parse_str((string) parse_url($currentUrl, PHP_URL_QUERY), $query);
+        unset($query[$filterKey], $query['page']);
+
+        return $this->toUrl($this->clearAll($currentUrl), $query);
+    }
+
     /** @param array<string, mixed> $query */
     public function removeAppliedFilter(
         string $baseUrl,
@@ -38,7 +47,7 @@ final class FacetUrlBuilder
 
     public function clearAll(string $baseUrl): string
     {
-        return strtok($baseUrl, '?') ?: $baseUrl;
+        return preg_split('/[?#]/', $baseUrl, 2)[0] ?: $baseUrl;
     }
 
     /** @param array<string, mixed> $query */

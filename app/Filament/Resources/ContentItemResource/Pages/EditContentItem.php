@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ContentItemResource\Pages;
 
+use App\Enums\ContentType;
 use App\Filament\Resources\ContentItemResource;
 use App\Models\ContentItem;
 use App\Models\User;
@@ -52,6 +53,7 @@ final class EditContentItem extends EditRecord
         $data['translation_slug'] = $translation?->slug;
         $data['translation_excerpt'] = $translation?->excerpt;
         $data['translation_body'] = $translation?->body;
+        $data['translation_body_json'] = $translation?->body_json;
 
         return $data;
     }
@@ -70,20 +72,35 @@ final class EditContentItem extends EditRecord
      */
     private function extractTranslationData(array &$data): array
     {
+        $isFaq = $data['type'] === ContentType::Faq->value;
         $translation = [
             'locale' => $data['translation_locale'],
             'title' => $data['translation_title'],
             'slug' => $data['translation_slug'],
             'excerpt' => $data['translation_excerpt'] ?? null,
-            'body' => $data['translation_body'],
+            'body' => $isFaq ? null : $data['translation_body'],
+            'body_json' => $isFaq ? $this->faqItems($data['translation_body_json']) : null,
             'status' => $data['status'] === 'published' ? 'published' : 'draft',
         ];
 
-        foreach (['locale', 'title', 'slug', 'excerpt', 'body'] as $key) {
+        foreach (['locale', 'title', 'slug', 'excerpt', 'body', 'body_json'] as $key) {
             unset($data['translation_'.$key]);
         }
 
         return $translation;
+    }
+
+    /**
+     * @param  array<int, array{question: string, answer: string}>  $items
+     * @return array<int, array{question: string, answer: string, position: int}>
+     */
+    private function faqItems(array $items): array
+    {
+        return array_map(
+            fn (array $item, int $position): array => [...$item, 'position' => $position],
+            array_values($items),
+            array_keys(array_values($items)),
+        );
     }
 
     private function contentItem(): ContentItem

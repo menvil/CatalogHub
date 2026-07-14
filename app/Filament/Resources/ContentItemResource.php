@@ -79,6 +79,7 @@ final class ContentItemResource extends Resource
                 ->required(),
             Select::make('type')
                 ->options(ContentType::options())
+                ->live()
                 ->required(),
             Select::make('status')
                 ->options([

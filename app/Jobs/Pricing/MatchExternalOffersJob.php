@@ -1,0 +1,187 @@
+<?php
+
+namespace App\Jobs\Pricing;
+
+use App\Enums\ExternalProductMappingStatus;
+use App\Enums\RawPriceOfferStatus;
+use App\Jobs\Pricing\Concerns\UsesPriceSourceRetryPolicy;
+use App\Models\ExternalProductMapping;
+use App\Models\PriceSource;
+use App\Models\PriceSourceSyncLog;
+use App\Models\RawPriceOffer;
+use App\Services\Pricing\PriceSourceSyncStatusService;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Queue\Queueable;
+use LogicException;
+use Throwable;
+
+final class MatchExternalOffersJob implements ShouldQueue
+{
+    use Queueable, UsesPriceSourceRetryPolicy;
+
+    public function __construct(
+        public int $priceSourceId,
+        public int $priceSourceSyncLogId,
+    ) {}
+
+    public function handle(?PriceSourceSyncStatusService $statusService = null): void
+    {
+        $statusService ??= app(PriceSourceSyncStatusService::class);
+        $source = PriceSource::query()->findOrFail($this->priceSourceId);
+        $log = PriceSourceSyncLog::query()->findOrFail($this->priceSourceSyncLogId);
+
+        try {
+            $rows = RawPriceOffer::query()
+                ->where('price_source_id', $source->id)
+                ->where('price_source_sync_log_id', $log->id)
+                ->where('status', RawPriceOfferStatus::Normalized->value)
+                ->get();
+
+            foreach ($rows as $row) {
+                if (blank($row->external_product_id) && blank($row->external_sku)) {
+                    $row->update([
+                        'status' => RawPriceOfferStatus::Failed,
+                        'error_message' => 'An external product identity or SKU is required for mapping.',
+                    ]);
+
+                    continue;
+                }
+
+                $mapping = $this->mappingFor($row);
+
+                if (
+                    $mapping->status === ExternalProductMappingStatus::Approved
+                    && $mapping->central_product_id !== null
+                ) {
+                    $row->update([
+                        'status' => RawPriceOfferStatus::Matched,
+                        'error_message' => null,
+                    ]);
+                }
+            }
+
+            $log->update([
+                'items_matched' => RawPriceOffer::query()
+                    ->where('price_source_id', $source->id)
+                    ->where('price_source_sync_log_id', $log->id)
+                    ->where('status', RawPriceOfferStatus::Matched->value)
+                    ->count(),
+            ]);
+
+            UpdateMarketOffersJob::dispatch($source->id, $log->id)->afterCommit();
+        } catch (Throwable $exception) {
+            $willRetry = $this->shouldRetryFailure($source, $exception);
+            $statusService->fail(
+                $source,
+                $log,
+                $exception->getMessage(),
+                $this->retryFailureMetadata($log, 'match', $willRetry),
+            );
+
+            if (! $willRetry) {
+                $this->fail($exception);
+            }
+
+            throw $exception;
+        }
+    }
+
+    public function failed(?Throwable $exception): void
+    {
+        $this->markFailed($exception ?? new \RuntimeException('Price source matching failed.'), 'match');
+    }
+
+    private function mappingFor(RawPriceOffer $row): ExternalProductMapping
+    {
+        $mapping = null;
+
+        if (filled($row->external_product_id)) {
+            $mapping = ExternalProductMapping::query()
+                ->where('price_source_id', $row->price_source_id)
+                ->where('external_product_id', $row->external_product_id)
+                ->first();
+        }
+
+        if ($mapping === null && filled($row->external_sku)) {
+            $mapping = ExternalProductMapping::query()
+                ->where('price_source_id', $row->price_source_id)
+                ->where('external_sku', $row->external_sku)
+                ->first();
+        }
+
+        if ($mapping === null) {
+            $mapping = $this->createPendingMapping($row);
+        }
+
+        $normalized = $row->normalized_payload_json ?? [];
+        $changes = [];
+
+        if (blank($mapping->external_title) && filled($row->external_title)) {
+            $changes['external_title'] = $row->external_title;
+        }
+
+        if (blank($mapping->external_url) && filled($normalized['url'] ?? null)) {
+            $changes['external_url'] = $normalized['url'];
+        }
+
+        if ($changes !== []) {
+            $mapping->update($changes);
+        }
+
+        $mapping->refresh();
+
+        return $mapping;
+    }
+
+    private function createPendingMapping(RawPriceOffer $row): ExternalProductMapping
+    {
+        $normalized = $row->normalized_payload_json ?? [];
+        $values = [
+            'external_product_id' => $row->external_product_id,
+            'external_sku' => $row->external_sku,
+            'external_title' => $row->external_title,
+            'external_url' => $normalized['url'] ?? null,
+            'status' => ExternalProductMappingStatus::Pending,
+            'metadata' => array_filter([
+                'brand_name' => $normalized['brand_name'] ?? null,
+                'model_name' => $normalized['model_name'] ?? null,
+            ]),
+        ];
+
+        if (filled($row->external_product_id)) {
+            return ExternalProductMapping::query()->firstOrCreate([
+                'price_source_id' => $row->price_source_id,
+                'external_product_id' => $row->external_product_id,
+            ], $values);
+        }
+
+        if (filled($row->external_sku)) {
+            return ExternalProductMapping::query()->firstOrCreate([
+                'price_source_id' => $row->price_source_id,
+                'external_sku' => $row->external_sku,
+            ], $values);
+        }
+
+        throw new LogicException('Cannot create an external product mapping without a reusable identity.');
+    }
+
+    private function markFailed(Throwable $exception, string $stage): void
+    {
+        $source = PriceSource::query()->find($this->priceSourceId);
+        $log = PriceSourceSyncLog::query()->find($this->priceSourceSyncLogId);
+
+        if ($source instanceof PriceSource && $log instanceof PriceSourceSyncLog) {
+            app(PriceSourceSyncStatusService::class)->fail(
+                $source,
+                $log,
+                $exception->getMessage(),
+                ['stage' => $stage],
+            );
+        }
+    }
+
+    protected function retryPriceSourceId(): int
+    {
+        return $this->priceSourceId;
+    }
+}

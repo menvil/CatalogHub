@@ -15,6 +15,7 @@ use App\Http\Controllers\Public\HomeController as PublicHomeController;
 use App\Http\Controllers\Public\ProductController as PublicProductController;
 use App\Http\Controllers\Public\ProductListingController as PublicProductListingController;
 use App\Http\Controllers\Public\SearchController as PublicSearchController;
+use App\Http\Controllers\Public\TrackOfferClickController;
 use Illuminate\Support\Facades\Route;
 
 require __DIR__.'/health.php';
@@ -22,6 +23,10 @@ require __DIR__.'/health.php';
 Route::get('/', function () {
     return view('pages.home');
 });
+
+Route::get('/offers/{offer}/go', TrackOfferClickController::class)
+    ->whereNumber('offer')
+    ->name('public.offers.go');
 
 Route::get('/{locale}', PublicHomeController::class)
     ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')

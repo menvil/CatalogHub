@@ -46,7 +46,7 @@ class OfferCardTest extends TestCase
 
     public function test_it_disables_the_action_until_a_tracked_url_is_available(): void
     {
-        $offer = MarketOffer::factory()->create();
+        $offer = MarketOffer::factory()->create(['url' => null]);
         $offer->load('merchant.logoMediaAsset');
 
         $html = Blade::render(
@@ -55,6 +55,5 @@ class OfferCardTest extends TestCase
         );
 
         $this->assertStringContainsString('aria-disabled="true"', $html);
-        $this->assertStringNotContainsString((string) $offer->url, $html);
     }
 }

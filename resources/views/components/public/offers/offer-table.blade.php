@@ -29,7 +29,11 @@
                         <x-public.price-freshness-badge :status="$freshness[$offer->getKey()] ?? \App\Enums\PriceFreshnessStatus::Unknown" />
                     </td>
                     <td class="whitespace-nowrap px-4 py-4 sm:px-6">
-                        <span aria-disabled="true" class="inline-flex cursor-not-allowed rounded-lg bg-slate-200 px-3 py-2 font-semibold text-slate-500">Go to shop</span>
+                        @if (filled($offer->url))
+                            <a href="{{ route('public.offers.go', ['offer' => $offer], false) }}" rel="nofollow sponsored" class="inline-flex rounded-lg bg-blue-600 px-3 py-2 font-semibold text-white transition hover:bg-blue-500">Go to shop</a>
+                        @else
+                            <span aria-disabled="true" class="inline-flex cursor-not-allowed rounded-lg bg-slate-200 px-3 py-2 font-semibold text-slate-500">Go to shop</span>
+                        @endif
                     </td>
                 </tr>
             @endforeach

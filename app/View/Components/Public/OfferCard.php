@@ -33,6 +33,9 @@ final class OfferCard extends Component
         public ?string $actionUrl = null,
         public string $locale = 'en',
     ) {
+        $this->actionUrl ??= filled($offer->url)
+            ? route('public.offers.go', ['offer' => $offer], false)
+            : null;
         $this->freshness = is_string($freshness)
             ? PriceFreshnessStatus::tryFrom($freshness) ?? PriceFreshnessStatus::Unknown
             : $freshness;

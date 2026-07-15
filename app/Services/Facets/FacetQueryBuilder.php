@@ -73,6 +73,7 @@ final readonly class FacetQueryBuilder
         $this->applyEnumFilters($query, $facets, $filters);
         $this->applyBooleanFilters($query, $facets, $filters);
         $this->applyNumericRangeFilters($query, $facets, $filters);
+        $this->applyPriceRangeFilter($query, $filters);
         $this->applyRatingFilter($query, $filters);
         $this->applySorting($query, $filters);
 
@@ -82,7 +83,7 @@ final readonly class FacetQueryBuilder
     /** @param Collection<int, FacetDefinitionData> $facets */
     private function retainKnownFilters(FacetFilterSet $filters, Collection $facets): void
     {
-        $keys = ['brand', 'rating_min', 'sort'];
+        $keys = ['brand', 'price_from', 'price_to', 'rating_min', 'sort'];
 
         foreach ($facets as $facet) {
             if ($this->isNumericRangeFacet($facet)) {
@@ -276,6 +277,57 @@ final readonly class FacetQueryBuilder
             label: 'Rating',
             value: $this->ranges->serialize($minimum),
             queryKeys: ['rating_min'],
+        ));
+    }
+
+    /** @param Builder<SiteSearchDocument> $query */
+    private function applyPriceRangeFilter(Builder $query, FacetFilterSet $filters): void
+    {
+        if (! $filters->has('price_from') && ! $filters->has('price_to')) {
+            return;
+        }
+
+        $range = $this->ranges->parse($filters->get('price_from'), $filters->get('price_to'));
+
+        if ($range === null) {
+            $filters->forget('price_from', 'price_to');
+
+            return;
+        }
+
+        $minimum = $range['min'] === null ? null : max(0.0, $range['min']);
+        $maximum = $range['max'] === null ? null : max(0.0, $range['max']);
+
+        if ($minimum === null) {
+            $filters->forget('price_from');
+        } else {
+            $filters->replace('price_from', $this->ranges->serialize($minimum));
+        }
+
+        if ($maximum === null) {
+            $filters->forget('price_to');
+        } else {
+            $filters->replace('price_to', $this->ranges->serialize($maximum));
+        }
+
+        $query->whereNotNull('min_price');
+
+        if ($minimum !== null) {
+            $query->where('min_price', '>=', $minimum);
+        }
+
+        if ($maximum !== null) {
+            $query->where('min_price', '<=', $maximum);
+        }
+
+        $filters->recordAppliedFilter(new AppliedFacetFilter(
+            code: 'price',
+            label: 'Price',
+            value: array_filter([
+                'from' => $minimum === null ? null : $this->ranges->serialize($minimum),
+                'to' => $maximum === null ? null : $this->ranges->serialize($maximum),
+            ], fn (?string $value): bool => $value !== null),
+            queryKeys: ['price_from', 'price_to'],
         ));
     }
 

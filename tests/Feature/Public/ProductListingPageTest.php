@@ -38,12 +38,13 @@ class ProductListingPageTest extends TestCase
         DB::flushQueryLog();
         DB::enableQueryLog();
 
-        $this->get('http://tech-compare.test/en-US/categories/monitors/products?sort=name_asc&per_page=1')
+        $this->get('http://tech-compare.test/en-US/categories/monitors/products?sort=name_asc&price_from=50&per_page=1')
             ->assertOk()
             ->assertSee('Alpha Display')
             ->assertDontSee('Zeta Display')
             ->assertDontSee('German Display')
-            ->assertSee('page=2', false);
+            ->assertSee('page=2', false)
+            ->assertSee('price_from=50', false);
 
         $queries = DB::getQueryLog();
         DB::disableQueryLog();
@@ -143,6 +144,7 @@ class ProductListingPageTest extends TestCase
             'slug' => $slug,
             'filter_values_json' => ['category_id' => $category->id, ...$filterValues],
             'sort_values_json' => ['title' => $title, 'rating' => null],
+            'min_price' => '100.00',
             'payload_json' => $projection->payload_json,
             'built_at' => $projection->built_at,
         ]);

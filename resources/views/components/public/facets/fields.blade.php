@@ -2,6 +2,7 @@
     'facets',
     'filters' => [],
     'variant' => 'desktop',
+    'currency' => null,
 ])
 
 @php
@@ -14,6 +15,33 @@
         return array_values(array_filter(array_map(static fn (mixed $item): string => trim((string) $item), $values)));
     };
 @endphp
+
+<details open class="group px-5 py-4">
+    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-slate-900">
+        <span>Price{{ filled($currency) ? ' ('.$currency.')' : '' }}</span>
+        <span aria-hidden="true" class="text-slate-400 transition group-open:rotate-180">⌄</span>
+    </summary>
+
+    <div @class(['mt-4 grid grid-cols-2', 'gap-3' => $isMobile, 'gap-2' => ! $isMobile])>
+        @foreach (['price_from' => 'From', 'price_to' => 'To'] as $name => $label)
+            <label class="text-sm text-slate-600">
+                <span>{{ $label }}</span>
+                <input
+                    type="number"
+                    name="{{ $name }}"
+                    value="{{ $filterValues[$name] ?? '' }}"
+                    min="0"
+                    step="0.01"
+                    @class([
+                        'mt-1 w-full rounded-lg border border-slate-300 px-3 text-slate-900',
+                        'py-3' => $isMobile,
+                        'py-2' => ! $isMobile,
+                    ])
+                >
+            </label>
+        @endforeach
+    </div>
+</details>
 
 @foreach ($facets as $facet)
     @php

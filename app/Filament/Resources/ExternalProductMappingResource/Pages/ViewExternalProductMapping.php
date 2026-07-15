@@ -8,4 +8,9 @@ use Filament\Resources\Pages\ViewRecord;
 final class ViewExternalProductMapping extends ViewRecord
 {
     protected static string $resource = ExternalProductMappingResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [ExternalProductMappingResource::approveAction()];
+    }
 }

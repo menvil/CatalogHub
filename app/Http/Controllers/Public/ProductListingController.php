@@ -33,6 +33,7 @@ final class ProductListingController extends Controller
         FacetUrlBuilder $facetUrls,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
+        $site->loadMissing('market');
         $category = SiteCategoryProjection::query()
             ->where('site_id', $site->id)
             ->where('locale', $locale)
@@ -101,6 +102,7 @@ final class ProductListingController extends Controller
             'appliedFilters' => $filters->appliedFilters(),
             'sort' => PublicProductSort::fromInput($filters->get('sort'))->value,
             'sortOptions' => PublicProductSort::options(),
+            'currency' => $site->market->currency_code,
             'listingUrl' => $listingUrl,
             'clearFiltersUrl' => $facetUrls->clearAll($listingUrl),
             'categoryUrl' => $urls->category($site, $locale, $category),

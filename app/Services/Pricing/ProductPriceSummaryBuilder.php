@@ -14,12 +14,13 @@ final class ProductPriceSummaryBuilder
     public function build(int $siteId, int $centralProductId): ProductPriceSummary
     {
         $site = Site::query()->with('market')->findOrFail($siteId);
-        $minimum = $this->validOffers($site, $centralProductId)
-            ->orderBy('price')
-            ->value('price');
+        $offers = $this->validOffers($site, $centralProductId);
+        $minimum = (clone $offers)->min('price');
+        $maximum = (clone $offers)->max('price');
 
         return new ProductPriceSummary(
-            minPrice: $minimum === null ? null : number_format((float) $minimum, 2, '.', ''),
+            minPrice: $this->money($minimum),
+            maxPrice: $this->money($maximum),
         );
     }
 
@@ -36,5 +37,10 @@ final class ProductPriceSummaryBuilder
                     ->where('market_id', $site->market_id)
                     ->where('status', PriceSourceStatus::Active);
             });
+    }
+
+    private function money(mixed $value): ?string
+    {
+        return $value === null ? null : number_format((float) $value, 2, '.', '');
     }
 }

@@ -26,6 +26,7 @@ class SiteSearchDocumentFactory extends Factory
             'status' => ProjectionStatus::Active,
             'search_text' => $title,
             'min_price' => null,
+            'max_price' => null,
             'filter_values_json' => [],
             'sort_values_json' => [],
             'payload_json' => [],

@@ -13,6 +13,7 @@
         ? $product['rating']
         : (is_array($summary['rating'] ?? null) ? $summary['rating'] : null);
     $ratingValue = is_array($rating) ? ($rating['value'] ?? $rating['average'] ?? null) : null;
+    $price = is_array($product['price'] ?? null) ? $product['price'] : ['has_offers' => false];
 @endphp
 
 <article
@@ -53,6 +54,33 @@
                 @endforeach
             </ul>
         @endif
+
+        <div data-product-card-price class="mt-4 border-t border-slate-100 pt-4">
+            @if ($price['has_offers'] ?? false)
+                <div class="text-lg font-bold text-slate-950">From {{ $price['formatted_min_price'] }}</div>
+                <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm">
+                    <span class="text-slate-600">
+                        {{ $price['offers_count'] }} {{ Str::plural('offer', $price['offers_count']) }}
+                    </span>
+                    @if ($price['in_stock'])
+                        <span class="font-medium text-emerald-700">In stock</span>
+                    @else
+                        <span class="font-medium text-slate-500">Currently unavailable</span>
+                    @endif
+                </div>
+                <div @class([
+                    'mt-1 text-xs',
+                    'text-slate-500' => ($price['freshness'] ?? null) === 'fresh',
+                    'font-medium text-amber-700' => ($price['freshness'] ?? null) === 'stale',
+                    'font-semibold text-red-700' => ($price['freshness'] ?? null) === 'expired',
+                    'text-slate-500' => ($price['freshness'] ?? null) === 'unknown',
+                ])>
+                    {{ $price['freshness_summary'] }}
+                </div>
+            @else
+                <div class="text-sm font-medium text-slate-500">No current offers</div>
+            @endif
+        </div>
 
         <div class="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-4 text-sm">
             @if (is_numeric($ratingValue))

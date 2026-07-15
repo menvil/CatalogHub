@@ -16,23 +16,11 @@
             </div>
         @endif
 
-        <ul class="divide-y divide-slate-200" aria-label="Available offers">
-            @foreach ($offers->take(3) as $offer)
-                <li class="flex flex-wrap items-center justify-between gap-3 px-6 py-4 sm:px-8">
-                    <div>
-                        <p class="font-semibold text-slate-950">{{ $offer->merchant?->name ?? 'Merchant' }}</p>
-                        <div class="mt-2 flex flex-wrap items-center gap-2">
-                            <p class="text-sm text-slate-500">{{ str($offer->availability->value)->headline() }}</p>
-                            <x-public.price-freshness-badge :status="$freshness[$offer->getKey()] ?? \App\Enums\PriceFreshnessStatus::Unknown" />
-                        </div>
-                    </div>
-                    <p class="text-lg font-bold tabular-nums text-slate-950">{{ $formattedPrices[$offer->getKey()] }}</p>
-                </li>
-            @endforeach
-        </ul>
-
-        @if ($offers->count() > 3)
-            <p class="border-t border-slate-200 px-6 py-3 text-sm text-slate-500 sm:px-8">{{ $offers->count() - 3 }} more offers available below.</p>
-        @endif
+        <x-public.offer-table
+            :offers="$offers"
+            :freshness="$freshness"
+            :best-offer="$bestOffer"
+            :locale="$locale"
+        />
     @endif
 </section>

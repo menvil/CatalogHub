@@ -135,6 +135,7 @@ final class SiteResource extends Resource
             'pricing-preview' => Pages\OfferProviderPreview::route('/{record}/pricing/preview'),
             'products-without-offers' => Pages\ProductsWithoutOffersReport::route('/{record}/pricing/products-without-offers'),
             'offers-coverage' => Pages\OffersCoverageDashboard::route('/{record}/pricing/coverage'),
+            'cheapest-products' => Pages\CheapestProductsReport::route('/{record}/pricing/cheapest-products'),
         ];
     }
 

@@ -133,6 +133,7 @@ final class SiteResource extends Resource
             'themes' => Pages\ThemeSelection::route('/{record}/themes'),
             'home-blocks' => Pages\HomepageBlocksEditor::route('/{record}/home-blocks'),
             'pricing-preview' => Pages\OfferProviderPreview::route('/{record}/pricing/preview'),
+            'products-without-offers' => Pages\ProductsWithoutOffersReport::route('/{record}/pricing/products-without-offers'),
         ];
     }
 

@@ -6,6 +6,7 @@ use App\Enums\PriceFreshnessStatus;
 use App\Models\MarketOffer;
 use App\Models\MediaAsset;
 use App\Services\Media\MediaUrlGenerator;
+use App\Services\Pricing\OfferDeliveryFormatter;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Number;
 use Illuminate\View\Component;
@@ -24,6 +25,7 @@ final class OfferCard extends Component
 
     public function __construct(
         MediaUrlGenerator $mediaUrls,
+        OfferDeliveryFormatter $deliveryFormatter,
         public MarketOffer $offer,
         PriceFreshnessStatus|string $freshness = PriceFreshnessStatus::Unknown,
         public ?string $actionUrl = null,
@@ -41,9 +43,7 @@ final class OfferCard extends Component
         $this->merchantLogoUrl = $logo instanceof MediaAsset ? $mediaUrls->forAsset($logo) : null;
         $merchantName = trim($offer->merchant->name);
         $this->merchantInitial = mb_strtoupper(mb_substr($merchantName, 0, 1));
-        $this->deliverySummary = $offer->delivery_price === null
-            ? 'Delivery details unavailable'
-            : 'Delivery details available';
+        $this->deliverySummary = $deliveryFormatter->price($offer, $locale);
     }
 
     public function render(): View

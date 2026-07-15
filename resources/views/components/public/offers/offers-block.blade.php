@@ -4,7 +4,9 @@
         <h2 id="offers-heading-{{ $productProjection->getKey() }}" class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Where to buy</h2>
     </div>
 
-    @if ($offers->isEmpty())
+    @if ($externalWidget)
+        <x-public.external-price-widget-block :widget="$externalWidget" />
+    @elseif ($offers->isEmpty())
         <div class="px-6 py-8 text-slate-600 sm:px-8">
             <p class="font-semibold text-slate-900">No current offers</p>
             <p class="mt-1 text-sm">We do not have a reliable price for this product right now.</p>

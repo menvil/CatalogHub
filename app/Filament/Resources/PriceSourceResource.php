@@ -157,6 +157,14 @@ final class PriceSourceResource extends Resource
                             'price_source_id' => ['value' => $record->id],
                         ],
                     ])),
+                Action::make('rawOffers')
+                    ->label('View raw offers')
+                    ->icon(Heroicon::OutlinedCircleStack)
+                    ->url(fn (PriceSource $record): string => RawPriceOfferResource::getUrl('index', [
+                        'tableFilters' => [
+                            'price_source_id' => ['value' => $record->id],
+                        ],
+                    ])),
                 Action::make('credentials')
                     ->label('Update credentials')
                     ->icon(Heroicon::OutlinedKey)

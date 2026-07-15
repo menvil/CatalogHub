@@ -115,6 +115,15 @@ final class ExternalProductMappingResource extends Resource
             TextEntry::make('external_title')->label('External title')->placeholder('None')->columnSpanFull(),
             TextEntry::make('external_url')->label('External URL')->url(fn (?string $state): ?string => $state)->placeholder('None')->columnSpanFull(),
             TextEntry::make('centralProduct.name')->label('Central product')->placeholder('Not mapped'),
+            TextEntry::make('raw_offers')
+                ->label('Raw offers')
+                ->state('View matching raw offers')
+                ->url(fn (ExternalProductMapping $record): string => RawPriceOfferResource::getUrl('index', [
+                    'tableFilters' => [
+                        'price_source_id' => ['value' => $record->price_source_id],
+                    ],
+                    'tableSearch' => $record->external_sku ?? $record->external_product_id,
+                ])),
             TextEntry::make('approved_at')->dateTime()->placeholder('Not approved'),
             TextEntry::make('approvedByUser.name')->label('Approved by')->placeholder('None'),
             TextEntry::make('rejected_at')->dateTime()->placeholder('Not rejected'),

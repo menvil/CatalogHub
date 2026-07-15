@@ -53,7 +53,7 @@ class FacetQueryBuilderSortingTest extends TestCase
             SiteSearchDocument::query(),
             $site,
             $category,
-            FacetFilterSet::fromArray(['sort' => 'price_asc']),
+            FacetFilterSet::fromArray(['sort' => 'price_sideways']),
         )->get();
 
         $this->assertSame([$newer->id, $older->id], $results->pluck('id')->all());

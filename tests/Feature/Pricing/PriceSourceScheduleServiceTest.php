@@ -8,6 +8,7 @@ use App\Jobs\Pricing\FetchExternalOffersJob;
 use App\Models\PriceSource;
 use App\Models\PriceSourceSyncLog;
 use App\Services\Pricing\PriceSourceScheduleService;
+use Illuminate\Console\Command;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Bus;
@@ -56,7 +57,7 @@ class PriceSourceScheduleServiceTest extends TestCase
 
         $exitCode = Artisan::call('pricing:sync-due-sources');
 
-        $this->assertSame(0, $exitCode);
+        $this->assertSame(Command::SUCCESS, $exitCode);
         $this->assertSame(1, $source->syncLogs()->count());
         Bus::assertDispatched(FetchExternalOffersJob::class);
     }
@@ -90,7 +91,7 @@ class PriceSourceScheduleServiceTest extends TestCase
 
         $output = Artisan::output();
 
-        $this->assertSame(0, $exitCode);
+        $this->assertSame(Command::FAILURE, $exitCode);
         $this->assertSame(0, $failingSource->syncLogs()->count());
         $this->assertSame(1, $healthySource->syncLogs()->count());
         $this->assertStringContainsString('Broken Feed', $output);

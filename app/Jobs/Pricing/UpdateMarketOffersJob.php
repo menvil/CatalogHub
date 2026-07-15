@@ -41,6 +41,11 @@ final class UpdateMarketOffersJob implements ShouldQueue
 
         try {
             $offerIds = DB::transaction(function () use ($source, $log): array {
+                PriceSource::query()
+                    ->whereKey($source->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
                 $offerIds = [];
                 $rows = RawPriceOffer::query()
                     ->where('price_source_id', $source->id)

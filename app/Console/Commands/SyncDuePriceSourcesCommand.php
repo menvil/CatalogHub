@@ -19,18 +19,20 @@ final class SyncDuePriceSourcesCommand extends Command
     ): int {
         $sources = $scheduleService->dueSources();
         $queued = 0;
+        $failures = 0;
 
         foreach ($sources as $source) {
             try {
                 $syncService->sync($source);
                 $queued++;
             } catch (Throwable $exception) {
+                $failures++;
                 $this->error("Failed to queue [{$source->name}]: {$exception->getMessage()}");
             }
         }
 
         $this->info("Queued {$queued} due price source sync(s).");
 
-        return self::SUCCESS;
+        return $failures > 0 ? self::FAILURE : self::SUCCESS;
     }
 }

@@ -5,7 +5,7 @@ namespace App\Data\Pricing;
 final readonly class PriceSourceFetchResult
 {
     /**
-     * @param  list<array<string, mixed>>  $offers
+     * @param  list<array<array-key, mixed>>  $offers
      * @param  array<string, mixed>  $metadata
      */
     public function __construct(
@@ -13,10 +13,10 @@ final readonly class PriceSourceFetchResult
         public array $metadata = [],
     ) {}
 
-    /** @param list<array<string, mixed>> $offers */
+    /** @param list<array<array-key, mixed>> $offers */
     public static function fromOffers(array $offers, array $metadata = []): self
     {
-        return new self(array_values($offers), $metadata);
+        return new self($offers, $metadata);
     }
 
     public static function empty(): self

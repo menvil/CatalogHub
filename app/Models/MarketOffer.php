@@ -6,6 +6,7 @@ use App\Enums\MarketOfferStatus;
 use App\Enums\OfferAvailability;
 use App\Enums\OfferCondition;
 use App\Models\CentralCatalog\CentralProduct;
+use Carbon\CarbonInterface;
 use Database\Factories\MarketOfferFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,6 +21,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property OfferCondition $condition
  * @property MarketOfferStatus $status
  * @property array<string, mixed>|null $metadata
+ * @property CarbonInterface $last_seen_at
+ * @property CarbonInterface $last_checked_at
  */
 #[Fillable([
     'market_id', 'market_merchant_id', 'central_product_id', 'price_source_id',

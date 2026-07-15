@@ -6,6 +6,7 @@ use App\Enums\OfferAvailability;
 use App\Enums\OfferCondition;
 use App\Models\MarketOffer;
 use App\Models\PriceHistory;
+use Carbon\CarbonInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -29,6 +30,6 @@ class PriceHistoryTest extends TestCase
         $this->assertSame(OfferAvailability::InStock, $history->availability);
         $this->assertSame(OfferCondition::New, $history->condition);
         $this->assertSame(['source' => 'manual'], $history->source_snapshot_json);
-        $this->assertNotNull($history->checked_at);
+        $this->assertInstanceOf(CarbonInterface::class, $history->checked_at);
     }
 }

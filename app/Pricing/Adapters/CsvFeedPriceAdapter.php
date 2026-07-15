@@ -67,7 +67,7 @@ final class CsvFeedPriceAdapter implements PriceSourceAdapterInterface
 
     /**
      * @param  array<string, mixed>  $config
-     * @return list<array<string, mixed>>
+     * @return list<array<array-key, mixed>>
      */
     private function parseCsv(string $content, array $config): array
     {
@@ -107,7 +107,7 @@ final class CsvFeedPriceAdapter implements PriceSourceAdapterInterface
         return $mapped;
     }
 
-    /** @return list<array<string, mixed>> */
+    /** @return list<array<array-key, mixed>> */
     private function validatedRows(mixed $rows): array
     {
         if (! is_array($rows)) {
@@ -120,7 +120,6 @@ final class CsvFeedPriceAdapter implements PriceSourceAdapterInterface
             }
         }
 
-        /** @var list<array<string, mixed>> $rows */
         return array_values($rows);
     }
 

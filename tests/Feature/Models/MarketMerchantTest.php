@@ -25,6 +25,6 @@ class MarketMerchantTest extends TestCase
         $this->assertInstanceOf(MediaAsset::class, $merchant->logoMediaAsset);
         $this->assertSame(MarketMerchantStatus::Active, $merchant->status);
         $this->assertSame(['verified' => true], $merchant->metadata);
-        $this->assertTrue(method_exists($merchant, 'offers'));
+        $this->assertCount(0, $merchant->offers);
     }
 }

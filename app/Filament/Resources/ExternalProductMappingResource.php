@@ -3,15 +3,19 @@
 namespace App\Filament\Resources;
 
 use App\Actions\Pricing\ApproveExternalProductMappingAction;
+use App\Actions\Pricing\ManualRemapExternalProductAction;
 use App\Actions\Pricing\RejectExternalProductMappingAction;
+use App\Enums\CentralProductStatus;
 use App\Enums\ExternalProductMappingStatus;
 use App\Filament\Resources\ExternalProductMappingResource\Pages;
+use App\Models\CentralCatalog\CentralProduct;
 use App\Models\ExternalProductMapping;
 use App\Models\Market;
 use App\Models\User;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
@@ -60,7 +64,7 @@ final class ExternalProductMappingResource extends Resource
     /** @return Builder<ExternalProductMapping> */
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with([
+        return ExternalProductMapping::query()->with([
             'priceSource.market',
             'centralProduct',
             'approvedByUser',
@@ -107,6 +111,7 @@ final class ExternalProductMappingResource extends Resource
             ->recordActions([
                 self::approveAction(),
                 self::rejectAction(),
+                self::manualRemapAction(),
                 ViewAction::make(),
             ])
             ->defaultSort('updated_at', 'desc');
@@ -198,6 +203,48 @@ final class ExternalProductMappingResource extends Resource
                 return app(RejectExternalProductMappingAction::class)->handle(
                     $user,
                     $record,
+                    (string) $data['reason'],
+                );
+            });
+    }
+
+    public static function manualRemapAction(): Action
+    {
+        return Action::make('manualRemap')
+            ->label('Manual remap')
+            ->icon(Heroicon::OutlinedArrowPath)
+            ->visible(fn (ExternalProductMapping $record): bool => $record->status !== ExternalProductMappingStatus::Ignored)
+            ->fillForm(fn (ExternalProductMapping $record): array => [
+                'central_product_id' => $record->central_product_id,
+            ])
+            ->schema([
+                Select::make('central_product_id')
+                    ->label('Central product')
+                    ->options(fn (): array => CentralProduct::query()
+                        ->whereIn('status', [CentralProductStatus::Draft, CentralProductStatus::Active])
+                        ->orderBy('name')
+                        ->pluck('name', 'id')
+                        ->all())
+                    ->searchable()
+                    ->required(),
+                Textarea::make('reason')
+                    ->label('Remap reason')
+                    ->required()
+                    ->maxLength(2000),
+            ])
+            ->action(function (array $data, ExternalProductMapping $record): ExternalProductMapping {
+                $user = auth()->user();
+
+                if (! $user instanceof User) {
+                    throw new AuthorizationException;
+                }
+
+                $newCentralProduct = CentralProduct::query()->findOrFail((int) $data['central_product_id']);
+
+                return app(ManualRemapExternalProductAction::class)->handle(
+                    $user,
+                    $record,
+                    $newCentralProduct,
                     (string) $data['reason'],
                 );
             });

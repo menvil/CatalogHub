@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\OfferAvailability;
 use App\Enums\OfferCondition;
+use Carbon\CarbonInterface;
 use Database\Factories\PriceHistoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property OfferAvailability $availability
  * @property OfferCondition|null $condition
  * @property array<string, mixed>|null $source_snapshot_json
+ * @property CarbonInterface $checked_at
  */
 #[Fillable([
     'market_offer_id', 'price', 'currency', 'availability', 'condition',

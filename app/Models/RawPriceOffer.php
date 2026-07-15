@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\RawPriceOfferStatus;
+use Carbon\CarbonInterface;
 use Database\Factories\RawPriceOfferFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property array<string, mixed> $raw_payload_json
  * @property array<string, mixed>|null $normalized_payload_json
  * @property RawPriceOfferStatus $status
+ * @property CarbonInterface $fetched_at
  */
 #[Fillable([
     'price_source_id', 'price_source_sync_log_id', 'external_product_id',

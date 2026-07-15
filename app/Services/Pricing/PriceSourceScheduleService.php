@@ -41,9 +41,8 @@ final class PriceSourceScheduleService
             PriceSourceUpdateFrequency::EverySixHours => $lastSyncAt->addHours(6),
             PriceSourceUpdateFrequency::Daily => $lastSyncAt->addDay(),
             PriceSourceUpdateFrequency::Weekly => $lastSyncAt->addWeek(),
-            PriceSourceUpdateFrequency::Manual => null,
         };
 
-        return $dueAt?->lessThanOrEqualTo($at) ?? false;
+        return $dueAt->lessThanOrEqualTo($at);
     }
 }

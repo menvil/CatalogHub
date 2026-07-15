@@ -14,6 +14,7 @@ final class ViewExternalProductMapping extends ViewRecord
         return [
             ExternalProductMappingResource::approveAction(),
             ExternalProductMappingResource::rejectAction(),
+            ExternalProductMappingResource::manualRemapAction(),
         ];
     }
 }

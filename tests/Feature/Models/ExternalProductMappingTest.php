@@ -36,6 +36,6 @@ class ExternalProductMappingTest extends TestCase
         $this->assertInstanceOf(CentralProduct::class, $mapping->centralProduct);
         $this->assertInstanceOf(User::class, $mapping->approvedByUser);
         $this->assertNotNull($mapping->approved_at);
-        $this->assertTrue(method_exists($mapping, 'marketOffers'));
+        $this->assertCount(0, $mapping->marketOffers);
     }
 }

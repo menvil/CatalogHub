@@ -9,16 +9,20 @@ use App\Enums\OfferAvailability;
 use App\Enums\OfferCondition;
 use Carbon\CarbonImmutable;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 use ReflectionMethod;
 
 class PriceSourceAdapterInterfaceTest extends TestCase
 {
     public function test_defines_price_source_adapter_contract(): void
     {
-        $this->assertTrue(interface_exists(PriceSourceAdapterInterface::class));
-        $this->assertTrue(method_exists(PriceSourceAdapterInterface::class, 'supports'));
-        $this->assertTrue(method_exists(PriceSourceAdapterInterface::class, 'fetchOffers'));
-        $this->assertTrue(method_exists(PriceSourceAdapterInterface::class, 'normalizeOffer'));
+        $reflection = new ReflectionClass(PriceSourceAdapterInterface::class);
+
+        $this->assertTrue($reflection->isInterface());
+        $this->assertSame(
+            ['supports', 'fetchOffers', 'normalizeOffer'],
+            array_map(fn (ReflectionMethod $method): string => $method->getName(), $reflection->getMethods()),
+        );
         $this->assertSame(PriceSourceFetchResult::class, (string) (new ReflectionMethod(
             PriceSourceAdapterInterface::class,
             'fetchOffers',

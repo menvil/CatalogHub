@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\RawPriceOfferStatus;
 use App\Models\ExternalProductMapping;
 use App\Models\PriceSource;
 use App\Models\PriceSourceSyncLog;
@@ -25,7 +26,7 @@ class RawPriceOfferFactory extends Factory
             'external_title' => fake()->words(4, true),
             'raw_payload_json' => ['price' => 99.99, 'currency' => 'EUR'],
             'normalized_payload_json' => null,
-            'status' => 'fetched',
+            'status' => RawPriceOfferStatus::Fetched,
             'error_message' => null,
             'fetched_at' => now(),
         ];
@@ -35,7 +36,7 @@ class RawPriceOfferFactory extends Factory
     {
         return $this->state(fn (): array => [
             'normalized_payload_json' => null,
-            'status' => 'fetched',
+            'status' => RawPriceOfferStatus::Fetched,
             'error_message' => null,
         ]);
     }
@@ -54,14 +55,14 @@ class RawPriceOfferFactory extends Factory
                 'condition' => 'new',
                 'fetched_at' => now()->toISOString(),
             ],
-            'status' => 'normalized',
+            'status' => RawPriceOfferStatus::Normalized,
             'error_message' => null,
         ]);
     }
 
     public function matched(): static
     {
-        return $this->normalized()->state(fn (): array => ['status' => 'matched']);
+        return $this->normalized()->state(fn (): array => ['status' => RawPriceOfferStatus::Matched]);
     }
 
     public function forMapping(ExternalProductMapping $mapping): static

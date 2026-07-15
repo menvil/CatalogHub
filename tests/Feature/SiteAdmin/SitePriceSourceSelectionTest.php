@@ -116,11 +116,15 @@ class SitePriceSourceSelectionTest extends TestCase
         DB::flushQueryLog();
         DB::enableQueryLog();
 
-        app(ProductPriceSummaryBuilder::class)->build($site->id, $product->id);
+        try {
+            app(ProductPriceSummaryBuilder::class)->build($site->id, $product->id);
 
-        $offerQueries = collect(DB::getQueryLog())
-            ->filter(fn (array $query): bool => str_contains($query['query'], 'market_offers'));
-        DB::disableQueryLog();
+            $offerQueries = collect(DB::getQueryLog())
+                ->filter(fn (array $query): bool => str_contains($query['query'], 'market_offers'));
+        } finally {
+            DB::disableQueryLog();
+        }
+
         $this->assertCount(1, $offerQueries);
     }
 

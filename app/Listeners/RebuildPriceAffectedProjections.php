@@ -16,7 +16,7 @@ final readonly class RebuildPriceAffectedProjections
     {
         $offer = MarketOffer::query()->with('priceSource')->find($event->marketOfferId);
 
-        if (! $offer instanceof MarketOffer || $offer->priceSource->status !== PriceSourceStatus::Active) {
+        if (! $offer instanceof MarketOffer || $offer->priceSource?->status !== PriceSourceStatus::Active) {
             return;
         }
 

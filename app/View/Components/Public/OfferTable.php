@@ -4,6 +4,7 @@ namespace App\View\Components\Public;
 
 use App\Enums\PriceFreshnessStatus;
 use App\Models\MarketOffer;
+use App\Services\Pricing\OfferDeliveryFormatter;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Number;
@@ -17,11 +18,15 @@ final class OfferTable extends Component
     /** @var array<int, string> */
     public array $formattedPrices = [];
 
+    /** @var array<int, string> */
+    public array $formattedDeliveryPrices = [];
+
     /**
      * @param  Collection<int, MarketOffer>  $offers
      * @param  array<int, PriceFreshnessStatus>  $freshness
      */
     public function __construct(
+        OfferDeliveryFormatter $deliveryFormatter,
         public Collection $offers,
         public array $freshness = [],
         public ?MarketOffer $bestOffer = null,
@@ -44,6 +49,7 @@ final class OfferTable extends Component
                 in: (string) $offer->getAttribute('currency'),
                 locale: $locale,
             );
+            $this->formattedDeliveryPrices[(int) $offer->getKey()] = $deliveryFormatter->price($offer, $locale);
         }
     }
 

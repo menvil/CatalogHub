@@ -39,7 +39,7 @@ class OfferCardTest extends TestCase
         $this->assertStringContainsString('Example Merchant', $html);
         $this->assertStringContainsString('249.99', $html);
         $this->assertStringContainsString('data-merchant-logo-fallback', $html);
-        $this->assertStringContainsString('Delivery details unavailable', $html);
+        $this->assertStringContainsString('Delivery price unknown', $html);
         $this->assertStringContainsString('href="'.$actionUrl.'"', $html);
         $this->assertStringNotContainsString((string) $offer->url, $html);
     }

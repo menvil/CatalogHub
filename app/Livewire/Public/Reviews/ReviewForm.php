@@ -38,7 +38,10 @@ final class ReviewForm extends Component
     {
         $this->site = $site;
         $this->productId = (int) ($product instanceof CentralProduct ? $product->getKey() : $product);
-        $this->locale = $site->default_locale;
+        $defaultLocale = $site->getAttribute('default_locale');
+        $this->locale = is_string($defaultLocale) && $defaultLocale !== ''
+            ? $defaultLocale
+            : app()->getLocale();
     }
 
     public function submit(CreateReviewAction $createReview): void

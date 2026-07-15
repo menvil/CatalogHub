@@ -28,6 +28,7 @@ final class ApproveReviewAction
                 'status' => ReviewStatus::Approved,
                 'approved_at' => now(),
                 'rejected_at' => null,
+                'rejection_reason' => null,
                 'spam_marked_at' => null,
             ])->save();
 

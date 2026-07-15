@@ -104,10 +104,12 @@ final class EditContentItem extends EditRecord
      */
     private function faqItems(array $items): array
     {
+        $items = array_values($items);
+
         return array_map(
             fn (array $item, int $position): array => [...$item, 'position' => $position],
-            array_values($items),
-            array_keys(array_values($items)),
+            $items,
+            array_keys($items),
         );
     }
 

@@ -26,8 +26,8 @@ return new class extends Migration
             $table->json('metadata')->nullable();
             $table->timestamps();
 
-            $table->index(['site_id', 'central_product_id', 'status']);
-            $table->index(['site_id', 'status']);
+            $table->index(['site_id', 'central_product_id', 'status', 'created_at']);
+            $table->index(['site_id', 'status', 'created_at']);
             $table->index('created_at');
         });
     }

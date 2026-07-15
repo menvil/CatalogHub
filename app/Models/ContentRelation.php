@@ -30,6 +30,10 @@ final class ContentRelation extends Model
     protected static function booted(): void
     {
         self::saving(function (self $relation): void {
+            if ($relation->exists && ! $relation->isDirty(['related_type', 'related_id'])) {
+                return;
+            }
+
             $type = $relation->targetType();
             $targetExists = match ($type) {
                 ContentRelationTargetType::Product => CentralProduct::query()->whereKey($relation->related_id)->exists(),

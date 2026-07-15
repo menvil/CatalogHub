@@ -15,6 +15,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -29,14 +30,12 @@ final class RelationsRelationManager extends RelationManager
     {
         return $schema->components([
             Select::make('related_type')
-                ->options([
-                    ContentRelationTargetType::Product->value => ContentRelationTargetType::Product->label(),
-                    ContentRelationTargetType::Category->value => ContentRelationTargetType::Category->label(),
-                    ContentRelationTargetType::Brand->value => ContentRelationTargetType::Brand->label(),
-                    ContentRelationTargetType::Attribute->value => ContentRelationTargetType::Attribute->label(),
-                ])
+                ->options(collect(ContentRelationTargetType::cases())
+                    ->mapWithKeys(fn (ContentRelationTargetType $type): array => [$type->value => $type->label()])
+                    ->all())
                 ->default(ContentRelationTargetType::Product->value)
                 ->live()
+                ->afterStateUpdated(fn (Set $set): mixed => $set('related_id', null))
                 ->required(),
             Select::make('related_id')
                 ->label(fn (Get $get): string => ContentRelationTargetType::tryFrom(

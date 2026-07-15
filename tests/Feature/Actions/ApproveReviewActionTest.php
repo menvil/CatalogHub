@@ -20,13 +20,19 @@ class ApproveReviewActionTest extends TestCase
     {
         $site = Site::factory()->create();
         $admin = User::factory()->siteAdmin($site)->create();
-        $review = Review::factory()->pending()->create(['site_id' => $site->id]);
+        $review = Review::factory()->pending()->create([
+            'site_id' => $site->id,
+            'rejected_at' => now(),
+            'rejection_reason' => 'Stale rejection reason.',
+            'spam_marked_at' => now(),
+        ]);
 
         $approved = app(ApproveReviewAction::class)->handle($admin, $review);
 
         $this->assertSame(ReviewStatus::Approved, $approved->status);
         $this->assertNotNull($approved->approved_at);
         $this->assertNull($approved->rejected_at);
+        $this->assertNull($approved->rejection_reason);
         $this->assertNull($approved->spam_marked_at);
     }
 

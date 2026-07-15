@@ -80,7 +80,7 @@ class ReviewsModerationScreenTest extends TestCase
         Livewire::actingAs(User::factory()->siteAdmin($site)->create())
             ->test(ListReviews::class)
             ->callTableAction('approve', $review)
-            ->assertHasNoActionErrors();
+            ->assertHasNoTableActionErrors();
 
         $this->assertSame(ReviewStatus::Approved, $review->fresh()->status);
     }
@@ -93,7 +93,7 @@ class ReviewsModerationScreenTest extends TestCase
         Livewire::actingAs(User::factory()->siteAdmin($site)->create())
             ->test(ListReviews::class)
             ->callTableAction('reject', $review, data: ['reason' => 'Does not meet review guidelines.'])
-            ->assertHasNoActionErrors();
+            ->assertHasNoTableActionErrors();
 
         $this->assertSame(ReviewStatus::Rejected, $review->fresh()->status);
         $this->assertSame('Does not meet review guidelines.', $review->fresh()->rejection_reason);
@@ -107,7 +107,7 @@ class ReviewsModerationScreenTest extends TestCase
         Livewire::actingAs(User::factory()->siteAdmin($site)->create())
             ->test(ListReviews::class)
             ->callTableAction('markSpam', $review)
-            ->assertHasNoActionErrors();
+            ->assertHasNoTableActionErrors();
 
         $this->assertSame(ReviewStatus::Spam, $review->fresh()->status);
         $this->assertNotNull($review->fresh()->spam_marked_at);

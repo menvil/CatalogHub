@@ -9,7 +9,6 @@ use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Site;
 use Illuminate\Contracts\View\View;
-use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
@@ -59,12 +58,7 @@ final class LeadForm extends Component
     public function submit(CreateLeadAction $createLead): void
     {
         $data = $this->validate([
-            'type' => ['required', Rule::enum(LeadType::class)],
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255', 'required_without:phone'],
-            'phone' => ['nullable', 'string', 'max:64', 'required_without:email'],
-            'city' => ['nullable', 'string', 'max:255'],
-            'message' => ['nullable', 'string', 'max:3000'],
+            ...CreateLeadAction::inputRules(),
             'consentAccepted' => ['accepted'],
         ]);
 

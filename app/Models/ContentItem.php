@@ -46,25 +46,25 @@ final class ContentItem extends Model
     /** @param Builder<ContentItem> $query */
     public function scopePublished(Builder $query): Builder
     {
-        return $query->where('status', 'published');
+        return $query->where($this->qualifyColumn('status'), 'published');
     }
 
     /** @param Builder<ContentItem> $query */
     public function scopeDraft(Builder $query): Builder
     {
-        return $query->where('status', 'draft');
+        return $query->where($this->qualifyColumn('status'), 'draft');
     }
 
     /** @param Builder<ContentItem> $query */
     public function scopeForSite(Builder $query, Site|int $site): Builder
     {
-        return $query->where('site_id', $site instanceof Site ? $site->getKey() : $site);
+        return $query->where($this->qualifyColumn('site_id'), $site instanceof Site ? $site->getKey() : $site);
     }
 
     /** @param Builder<ContentItem> $query */
     public function scopeOfType(Builder $query, ContentType|string $type): Builder
     {
-        return $query->where('type', $type instanceof ContentType ? $type->value : $type);
+        return $query->where($this->qualifyColumn('type'), $type instanceof ContentType ? $type->value : $type);
     }
 
     /** @return BelongsTo<Site, $this> */

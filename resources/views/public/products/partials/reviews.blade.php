@@ -25,8 +25,8 @@
                                 {{ str_repeat('★', $review->rating) }}<span class="text-slate-300">{{ str_repeat('★', 5 - $review->rating) }}</span>
                             </p>
                         </div>
-                        <time class="text-sm text-slate-500" datetime="{{ $review->created_at->toDateString() }}">
-                            {{ $review->created_at->toFormattedDateString() }}
+                        <time class="text-sm text-slate-500" datetime="{{ $review->created_at?->toDateString() }}">
+                            {{ $review->created_at?->toFormattedDateString() }}
                         </time>
                     </div>
 

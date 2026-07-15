@@ -30,7 +30,7 @@
             <div class="mt-2 flex gap-3">
                 @foreach (range(1, 5) as $value)
                     <label class="inline-flex items-center gap-1 text-sm text-slate-700">
-                        <input type="radio" wire:model="rating" value="{{ $value }}">
+                        <input type="radio" name="rating" wire:model="rating" value="{{ $value }}">
                         {{ $value }}
                     </label>
                 @endforeach

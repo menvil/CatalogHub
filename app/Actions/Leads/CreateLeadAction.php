@@ -46,12 +46,7 @@ final class CreateLeadAction
         ], [
             'central_product_id' => ['nullable', 'integer'],
             'central_category_id' => ['nullable', 'integer'],
-            'type' => ['required', Rule::enum(LeadType::class)],
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255', 'required_without:phone'],
-            'phone' => ['nullable', 'string', 'max:64', 'required_without:email'],
-            'city' => ['nullable', 'string', 'max:255'],
-            'message' => ['nullable', 'string', 'max:3000'],
+            ...self::inputRules(),
             'locale' => ['nullable', 'string', 'max:20'],
             'source' => ['nullable', 'string', 'max:255'],
         ])->validate();
@@ -86,6 +81,19 @@ final class CreateLeadAction
         Notification::send($recipients, new NewLeadCreatedNotification($lead));
 
         return $lead;
+    }
+
+    /** @return array<string, list<mixed>> */
+    public static function inputRules(): array
+    {
+        return [
+            'type' => ['required', Rule::enum(LeadType::class)],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255', 'required_without:phone'],
+            'phone' => ['nullable', 'string', 'max:64', 'required_without:email'],
+            'city' => ['nullable', 'string', 'max:255'],
+            'message' => ['nullable', 'string', 'max:3000'],
+        ];
     }
 
     private function ensureContextIsVisible(Site $site, ?int $productId, ?int $categoryId, ?string $locale): void

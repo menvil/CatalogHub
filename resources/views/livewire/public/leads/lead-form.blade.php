@@ -59,12 +59,18 @@
             <label for="lead-city" class="block text-sm font-medium text-slate-800">City (optional)</label>
             <input id="lead-city" type="text" wire:model="city" autocomplete="address-level2"
                 class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-950">
+            @error('city')
+                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+            @enderror
         </div>
 
         <div>
             <label for="lead-message" class="block text-sm font-medium text-slate-800">How can we help?</label>
             <textarea id="lead-message" wire:model="message" rows="5"
                 class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-950"></textarea>
+            @error('message')
+                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+            @enderror
         </div>
 
         <div>

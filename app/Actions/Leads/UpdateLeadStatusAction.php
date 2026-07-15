@@ -12,14 +12,15 @@ final class UpdateLeadStatusAction
 {
     public function handle(User $user, Lead $lead, LeadStatus $status): Lead
     {
-        return DB::transaction(function () use ($lead, $status, $user): Lead {
-            $lockedLead = Lead::query()->lockForUpdate()->findOrFail($lead->getKey());
-            $canManage = $user->hasCatalogHubPermission('leads.manage')
-                && ($user->isSuperAdmin() || (int) $user->site_id === (int) $lockedLead->site_id);
+        $canManage = $user->hasCatalogHubPermission('leads.manage')
+            && ($user->isSuperAdmin() || (int) $user->site_id === (int) $lead->site_id);
 
-            if (! $canManage) {
-                throw CannotUpdateLeadException::because('You cannot update leads for this site.');
-            }
+        if (! $canManage) {
+            throw CannotUpdateLeadException::because('You cannot update leads for this site.');
+        }
+
+        return DB::transaction(function () use ($lead, $status): Lead {
+            $lockedLead = Lead::query()->lockForUpdate()->findOrFail($lead->getKey());
 
             $lockedLead->forceFill(['status' => $status])->save();
 

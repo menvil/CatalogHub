@@ -54,6 +54,27 @@ class ContentProductRelationTest extends TestCase
         ]);
     }
 
+    public function test_updating_non_target_fields_does_not_revalidate_the_target(): void
+    {
+        $product = CentralProduct::factory()->create();
+        $relation = ContentRelation::factory()->product($product)->create();
+        $product->delete();
+
+        $relation->update(['position' => 10]);
+
+        $this->assertSame(10, $relation->refresh()->position);
+    }
+
+    public function test_changing_the_target_still_validates_its_existence(): void
+    {
+        $product = CentralProduct::factory()->create();
+        $relation = ContentRelation::factory()->product($product)->create();
+
+        $this->expectException(ValidationException::class);
+
+        $relation->update(['related_id' => 999999]);
+    }
+
     public function test_admin_can_add_and_remove_product_relation(): void
     {
         $site = Site::factory()->create();

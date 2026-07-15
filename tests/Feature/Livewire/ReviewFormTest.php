@@ -33,6 +33,17 @@ class ReviewFormTest extends TestCase
             ->assertSee('Your review');
     }
 
+    public function test_review_form_uses_application_locale_when_site_locale_is_missing(): void
+    {
+        $site = Site::factory()->make(['default_locale' => null]);
+        $product = CentralProduct::factory()->create();
+        $form = new ReviewForm;
+
+        $form->mount($site, $product);
+
+        $this->assertSame(app()->getLocale(), $form->locale);
+    }
+
     public function test_rating_is_required_and_must_be_between_one_and_five(): void
     {
         $site = Site::factory()->create();

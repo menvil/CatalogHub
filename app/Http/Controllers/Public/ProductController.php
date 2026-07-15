@@ -106,14 +106,14 @@ final class ProductController extends Controller
 
     private function canonicalId(mixed $value): ?int
     {
-        if (is_int($value) && $value > 0) {
-            return $value;
+        if (! is_int($value) && ! is_string($value)) {
+            return null;
         }
 
-        if (is_string($value) && ctype_digit($value) && (int) $value > 0) {
-            return (int) $value;
-        }
+        $id = filter_var($value, FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1],
+        ]);
 
-        return null;
+        return $id === false ? null : $id;
     }
 }

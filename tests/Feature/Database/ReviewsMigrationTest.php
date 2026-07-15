@@ -27,6 +27,7 @@ class ReviewsMigrationTest extends TestCase
             'locale',
             'approved_at',
             'rejected_at',
+            'rejection_reason',
             'spam_marked_at',
             'metadata',
             'created_at',
@@ -36,10 +37,10 @@ class ReviewsMigrationTest extends TestCase
         $indexes = collect(Schema::getIndexes('reviews'));
 
         $this->assertTrue($indexes->contains(
-            fn (array $index): bool => $index['columns'] === ['site_id', 'central_product_id', 'status'],
+            fn (array $index): bool => $index['columns'] === ['site_id', 'central_product_id', 'status', 'created_at'],
         ));
         $this->assertTrue($indexes->contains(
-            fn (array $index): bool => $index['columns'] === ['site_id', 'status'],
+            fn (array $index): bool => $index['columns'] === ['site_id', 'status', 'created_at'],
         ));
         $this->assertTrue($indexes->contains(
             fn (array $index): bool => $index['columns'] === ['created_at'],

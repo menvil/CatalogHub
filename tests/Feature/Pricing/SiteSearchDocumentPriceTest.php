@@ -4,6 +4,7 @@ namespace Tests\Feature\Pricing;
 
 use App\Domains\Projections\SiteSyncService;
 use App\Enums\MarketOfferStatus;
+use App\Enums\OfferAvailability;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\MarketMerchant;
 use App\Models\MarketOffer;
@@ -74,6 +75,7 @@ class SiteSearchDocumentPriceTest extends TestCase
             'min_price' => null,
             'max_price' => null,
             'offers_count' => 0,
+            'in_stock' => false,
         ]);
     }
 
@@ -146,6 +148,62 @@ class SiteSearchDocumentPriceTest extends TestCase
             'document_type' => 'product',
             'document_id' => $product->id,
             'offers_count' => 3,
+        ]);
+    }
+
+    public function test_it_marks_a_product_in_stock_when_any_valid_offer_is_in_stock(): void
+    {
+        $site = Site::factory()->create(['default_locale' => 'en']);
+        $product = CentralProduct::factory()->create();
+        $source = PriceSource::factory()->active()->create(['market_id' => $site->market_id]);
+
+        foreach ([OfferAvailability::OutOfStock, OfferAvailability::InStock] as $availability) {
+            MarketOffer::factory()->create([
+                'market_id' => $site->market_id,
+                'market_merchant_id' => MarketMerchant::factory()->create([
+                    'market_id' => $site->market_id,
+                ]),
+                'central_product_id' => $product->id,
+                'price_source_id' => $source->id,
+                'currency' => $site->market->currency_code,
+                'availability' => $availability,
+            ]);
+        }
+
+        app(SiteSyncService::class)->syncProduct($site, $product, 'en');
+
+        $this->assertDatabaseHas('site_search_documents', [
+            'site_id' => $site->id,
+            'document_type' => 'product',
+            'document_id' => $product->id,
+            'in_stock' => true,
+        ]);
+    }
+
+    public function test_it_marks_a_product_out_of_stock_when_no_valid_offer_is_in_stock(): void
+    {
+        $site = Site::factory()->create(['default_locale' => 'en']);
+        $product = CentralProduct::factory()->create();
+        $source = PriceSource::factory()->active()->create(['market_id' => $site->market_id]);
+
+        MarketOffer::factory()->create([
+            'market_id' => $site->market_id,
+            'market_merchant_id' => MarketMerchant::factory()->create([
+                'market_id' => $site->market_id,
+            ]),
+            'central_product_id' => $product->id,
+            'price_source_id' => $source->id,
+            'currency' => $site->market->currency_code,
+            'availability' => OfferAvailability::OutOfStock,
+        ]);
+
+        app(SiteSyncService::class)->syncProduct($site, $product, 'en');
+
+        $this->assertDatabaseHas('site_search_documents', [
+            'site_id' => $site->id,
+            'document_type' => 'product',
+            'document_id' => $product->id,
+            'in_stock' => false,
         ]);
     }
 }

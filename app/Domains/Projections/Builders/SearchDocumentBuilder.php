@@ -72,6 +72,7 @@ final class SearchDocumentBuilder
             minPrice: $priceSummary?->minPrice,
             maxPrice: $priceSummary?->maxPrice,
             offersCount: $priceSummary === null ? 0 : $priceSummary->offersCount,
+            inStock: $priceSummary === null ? false : $priceSummary->inStock,
         );
     }
 
@@ -109,6 +110,7 @@ final class SearchDocumentBuilder
             minPrice: null,
             maxPrice: null,
             offersCount: 0,
+            inStock: false,
         );
     }
 
@@ -132,6 +134,7 @@ final class SearchDocumentBuilder
         ?string $minPrice,
         ?string $maxPrice,
         int $offersCount,
+        bool $inStock,
     ): SearchDocumentData {
         $checksum = hash('sha256', json_encode(
             compact(
@@ -149,6 +152,7 @@ final class SearchDocumentBuilder
                 'minPrice',
                 'maxPrice',
                 'offersCount',
+                'inStock',
             ),
             JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
         ));
@@ -169,6 +173,7 @@ final class SearchDocumentBuilder
             minPrice: $minPrice,
             maxPrice: $maxPrice,
             offersCount: $offersCount,
+            inStock: $inStock,
         );
     }
 

@@ -28,6 +28,7 @@ class SiteSearchDocumentFactory extends Factory
             'min_price' => null,
             'max_price' => null,
             'offers_count' => 0,
+            'in_stock' => false,
             'filter_values_json' => [],
             'sort_values_json' => [],
             'payload_json' => [],

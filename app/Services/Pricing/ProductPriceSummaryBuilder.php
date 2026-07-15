@@ -4,6 +4,7 @@ namespace App\Services\Pricing;
 
 use App\Data\Pricing\ProductPriceSummary;
 use App\Enums\MarketOfferStatus;
+use App\Enums\OfferAvailability;
 use App\Enums\PriceSourceStatus;
 use App\Models\MarketOffer;
 use App\Models\Site;
@@ -22,6 +23,7 @@ final class ProductPriceSummaryBuilder
             minPrice: $this->money($minimum),
             maxPrice: $this->money($maximum),
             offersCount: (clone $offers)->count(),
+            inStock: (clone $offers)->where('availability', OfferAvailability::InStock)->exists(),
         );
     }
 

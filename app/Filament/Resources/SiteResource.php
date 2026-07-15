@@ -134,6 +134,7 @@ final class SiteResource extends Resource
             'home-blocks' => Pages\HomepageBlocksEditor::route('/{record}/home-blocks'),
             'pricing-preview' => Pages\OfferProviderPreview::route('/{record}/pricing/preview'),
             'products-without-offers' => Pages\ProductsWithoutOffersReport::route('/{record}/pricing/products-without-offers'),
+            'offers-coverage' => Pages\OffersCoverageDashboard::route('/{record}/pricing/coverage'),
         ];
     }
 

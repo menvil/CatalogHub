@@ -10,6 +10,7 @@ enum PublicProductSort: string
     case NameAsc = 'name_asc';
     case NameDesc = 'name_desc';
     case PriceAsc = 'price_asc';
+    case PriceDesc = 'price_desc';
 
     public static function fromInput(mixed $value): self
     {
@@ -26,6 +27,7 @@ enum PublicProductSort: string
             self::NameAsc->value => 'Name A–Z',
             self::NameDesc->value => 'Name Z–A',
             self::PriceAsc->value => 'Price: low to high',
+            self::PriceDesc->value => 'Price: high to low',
         ];
     }
 }

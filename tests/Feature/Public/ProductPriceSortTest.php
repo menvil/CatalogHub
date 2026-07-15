@@ -32,6 +32,23 @@ class ProductPriceSortTest extends TestCase
         $this->assertSame('Price: low to high', PublicProductSort::options()['price_asc']);
     }
 
+    public function test_it_sorts_products_by_minimum_price_descending_with_null_prices_last(): void
+    {
+        [$site, $category] = $this->scenario();
+        $filters = FacetFilterSet::fromArray(['sort' => 'price_desc']);
+
+        $results = app(FacetQueryBuilder::class)->apply(
+            SiteSearchDocument::query(),
+            $site,
+            $category,
+            $filters,
+        )->get();
+
+        $this->assertSame(['300.00', '200.00', '100.00', null], $results->pluck('min_price')->all());
+        $this->assertSame('price_desc', $filters->toQueryArray()['sort']);
+        $this->assertSame('Price: high to low', PublicProductSort::options()['price_desc']);
+    }
+
     /** @return array{Site, CentralCategory} */
     private function scenario(): array
     {

@@ -5,6 +5,7 @@ namespace Tests\Feature\Jobs\Pricing;
 use App\Jobs\Pricing\StorePriceHistoryJob;
 use App\Models\MarketOffer;
 use App\Models\PriceHistory;
+use Carbon\CarbonInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -26,7 +27,7 @@ class StorePriceHistoryJobTest extends TestCase
         $history = PriceHistory::query()->where('market_offer_id', $offer->id)->sole();
         $this->assertSame('249.99', $history->price);
         $this->assertSame('EUR', $history->currency);
-        $this->assertNotNull($history->checked_at);
+        $this->assertInstanceOf(CarbonInterface::class, $history->checked_at);
     }
 
     public function test_creates_new_snapshot_when_offer_value_changes(): void

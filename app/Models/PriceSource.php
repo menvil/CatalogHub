@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\PriceSourceStatus;
 use App\Enums\PriceSourceType;
 use App\Enums\PriceSourceUpdateFrequency;
+use Carbon\CarbonInterface;
 use Database\Factories\PriceSourceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property PriceSourceStatus $status
  * @property PriceSourceUpdateFrequency|null $update_frequency
  * @property array<string, mixed>|null $config_json
+ * @property CarbonInterface|null $last_sync_at
  */
 #[Fillable([
     'market_id', 'code', 'name', 'type', 'status', 'config_json',

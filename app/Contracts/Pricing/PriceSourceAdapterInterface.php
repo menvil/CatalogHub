@@ -12,6 +12,6 @@ interface PriceSourceAdapterInterface
 
     public function fetchOffers(PriceSource $source): PriceSourceFetchResult;
 
-    /** @param array<string, mixed> $rawPayload */
+    /** @param array<array-key, mixed> $rawPayload */
     public function normalizeOffer(PriceSource $source, array $rawPayload): ExternalPriceOfferData;
 }

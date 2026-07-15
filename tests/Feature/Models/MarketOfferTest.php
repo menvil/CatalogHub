@@ -39,6 +39,6 @@ class MarketOfferTest extends TestCase
         $this->assertInstanceOf(MarketMerchant::class, $offer->merchant);
         $this->assertInstanceOf(CentralProduct::class, $offer->centralProduct);
         $this->assertInstanceOf(PriceSource::class, $offer->priceSource);
-        $this->assertTrue(method_exists($offer, 'priceHistory'));
+        $this->assertCount(0, $offer->priceHistory);
     }
 }

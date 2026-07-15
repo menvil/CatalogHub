@@ -69,7 +69,7 @@ final class PriceSourceResource extends Resource
     /** @return Builder<PriceSource> */
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['market', 'credentials']);
+        return PriceSource::query()->with(['market', 'credentials']);
     }
 
     public static function form(Schema $schema): Schema

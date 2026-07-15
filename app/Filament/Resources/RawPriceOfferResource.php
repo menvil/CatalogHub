@@ -55,7 +55,7 @@ final class RawPriceOfferResource extends Resource
     /** @return Builder<RawPriceOffer> */
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['priceSource', 'syncLog']);
+        return RawPriceOffer::query()->with(['priceSource', 'syncLog']);
     }
 
     public static function table(Table $table): Table

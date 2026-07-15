@@ -44,7 +44,7 @@ final class StorePriceHistoryJob implements ShouldQueue
                 'external_product_mapping_id' => $offer->external_product_mapping_id,
                 'status' => $offer->status->value,
                 'url' => $offer->url,
-                'last_seen_at' => $offer->last_seen_at?->toISOString(),
+                'last_seen_at' => $offer->last_seen_at->toISOString(),
             ],
         ]);
     }

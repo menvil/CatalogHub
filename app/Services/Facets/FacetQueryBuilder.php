@@ -350,6 +350,10 @@ final readonly class FacetQueryBuilder
                 ->orderByRaw('CASE WHEN min_price IS NULL THEN 1 ELSE 0 END')
                 ->orderBy('min_price')
                 ->orderBy('id'),
+            PublicProductSort::PriceDesc => $query
+                ->orderByRaw('CASE WHEN min_price IS NULL THEN 1 ELSE 0 END')
+                ->orderByDesc('min_price')
+                ->orderByDesc('id'),
             PublicProductSort::Default,
             PublicProductSort::Newest => $query->orderByDesc('built_at')->orderByDesc('id'),
         };

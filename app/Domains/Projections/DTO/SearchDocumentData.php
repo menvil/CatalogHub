@@ -25,5 +25,6 @@ final readonly class SearchDocumentData
         public ?string $minPrice,
         public ?string $maxPrice,
         public int $offersCount,
+        public bool $inStock,
     ) {}
 }

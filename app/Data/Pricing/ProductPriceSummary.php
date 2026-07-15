@@ -8,5 +8,6 @@ final readonly class ProductPriceSummary
         public ?string $minPrice,
         public ?string $maxPrice,
         public int $offersCount,
+        public bool $inStock,
     ) {}
 }

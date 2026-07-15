@@ -310,6 +310,7 @@ final class SiteSyncService
             'min_price' => $document->minPrice,
             'max_price' => $document->maxPrice,
             'offers_count' => $document->offersCount,
+            'in_stock' => $document->inStock,
             'filter_values_json' => $document->filterValues,
             'sort_values_json' => $document->sortValues,
             'payload_json' => $document->payload,

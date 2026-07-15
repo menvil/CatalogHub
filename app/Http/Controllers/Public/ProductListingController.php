@@ -15,6 +15,7 @@ use App\Models\SiteProductProjection;
 use App\Models\SiteSearchDocument;
 use App\Services\Facets\FacetQueryBuilder;
 use App\Services\Facets\SiteFacetConfigResolver;
+use App\Services\Pricing\MerchantFilterOptionsBuilder;
 use App\Support\Facets\FacetUrlBuilder;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -31,6 +32,7 @@ final class ProductListingController extends Controller
         FacetQueryBuilder $facetQuery,
         SiteFacetConfigResolver $facetConfig,
         FacetUrlBuilder $facetUrls,
+        MerchantFilterOptionsBuilder $merchantOptions,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
         $site->loadMissing('market');
@@ -98,6 +100,7 @@ final class ProductListingController extends Controller
             'category' => ['title' => $category->title, 'slug' => $category->slug],
             'products' => $products,
             'facets' => $facetConfig->resolve($site, $centralCategory),
+            'merchants' => $merchantOptions->build($site, $centralCategory),
             'filters' => $filters,
             'appliedFilters' => $filters->appliedFilters(),
             'sort' => PublicProductSort::fromInput($filters->get('sort'))->value,

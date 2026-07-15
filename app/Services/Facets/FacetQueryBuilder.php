@@ -14,6 +14,8 @@ use App\Enums\PublicProductSort;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Site;
 use App\Models\SiteSearchDocument;
+use App\Services\Pricing\MerchantFilterOptionsBuilder;
+use App\Services\Pricing\ValidMarketOfferQuery;
 use App\Support\Facets\BooleanFacetValueParser;
 use App\Support\Facets\NumericRangeFacetParser;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,6 +29,8 @@ final readonly class FacetQueryBuilder
         private SiteFacetConfigResolver $siteFacets,
         private BooleanFacetValueParser $booleans,
         private NumericRangeFacetParser $ranges,
+        private MerchantFilterOptionsBuilder $merchantOptions,
+        private ValidMarketOfferQuery $validOffers,
     ) {}
 
     /**
@@ -70,6 +74,7 @@ final readonly class FacetQueryBuilder
             $filters->forget('brand');
         }
 
+        $this->applyMerchantFilter($query, $site, $category, $filters);
         $this->applyEnumFilters($query, $facets, $filters);
         $this->applyBooleanFilters($query, $facets, $filters);
         $this->applyNumericRangeFilters($query, $facets, $filters);
@@ -84,7 +89,7 @@ final readonly class FacetQueryBuilder
     /** @param Collection<int, FacetDefinitionData> $facets */
     private function retainKnownFilters(FacetFilterSet $filters, Collection $facets): void
     {
-        $keys = ['brand', 'in_stock', 'price_from', 'price_to', 'rating_min', 'sort'];
+        $keys = ['brand', 'in_stock', 'merchant_ids', 'price_from', 'price_to', 'rating_min', 'sort'];
 
         foreach ($facets as $facet) {
             if ($this->isNumericRangeFacet($facet)) {
@@ -349,6 +354,50 @@ final readonly class FacetQueryBuilder
             value: '1',
             queryKeys: ['in_stock'],
         ));
+    }
+
+    /** @param Builder<SiteSearchDocument> $query */
+    private function applyMerchantFilter(
+        Builder $query,
+        Site $site,
+        CentralCategory $category,
+        FacetFilterSet $filters,
+    ): void {
+        if (! $filters->has('merchant_ids')) {
+            return;
+        }
+
+        $options = $this->merchantOptions->build($site, $category)->keyBy('id');
+        $merchantIds = collect($this->listValues($filters->get('merchant_ids')))
+            ->filter(fn (string $id): bool => ctype_digit($id) && (int) $id > 0)
+            ->map(fn (string $id): int => (int) $id)
+            ->filter(fn (int $id): bool => $options->has($id))
+            ->unique()
+            ->sort()
+            ->values();
+
+        if ($merchantIds->isEmpty()) {
+            $filters->forget('merchant_ids');
+
+            return;
+        }
+
+        $filters->replace('merchant_ids', $merchantIds->map(fn (int $id): string => (string) $id)->all());
+        $productIds = $this->validOffers->forSite($site)
+            ->select('central_product_id')
+            ->whereIn('market_merchant_id', $merchantIds->all())
+            ->distinct();
+        $query->whereIn('document_id', $productIds);
+
+        foreach ($merchantIds as $merchantId) {
+            $merchant = $options->get($merchantId);
+            $filters->recordAppliedFilter(new AppliedFacetFilter(
+                code: 'merchant',
+                label: (string) $merchant?->getAttribute('name'),
+                value: (string) $merchantId,
+                queryKeys: ['merchant_ids'],
+            ));
+        }
     }
 
     /** @param Builder<SiteSearchDocument> $query */

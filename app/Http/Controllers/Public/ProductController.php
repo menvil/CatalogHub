@@ -79,12 +79,12 @@ final class ProductController extends Controller
                 ->get()
             : collect();
         $offers = $validOffers->forProduct($site, (int) $projection->central_product_id)
-            ->with('merchant.logoMediaAsset')
+            ->with(['merchant.logoMediaAsset', 'priceSource'])
             ->orderBy('price')
             ->orderBy('id')
             ->get();
         $offerFreshness = $offers->mapWithKeys(fn ($offer): array => [
-            (int) $offer->getKey() => $freshness->calculate($offer),
+            (int) $offer->getKey() => $freshness->calculate($offer, site: $site),
         ])->all();
 
         return view($layouts->resolve($site, 'product'), [

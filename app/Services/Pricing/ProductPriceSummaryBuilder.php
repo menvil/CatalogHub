@@ -11,12 +11,16 @@ final class ProductPriceSummaryBuilder
 {
     public function __construct(
         private readonly ValidMarketOfferQuery $validOffers,
+        private readonly SitePriceSourceConfigResolver $sourceConfig,
     ) {}
 
     public function build(int $siteId, int $centralProductId): ProductPriceSummary
     {
         $site = Site::query()->with('market')->findOrFail($siteId);
-        $offers = $this->validOffers->forProduct($site, $centralProductId);
+        $offers = $this->sourceConfig->applySummaryPolicy(
+            $this->validOffers->forProduct($site, $centralProductId),
+            $site,
+        );
         $minimum = (clone $offers)->min('price');
         $maximum = (clone $offers)->max('price');
         $lastPriceUpdateAt = (clone $offers)->max('last_checked_at');

@@ -4,16 +4,20 @@ namespace App\Services\Pricing;
 
 use App\Enums\PriceFreshnessStatus;
 use App\Models\MarketOffer;
+use App\Models\PriceSource;
+use App\Models\Site;
 use App\Models\SiteSearchDocument;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
-use InvalidArgumentException;
 
 final class PriceFreshnessCalculator
 {
+    public function __construct(private readonly SitePriceSourceConfigResolver $sourceConfig) {}
+
     public function calculate(
         MarketOffer|SiteSearchDocument|DateTimeInterface|null $subject,
         ?DateTimeInterface $now = null,
+        ?Site $site = null,
     ): PriceFreshnessStatus {
         $updatedAt = $this->timestamp($subject);
 
@@ -22,7 +26,7 @@ final class PriceFreshnessCalculator
         }
 
         $now = $now === null ? CarbonImmutable::now() : CarbonImmutable::instance($now);
-        $thresholds = $this->thresholds();
+        $thresholds = $this->thresholds($subject, $site);
         $ageInSeconds = max(0, $now->getTimestamp() - $updatedAt->getTimestamp());
 
         if ($ageInSeconds >= $thresholds['expired'] * 3600) {
@@ -55,20 +59,24 @@ final class PriceFreshnessCalculator
     }
 
     /** @return array{fresh: int, stale: int, expired: int} */
-    private function thresholds(): array
-    {
-        $thresholds = [
-            'fresh' => (int) config('pricing.freshness.fresh_hours', 6),
-            'stale' => (int) config('pricing.freshness.stale_hours', 24),
-            'expired' => (int) config('pricing.freshness.expired_hours', 48),
-        ];
+    private function thresholds(
+        MarketOffer|SiteSearchDocument|DateTimeInterface|null $subject,
+        ?Site $site,
+    ): array {
+        if ($subject instanceof MarketOffer && $site instanceof Site) {
+            $source = $subject->priceSource;
 
-        if ($thresholds['fresh'] < 0
-            || $thresholds['fresh'] > $thresholds['stale']
-            || $thresholds['stale'] > $thresholds['expired']) {
-            throw new InvalidArgumentException('Price freshness thresholds must be non-negative and ascending.');
+            if ($source instanceof PriceSource) {
+                $config = $this->sourceConfig->resolve($site, $source);
+
+                return [
+                    'fresh' => $config->freshHours,
+                    'stale' => $config->staleHours,
+                    'expired' => $config->expiredHours,
+                ];
+            }
         }
 
-        return $thresholds;
+        return $this->sourceConfig->defaultThresholds();
     }
 }

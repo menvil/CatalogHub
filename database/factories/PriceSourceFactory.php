@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Enums\PriceSourceStatus;
 use App\Enums\PriceSourceType;
+use App\Enums\PriceSourceUpdateFrequency;
 use App\Models\Market;
 use App\Models\PriceSource;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -22,7 +23,7 @@ class PriceSourceFactory extends Factory
             'type' => PriceSourceType::Manual,
             'status' => PriceSourceStatus::Inactive,
             'config_json' => [],
-            'update_frequency' => 'manual',
+            'update_frequency' => PriceSourceUpdateFrequency::Manual,
             'last_sync_at' => null,
         ];
     }

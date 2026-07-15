@@ -11,6 +11,7 @@ use App\Models\MarketOffer;
 use App\Models\PriceSource;
 use App\Models\Site;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class SiteSearchDocumentPriceTest extends TestCase
@@ -76,6 +77,7 @@ class SiteSearchDocumentPriceTest extends TestCase
             'max_price' => null,
             'offers_count' => 0,
             'in_stock' => false,
+            'last_price_update_at' => null,
         ]);
     }
 
@@ -204,6 +206,35 @@ class SiteSearchDocumentPriceTest extends TestCase
             'document_type' => 'product',
             'document_id' => $product->id,
             'in_stock' => false,
+        ]);
+    }
+
+    public function test_it_stores_the_latest_valid_offer_check_as_the_last_price_update_time(): void
+    {
+        $site = Site::factory()->create(['default_locale' => 'en']);
+        $product = CentralProduct::factory()->create();
+        $source = PriceSource::factory()->active()->create(['market_id' => $site->market_id]);
+
+        foreach (['2026-07-15 10:00:00', '2026-07-15 12:00:00'] as $checkedAt) {
+            MarketOffer::factory()->create([
+                'market_id' => $site->market_id,
+                'market_merchant_id' => MarketMerchant::factory()->create([
+                    'market_id' => $site->market_id,
+                ]),
+                'central_product_id' => $product->id,
+                'price_source_id' => $source->id,
+                'currency' => $site->market->currency_code,
+                'last_checked_at' => Carbon::parse($checkedAt),
+            ]);
+        }
+
+        app(SiteSyncService::class)->syncProduct($site, $product, 'en');
+
+        $this->assertDatabaseHas('site_search_documents', [
+            'site_id' => $site->id,
+            'document_type' => 'product',
+            'document_id' => $product->id,
+            'last_price_update_at' => '2026-07-15 12:00:00',
         ]);
     }
 }

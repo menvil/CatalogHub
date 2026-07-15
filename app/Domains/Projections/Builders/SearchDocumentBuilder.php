@@ -6,6 +6,7 @@ use App\Data\Pricing\ProductPriceSummary;
 use App\Domains\Projections\DTO\CategoryProjectionData;
 use App\Domains\Projections\DTO\ProductProjectionData;
 use App\Domains\Projections\DTO\SearchDocumentData;
+use Carbon\CarbonImmutable;
 
 final class SearchDocumentBuilder
 {
@@ -73,6 +74,7 @@ final class SearchDocumentBuilder
             maxPrice: $priceSummary?->maxPrice,
             offersCount: $priceSummary === null ? 0 : $priceSummary->offersCount,
             inStock: $priceSummary === null ? false : $priceSummary->inStock,
+            lastPriceUpdateAt: $priceSummary?->lastPriceUpdateAt,
         );
     }
 
@@ -111,6 +113,7 @@ final class SearchDocumentBuilder
             maxPrice: null,
             offersCount: 0,
             inStock: false,
+            lastPriceUpdateAt: null,
         );
     }
 
@@ -135,6 +138,7 @@ final class SearchDocumentBuilder
         ?string $maxPrice,
         int $offersCount,
         bool $inStock,
+        ?CarbonImmutable $lastPriceUpdateAt,
     ): SearchDocumentData {
         $checksum = hash('sha256', json_encode(
             compact(
@@ -153,6 +157,7 @@ final class SearchDocumentBuilder
                 'maxPrice',
                 'offersCount',
                 'inStock',
+                'lastPriceUpdateAt',
             ),
             JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
         ));
@@ -174,6 +179,7 @@ final class SearchDocumentBuilder
             maxPrice: $maxPrice,
             offersCount: $offersCount,
             inStock: $inStock,
+            lastPriceUpdateAt: $lastPriceUpdateAt,
         );
     }
 

@@ -3,6 +3,7 @@
     'filters' => [],
     'variant' => 'desktop',
     'currency' => null,
+    'merchants' => [],
 ])
 
 @php
@@ -68,6 +69,41 @@
         <span>Only in-stock products</span>
     </label>
 </details>
+
+@if (collect($merchants)->isNotEmpty())
+    @php
+        $selectedMerchantIds = $valuesFor('merchant_ids');
+    @endphp
+    <details open class="group px-5 py-4">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-slate-900">
+            <span>Merchants</span>
+            <span aria-hidden="true" class="text-slate-400 transition group-open:rotate-180">⌄</span>
+        </summary>
+
+        <div class="mt-4 space-y-3">
+            @foreach ($merchants as $merchant)
+                <label @class([
+                    'flex items-center text-sm text-slate-700',
+                    'min-h-11 gap-3' => $isMobile,
+                    'cursor-pointer gap-2' => ! $isMobile,
+                ])>
+                    <input
+                        type="checkbox"
+                        name="merchant_ids[]"
+                        value="{{ $merchant->getKey() }}"
+                        @checked(in_array((string) $merchant->getKey(), $selectedMerchantIds, true))
+                        @class([
+                            'rounded border-slate-300 text-blue-600',
+                            'size-5' => $isMobile,
+                            'size-4 focus:ring-blue-500' => ! $isMobile,
+                        ])
+                    >
+                    <span>{{ $merchant->getAttribute('name') }}</span>
+                </label>
+            @endforeach
+        </div>
+    </details>
+@endif
 
 @foreach ($facets as $facet)
     @php

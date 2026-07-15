@@ -11,8 +11,11 @@ use App\Models\Site;
 use App\Models\User;
 use BackedEnum;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -91,6 +94,24 @@ final class SiteResource extends Resource
                     ->pluck('name', 'id')
                     ->all())
                 ->helperText('Only sources from this site market can be selected.'),
+            Repeater::make('price_source_configs')
+                ->label('Market-specific price source config')
+                ->schema([
+                    Hidden::make('price_source_id'),
+                    TextInput::make('source_name')->label('Source')->disabled()->dehydrated(false),
+                    TextInput::make('priority')->integer()->minValue(0)->maxValue(65535),
+                    TextInput::make('fresh_hours')->label('Fresh hours')->integer()->minValue(0)->required(),
+                    TextInput::make('stale_hours')->label('Stale hours')->integer()->minValue(0)->required(),
+                    TextInput::make('expired_hours')->label('Expired hours')->integer()->minValue(0)->required(),
+                    Toggle::make('allow_default_market_currency')->default(true),
+                    Toggle::make('include_out_of_stock')->default(true),
+                ])
+                ->columns(3)
+                ->addable(false)
+                ->deletable(false)
+                ->reorderable(false)
+                ->columnSpanFull()
+                ->helperText('Save source selection once before configuring newly enabled sources.'),
         ]);
     }
 

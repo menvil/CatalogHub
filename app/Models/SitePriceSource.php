@@ -6,7 +6,11 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
-/** @property array<string, mixed>|null $config_json */
+/**
+ * @property bool $enabled
+ * @property int|null $priority
+ * @property array<string, mixed>|null $config_json
+ */
 #[Fillable(['site_id', 'price_source_id', 'enabled', 'priority', 'config_json'])]
 final class SitePriceSource extends Pivot
 {

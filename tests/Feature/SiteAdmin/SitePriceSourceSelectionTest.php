@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\SiteAdmin;
 
+use App\Enums\OfferAvailability;
 use App\Filament\Resources\SiteResource\Pages\EditSite;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\MarketMerchant;
@@ -80,6 +81,62 @@ class SitePriceSourceSelectionTest extends TestCase
 
         $this->assertSame('199.99', $summary->minPrice);
         $this->assertSame(1, $summary->offersCount);
+    }
+
+    public function test_price_summary_respects_source_out_of_stock_config(): void
+    {
+        $site = Site::factory()->create();
+        $product = CentralProduct::factory()->create();
+        $merchant = MarketMerchant::factory()->create(['market_id' => $site->market_id]);
+        $source = PriceSource::factory()->active()->create(['market_id' => $site->market_id]);
+        $site->priceSources()->attach($source, [
+            'enabled' => true,
+            'config_json' => ['include_out_of_stock' => false],
+        ]);
+        MarketOffer::factory()->create([
+            'market_id' => $site->market_id,
+            'market_merchant_id' => $merchant->id,
+            'central_product_id' => $product->id,
+            'price_source_id' => $source->id,
+            'currency' => $site->market->currency_code,
+            'availability' => OfferAvailability::OutOfStock,
+            'price' => '99.99',
+        ]);
+
+        $summary = app(ProductPriceSummaryBuilder::class)->build($site->id, $product->id);
+
+        $this->assertNull($summary->minPrice);
+        $this->assertSame(0, $summary->offersCount);
+    }
+
+    public function test_site_admin_can_save_source_priority_and_market_config_fields(): void
+    {
+        $site = Site::factory()->create();
+        $source = PriceSource::factory()->active()->create(['market_id' => $site->market_id]);
+        $site->priceSources()->attach($source, ['enabled' => true]);
+
+        Livewire::actingAs(User::factory()->siteAdmin($site)->create())
+            ->test(EditSite::class, ['record' => $site->getRouteKey()])
+            ->fillForm(['price_source_configs' => [[
+                'price_source_id' => $source->id,
+                'source_name' => $source->name,
+                'priority' => 5,
+                'fresh_hours' => 3,
+                'stale_hours' => 12,
+                'expired_hours' => 36,
+                'allow_default_market_currency' => false,
+                'include_out_of_stock' => false,
+            ]]])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $pivot = $site->priceSources()->whereKey($source->id)->firstOrFail()->pivot;
+        $this->assertSame(5, $pivot->priority);
+        $this->assertSame([
+            'freshness' => ['fresh_hours' => 3, 'stale_hours' => 12, 'expired_hours' => 36],
+            'allow_default_market_currency' => false,
+            'include_out_of_stock' => false,
+        ], $pivot->config_json);
     }
 
     private function offer(

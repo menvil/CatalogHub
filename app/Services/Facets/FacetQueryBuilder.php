@@ -74,6 +74,7 @@ final readonly class FacetQueryBuilder
         $this->applyBooleanFilters($query, $facets, $filters);
         $this->applyNumericRangeFilters($query, $facets, $filters);
         $this->applyPriceRangeFilter($query, $filters);
+        $this->applyInStockFilter($query, $filters);
         $this->applyRatingFilter($query, $filters);
         $this->applySorting($query, $filters);
 
@@ -83,7 +84,7 @@ final readonly class FacetQueryBuilder
     /** @param Collection<int, FacetDefinitionData> $facets */
     private function retainKnownFilters(FacetFilterSet $filters, Collection $facets): void
     {
-        $keys = ['brand', 'price_from', 'price_to', 'rating_min', 'sort'];
+        $keys = ['brand', 'in_stock', 'price_from', 'price_to', 'rating_min', 'sort'];
 
         foreach ($facets as $facet) {
             if ($this->isNumericRangeFacet($facet)) {
@@ -328,6 +329,25 @@ final readonly class FacetQueryBuilder
                 'to' => $maximum === null ? null : $this->ranges->serialize($maximum),
             ], fn (?string $value): bool => $value !== null),
             queryKeys: ['price_from', 'price_to'],
+        ));
+    }
+
+    /** @param Builder<SiteSearchDocument> $query */
+    private function applyInStockFilter(Builder $query, FacetFilterSet $filters): void
+    {
+        if (! $filters->has('in_stock') || $this->booleans->parse($filters->get('in_stock')) !== true) {
+            $filters->forget('in_stock');
+
+            return;
+        }
+
+        $filters->replace('in_stock', '1');
+        $query->where('in_stock', true);
+        $filters->recordAppliedFilter(new AppliedFacetFilter(
+            code: 'in_stock',
+            label: 'In stock',
+            value: '1',
+            queryKeys: ['in_stock'],
         ));
     }
 

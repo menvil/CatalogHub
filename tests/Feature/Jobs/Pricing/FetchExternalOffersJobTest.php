@@ -11,7 +11,7 @@ use App\Models\RawPriceOffer;
 use App\Pricing\PriceSourceAdapterRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
-use RuntimeException;
+use InvalidArgumentException;
 use Tests\TestCase;
 
 class FetchExternalOffersJobTest extends TestCase
@@ -52,7 +52,7 @@ class FetchExternalOffersJobTest extends TestCase
             (new FetchExternalOffersJob($source->id, $log->id))
                 ->handle(app(PriceSourceAdapterRegistry::class));
             $this->fail('Expected unsupported adapter exception.');
-        } catch (RuntimeException) {
+        } catch (InvalidArgumentException) {
             $this->assertSame('failed', $log->fresh()->getRawOriginal('status'));
             $this->assertNotNull($log->fresh()->finished_at);
             $this->assertNotNull($log->fresh()->error_message);

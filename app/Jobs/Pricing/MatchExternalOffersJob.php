@@ -4,6 +4,7 @@ namespace App\Jobs\Pricing;
 
 use App\Enums\ExternalProductMappingStatus;
 use App\Enums\RawPriceOfferStatus;
+use App\Jobs\Pricing\Concerns\UsesPriceSourceRetryPolicy;
 use App\Models\ExternalProductMapping;
 use App\Models\PriceSource;
 use App\Models\PriceSourceSyncLog;
@@ -15,9 +16,7 @@ use Throwable;
 
 final class MatchExternalOffersJob implements ShouldQueue
 {
-    use Queueable;
-
-    public int $tries = 1;
+    use Queueable, UsesPriceSourceRetryPolicy;
 
     public function __construct(
         public int $priceSourceId,
@@ -61,7 +60,17 @@ final class MatchExternalOffersJob implements ShouldQueue
 
             UpdateMarketOffersJob::dispatch($source->id, $log->id)->afterCommit();
         } catch (Throwable $exception) {
-            $statusService->fail($source, $log, $exception->getMessage(), ['stage' => 'match']);
+            $willRetry = $this->shouldRetryFailure($source, $exception);
+            $statusService->fail(
+                $source,
+                $log,
+                $exception->getMessage(),
+                $this->retryFailureMetadata($log, 'match', $willRetry),
+            );
+
+            if (! $willRetry) {
+                $this->fail($exception);
+            }
 
             throw $exception;
         }
@@ -162,5 +171,10 @@ final class MatchExternalOffersJob implements ShouldQueue
                 ['stage' => $stage],
             );
         }
+    }
+
+    protected function retryPriceSourceId(): int
+    {
+        return $this->priceSourceId;
     }
 }

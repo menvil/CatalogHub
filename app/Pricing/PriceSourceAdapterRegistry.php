@@ -7,7 +7,7 @@ use App\Models\PriceSource;
 use App\Pricing\Adapters\CsvFeedPriceAdapter;
 use App\Pricing\Adapters\GenericApiPriceAdapter;
 use App\Pricing\Adapters\ManualOfferAdapter;
-use RuntimeException;
+use InvalidArgumentException;
 
 final class PriceSourceAdapterRegistry
 {
@@ -30,6 +30,6 @@ final class PriceSourceAdapterRegistry
             }
         }
 
-        throw new RuntimeException("No price source adapter supports source [{$source->getKey()}].");
+        throw new InvalidArgumentException("No price source adapter supports source [{$source->getKey()}].");
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Pricing;
 
+use App\Jobs\Pricing\Concerns\UsesPriceSourceRetryPolicy;
 use App\Models\PriceSource;
 use App\Models\PriceSourceSyncLog;
 use App\Models\RawPriceOffer;
@@ -14,9 +15,7 @@ use Throwable;
 
 final class FetchExternalOffersJob implements ShouldQueue
 {
-    use Queueable;
-
-    public int $tries = 1;
+    use Queueable, UsesPriceSourceRetryPolicy;
 
     public function __construct(
         public int $priceSourceId,
@@ -66,7 +65,17 @@ final class FetchExternalOffersJob implements ShouldQueue
 
             NormalizeExternalOffersJob::dispatch($source->id, $log->id)->afterCommit();
         } catch (Throwable $exception) {
-            $statusService->fail($source, $log, $exception->getMessage(), ['stage' => 'fetch']);
+            $willRetry = $this->shouldRetryFailure($source, $exception);
+            $statusService->fail(
+                $source,
+                $log,
+                $exception->getMessage(),
+                $this->retryFailureMetadata($log, 'fetch', $willRetry),
+            );
+
+            if (! $willRetry) {
+                $this->fail($exception);
+            }
 
             throw $exception;
         }
@@ -98,5 +107,10 @@ final class FetchExternalOffersJob implements ShouldQueue
                 ['stage' => $stage],
             );
         }
+    }
+
+    protected function retryPriceSourceId(): int
+    {
+        return $this->priceSourceId;
     }
 }

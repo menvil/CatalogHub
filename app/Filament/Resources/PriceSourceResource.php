@@ -141,6 +141,14 @@ final class PriceSourceResource extends Resource
                     ->requiresConfirmation()
                     ->action(fn (PriceSource $record): PriceSourceSyncLog => app(PriceSourceSyncService::class)
                         ->sync($record)),
+                Action::make('syncLogs')
+                    ->label('View logs')
+                    ->icon(Heroicon::OutlinedDocumentText)
+                    ->url(fn (PriceSource $record): string => PriceSourceSyncLogResource::getUrl('index', [
+                        'tableFilters' => [
+                            'price_source_id' => ['value' => $record->id],
+                        ],
+                    ])),
                 Action::make('credentials')
                     ->label('Update credentials')
                     ->icon(Heroicon::OutlinedKey)

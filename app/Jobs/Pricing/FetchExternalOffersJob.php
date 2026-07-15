@@ -6,6 +6,7 @@ use App\Models\PriceSource;
 use App\Models\PriceSourceSyncLog;
 use App\Models\RawPriceOffer;
 use App\Pricing\PriceSourceAdapterRegistry;
+use App\Services\Pricing\PriceSourceSyncStatusService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
@@ -22,17 +23,16 @@ final class FetchExternalOffersJob implements ShouldQueue
         public int $priceSourceSyncLogId,
     ) {}
 
-    public function handle(PriceSourceAdapterRegistry $adapterRegistry): void
-    {
+    public function handle(
+        PriceSourceAdapterRegistry $adapterRegistry,
+        ?PriceSourceSyncStatusService $statusService = null,
+    ): void {
+        $statusService ??= app(PriceSourceSyncStatusService::class);
         $source = PriceSource::query()->findOrFail($this->priceSourceId);
         $log = PriceSourceSyncLog::query()->findOrFail($this->priceSourceSyncLogId);
 
         try {
-            $log->update([
-                'status' => 'running',
-                'started_at' => $log->started_at ?? now(),
-                'error_message' => null,
-            ]);
+            $statusService->start($source, $log);
 
             $result = $adapterRegistry->for($source)->fetchOffers($source);
 
@@ -66,7 +66,7 @@ final class FetchExternalOffersJob implements ShouldQueue
 
             NormalizeExternalOffersJob::dispatch($source->id, $log->id)->afterCommit();
         } catch (Throwable $exception) {
-            $this->markFailed($exception);
+            $statusService->fail($source, $log, $exception->getMessage(), ['stage' => 'fetch']);
 
             throw $exception;
         }
@@ -74,7 +74,7 @@ final class FetchExternalOffersJob implements ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
-        $this->markFailed($exception ?? new \RuntimeException('Price source fetch failed.'));
+        $this->markFailed($exception ?? new \RuntimeException('Price source fetch failed.'), 'fetch');
     }
 
     /** @param array<string, mixed> $payload */
@@ -85,12 +85,18 @@ final class FetchExternalOffersJob implements ShouldQueue
         return is_scalar($value) && trim((string) $value) !== '' ? trim((string) $value) : null;
     }
 
-    private function markFailed(Throwable $exception): void
+    private function markFailed(Throwable $exception, string $stage): void
     {
-        PriceSourceSyncLog::query()->whereKey($this->priceSourceSyncLogId)->update([
-            'status' => 'failed',
-            'finished_at' => now(),
-            'error_message' => $exception->getMessage(),
-        ]);
+        $source = PriceSource::query()->find($this->priceSourceId);
+        $log = PriceSourceSyncLog::query()->find($this->priceSourceSyncLogId);
+
+        if ($source instanceof PriceSource && $log instanceof PriceSourceSyncLog) {
+            app(PriceSourceSyncStatusService::class)->fail(
+                $source,
+                $log,
+                $exception->getMessage(),
+                ['stage' => $stage],
+            );
+        }
     }
 }

@@ -8,6 +8,7 @@ use App\Models\ExternalProductMapping;
 use App\Models\PriceSource;
 use App\Models\PriceSourceSyncLog;
 use App\Models\RawPriceOffer;
+use App\Services\Pricing\PriceSourceSyncStatusService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Throwable;
@@ -23,8 +24,9 @@ final class MatchExternalOffersJob implements ShouldQueue
         public int $priceSourceSyncLogId,
     ) {}
 
-    public function handle(): void
+    public function handle(?PriceSourceSyncStatusService $statusService = null): void
     {
+        $statusService ??= app(PriceSourceSyncStatusService::class);
         $source = PriceSource::query()->findOrFail($this->priceSourceId);
         $log = PriceSourceSyncLog::query()->findOrFail($this->priceSourceSyncLogId);
 
@@ -59,7 +61,7 @@ final class MatchExternalOffersJob implements ShouldQueue
 
             UpdateMarketOffersJob::dispatch($source->id, $log->id)->afterCommit();
         } catch (Throwable $exception) {
-            $this->markFailed($exception);
+            $statusService->fail($source, $log, $exception->getMessage(), ['stage' => 'match']);
 
             throw $exception;
         }
@@ -67,7 +69,7 @@ final class MatchExternalOffersJob implements ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
-        $this->markFailed($exception ?? new \RuntimeException('Price source matching failed.'));
+        $this->markFailed($exception ?? new \RuntimeException('Price source matching failed.'), 'match');
     }
 
     private function mappingFor(RawPriceOffer $row): ExternalProductMapping
@@ -147,12 +149,18 @@ final class MatchExternalOffersJob implements ShouldQueue
         ]);
     }
 
-    private function markFailed(Throwable $exception): void
+    private function markFailed(Throwable $exception, string $stage): void
     {
-        PriceSourceSyncLog::query()->whereKey($this->priceSourceSyncLogId)->update([
-            'status' => 'failed',
-            'finished_at' => now(),
-            'error_message' => $exception->getMessage(),
-        ]);
+        $source = PriceSource::query()->find($this->priceSourceId);
+        $log = PriceSourceSyncLog::query()->find($this->priceSourceSyncLogId);
+
+        if ($source instanceof PriceSource && $log instanceof PriceSourceSyncLog) {
+            app(PriceSourceSyncStatusService::class)->fail(
+                $source,
+                $log,
+                $exception->getMessage(),
+                ['stage' => $stage],
+            );
+        }
     }
 }

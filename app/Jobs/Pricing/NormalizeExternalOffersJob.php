@@ -7,6 +7,7 @@ use App\Models\PriceSource;
 use App\Models\PriceSourceSyncLog;
 use App\Models\RawPriceOffer;
 use App\Pricing\PriceSourceAdapterRegistry;
+use App\Services\Pricing\PriceSourceSyncStatusService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Throwable;
@@ -22,8 +23,11 @@ final class NormalizeExternalOffersJob implements ShouldQueue
         public int $priceSourceSyncLogId,
     ) {}
 
-    public function handle(PriceSourceAdapterRegistry $adapterRegistry): void
-    {
+    public function handle(
+        PriceSourceAdapterRegistry $adapterRegistry,
+        ?PriceSourceSyncStatusService $statusService = null,
+    ): void {
+        $statusService ??= app(PriceSourceSyncStatusService::class);
         $source = PriceSource::query()->findOrFail($this->priceSourceId);
         $log = PriceSourceSyncLog::query()->findOrFail($this->priceSourceSyncLogId);
 
@@ -64,7 +68,7 @@ final class NormalizeExternalOffersJob implements ShouldQueue
 
             MatchExternalOffersJob::dispatch($source->id, $log->id)->afterCommit();
         } catch (Throwable $exception) {
-            $this->markFailed($exception);
+            $statusService->fail($source, $log, $exception->getMessage(), ['stage' => 'normalize']);
 
             throw $exception;
         }
@@ -72,15 +76,21 @@ final class NormalizeExternalOffersJob implements ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
-        $this->markFailed($exception ?? new \RuntimeException('Price source normalization failed.'));
+        $this->markFailed($exception ?? new \RuntimeException('Price source normalization failed.'), 'normalize');
     }
 
-    private function markFailed(Throwable $exception): void
+    private function markFailed(Throwable $exception, string $stage): void
     {
-        PriceSourceSyncLog::query()->whereKey($this->priceSourceSyncLogId)->update([
-            'status' => 'failed',
-            'finished_at' => now(),
-            'error_message' => $exception->getMessage(),
-        ]);
+        $source = PriceSource::query()->find($this->priceSourceId);
+        $log = PriceSourceSyncLog::query()->find($this->priceSourceSyncLogId);
+
+        if ($source instanceof PriceSource && $log instanceof PriceSourceSyncLog) {
+            app(PriceSourceSyncStatusService::class)->fail(
+                $source,
+                $log,
+                $exception->getMessage(),
+                ['stage' => $stage],
+            );
+        }
     }
 }

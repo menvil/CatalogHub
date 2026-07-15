@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use App\Enums\PriceSourceSyncStatus;
 use Database\Factories\PriceSourceSyncLogFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/** @property array<string, mixed>|null $metadata */
+/**
+ * @property PriceSourceSyncStatus $status
+ * @property array<string, mixed>|null $metadata
+ */
 #[Fillable([
     'price_source_id', 'status', 'started_at', 'finished_at', 'items_fetched',
     'items_normalized', 'items_matched', 'items_updated', 'error_message', 'metadata',
@@ -26,6 +30,7 @@ final class PriceSourceSyncLog extends Model
     protected function casts(): array
     {
         return [
+            'status' => PriceSourceSyncStatus::class,
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
             'items_fetched' => 'integer',

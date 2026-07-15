@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\PriceSourceSyncStatus;
 use App\Models\PriceSource;
 use App\Models\PriceSourceSyncLog;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -15,7 +16,7 @@ class PriceSourceSyncLogFactory extends Factory
     {
         return [
             'price_source_id' => PriceSource::factory(),
-            'status' => 'queued',
+            'status' => PriceSourceSyncStatus::Queued,
             'started_at' => null,
             'finished_at' => null,
             'items_fetched' => 0,
@@ -29,6 +30,9 @@ class PriceSourceSyncLogFactory extends Factory
 
     public function running(): static
     {
-        return $this->state(fn (): array => ['status' => 'running', 'started_at' => now()]);
+        return $this->state(fn (): array => [
+            'status' => PriceSourceSyncStatus::Running,
+            'started_at' => now(),
+        ]);
     }
 }

@@ -14,6 +14,7 @@ use App\Models\MarketOffer;
 use App\Models\PriceSource;
 use App\Models\PriceSourceSyncLog;
 use App\Models\RawPriceOffer;
+use App\Services\Pricing\PriceSourceSyncStatusService;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -33,8 +34,9 @@ final class UpdateMarketOffersJob implements ShouldQueue
         public int $priceSourceSyncLogId,
     ) {}
 
-    public function handle(): void
+    public function handle(?PriceSourceSyncStatusService $statusService = null): void
     {
+        $statusService ??= app(PriceSourceSyncStatusService::class);
         $source = PriceSource::query()->with('market')->findOrFail($this->priceSourceId);
         $log = PriceSourceSyncLog::query()->findOrFail($this->priceSourceSyncLogId);
 
@@ -70,8 +72,33 @@ final class UpdateMarketOffersJob implements ShouldQueue
             foreach ($offerIds as $offerId) {
                 StorePriceHistoryJob::dispatch($offerId)->afterCommit();
             }
+
+            $log->refresh();
+            $counters = [
+                'items_fetched' => $log->items_fetched,
+                'items_normalized' => $log->items_normalized,
+                'items_matched' => $log->items_matched,
+                'items_updated' => $log->items_updated,
+            ];
+            $failedRows = RawPriceOffer::query()
+                ->where('price_source_id', $source->id)
+                ->where('price_source_sync_log_id', $log->id)
+                ->where('status', RawPriceOfferStatus::Failed->value)
+                ->count();
+
+            if ($failedRows > 0) {
+                $statusService->partiallyComplete(
+                    $source,
+                    $log,
+                    $counters,
+                    "{$failedRows} raw offer row(s) failed.",
+                    ['failed_rows' => $failedRows],
+                );
+            } else {
+                $statusService->complete($source, $log, $counters);
+            }
         } catch (Throwable $exception) {
-            $this->markFailed($exception);
+            $statusService->fail($source, $log, $exception->getMessage(), ['stage' => 'update']);
 
             throw $exception;
         }
@@ -79,7 +106,7 @@ final class UpdateMarketOffersJob implements ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
-        $this->markFailed($exception ?? new \RuntimeException('Market offer update failed.'));
+        $this->markFailed($exception ?? new \RuntimeException('Market offer update failed.'), 'update');
     }
 
     private function approvedMappingFor(RawPriceOffer $row): ?ExternalProductMapping
@@ -177,12 +204,18 @@ final class UpdateMarketOffersJob implements ShouldQueue
         return is_scalar($value) && trim((string) $value) !== '' ? trim((string) $value) : null;
     }
 
-    private function markFailed(Throwable $exception): void
+    private function markFailed(Throwable $exception, string $stage): void
     {
-        PriceSourceSyncLog::query()->whereKey($this->priceSourceSyncLogId)->update([
-            'status' => 'failed',
-            'finished_at' => now(),
-            'error_message' => $exception->getMessage(),
-        ]);
+        $source = PriceSource::query()->find($this->priceSourceId);
+        $log = PriceSourceSyncLog::query()->find($this->priceSourceSyncLogId);
+
+        if ($source instanceof PriceSource && $log instanceof PriceSourceSyncLog) {
+            app(PriceSourceSyncStatusService::class)->fail(
+                $source,
+                $log,
+                $exception->getMessage(),
+                ['stage' => $stage],
+            );
+        }
     }
 }

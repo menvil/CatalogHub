@@ -25,6 +25,7 @@ class SiteSearchDocumentFactory extends Factory
             'slug' => str($title)->slug()->toString(),
             'status' => ProjectionStatus::Active,
             'search_text' => $title,
+            'min_price' => null,
             'filter_values_json' => [],
             'sort_values_json' => [],
             'payload_json' => [],

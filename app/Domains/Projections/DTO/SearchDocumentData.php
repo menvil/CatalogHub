@@ -22,5 +22,6 @@ final readonly class SearchDocumentData
         public array $sortValues,
         public array $payload,
         public string $checksum,
+        public ?string $minPrice,
     ) {}
 }

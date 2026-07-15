@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Events\MarketOfferUpdated;
 use App\Importers\SerializedPhpProductImporter;
+use App\Listeners\RebuildPriceAffectedProjections;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Imports\NormalizedProductDraft;
 use App\Models\User;
@@ -19,6 +21,7 @@ use App\Services\Imports\Normalizers\NumberNormalizer;
 use App\Services\Imports\Normalizers\UnitNormalizer;
 use App\View\Composers\PublicNavigationComposer;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -64,6 +67,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('translations.manage', fn (User $user): bool => $user->hasCatalogHubPermission('translations.manage'));
 
         CentralProduct::observe(CentralProductObserver::class);
+        Event::listen(MarketOfferUpdated::class, RebuildPriceAffectedProjections::class);
 
         View::composer('public.partials.header', PublicNavigationComposer::class);
     }

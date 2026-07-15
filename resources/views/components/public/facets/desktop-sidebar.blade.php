@@ -4,6 +4,8 @@
     'action' => null,
     'sort' => null,
     'clearUrl' => null,
+    'currency' => null,
+    'merchants' => [],
 ])
 
 <aside data-desktop-filter-sidebar class="hidden w-72 shrink-0 lg:block" aria-label="Product filters">
@@ -17,7 +19,7 @@
         @endif
 
         <div class="divide-y divide-slate-200">
-            <x-public.facets.fields :facets="$facets" :filters="$filters" variant="desktop" />
+            <x-public.facets.fields :facets="$facets" :filters="$filters" variant="desktop" :currency="$currency" :merchants="$merchants" />
         </div>
 
         <div class="grid grid-cols-2 gap-3 border-t border-slate-200 p-4">

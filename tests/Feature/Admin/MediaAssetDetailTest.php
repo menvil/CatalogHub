@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Enums\UserRole;
 use App\Models\MediaAsset;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -44,5 +45,31 @@ class MediaAssetDetailTest extends TestCase
             ])
             ->assertRedirect(route('central.media.show', $asset))
             ->assertSessionHasErrors('source_url');
+    }
+
+    public function test_blocks_media_asset_detail_for_user_without_media_permission(): void
+    {
+        $user = User::factory()->create(['role' => UserRole::SiteAdmin]);
+        $asset = MediaAsset::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('central.media.show', $asset))
+            ->assertForbidden();
+    }
+
+    public function test_blocks_media_source_update_for_user_without_media_permission(): void
+    {
+        $user = User::factory()->create(['role' => UserRole::SiteAdmin]);
+        $asset = MediaAsset::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('central.media.source.update', $asset), [
+                'source_url' => 'https://example.com/image.jpg',
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('media_sources', [
+            'media_asset_id' => $asset->id,
+        ]);
     }
 }

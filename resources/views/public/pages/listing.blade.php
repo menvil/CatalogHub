@@ -17,6 +17,8 @@
                 :action="$listingUrl"
                 :sort="$sort"
                 :clear-url="$clearFiltersUrl"
+                :currency="$currency"
+                :merchants="$merchants"
             />
 
             <form method="get" action="{{ $listingUrl }}" data-facet-form class="flex items-center gap-3">
@@ -46,6 +48,8 @@
             :action="$listingUrl"
             :sort="$sort"
             :clear-url="$clearFiltersUrl"
+            :currency="$currency"
+            :merchants="$merchants"
         />
 
         <div class="min-w-0 flex-1">

@@ -5,6 +5,8 @@
     'sort' => null,
     'id' => 'mobile-filter-drawer',
     'clearUrl' => null,
+    'currency' => null,
+    'merchants' => [],
 ])
 
 <div data-mobile-filter-drawer class="lg:hidden">
@@ -42,7 +44,7 @@
             @endif
 
             <div class="min-h-0 flex-1 divide-y divide-slate-200 overflow-y-auto">
-                <x-public.facets.fields :facets="$facets" :filters="$filters" variant="mobile" />
+                <x-public.facets.fields :facets="$facets" :filters="$filters" variant="mobile" :currency="$currency" :merchants="$merchants" />
             </div>
 
             <div class="sticky bottom-0 grid grid-cols-2 gap-3 border-t border-slate-200 bg-white p-4 shadow-[0_-8px_24px_rgba(15,23,42,0.08)]">

@@ -19,6 +19,7 @@ use App\Models\SiteCategoryProjection;
 use App\Models\SiteProductProjection;
 use App\Models\SiteSearchDocument;
 use App\Models\SiteSitemapUrl;
+use App\Services\Pricing\ProductPriceSummaryBuilder;
 use Closure;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
@@ -34,6 +35,7 @@ final class SiteSyncService
         private readonly CategoryProjectionBuilder $categoryProjectionBuilder,
         private readonly SearchDocumentBuilder $searchDocumentBuilder,
         private readonly SitemapBuilder $sitemapBuilder,
+        private readonly ProductPriceSummaryBuilder $productPriceSummaryBuilder,
     ) {}
 
     public function syncProduct(
@@ -46,7 +48,11 @@ final class SiteSyncService
 
         try {
             $projection = $this->productProjectionBuilder->build($site, $product, $locale);
-            $searchDocument = $this->searchDocumentBuilder->fromProductProjection($projection);
+            $priceSummary = $this->productPriceSummaryBuilder->build(
+                (int) $site->getKey(),
+                (int) $product->getKey(),
+            );
+            $searchDocument = $this->searchDocumentBuilder->fromProductProjection($projection, $priceSummary);
             $sitemapUrl = $this->sitemapBuilder->fromProductProjection($site, $projection);
             $record = $this->persistAtomically(
                 $projection->siteId,
@@ -301,6 +307,11 @@ final class SiteSyncService
             'slug' => $document->slug,
             'status' => $document->status,
             'search_text' => $document->searchText,
+            'min_price' => $document->minPrice,
+            'max_price' => $document->maxPrice,
+            'offers_count' => $document->offersCount,
+            'in_stock' => $document->inStock,
+            'last_price_update_at' => $document->lastPriceUpdateAt,
             'filter_values_json' => $document->filterValues,
             'sort_values_json' => $document->sortValues,
             'payload_json' => $document->payload,

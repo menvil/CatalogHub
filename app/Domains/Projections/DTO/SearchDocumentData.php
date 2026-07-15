@@ -2,6 +2,8 @@
 
 namespace App\Domains\Projections\DTO;
 
+use Carbon\CarbonImmutable;
+
 final readonly class SearchDocumentData
 {
     /**
@@ -22,5 +24,10 @@ final readonly class SearchDocumentData
         public array $sortValues,
         public array $payload,
         public string $checksum,
+        public ?string $minPrice,
+        public ?string $maxPrice,
+        public int $offersCount,
+        public bool $inStock,
+        public ?CarbonImmutable $lastPriceUpdateAt,
     ) {}
 }

@@ -10,6 +10,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Review;
 use App\Models\SiteProductProjection;
 use App\Services\Content\RelatedContentResolver;
+use App\Services\Pricing\BestOfferResolver;
+use App\Services\Pricing\PriceFreshnessCalculator;
+use App\Services\Pricing\ValidMarketOfferQuery;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -23,6 +26,9 @@ final class ProductController extends Controller
         ThemeLayoutResolver $layouts,
         LocalizedUrlResolver $urls,
         RelatedContentResolver $relatedContent,
+        ValidMarketOfferQuery $validOffers,
+        BestOfferResolver $bestOffers,
+        PriceFreshnessCalculator $freshness,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
         $projection = SiteProductProjection::query()
@@ -72,6 +78,14 @@ final class ProductController extends Controller
                 ->limit(50)
                 ->get()
             : collect();
+        $offers = $validOffers->forProduct($site, (int) $projection->central_product_id)
+            ->with(['merchant.logoMediaAsset', 'priceSource'])
+            ->orderBy('price')
+            ->orderBy('id')
+            ->get();
+        $offerFreshness = $offers->mapWithKeys(fn ($offer): array => [
+            (int) $offer->getKey() => $freshness->calculate($offer, site: $site),
+        ])->all();
 
         return view($layouts->resolve($site, 'product'), [
             'site' => $site,
@@ -91,6 +105,10 @@ final class ProductController extends Controller
             'seo' => $seo,
             'breadcrumbs' => $breadcrumbs,
             'centralProductId' => (int) $projection->central_product_id,
+            'productProjection' => $projection,
+            'offers' => $offers,
+            'offerFreshness' => $offerFreshness,
+            'bestOffer' => $bestOffers->resolveFromOffers($site, $offers, $offerFreshness),
             'reviewsEnabled' => $reviewsEnabled,
             'reviews' => $reviews,
             'leadsEnabled' => $leadsEnabled,

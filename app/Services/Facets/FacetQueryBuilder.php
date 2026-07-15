@@ -14,6 +14,8 @@ use App\Enums\PublicProductSort;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Site;
 use App\Models\SiteSearchDocument;
+use App\Services\Pricing\MerchantFilterOptionsBuilder;
+use App\Services\Pricing\ValidMarketOfferQuery;
 use App\Support\Facets\BooleanFacetValueParser;
 use App\Support\Facets\NumericRangeFacetParser;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,6 +29,8 @@ final readonly class FacetQueryBuilder
         private SiteFacetConfigResolver $siteFacets,
         private BooleanFacetValueParser $booleans,
         private NumericRangeFacetParser $ranges,
+        private MerchantFilterOptionsBuilder $merchantOptions,
+        private ValidMarketOfferQuery $validOffers,
     ) {}
 
     /**
@@ -70,9 +74,12 @@ final readonly class FacetQueryBuilder
             $filters->forget('brand');
         }
 
+        $this->applyMerchantFilter($query, $site, $category, $filters);
         $this->applyEnumFilters($query, $facets, $filters);
         $this->applyBooleanFilters($query, $facets, $filters);
         $this->applyNumericRangeFilters($query, $facets, $filters);
+        $this->applyPriceRangeFilter($query, $filters);
+        $this->applyInStockFilter($query, $filters);
         $this->applyRatingFilter($query, $filters);
         $this->applySorting($query, $filters);
 
@@ -82,7 +89,7 @@ final readonly class FacetQueryBuilder
     /** @param Collection<int, FacetDefinitionData> $facets */
     private function retainKnownFilters(FacetFilterSet $filters, Collection $facets): void
     {
-        $keys = ['brand', 'rating_min', 'sort'];
+        $keys = ['brand', 'in_stock', 'merchant_ids', 'price_from', 'price_to', 'rating_min', 'sort'];
 
         foreach ($facets as $facet) {
             if ($this->isNumericRangeFacet($facet)) {
@@ -280,6 +287,120 @@ final readonly class FacetQueryBuilder
     }
 
     /** @param Builder<SiteSearchDocument> $query */
+    private function applyPriceRangeFilter(Builder $query, FacetFilterSet $filters): void
+    {
+        if (! $filters->has('price_from') && ! $filters->has('price_to')) {
+            return;
+        }
+
+        $range = $this->ranges->parse($filters->get('price_from'), $filters->get('price_to'));
+
+        if ($range === null) {
+            $filters->forget('price_from', 'price_to');
+
+            return;
+        }
+
+        $minimum = $range['min'] === null ? null : max(0.0, $range['min']);
+        $maximum = $range['max'] === null ? null : max(0.0, $range['max']);
+
+        if ($minimum === null) {
+            $filters->forget('price_from');
+        } else {
+            $filters->replace('price_from', $this->ranges->serialize($minimum));
+        }
+
+        if ($maximum === null) {
+            $filters->forget('price_to');
+        } else {
+            $filters->replace('price_to', $this->ranges->serialize($maximum));
+        }
+
+        $query->whereNotNull('min_price');
+
+        if ($minimum !== null) {
+            $query->where('min_price', '>=', $minimum);
+        }
+
+        if ($maximum !== null) {
+            $query->where('min_price', '<=', $maximum);
+        }
+
+        $filters->recordAppliedFilter(new AppliedFacetFilter(
+            code: 'price',
+            label: 'Price',
+            value: array_filter([
+                'from' => $minimum === null ? null : $this->ranges->serialize($minimum),
+                'to' => $maximum === null ? null : $this->ranges->serialize($maximum),
+            ], fn (?string $value): bool => $value !== null),
+            queryKeys: ['price_from', 'price_to'],
+        ));
+    }
+
+    /** @param Builder<SiteSearchDocument> $query */
+    private function applyInStockFilter(Builder $query, FacetFilterSet $filters): void
+    {
+        if (! $filters->has('in_stock') || $this->booleans->parse($filters->get('in_stock')) !== true) {
+            $filters->forget('in_stock');
+
+            return;
+        }
+
+        $filters->replace('in_stock', '1');
+        $query->where('in_stock', true);
+        $filters->recordAppliedFilter(new AppliedFacetFilter(
+            code: 'in_stock',
+            label: 'In stock',
+            value: '1',
+            queryKeys: ['in_stock'],
+        ));
+    }
+
+    /** @param Builder<SiteSearchDocument> $query */
+    private function applyMerchantFilter(
+        Builder $query,
+        Site $site,
+        CentralCategory $category,
+        FacetFilterSet $filters,
+    ): void {
+        if (! $filters->has('merchant_ids')) {
+            return;
+        }
+
+        $options = $this->merchantOptions->build($site, $category)->keyBy('id');
+        $merchantIds = collect($this->listValues($filters->get('merchant_ids')))
+            ->filter(fn (string $id): bool => ctype_digit($id) && (int) $id > 0)
+            ->map(fn (string $id): int => (int) $id)
+            ->filter(fn (int $id): bool => $options->has($id))
+            ->unique()
+            ->sort()
+            ->values();
+
+        if ($merchantIds->isEmpty()) {
+            $filters->forget('merchant_ids');
+
+            return;
+        }
+
+        $filters->replace('merchant_ids', $merchantIds->map(fn (int $id): string => (string) $id)->all());
+        $productIds = $this->validOffers->forSite($site)
+            ->select('central_product_id')
+            ->whereIn('market_merchant_id', $merchantIds->all())
+            ->distinct();
+        $query->whereIn('document_id', $productIds);
+
+        foreach ($merchantIds as $merchantId) {
+            $merchant = $options->get($merchantId);
+            $filters->recordAppliedFilter(new AppliedFacetFilter(
+                code: 'merchant',
+                label: (string) $merchant?->getAttribute('name'),
+                value: (string) $merchantId,
+                queryKeys: ['merchant_ids'],
+            ));
+        }
+    }
+
+    /** @param Builder<SiteSearchDocument> $query */
     private function applySorting(Builder $query, FacetFilterSet $filters): void
     {
         $sort = PublicProductSort::fromInput($filters->get('sort'));
@@ -294,6 +415,14 @@ final readonly class FacetQueryBuilder
                 ->orderByDesc('id'),
             PublicProductSort::NameAsc => $query->orderBy('title')->orderBy('id'),
             PublicProductSort::NameDesc => $query->orderByDesc('title')->orderByDesc('id'),
+            PublicProductSort::PriceAsc => $query
+                ->orderByRaw('CASE WHEN min_price IS NULL THEN 1 ELSE 0 END')
+                ->orderBy('min_price')
+                ->orderBy('id'),
+            PublicProductSort::PriceDesc => $query
+                ->orderByRaw('CASE WHEN min_price IS NULL THEN 1 ELSE 0 END')
+                ->orderByDesc('min_price')
+                ->orderByDesc('id'),
             PublicProductSort::Default,
             PublicProductSort::Newest => $query->orderByDesc('built_at')->orderByDesc('id'),
         };

@@ -8,6 +8,7 @@ use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Http\Controllers\Controller;
 use App\Models\SiteSearchDocument;
+use App\Services\Pricing\ProductCardPricePresenter;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -19,8 +20,10 @@ final class SearchController extends Controller
         SiteContextResolver $sites,
         ThemeLayoutResolver $layouts,
         LocalizedUrlResolver $urls,
+        ProductCardPricePresenter $pricePresenter,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
+        $site->loadMissing('market');
         $term = trim($request->string('q')->toString());
         $results = collect();
 
@@ -44,6 +47,7 @@ final class SearchController extends Controller
                     'slug' => $document->slug,
                     'url' => $urls->product($site, $locale, (string) $document->slug),
                     'payload' => $document->payload_json ?? [],
+                    'price' => $pricePresenter->present($document, $site->market->currency_code, $locale),
                 ]);
         }
 

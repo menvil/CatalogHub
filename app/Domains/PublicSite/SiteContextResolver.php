@@ -8,6 +8,20 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class SiteContextResolver
 {
+    public function resolveHost(string $host): Site
+    {
+        $site = Site::query()
+            ->where('domain', strtolower($host))
+            ->where('status', SiteStatus::Active)
+            ->first();
+
+        if (! $site instanceof Site) {
+            throw new NotFoundHttpException('Public site not found.');
+        }
+
+        return $site;
+    }
+
     public function resolve(string $host, string $locale): Site
     {
         $site = Site::query()

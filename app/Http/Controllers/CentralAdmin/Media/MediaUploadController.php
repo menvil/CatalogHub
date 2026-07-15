@@ -3,17 +3,19 @@
 namespace App\Http\Controllers\CentralAdmin\Media;
 
 use App\Http\Controllers\Controller;
+use App\Models\MediaAsset;
 use App\Services\Media\MediaService;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Gate;
 
 final class MediaUploadController extends Controller
 {
     public function __invoke(Request $request, MediaService $media): RedirectResponse
     {
-        abort_unless($request->user()?->hasCatalogHubPermission('media.manage'), 403);
+        Gate::authorize('create', MediaAsset::class);
 
         $data = $request->validate([
             'file' => [

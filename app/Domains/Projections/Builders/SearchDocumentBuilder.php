@@ -2,14 +2,18 @@
 
 namespace App\Domains\Projections\Builders;
 
+use App\Data\Pricing\ProductPriceSummary;
 use App\Domains\Projections\DTO\CategoryProjectionData;
 use App\Domains\Projections\DTO\ProductProjectionData;
 use App\Domains\Projections\DTO\SearchDocumentData;
+use Carbon\CarbonImmutable;
 
 final class SearchDocumentBuilder
 {
-    public function fromProductProjection(ProductProjectionData $projection): SearchDocumentData
-    {
+    public function fromProductProjection(
+        ProductProjectionData $projection,
+        ?ProductPriceSummary $priceSummary = null,
+    ): SearchDocumentData {
         $attributes = $this->attributesFromPayload($projection->payload);
         $filterValues = [
             'brand_id' => data_get($projection->payload, 'brand.id'),
@@ -66,6 +70,11 @@ final class SearchDocumentBuilder
             filterValues: $filterValues,
             sortValues: $sortValues,
             payload: $projection->payload,
+            minPrice: $priceSummary?->minPrice,
+            maxPrice: $priceSummary?->maxPrice,
+            offersCount: $priceSummary === null ? 0 : $priceSummary->offersCount,
+            inStock: $priceSummary === null ? false : $priceSummary->inStock,
+            lastPriceUpdateAt: $priceSummary?->lastPriceUpdateAt,
         );
     }
 
@@ -100,6 +109,11 @@ final class SearchDocumentBuilder
             ], fn (mixed $value): bool => $value !== null),
             sortValues: ['title' => $projection->title],
             payload: $projection->payload,
+            minPrice: null,
+            maxPrice: null,
+            offersCount: 0,
+            inStock: false,
+            lastPriceUpdateAt: null,
         );
     }
 
@@ -120,6 +134,11 @@ final class SearchDocumentBuilder
         array $filterValues,
         array $sortValues,
         array $payload,
+        ?string $minPrice,
+        ?string $maxPrice,
+        int $offersCount,
+        bool $inStock,
+        ?CarbonImmutable $lastPriceUpdateAt,
     ): SearchDocumentData {
         $checksum = hash('sha256', json_encode(
             compact(
@@ -134,6 +153,11 @@ final class SearchDocumentBuilder
                 'filterValues',
                 'sortValues',
                 'payload',
+                'minPrice',
+                'maxPrice',
+                'offersCount',
+                'inStock',
+                'lastPriceUpdateAt',
             ),
             JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
         ));
@@ -151,6 +175,11 @@ final class SearchDocumentBuilder
             sortValues: $sortValues,
             payload: $payload,
             checksum: $checksum,
+            minPrice: $minPrice,
+            maxPrice: $maxPrice,
+            offersCount: $offersCount,
+            inStock: $inStock,
+            lastPriceUpdateAt: $lastPriceUpdateAt,
         );
     }
 

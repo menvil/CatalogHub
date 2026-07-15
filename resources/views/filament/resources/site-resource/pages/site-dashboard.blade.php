@@ -1,4 +1,8 @@
 <x-filament-panels::page>
+    @include('filament.site.stale-price-warning')
+
+    @livewire(\App\Filament\Widgets\PriceUpdateQueueMonitor::class, ['siteId' => $this->getSiteId()])
+
     @php($labels = [
         'visible_products' => 'Visible products',
         'hidden_products' => 'Hidden products',

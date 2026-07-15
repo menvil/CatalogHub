@@ -34,7 +34,7 @@ class FacetFilterSetTest extends TestCase
         $this->assertFalse($filters->hasActiveFilters());
     }
 
-    public function test_normalizes_boolean_aliases_and_unknown_sort_values(): void
+    public function test_normalizes_boolean_aliases_and_sort_values(): void
     {
         $filters = FacetFilterSet::fromQuery([
             'curved' => 'yes',
@@ -45,7 +45,11 @@ class FacetFilterSetTest extends TestCase
         $this->assertSame([
             'curved' => '1',
             'hdr' => '0',
-            'sort' => 'default',
+            'sort' => 'price_asc',
         ], $filters->toQueryArray());
+
+        $unknownSort = FacetFilterSet::fromQuery(['sort' => 'unknown_sort']);
+
+        $this->assertSame(['sort' => 'default'], $unknownSort->toQueryArray());
     }
 }

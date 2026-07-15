@@ -26,6 +26,15 @@
         </section>
     </div>
 
+    <x-public.offers-block
+        :site="$site"
+        :product-projection="$productProjection"
+        :offers="$offers"
+        :freshness="$offerFreshness"
+        :best-offer="$bestOffer"
+        :locale="$locale"
+    />
+
     @include('public.components.product-benefits', ['benefits' => $benefits])
 
     @include('public.components.product-specs', ['sections' => $specSections])

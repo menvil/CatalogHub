@@ -6,6 +6,7 @@ use App\Enums\SiteMode;
 use App\Enums\SiteStatus;
 use App\Filament\Resources\SiteResource\Pages;
 use App\Filament\Resources\SiteResource\RelationManagers\SiteFeaturesRelationManager;
+use App\Models\PriceSource;
 use App\Models\Site;
 use App\Models\User;
 use BackedEnum;
@@ -79,6 +80,17 @@ final class SiteResource extends Resource
             TextInput::make('name')->required()->maxLength(255), TextInput::make('domain')->maxLength(255)->unique(ignoreRecord: true),
             Select::make('mode')->required()->options(collect(SiteMode::cases())->mapWithKeys(fn (SiteMode $mode) => [$mode->value => str($mode->value)->headline()]))->disabledOn('edit'),
             TextInput::make('default_locale')->required()->maxLength(255)->disabledOn('edit'), Select::make('status')->required()->options(SiteStatus::options())->default(SiteStatus::default()->value),
+            Select::make('enabled_price_source_ids')
+                ->label('Enabled price sources')
+                ->multiple()
+                ->searchable()
+                ->preload()
+                ->options(fn (?Model $record): array => ! $record instanceof Site ? [] : PriceSource::query()
+                    ->where('market_id', $record->market_id)
+                    ->orderBy('name')
+                    ->pluck('name', 'id')
+                    ->all())
+                ->helperText('Only sources from this site market can be selected.'),
         ]);
     }
 

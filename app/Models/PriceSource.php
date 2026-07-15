@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -80,5 +81,14 @@ final class PriceSource extends Model
     public function offers(): HasMany
     {
         return $this->hasMany(MarketOffer::class);
+    }
+
+    /** @return BelongsToMany<Site, $this, SitePriceSource, 'pivot'> */
+    public function sites(): BelongsToMany
+    {
+        return $this->belongsToMany(Site::class, 'site_price_sources')
+            ->using(SitePriceSource::class)
+            ->withPivot(['enabled', 'priority', 'config_json'])
+            ->withTimestamps();
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Services\Pricing;
 
 use App\Data\Pricing\SiteOfferProviderPreviewData;
-use App\Enums\PriceSourceStatus;
 use App\Enums\PriceSourceSyncStatus;
 use App\Models\MarketOffer;
 use App\Models\PriceSource;
@@ -15,13 +14,14 @@ use Illuminate\Support\Number;
 
 final readonly class SiteOfferProviderPreviewBuilder
 {
-    public function __construct(private ValidMarketOfferQuery $validOffers) {}
+    public function __construct(
+        private ValidMarketOfferQuery $validOffers,
+        private SitePriceSourceSelection $sourceSelection,
+    ) {}
 
     public function build(Site $site): SiteOfferProviderPreviewData
     {
-        $sources = PriceSource::query()
-            ->where('market_id', $site->market_id)
-            ->where('status', PriceSourceStatus::Active)
+        $sources = $this->sourceSelection->enabledSources($site)
             ->orderBy('name')
             ->get();
         $lastSync = PriceSourceSyncLog::query()

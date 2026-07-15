@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Review;
 use App\Models\SiteProductProjection;
 use App\Services\Content\RelatedContentResolver;
+use App\Services\Pricing\ValidMarketOfferQuery;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -23,6 +24,7 @@ final class ProductController extends Controller
         ThemeLayoutResolver $layouts,
         LocalizedUrlResolver $urls,
         RelatedContentResolver $relatedContent,
+        ValidMarketOfferQuery $validOffers,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
         $projection = SiteProductProjection::query()
@@ -72,6 +74,11 @@ final class ProductController extends Controller
                 ->limit(50)
                 ->get()
             : collect();
+        $offers = $validOffers->forProduct($site, (int) $projection->central_product_id)
+            ->with('merchant.logoMediaAsset')
+            ->orderBy('price')
+            ->orderBy('id')
+            ->get();
 
         return view($layouts->resolve($site, 'product'), [
             'site' => $site,
@@ -91,6 +98,9 @@ final class ProductController extends Controller
             'seo' => $seo,
             'breadcrumbs' => $breadcrumbs,
             'centralProductId' => (int) $projection->central_product_id,
+            'productProjection' => $projection,
+            'offers' => $offers,
+            'bestOffer' => null,
             'reviewsEnabled' => $reviewsEnabled,
             'reviews' => $reviews,
             'leadsEnabled' => $leadsEnabled,

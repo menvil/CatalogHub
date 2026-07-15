@@ -36,7 +36,7 @@ final class NormalizeExternalOffersJob implements ShouldQueue
                 ->where('price_source_id', $source->id)
                 ->where('price_source_sync_log_id', $log->id)
                 ->where('status', RawPriceOfferStatus::Fetched->value)
-                ->get();
+                ->lazyById();
 
             foreach ($rows as $row) {
                 try {

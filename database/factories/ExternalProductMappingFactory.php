@@ -19,7 +19,7 @@ class ExternalProductMappingFactory extends Factory
         return [
             'price_source_id' => PriceSource::factory(),
             'central_product_id' => null,
-            'external_product_id' => fake()->unique()->uuid(),
+            'external_product_id' => fake()->uuid(),
             'external_sku' => strtoupper(fake()->bothify('SKU-####-??')),
             'external_url' => fake()->url(),
             'external_title' => fake()->words(4, true),

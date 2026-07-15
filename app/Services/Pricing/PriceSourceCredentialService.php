@@ -80,6 +80,10 @@ final class PriceSourceCredentialService
 
             $value = (string) $value;
 
+            if (strlen($value) <= 4) {
+                return '****';
+            }
+
             return '****'.substr($value, -4);
         })->all();
     }

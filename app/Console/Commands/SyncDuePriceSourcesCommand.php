@@ -2,11 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Models\PriceSource;
-use App\Models\PriceSourceSyncLog;
 use App\Services\Pricing\PriceSourceScheduleService;
 use App\Services\Pricing\PriceSourceSyncService;
 use Illuminate\Console\Command;
+use Throwable;
 
 final class SyncDuePriceSourcesCommand extends Command
 {
@@ -19,10 +18,18 @@ final class SyncDuePriceSourcesCommand extends Command
         PriceSourceSyncService $syncService,
     ): int {
         $sources = $scheduleService->dueSources();
+        $queued = 0;
 
-        $sources->each(fn (PriceSource $source): PriceSourceSyncLog => $syncService->sync($source));
+        foreach ($sources as $source) {
+            try {
+                $syncService->sync($source);
+                $queued++;
+            } catch (Throwable $exception) {
+                $this->error("Failed to queue [{$source->name}]: {$exception->getMessage()}");
+            }
+        }
 
-        $this->info("Queued {$sources->count()} due price source sync(s).");
+        $this->info("Queued {$queued} due price source sync(s).");
 
         return self::SUCCESS;
     }

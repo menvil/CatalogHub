@@ -12,6 +12,7 @@ use App\Models\RawPriceOffer;
 use App\Services\Pricing\PriceSourceSyncStatusService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use LogicException;
 use Throwable;
 
 final class MatchExternalOffersJob implements ShouldQueue
@@ -37,6 +38,15 @@ final class MatchExternalOffersJob implements ShouldQueue
                 ->get();
 
             foreach ($rows as $row) {
+                if (blank($row->external_product_id) && blank($row->external_sku)) {
+                    $row->update([
+                        'status' => RawPriceOfferStatus::Failed,
+                        'error_message' => 'An external product identity or SKU is required for mapping.',
+                    ]);
+
+                    continue;
+                }
+
                 $mapping = $this->mappingFor($row);
 
                 if (
@@ -152,10 +162,7 @@ final class MatchExternalOffersJob implements ShouldQueue
             ], $values);
         }
 
-        return ExternalProductMapping::query()->create([
-            'price_source_id' => $row->price_source_id,
-            ...$values,
-        ]);
+        throw new LogicException('Cannot create an external product mapping without a reusable identity.');
     }
 
     private function markFailed(Throwable $exception, string $stage): void

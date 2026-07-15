@@ -4,6 +4,7 @@ namespace Tests\Feature\Jobs\Pricing;
 
 use App\Enums\ExternalProductMappingStatus;
 use App\Enums\RawPriceOfferStatus;
+use App\Events\MarketOfferUpdated;
 use App\Jobs\Pricing\StorePriceHistoryJob;
 use App\Jobs\Pricing\UpdateMarketOffersJob;
 use App\Models\ExternalProductMapping;
@@ -14,6 +15,7 @@ use App\Models\PriceSourceSyncLog;
 use App\Models\RawPriceOffer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Event;
 use InvalidArgumentException;
 use Tests\TestCase;
 
@@ -24,6 +26,7 @@ class UpdateMarketOffersJobTest extends TestCase
     public function test_creates_current_offer_for_approved_mapping_and_dispatches_history(): void
     {
         Bus::fake();
+        Event::fake([MarketOfferUpdated::class]);
         $source = PriceSource::factory()->manual()->create();
         $mapping = ExternalProductMapping::factory()->approved()->for($source)->create([
             'external_product_id' => 'external-k2',
@@ -61,6 +64,10 @@ class UpdateMarketOffersJobTest extends TestCase
         Bus::assertDispatched(
             StorePriceHistoryJob::class,
             fn (StorePriceHistoryJob $job): bool => $job->marketOfferId === $offer->id,
+        );
+        Event::assertDispatched(
+            MarketOfferUpdated::class,
+            fn (MarketOfferUpdated $event): bool => $event->marketOfferId === $offer->id,
         );
     }
 

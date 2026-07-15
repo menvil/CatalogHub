@@ -8,6 +8,7 @@ use App\Enums\MarketOfferStatus;
 use App\Enums\OfferAvailability;
 use App\Enums\OfferCondition;
 use App\Enums\RawPriceOfferStatus;
+use App\Events\MarketOfferUpdated;
 use App\Jobs\Pricing\Concerns\UsesPriceSourceRetryPolicy;
 use App\Models\ExternalProductMapping;
 use App\Models\MarketMerchant;
@@ -80,6 +81,7 @@ final class UpdateMarketOffersJob implements ShouldQueue
 
             foreach ($offerIds as $offerId) {
                 StorePriceHistoryJob::dispatch($offerId)->afterCommit();
+                MarketOfferUpdated::dispatch($offerId);
             }
 
             $log->refresh();

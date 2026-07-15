@@ -2,12 +2,14 @@
 
 namespace App\Filament\Resources;
 
+use App\Actions\Pricing\ApproveExternalProductMappingAction;
 use App\Enums\ExternalProductMappingStatus;
 use App\Filament\Resources\ExternalProductMappingResource\Pages;
 use App\Models\ExternalProductMapping;
 use App\Models\Market;
 use App\Models\User;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
@@ -18,6 +20,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
@@ -99,7 +102,10 @@ final class ExternalProductMappingResource extends Resource
                         ->when(filled($data['max'] ?? null), fn (Builder $query): Builder => $query
                             ->where('confidence', '<=', $data['max']))),
             ])
-            ->recordActions([ViewAction::make()])
+            ->recordActions([
+                self::approveAction(),
+                ViewAction::make(),
+            ])
             ->defaultSort('updated_at', 'desc');
     }
 
@@ -145,6 +151,25 @@ final class ExternalProductMappingResource extends Resource
             'index' => Pages\ListExternalProductMappings::route('/'),
             'view' => Pages\ViewExternalProductMapping::route('/{record}'),
         ];
+    }
+
+    public static function approveAction(): Action
+    {
+        return Action::make('approve')
+            ->label('Approve')
+            ->icon(Heroicon::OutlinedCheckCircle)
+            ->color('success')
+            ->requiresConfirmation()
+            ->visible(fn (ExternalProductMapping $record): bool => $record->status === ExternalProductMappingStatus::Pending)
+            ->action(function (ExternalProductMapping $record): ExternalProductMapping {
+                $user = auth()->user();
+
+                if (! $user instanceof User) {
+                    throw new AuthorizationException;
+                }
+
+                return app(ApproveExternalProductMappingAction::class)->handle($user, $record);
+            });
     }
 
     private static function canManagePrices(): bool

@@ -11,8 +11,13 @@
         </div>
     @else
         @if ($bestOffer)
-            <div class="border-b border-blue-100 bg-blue-50 px-6 py-4 sm:px-8">
-                <p class="text-sm font-semibold text-blue-900">Best offer: {{ $bestOffer->merchant?->name }} · {{ $formattedPrices[$bestOffer->getKey()] }}</p>
+            <div class="border-b border-blue-100 bg-blue-50 px-6 py-5 sm:px-8">
+                <p class="mb-3 text-sm font-semibold text-blue-900">Best offer</p>
+                <x-public.offer-card
+                    :offer="$bestOffer"
+                    :freshness="$freshness[$bestOffer->getKey()] ?? \App\Enums\PriceFreshnessStatus::Unknown"
+                    :locale="$locale"
+                />
             </div>
         @endif
 

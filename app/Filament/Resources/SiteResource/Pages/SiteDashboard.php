@@ -44,4 +44,9 @@ final class SiteDashboard extends Page
     {
         return OfferProviderPreview::getUrl(['record' => $this->getRecord()]).'?freshness=stale';
     }
+
+    public function getSiteId(): int
+    {
+        return (int) $this->getRecord()->getKey();
+    }
 }

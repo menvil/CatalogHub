@@ -13,9 +13,11 @@
             <p class="text-lg font-semibold">{{ $modeLabels[$preview->providerMode] }}</p>
         </x-admin.card>
 
-        <x-admin.card title="Last successful source sync">
-            <p class="text-lg font-semibold">{{ $preview->lastSuccessfulSyncAt?->diffForHumans() ?? 'No successful sync yet' }}</p>
-        </x-admin.card>
+        <div id="source-sync-status">
+            <x-admin.card title="Last successful source sync">
+                <p class="text-lg font-semibold">{{ $preview->lastSuccessfulSyncAt?->diffForHumans() ?? 'No successful sync yet' }}</p>
+            </x-admin.card>
+        </div>
 
         <x-admin.card title="Widget fallback">
             @if ($preview->widgetEnabled)

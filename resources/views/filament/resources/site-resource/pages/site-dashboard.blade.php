@@ -1,4 +1,6 @@
 <x-filament-panels::page>
+    @include('filament.site.stale-price-warning')
+
     @php($labels = [
         'visible_products' => 'Visible products',
         'hidden_products' => 'Hidden products',

@@ -23,6 +23,8 @@ final class OfferCard extends Component
 
     public string $deliverySummary;
 
+    public string $deliveryTime;
+
     public function __construct(
         MediaUrlGenerator $mediaUrls,
         OfferDeliveryFormatter $deliveryFormatter,
@@ -44,6 +46,7 @@ final class OfferCard extends Component
         $merchantName = trim($offer->merchant->name);
         $this->merchantInitial = mb_strtoupper(mb_substr($merchantName, 0, 1));
         $this->deliverySummary = $deliveryFormatter->price($offer, $locale);
+        $this->deliveryTime = $deliveryFormatter->time($offer);
     }
 
     public function render(): View

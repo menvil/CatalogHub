@@ -23,4 +23,11 @@ final class OfferDeliveryFormatter
             locale: $locale,
         );
     }
+
+    public function time(MarketOffer $offer): string
+    {
+        $deliveryTime = trim((string) $offer->delivery_time);
+
+        return $deliveryTime !== '' ? $deliveryTime : 'Delivery time unknown';
+    }
 }

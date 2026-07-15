@@ -42,6 +42,24 @@ class OfferDeliveryDisplayTest extends TestCase
         $this->assertStringContainsString('Delivery price unknown', $this->renderTable($offer));
     }
 
+    public function test_it_shows_delivery_time_when_available(): void
+    {
+        $offer = MarketOffer::factory()->create(['delivery_time' => 'Ships in 1–2 days']);
+        $offer->load('merchant.logoMediaAsset');
+
+        $this->assertStringContainsString('Ships in 1–2 days', $this->renderCard($offer));
+        $this->assertStringContainsString('Ships in 1–2 days', $this->renderTable($offer));
+    }
+
+    public function test_it_shows_an_unknown_state_when_delivery_time_is_missing(): void
+    {
+        $offer = MarketOffer::factory()->create(['delivery_time' => null]);
+        $offer->load('merchant.logoMediaAsset');
+
+        $this->assertStringContainsString('Delivery time unknown', $this->renderCard($offer));
+        $this->assertStringContainsString('Delivery time unknown', $this->renderTable($offer));
+    }
+
     private function renderCard(MarketOffer $offer): string
     {
         return Blade::render(

@@ -21,6 +21,9 @@ final class OfferTable extends Component
     /** @var array<int, string> */
     public array $formattedDeliveryPrices = [];
 
+    /** @var array<int, string> */
+    public array $formattedDeliveryTimes = [];
+
     /**
      * @param  Collection<int, MarketOffer>  $offers
      * @param  array<int, PriceFreshnessStatus>  $freshness
@@ -50,6 +53,7 @@ final class OfferTable extends Component
                 locale: $locale,
             );
             $this->formattedDeliveryPrices[(int) $offer->getKey()] = $deliveryFormatter->price($offer, $locale);
+            $this->formattedDeliveryTimes[(int) $offer->getKey()] = $deliveryFormatter->time($offer);
         }
     }
 

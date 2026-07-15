@@ -43,6 +43,32 @@
     </div>
 </details>
 
+<details open class="group px-5 py-4">
+    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-slate-900">
+        <span>Availability</span>
+        <span aria-hidden="true" class="text-slate-400 transition group-open:rotate-180">⌄</span>
+    </summary>
+
+    <label @class([
+        'mt-4 flex items-center text-sm text-slate-700',
+        'min-h-11 gap-3' => $isMobile,
+        'cursor-pointer gap-2' => ! $isMobile,
+    ])>
+        <input
+            type="checkbox"
+            name="in_stock"
+            value="1"
+            @checked((string) ($filterValues['in_stock'] ?? '') === '1')
+            @class([
+                'rounded border-slate-300 text-blue-600',
+                'size-5' => $isMobile,
+                'size-4 focus:ring-blue-500' => ! $isMobile,
+            ])
+        >
+        <span>Only in-stock products</span>
+    </label>
+</details>
+
 @foreach ($facets as $facet)
     @php
         $options = collect($facet->options)->filter(

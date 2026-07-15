@@ -11,6 +11,7 @@ use App\Models\Review;
 use App\Models\SiteProductProjection;
 use App\Services\Content\RelatedContentResolver;
 use App\Services\Pricing\BestOfferResolver;
+use App\Services\Pricing\PriceFreshnessCalculator;
 use App\Services\Pricing\ValidMarketOfferQuery;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -27,6 +28,7 @@ final class ProductController extends Controller
         RelatedContentResolver $relatedContent,
         ValidMarketOfferQuery $validOffers,
         BestOfferResolver $bestOffers,
+        PriceFreshnessCalculator $freshness,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
         $projection = SiteProductProjection::query()
@@ -81,6 +83,9 @@ final class ProductController extends Controller
             ->orderBy('price')
             ->orderBy('id')
             ->get();
+        $offerFreshness = $offers->mapWithKeys(fn ($offer): array => [
+            (int) $offer->getKey() => $freshness->calculate($offer),
+        ])->all();
 
         return view($layouts->resolve($site, 'product'), [
             'site' => $site,
@@ -102,6 +107,7 @@ final class ProductController extends Controller
             'centralProductId' => (int) $projection->central_product_id,
             'productProjection' => $projection,
             'offers' => $offers,
+            'offerFreshness' => $offerFreshness,
             'bestOffer' => $bestOffers->resolve($site, (int) $projection->central_product_id),
             'reviewsEnabled' => $reviewsEnabled,
             'reviews' => $reviews,

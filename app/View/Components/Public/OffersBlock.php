@@ -2,6 +2,7 @@
 
 namespace App\View\Components\Public;
 
+use App\Enums\PriceFreshnessStatus;
 use App\Models\MarketOffer;
 use App\Models\SiteProductProjection;
 use Illuminate\Contracts\View\View;
@@ -14,10 +15,14 @@ final class OffersBlock extends Component
     /** @var array<int, string> */
     public array $formattedPrices = [];
 
-    /** @param Collection<int, MarketOffer> $offers */
+    /**
+     * @param  Collection<int, MarketOffer>  $offers
+     * @param  array<int, PriceFreshnessStatus>  $freshness
+     */
     public function __construct(
         public SiteProductProjection $productProjection,
         public Collection $offers,
+        public array $freshness = [],
         public ?MarketOffer $bestOffer = null,
         public string $locale = 'en',
     ) {

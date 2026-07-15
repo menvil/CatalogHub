@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\MediaAsset;
 use App\Services\Media\MediaUrlGenerator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 final class MediaLibraryController extends Controller
 {
     public function __invoke(Request $request, MediaUrlGenerator $urls): View
     {
-        $this->authorizeMedia($request);
+        Gate::authorize('viewAny', MediaAsset::class);
 
         $query = MediaAsset::query()
             ->with(['variants' => fn ($query) => $query->where('variant_type', 'thumbnail')->where('status', 'ready')])
@@ -40,10 +41,5 @@ final class MediaLibraryController extends Controller
             'assets' => $assets,
             'urlGenerator' => $urls,
         ]);
-    }
-
-    private function authorizeMedia(Request $request): void
-    {
-        abort_unless($request->user()?->hasCatalogHubPermission('media.manage'), 403);
     }
 }

@@ -8,13 +8,14 @@ use App\Models\MediaSource;
 use App\Services\Media\MediaUrlGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 final class MediaAssetDetailController extends Controller
 {
-    public function show(Request $request, MediaAsset $asset, MediaUrlGenerator $urls): View
+    public function show(MediaAsset $asset, MediaUrlGenerator $urls): View
     {
-        $this->authorizeMedia($request);
+        Gate::authorize('view', $asset);
 
         $asset->load(['sources', 'variants']);
 
@@ -27,7 +28,7 @@ final class MediaAssetDetailController extends Controller
 
     public function updateSource(Request $request, MediaAsset $asset): RedirectResponse
     {
-        $this->authorizeMedia($request);
+        Gate::authorize('update', $asset);
 
         $data = $request->validate([
             'source_type' => ['nullable', 'string', 'max:100'],
@@ -46,10 +47,5 @@ final class MediaAssetDetailController extends Controller
         return redirect()
             ->route('central.media.show', $asset)
             ->with('status', 'Media source saved.');
-    }
-
-    private function authorizeMedia(Request $request): void
-    {
-        abort_unless($request->user()?->hasCatalogHubPermission('media.manage'), 403);
     }
 }

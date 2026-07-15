@@ -108,7 +108,7 @@ final class ProductController extends Controller
             'productProjection' => $projection,
             'offers' => $offers,
             'offerFreshness' => $offerFreshness,
-            'bestOffer' => $bestOffers->resolve($site, (int) $projection->central_product_id),
+            'bestOffer' => $bestOffers->resolveFromOffers($site, $offers, $offerFreshness),
             'reviewsEnabled' => $reviewsEnabled,
             'reviews' => $reviews,
             'leadsEnabled' => $leadsEnabled,

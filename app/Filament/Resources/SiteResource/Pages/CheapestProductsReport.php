@@ -84,8 +84,14 @@ final class CheapestProductsReport extends Page
 
     public function formattedPrice(SiteSearchDocument $document): string
     {
+        $minimumPrice = $document->getAttribute('min_price');
+
+        if ($minimumPrice === null) {
+            return '—';
+        }
+
         return Number::currency(
-            (float) $document->min_price,
+            (float) $minimumPrice,
             in: $this->siteRecord()->market->currency_code,
             locale: $this->siteRecord()->default_locale,
         );

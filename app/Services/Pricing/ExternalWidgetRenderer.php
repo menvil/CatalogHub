@@ -60,11 +60,14 @@ final class ExternalWidgetRenderer
 
     private function isTrustedBaseUrl(string $url): bool
     {
+        $parsed = parse_url($url);
+
         return filter_var($url, FILTER_VALIDATE_URL) !== false
-            && strtolower((string) parse_url($url, PHP_URL_SCHEME)) === 'https'
-            && is_string(parse_url($url, PHP_URL_HOST))
-            && parse_url($url, PHP_URL_USER) === null
-            && parse_url($url, PHP_URL_PASS) === null
-            && parse_url($url, PHP_URL_FRAGMENT) === null;
+            && is_array($parsed)
+            && strtolower((string) ($parsed['scheme'] ?? '')) === 'https'
+            && is_string($parsed['host'] ?? null)
+            && ! array_key_exists('user', $parsed)
+            && ! array_key_exists('pass', $parsed)
+            && ! array_key_exists('fragment', $parsed);
     }
 }

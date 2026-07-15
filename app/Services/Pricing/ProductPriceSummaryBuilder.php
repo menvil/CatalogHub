@@ -4,6 +4,7 @@ namespace App\Services\Pricing;
 
 use App\Data\Pricing\ProductPriceSummary;
 use App\Enums\OfferAvailability;
+use App\Models\MarketOffer;
 use App\Models\Site;
 use Carbon\CarbonImmutable;
 
@@ -20,16 +21,18 @@ final class ProductPriceSummaryBuilder
         $offers = $this->sourceConfig->applySummaryPolicy(
             $this->validOffers->forProduct($site, $centralProductId),
             $site,
-        );
-        $minimum = (clone $offers)->min('price');
-        $maximum = (clone $offers)->max('price');
-        $lastPriceUpdateAt = (clone $offers)->max('last_checked_at');
+        )->get();
+        $minimum = $offers->min('price');
+        $maximum = $offers->max('price');
+        $lastPriceUpdateAt = $offers->max('last_checked_at');
 
         return new ProductPriceSummary(
             minPrice: $this->money($minimum),
             maxPrice: $this->money($maximum),
-            offersCount: (clone $offers)->count(),
-            inStock: (clone $offers)->where('availability', OfferAvailability::InStock)->exists(),
+            offersCount: $offers->count(),
+            inStock: $offers->contains(
+                fn (MarketOffer $offer): bool => $offer->availability === OfferAvailability::InStock,
+            ),
             lastPriceUpdateAt: $lastPriceUpdateAt === null
                 ? null
                 : CarbonImmutable::parse((string) $lastPriceUpdateAt),

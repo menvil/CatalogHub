@@ -12,7 +12,7 @@ final readonly class CheapestProductsQuery
 {
     public function __construct(
         private ValidMarketOfferQuery $validOffers,
-        private SitePriceSourceConfigResolver $sourceConfig,
+        private PriceFreshnessCalculator $freshness,
     ) {}
 
     /** @return Builder<SiteSearchDocument> */
@@ -85,16 +85,14 @@ final readonly class CheapestProductsQuery
             return;
         }
 
-        $thresholds = $this->sourceConfig->defaultThresholds();
-        $freshCutoff = now()->subHours($thresholds['fresh']);
-        $expiredCutoff = now()->subHours($thresholds['expired']);
+        $cutoffs = $this->freshness->defaultCutoffs();
 
         match ($freshness) {
-            PriceFreshnessStatus::Fresh => $query->where('site_search_documents.last_price_update_at', '>=', $freshCutoff),
+            PriceFreshnessStatus::Fresh => $query->where('site_search_documents.last_price_update_at', '>=', $cutoffs['fresh']),
             PriceFreshnessStatus::Stale => $query
-                ->where('site_search_documents.last_price_update_at', '<', $freshCutoff)
-                ->where('site_search_documents.last_price_update_at', '>', $expiredCutoff),
-            PriceFreshnessStatus::Expired => $query->where('site_search_documents.last_price_update_at', '<=', $expiredCutoff),
+                ->where('site_search_documents.last_price_update_at', '<', $cutoffs['fresh'])
+                ->where('site_search_documents.last_price_update_at', '>', $cutoffs['expired']),
+            PriceFreshnessStatus::Expired => $query->where('site_search_documents.last_price_update_at', '<=', $cutoffs['expired']),
             PriceFreshnessStatus::Unknown => $query->whereNull('site_search_documents.last_price_update_at'),
         };
     }

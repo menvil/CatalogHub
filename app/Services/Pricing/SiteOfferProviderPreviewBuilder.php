@@ -60,7 +60,7 @@ final readonly class SiteOfferProviderPreviewBuilder
                 'last_sync_at' => $source->last_sync_at?->toIso8601String(),
             ])->values()->all(),
             lastSuccessfulSyncAt: $lastSync instanceof CarbonInterface ? $lastSync : null,
-            sampleProductName: $sampleOffer?->centralProduct->name,
+            sampleProductName: $sampleOffer?->centralProduct?->name,
             sampleOffers: $offers->map(fn (MarketOffer $offer): array => [
                 'merchant' => (string) $offer->merchant->name,
                 'price' => Number::currency(

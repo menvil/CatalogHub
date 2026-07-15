@@ -11,6 +11,7 @@ use App\Models\PriceSource;
 use App\Models\Site;
 use App\Models\SiteProductProjection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\Concerns\EnablesSiteLocales;
 use Tests\TestCase;
 
@@ -36,7 +37,14 @@ class ProductOffersBlockTest extends TestCase
             'currency' => $site->market->currency_code,
         ]);
 
-        $this->get('http://offers.test/en/products/test-product')
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $response = $this->get('http://offers.test/en/products/test-product');
+        $offerQueries = collect(DB::getQueryLog())
+            ->filter(fn (array $query): bool => str_contains($query['query'], 'market_offers'));
+        DB::disableQueryLog();
+
+        $response
             ->assertOk()
             ->assertSee('data-offers-block', false)
             ->assertSee('Where to buy')
@@ -45,6 +53,7 @@ class ProductOffersBlockTest extends TestCase
             ->assertSee('/offers/'.$offer->id.'/go', false)
             ->assertDontSee((string) $offer->url, false)
             ->assertSee('data-price-freshness="fresh"', false);
+        $this->assertCount(1, $offerQueries);
     }
 
     public function test_product_page_renders_a_safe_no_offers_state(): void

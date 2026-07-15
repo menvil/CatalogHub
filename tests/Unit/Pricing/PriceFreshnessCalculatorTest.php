@@ -73,7 +73,7 @@ class PriceFreshnessCalculatorTest extends TestCase
         );
         $this->assertSame(
             PriceFreshnessStatus::Stale,
-            $calculator->calculate($this->now->subHours(3), $this->now),
+            $calculator->calculate($this->now->subMinutes(150), $this->now),
         );
         $this->assertSame(
             PriceFreshnessStatus::Expired,

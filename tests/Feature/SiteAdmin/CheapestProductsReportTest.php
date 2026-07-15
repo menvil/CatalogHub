@@ -64,6 +64,20 @@ class CheapestProductsReportTest extends TestCase
         $this->assertArrayHasKey('cheapest-products', SiteResource::getPages());
     }
 
+    public function test_formatted_price_uses_the_missing_value_marker_for_a_null_price(): void
+    {
+        $site = Site::factory()->create();
+        $document = SiteSearchDocument::factory()->create([
+            'site_id' => $site->id,
+            'min_price' => null,
+        ]);
+        $page = $this->actingAs(User::factory()->siteAdmin($site)->create())
+            ->get(CheapestProductsReport::getUrl(['record' => $site]));
+
+        $page->assertOk();
+        $this->assertSame('—', app(CheapestProductsReport::class)->formattedPrice($document));
+    }
+
     /** @return array{Site, CentralProduct, CentralProduct, MarketMerchant, CentralCategory} */
     private function scenario(): array
     {

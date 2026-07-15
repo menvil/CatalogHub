@@ -63,6 +63,18 @@ class SitePriceSourceConfigResolverTest extends TestCase
         $this->assertTrue($config->includeOutOfStock);
     }
 
+    public function test_it_reuses_the_resolved_config_for_the_same_site_and_source(): void
+    {
+        $site = Site::factory()->create();
+        $source = PriceSource::factory()->active()->create(['market_id' => $site->market_id]);
+        $resolver = app(SitePriceSourceConfigResolver::class);
+
+        $first = $resolver->resolve($site, $source);
+        $second = $resolver->resolve($site, $source);
+
+        $this->assertSame($first, $second);
+    }
+
     public function test_it_disables_a_source_from_an_unrelated_market(): void
     {
         $site = Site::factory()->create();

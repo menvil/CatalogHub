@@ -7,6 +7,7 @@ use App\Enums\PriceFreshnessStatus;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\MarketOffer;
 use App\Models\Site;
+use Illuminate\Support\Collection;
 
 final readonly class BestOfferResolver
 {
@@ -18,19 +19,45 @@ final readonly class BestOfferResolver
     public function resolve(Site $site, CentralProduct|int $product): ?MarketOffer
     {
         $productId = $product instanceof CentralProduct ? (int) $product->getKey() : $product;
-        $candidate = $this->validOffers->forProduct($site, $productId)
+        $offers = $this->validOffers->forProduct($site, $productId)
             ->where('availability', OfferAvailability::InStock)
             ->with(['merchant.logoMediaAsset', 'priceSource'])
-            ->get()
-            ->filter(fn (MarketOffer $offer): bool => $this->freshness->calculate($offer, site: $site) !== PriceFreshnessStatus::Expired)
-            ->sort(function (MarketOffer $left, MarketOffer $right) use ($site): int {
+            ->get();
+
+        return $this->resolveFromOffers($site, $offers);
+    }
+
+    /**
+     * @param  Collection<int, MarketOffer>  $offers
+     * @param  array<int, PriceFreshnessStatus>  $statuses
+     */
+    public function resolveFromOffers(Site $site, Collection $offers, array $statuses = []): ?MarketOffer
+    {
+        $candidate = $offers
+            ->filter(function (MarketOffer $offer) use ($site, &$statuses): bool {
+                if ($offer->availability !== OfferAvailability::InStock) {
+                    return false;
+                }
+
+                $offerId = (int) $offer->getKey();
+                $status = $statuses[$offerId]
+                    ?? $this->freshness->calculate($offer, site: $site);
+                $statuses[$offerId] = $status;
+
+                return $status !== PriceFreshnessStatus::Expired;
+            })
+            ->sort(function (MarketOffer $left, MarketOffer $right) use ($statuses): int {
                 $totalComparison = $this->totalCents($left) <=> $this->totalCents($right);
 
                 if ($totalComparison !== 0) {
                     return $totalComparison;
                 }
 
-                $freshnessComparison = $this->freshnessRank($left, $site) <=> $this->freshnessRank($right, $site);
+                $freshnessComparison = $this->freshnessRank(
+                    $statuses[(int) $left->getKey()] ?? PriceFreshnessStatus::Unknown,
+                ) <=> $this->freshnessRank(
+                    $statuses[(int) $right->getKey()] ?? PriceFreshnessStatus::Unknown,
+                );
 
                 return $freshnessComparison !== 0
                     ? $freshnessComparison
@@ -52,9 +79,9 @@ final readonly class BestOfferResolver
         return (int) round((float) $amount * 100);
     }
 
-    private function freshnessRank(MarketOffer $offer, Site $site): int
+    private function freshnessRank(PriceFreshnessStatus $status): int
     {
-        return match ($this->freshness->calculate($offer, site: $site)) {
+        return match ($status) {
             PriceFreshnessStatus::Fresh => 0,
             PriceFreshnessStatus::Stale => 1,
             PriceFreshnessStatus::Unknown => 2,

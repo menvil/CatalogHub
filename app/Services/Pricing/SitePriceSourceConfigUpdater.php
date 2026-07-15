@@ -4,7 +4,6 @@ namespace App\Services\Pricing;
 
 use App\Models\PriceSource;
 use App\Models\Site;
-use App\Models\SitePriceSource;
 
 final class SitePriceSourceConfigUpdater
 {
@@ -23,15 +22,6 @@ final class SitePriceSourceConfigUpdater
             ]);
 
             if ($sourceId === false || ! $marketSourceIds->has($sourceId)) {
-                continue;
-            }
-
-            $pivot = SitePriceSource::query()
-                ->where('site_id', $site->id)
-                ->where('price_source_id', $sourceId)
-                ->first();
-
-            if (! $pivot instanceof SitePriceSource) {
                 continue;
             }
 

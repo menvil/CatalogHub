@@ -3,6 +3,7 @@
 namespace Tests\Feature\SiteAdmin;
 
 use App\Enums\OfferAvailability;
+use App\Enums\PriceSourceStatus;
 use App\Filament\Resources\SiteResource\Pages\EditSite;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\MarketMerchant;
@@ -12,6 +13,7 @@ use App\Models\Site;
 use App\Models\User;
 use App\Services\Pricing\ProductPriceSummaryBuilder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -48,6 +50,25 @@ class SitePriceSourceSelectionTest extends TestCase
         ]);
     }
 
+    public function test_site_admin_source_options_exclude_inactive_market_sources(): void
+    {
+        $site = Site::factory()->create();
+        $active = PriceSource::factory()->active()->create([
+            'market_id' => $site->market_id,
+            'name' => 'Selectable Active Feed',
+        ]);
+        $inactive = PriceSource::factory()->create([
+            'market_id' => $site->market_id,
+            'name' => 'Hidden Inactive Feed',
+            'status' => PriceSourceStatus::Inactive,
+        ]);
+
+        Livewire::actingAs(User::factory()->siteAdmin($site)->create())
+            ->test(EditSite::class, ['record' => $site->getRouteKey()])
+            ->assertSee($active->name)
+            ->assertDontSee($inactive->name);
+    }
+
     public function test_disabled_site_price_source_does_not_affect_price_summary(): void
     {
         $site = Site::factory()->create();
@@ -81,6 +102,26 @@ class SitePriceSourceSelectionTest extends TestCase
 
         $this->assertSame('199.99', $summary->minPrice);
         $this->assertSame(1, $summary->offersCount);
+    }
+
+    public function test_price_summary_loads_valid_offers_once(): void
+    {
+        $site = Site::factory()->create();
+        $product = CentralProduct::factory()->create();
+        $merchant = MarketMerchant::factory()->create(['market_id' => $site->market_id]);
+        $otherMerchant = MarketMerchant::factory()->create(['market_id' => $site->market_id]);
+        $source = PriceSource::factory()->active()->create(['market_id' => $site->market_id]);
+        $this->offer($site, $product, $merchant, $source, '199.99');
+        $this->offer($site, $product, $otherMerchant, $source, '249.99');
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        app(ProductPriceSummaryBuilder::class)->build($site->id, $product->id);
+
+        $offerQueries = collect(DB::getQueryLog())
+            ->filter(fn (array $query): bool => str_contains($query['query'], 'market_offers'));
+        DB::disableQueryLog();
+        $this->assertCount(1, $offerQueries);
     }
 
     public function test_price_summary_respects_source_out_of_stock_config(): void

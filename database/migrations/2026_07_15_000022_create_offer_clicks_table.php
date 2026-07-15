@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('offer_clicks', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('site_id')->constrained()->restrictOnDelete();
-            $table->foreignId('market_offer_id')->constrained()->restrictOnDelete();
+            $table->foreignId('site_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('market_offer_id')->constrained()->cascadeOnDelete();
             $table->foreignId('central_product_id')->nullable()->constrained('central_products')->nullOnDelete();
             $table->foreignId('merchant_id')->nullable()->constrained('market_merchants')->nullOnDelete();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();

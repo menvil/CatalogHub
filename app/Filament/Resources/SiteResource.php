@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\PriceSourceStatus;
 use App\Enums\SiteMode;
 use App\Enums\SiteStatus;
 use App\Filament\Resources\SiteResource\Pages;
@@ -90,6 +91,7 @@ final class SiteResource extends Resource
                 ->preload()
                 ->options(fn (?Model $record): array => ! $record instanceof Site ? [] : PriceSource::query()
                     ->where('market_id', $record->market_id)
+                    ->where('status', PriceSourceStatus::Active)
                     ->orderBy('name')
                     ->pluck('name', 'id')
                     ->all())

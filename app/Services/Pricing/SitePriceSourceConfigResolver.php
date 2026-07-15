@@ -12,12 +12,21 @@ use App\Models\SitePriceSource;
 use Illuminate\Database\Eloquent\Builder;
 use InvalidArgumentException;
 
-final readonly class SitePriceSourceConfigResolver
+final class SitePriceSourceConfigResolver
 {
-    public function __construct(private SitePriceSourceSelection $selection) {}
+    /** @var array<string, SitePriceSourceConfigData> */
+    private array $cache = [];
+
+    public function __construct(private readonly SitePriceSourceSelection $selection) {}
 
     public function resolve(Site $site, PriceSource $source): SitePriceSourceConfigData
     {
+        $cacheKey = $site->getKey().':'.$source->getKey();
+
+        if (isset($this->cache[$cacheKey])) {
+            return $this->cache[$cacheKey];
+        }
+
         $defaults = $this->defaultThresholds();
         $pivot = SitePriceSource::query()
             ->where('site_id', $site->id)
@@ -39,7 +48,7 @@ final readonly class SitePriceSourceConfigResolver
             ? $pivot->enabled
             : ! $this->selection->hasExplicitSelection($site);
 
-        return new SitePriceSourceConfigData(
+        return $this->cache[$cacheKey] = new SitePriceSourceConfigData(
             enabled: $sameMarket && $source->status === PriceSourceStatus::Active && $enabledBySelection,
             priority: $pivot instanceof SitePriceSource ? $pivot->priority : null,
             freshHours: $thresholds['fresh'],

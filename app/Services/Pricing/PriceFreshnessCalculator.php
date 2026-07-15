@@ -29,15 +29,20 @@ final class PriceFreshnessCalculator
         $thresholds = $this->thresholds($subject, $site);
         $ageInSeconds = max(0, $now->getTimestamp() - $updatedAt->getTimestamp());
 
-        if ($ageInSeconds >= $thresholds['expired'] * 3600) {
-            return PriceFreshnessStatus::Expired;
-        }
+        return $this->statusForAge($ageInSeconds, $thresholds);
+    }
 
-        if ($ageInSeconds <= $thresholds['fresh'] * 3600) {
-            return PriceFreshnessStatus::Fresh;
-        }
+    /** @return array{fresh: CarbonImmutable, stale: CarbonImmutable, expired: CarbonImmutable} */
+    public function defaultCutoffs(?DateTimeInterface $now = null): array
+    {
+        $now = $now === null ? CarbonImmutable::now() : CarbonImmutable::instance($now);
+        $thresholds = $this->sourceConfig->defaultThresholds();
 
-        return PriceFreshnessStatus::Stale;
+        return [
+            'fresh' => $now->subHours($thresholds['fresh']),
+            'stale' => $now->subHours($thresholds['stale']),
+            'expired' => $now->subHours($thresholds['expired']),
+        ];
     }
 
     private function timestamp(
@@ -78,5 +83,16 @@ final class PriceFreshnessCalculator
         }
 
         return $this->sourceConfig->defaultThresholds();
+    }
+
+    /** @param array{fresh: int, stale: int, expired: int} $thresholds */
+    private function statusForAge(int $ageInSeconds, array $thresholds): PriceFreshnessStatus
+    {
+        return match (true) {
+            $ageInSeconds >= $thresholds['expired'] * 3600 => PriceFreshnessStatus::Expired,
+            $ageInSeconds <= $thresholds['fresh'] * 3600 => PriceFreshnessStatus::Fresh,
+            $ageInSeconds <= $thresholds['stale'] * 3600 => PriceFreshnessStatus::Stale,
+            default => PriceFreshnessStatus::Stale,
+        };
     }
 }

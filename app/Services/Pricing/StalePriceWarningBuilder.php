@@ -35,7 +35,7 @@ final readonly class StalePriceWarningBuilder
             ->whereHas('merchant', fn (Builder $merchant): Builder => $merchant
                 ->where('status', MarketMerchantStatus::Active))
             ->with('priceSource')
-            ->get();
+            ->lazy();
         $stale = 0;
         $expired = 0;
         $affectedProducts = [];

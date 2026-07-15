@@ -72,6 +72,38 @@ class SiteSearchDocumentPriceTest extends TestCase
             'document_type' => 'product',
             'document_id' => $product->id,
             'min_price' => null,
+            'max_price' => null,
+        ]);
+    }
+
+    public function test_it_stores_the_highest_valid_offer_price_in_the_site_search_document(): void
+    {
+        $site = Site::factory()->create(['default_locale' => 'en']);
+        $product = CentralProduct::factory()->create();
+        $source = PriceSource::factory()->active()->create(['market_id' => $site->market_id]);
+
+        foreach (['249.99', '329.99'] as $price) {
+            MarketOffer::factory()->create([
+                'market_id' => $site->market_id,
+                'market_merchant_id' => MarketMerchant::factory()->create([
+                    'market_id' => $site->market_id,
+                ]),
+                'central_product_id' => $product->id,
+                'price_source_id' => $source->id,
+                'price' => $price,
+                'currency' => $site->market->currency_code,
+                'status' => MarketOfferStatus::Active,
+            ]);
+        }
+
+        app(SiteSyncService::class)->syncProduct($site, $product, 'en');
+
+        $this->assertDatabaseHas('site_search_documents', [
+            'site_id' => $site->id,
+            'document_type' => 'product',
+            'document_id' => $product->id,
+            'min_price' => '249.99',
+            'max_price' => '329.99',
         ]);
     }
 }

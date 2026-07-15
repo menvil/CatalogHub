@@ -99,7 +99,7 @@ final class DemoSiteSeederSupport
                 'config_json' => ['public_layout' => 'public.layouts.app'],
             ],
         );
-        $supports = ['hero_search', 'popular_categories', 'top_products', 'buying_guides', 'lead_form'];
+        $supports = ['hero_search', 'popular_categories', 'top_products', 'buying_guides', 'content_block', 'lead_form'];
         $manifestLayouts = array_filter(
             self::LAYOUTS,
             fn (string $pageType): bool => $pageType !== 'listing',
@@ -130,7 +130,7 @@ final class DemoSiteSeederSupport
                 [
                     'name' => str($pageType)->headline().' Default',
                     'view_path' => $pageType === 'article'
-                        ? 'public.pages.article-stub'
+                        ? 'public.content.show'
                         : "public.pages.{$pageType}",
                     'slots_json' => ['main'],
                     'status' => 'active',

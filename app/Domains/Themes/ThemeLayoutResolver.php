@@ -16,7 +16,7 @@ final readonly class ThemeLayoutResolver
         'listing' => 'public.pages.listing',
         'product' => 'public.pages.product',
         'compare' => 'public.pages.compare',
-        'article' => 'public.pages.article-stub',
+        'article' => 'public.content.show',
         'search' => 'public.pages.search',
     ];
 

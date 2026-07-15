@@ -7,7 +7,9 @@ use App\Domains\PublicSite\LocalizedUrlResolver;
 use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Http\Controllers\Controller;
+use App\Models\Review;
 use App\Models\SiteProductProjection;
+use App\Services\Content\RelatedContentResolver;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -20,6 +22,7 @@ final class ProductController extends Controller
         SiteContextResolver $sites,
         ThemeLayoutResolver $layouts,
         LocalizedUrlResolver $urls,
+        RelatedContentResolver $relatedContent,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
         $projection = SiteProductProjection::query()
@@ -54,6 +57,21 @@ final class ProductController extends Controller
             ];
         }
         $breadcrumbs[] = ['label' => $projection->title, 'url' => null];
+        $enabledFeatures = $site->features()
+            ->where('is_enabled', true)
+            ->pluck('feature_key');
+        $reviewsEnabled = $enabledFeatures->contains('reviews');
+        $leadsEnabled = $enabledFeatures->contains('leads');
+        $reviews = $reviewsEnabled
+            ? Review::query()
+                ->visiblePublicly()
+                ->forSite($site)
+                ->where('central_product_id', $projection->central_product_id)
+                ->latest('approved_at')
+                ->latest('id')
+                ->limit(50)
+                ->get()
+            : collect();
 
         return view($layouts->resolve($site, 'product'), [
             'site' => $site,
@@ -72,6 +90,30 @@ final class ProductController extends Controller
             'media' => $projection->media_json ?? [],
             'seo' => $seo,
             'breadcrumbs' => $breadcrumbs,
+            'centralProductId' => (int) $projection->central_product_id,
+            'reviewsEnabled' => $reviewsEnabled,
+            'reviews' => $reviews,
+            'leadsEnabled' => $leadsEnabled,
+            'relatedContent' => $relatedContent->resolveForProduct(
+                site: $site,
+                locale: $locale,
+                productId: (int) $projection->central_product_id,
+                categoryId: $this->canonicalId(data_get($payload, 'category.id')),
+                brandId: $this->canonicalId(data_get($payload, 'brand.id')),
+            ),
         ]);
+    }
+
+    private function canonicalId(mixed $value): ?int
+    {
+        if (! is_int($value) && ! is_string($value)) {
+            return null;
+        }
+
+        $id = filter_var($value, FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1],
+        ]);
+
+        return $id === false ? null : $id;
     }
 }

@@ -1,15 +1,11 @@
 name: Test coverage
 run-name: Coverage · ${{ github.head_ref || github.ref_name }}
 
-# Coverage mirrors the deploy branches: release/hotfix PRs into main are
-# measured before merge, and pushes to develop/main verify the deployed commit.
+# Coverage is a pre-merge gate for release and hotfix pull requests into main.
+# Manual runs remain available for ad hoc verification.
 on:
   pull_request:
     branches:
-      - main
-  push:
-    branches:
-      - develop
       - main
   workflow_dispatch:
 
@@ -191,25 +187,24 @@ jobs:
                 issue_number: pullRequest.number,
                 per_page: 100,
               });
-              const existing = comments.find((comment) =>
+              const existingComments = comments.filter((comment) =>
                 comment.user?.login === 'github-actions[bot]' && comment.body?.includes(marker),
               );
 
-              if (existing) {
-                await github.rest.issues.updateComment({
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pullRequest.number,
+                body,
+              });
+
+              await Promise.all(existingComments.map((comment) =>
+                github.rest.issues.deleteComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  comment_id: existing.id,
-                  body,
-                });
-              } else {
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: pullRequest.number,
-                  body,
-                });
-              }
+                  comment_id: comment.id,
+                }),
+              ));
             } catch (error) {
               core.warning(`Could not publish the PR coverage summary: ${error.message}`);
             }

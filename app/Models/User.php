@@ -11,10 +11,11 @@ use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'role'])]
+#[Fillable(['site_id', 'name', 'email', 'password', 'role'])]
 #[Hidden(['password', 'remember_token'])]
 /**
  * @property UserRole $role
@@ -81,6 +82,12 @@ class User extends Authenticatable implements FilamentUser
     public function hasCatalogHubPermission(string $permission): bool
     {
         return app(PermissionMatrix::class)->allows($this->userRole(), $permission);
+    }
+
+    /** @return BelongsTo<Site, $this> */
+    public function site(): BelongsTo
+    {
+        return $this->belongsTo(Site::class);
     }
 
     private function userRole(): UserRole

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Actions\Pricing\ApproveExternalProductMappingAction;
+use App\Actions\Pricing\RejectExternalProductMappingAction;
 use App\Enums\ExternalProductMappingStatus;
 use App\Filament\Resources\ExternalProductMappingResource\Pages;
 use App\Models\ExternalProductMapping;
@@ -11,6 +12,7 @@ use App\Models\User;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
@@ -104,6 +106,7 @@ final class ExternalProductMappingResource extends Resource
             ])
             ->recordActions([
                 self::approveAction(),
+                self::rejectAction(),
                 ViewAction::make(),
             ])
             ->defaultSort('updated_at', 'desc');
@@ -169,6 +172,34 @@ final class ExternalProductMappingResource extends Resource
                 }
 
                 return app(ApproveExternalProductMappingAction::class)->handle($user, $record);
+            });
+    }
+
+    public static function rejectAction(): Action
+    {
+        return Action::make('reject')
+            ->label('Reject')
+            ->icon(Heroicon::OutlinedXCircle)
+            ->color('danger')
+            ->visible(fn (ExternalProductMapping $record): bool => $record->status === ExternalProductMappingStatus::Pending)
+            ->schema([
+                Textarea::make('reason')
+                    ->label('Rejection reason')
+                    ->required()
+                    ->maxLength(2000),
+            ])
+            ->action(function (array $data, ExternalProductMapping $record): ExternalProductMapping {
+                $user = auth()->user();
+
+                if (! $user instanceof User) {
+                    throw new AuthorizationException;
+                }
+
+                return app(RejectExternalProductMappingAction::class)->handle(
+                    $user,
+                    $record,
+                    (string) $data['reason'],
+                );
             });
     }
 

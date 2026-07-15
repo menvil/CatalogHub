@@ -11,6 +11,9 @@ final class ViewExternalProductMapping extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return [ExternalProductMappingResource::approveAction()];
+        return [
+            ExternalProductMappingResource::approveAction(),
+            ExternalProductMappingResource::rejectAction(),
+        ];
     }
 }

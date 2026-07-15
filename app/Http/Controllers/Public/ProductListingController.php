@@ -16,6 +16,7 @@ use App\Models\SiteSearchDocument;
 use App\Services\Facets\FacetQueryBuilder;
 use App\Services\Facets\SiteFacetConfigResolver;
 use App\Services\Pricing\MerchantFilterOptionsBuilder;
+use App\Services\Pricing\ProductCardPricePresenter;
 use App\Support\Facets\FacetUrlBuilder;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -33,6 +34,7 @@ final class ProductListingController extends Controller
         SiteFacetConfigResolver $facetConfig,
         FacetUrlBuilder $facetUrls,
         MerchantFilterOptionsBuilder $merchantOptions,
+        ProductCardPricePresenter $pricePresenter,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
         $site->loadMissing('market');
@@ -69,8 +71,10 @@ final class ProductListingController extends Controller
             $site,
             $locale,
             $urls,
+            $pricePresenter,
         ): array {
             $product = $projections->get($document->document_id);
+            $price = $pricePresenter->present($document, $site->market->currency_code, $locale);
 
             if (! $product instanceof SiteProductProjection) {
                 return [
@@ -81,6 +85,7 @@ final class ProductListingController extends Controller
                         : null,
                     'media' => data_get($document->payload_json, 'media', []),
                     'summary' => ['rating' => data_get($document->payload_json, 'rating')],
+                    'price' => $price,
                 ];
             }
 
@@ -90,6 +95,7 @@ final class ProductListingController extends Controller
                 'url' => $urls->product($site, $locale, $product),
                 'media' => $product->media_json ?? [],
                 'summary' => $product->search_summary_json ?? [],
+                'price' => $price,
             ];
         });
         $listingUrl = $urls->listing($site, $locale, $category);

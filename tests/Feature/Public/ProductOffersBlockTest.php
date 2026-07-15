@@ -27,7 +27,7 @@ class ProductOffersBlockTest extends TestCase
             'market_id' => $site->market_id,
             'name' => 'Example Merchant',
         ]);
-        MarketOffer::factory()->create([
+        $offer = MarketOffer::factory()->create([
             'market_id' => $site->market_id,
             'market_merchant_id' => $merchant->id,
             'central_product_id' => $product->id,
@@ -42,6 +42,8 @@ class ProductOffersBlockTest extends TestCase
             ->assertSee('Where to buy')
             ->assertSee('Example Merchant')
             ->assertSee('249.99')
+            ->assertSee('/offers/'.$offer->id.'/go', false)
+            ->assertDontSee((string) $offer->url, false)
             ->assertSee('data-price-freshness="fresh"', false);
     }
 

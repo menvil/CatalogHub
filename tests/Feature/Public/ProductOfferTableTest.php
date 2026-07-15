@@ -41,6 +41,7 @@ class ProductOfferTableTest extends TestCase
         }
         $this->assertMatchesRegularExpression('/Best Merchant.*Other Merchant/s', $html);
         $this->assertStringContainsString('Go to shop', $html);
+        $this->assertStringContainsString('/offers/'.$best->id.'/go', $html);
         $this->assertStringNotContainsString((string) $best->url, $html);
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Services\Pricing;
 
+use App\Enums\PriceSourceSyncStatus;
 use App\Jobs\Pricing\FetchExternalOffersJob;
 use App\Models\PriceSource;
 use App\Models\PriceSourceSyncLog;
@@ -15,7 +16,7 @@ final class PriceSourceSyncService
     public function sync(PriceSource $source): PriceSourceSyncLog
     {
         $log = $source->syncLogs()->create([
-            'status' => 'queued',
+            'status' => PriceSourceSyncStatus::Queued,
             'items_fetched' => 0,
             'items_normalized' => 0,
             'items_matched' => 0,

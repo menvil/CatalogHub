@@ -220,11 +220,25 @@ final class ExternalProductMappingResource extends Resource
             ->schema([
                 Select::make('central_product_id')
                     ->label('Central product')
-                    ->options(fn (): array => CentralProduct::query()
-                        ->whereIn('status', [CentralProductStatus::Draft, CentralProductStatus::Active])
+                    ->getSearchResultsUsing(fn (string $search): array => CentralProduct::query()
+                        ->whereIn('status', [
+                            CentralProductStatus::Draft->value,
+                            CentralProductStatus::Active->value,
+                        ])
+                        ->whereLike('name', "%{$search}%")
                         ->orderBy('name')
+                        ->limit(50)
                         ->pluck('name', 'id')
                         ->all())
+                    ->getOptionLabelUsing(function (mixed $value): ?string {
+                        if (! is_numeric($value)) {
+                            return null;
+                        }
+
+                        $label = CentralProduct::query()->whereKey((int) $value)->value('name');
+
+                        return is_string($label) ? $label : null;
+                    })
                     ->searchable()
                     ->required(),
                 Textarea::make('reason')

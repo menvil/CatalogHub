@@ -7,6 +7,7 @@ use App\Filament\Resources\PriceSourceSyncLogResource\Pages;
 use App\Models\PriceSourceSyncLog;
 use App\Models\User;
 use BackedEnum;
+use Carbon\CarbonImmutable;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Infolists\Components\TextEntry;
@@ -77,9 +78,9 @@ final class PriceSourceSyncLogResource extends Resource
                     ])
                     ->query(fn (Builder $query, array $data): Builder => $query
                         ->when(filled($data['from'] ?? null), fn (Builder $query): Builder => $query
-                            ->whereDate('started_at', '>=', $data['from']))
+                            ->where('started_at', '>=', CarbonImmutable::parse((string) $data['from'])->startOfDay()))
                         ->when(filled($data['until'] ?? null), fn (Builder $query): Builder => $query
-                            ->whereDate('started_at', '<=', $data['until']))),
+                            ->where('started_at', '<', CarbonImmutable::parse((string) $data['until'])->addDay()->startOfDay()))),
             ])
             ->recordActions([ViewAction::make()])
             ->defaultSort('created_at', 'desc');

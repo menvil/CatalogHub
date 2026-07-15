@@ -8,12 +8,17 @@ use App\Data\Pricing\PriceSourceFetchResult;
 use App\Enums\PriceSourceType;
 use App\Models\PriceSource;
 use App\Pricing\Adapters\Concerns\NormalizesExternalPriceOffers;
+use App\Services\Pricing\OutboundPriceSourceUrlGuard;
 use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
 
 final class CsvFeedPriceAdapter implements PriceSourceAdapterInterface
 {
     use NormalizesExternalPriceOffers;
+
+    public function __construct(
+        private readonly OutboundPriceSourceUrlGuard $urlGuard,
+    ) {}
 
     public function supports(PriceSource $source): bool
     {
@@ -31,7 +36,20 @@ final class CsvFeedPriceAdapter implements PriceSourceAdapterInterface
         $content = $config['csv_content'] ?? null;
 
         if ($content === null && filled($config['feed_url'] ?? null)) {
-            $content = Http::get((string) $config['feed_url'])->throw()->body();
+            $feedUrl = (string) $config['feed_url'];
+            $allowedHosts = $config['allowed_hosts'] ?? null;
+
+            if (! is_array($allowedHosts) || $allowedHosts === []) {
+                throw new InvalidArgumentException('CSV feed allowed_hosts must contain at least one host.');
+            }
+
+            $response = Http::withOptions($this->urlGuard->requestOptions($feedUrl, $allowedHosts))->get($feedUrl);
+
+            if ($response->redirect()) {
+                throw new InvalidArgumentException('CSV feed redirects are not allowed.');
+            }
+
+            $content = $response->throw()->body();
         }
 
         if ($content === null || trim((string) $content) === '') {
@@ -77,11 +95,28 @@ final class CsvFeedPriceAdapter implements PriceSourceAdapterInterface
             throw new InvalidArgumentException('CSV delimiter must be one character.');
         }
 
-        $lines = preg_split('/\r\n|\r|\n/', trim($content)) ?: [];
-        $rows = array_map(
-            fn (string $line): array => str_getcsv($line, $delimiter, '"', '\\'),
-            array_values(array_filter($lines, fn (string $line): bool => trim($line) !== '')),
-        );
+        $stream = fopen('php://temp', 'r+');
+
+        if ($stream === false) {
+            throw new InvalidArgumentException('Unable to open the CSV feed stream.');
+        }
+
+        $rows = [];
+
+        try {
+            fwrite($stream, $content);
+            rewind($stream);
+
+            while (($row = fgetcsv($stream, null, $delimiter, '"', '\\')) !== false) {
+                if (count($row) === 1 && ($row[0] === null || trim($row[0]) === '')) {
+                    continue;
+                }
+
+                $rows[] = $row;
+            }
+        } finally {
+            fclose($stream);
+        }
 
         if ($rows === []) {
             return [];

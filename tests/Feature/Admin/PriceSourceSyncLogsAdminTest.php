@@ -19,6 +19,8 @@ class PriceSourceSyncLogsAdminTest extends TestCase
 
     public function test_price_admin_can_list_filter_and_view_sync_log_errors(): void
     {
+        $this->freezeTime();
+
         $admin = User::factory()->create(['role' => UserRole::CentralAdmin]);
         $source = PriceSource::factory()->create(['name' => 'German Feed']);
         $visible = PriceSourceSyncLog::factory()->for($source)->create([

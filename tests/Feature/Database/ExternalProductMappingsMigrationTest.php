@@ -24,6 +24,7 @@ class ExternalProductMappingsMigrationTest extends TestCase
 
         $this->assertTrue($indexes->contains(
             fn (array $index): bool => $index['unique'] === true
+                && $index['name'] === 'external_mappings_source_product_unique'
                 && $index['columns'] === ['price_source_id', 'external_product_id'],
         ));
 

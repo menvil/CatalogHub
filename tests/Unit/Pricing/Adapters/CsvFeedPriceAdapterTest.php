@@ -7,7 +7,9 @@ use App\Enums\OfferAvailability;
 use App\Enums\PriceSourceType;
 use App\Models\PriceSource;
 use App\Pricing\Adapters\CsvFeedPriceAdapter;
+use App\Services\Pricing\OutboundPriceSourceUrlGuard;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
 use Tests\TestCase;
 
@@ -49,11 +51,14 @@ class CsvFeedPriceAdapterTest extends TestCase
         $source = PriceSource::factory()->create([
             'type' => PriceSourceType::CsvFeed,
             'config_json' => [
-                'csv_content' => "sku,title,price,currency\nK2,Keychron K2,79.99,EUR\n",
+                'csv_content' => "sku,title,price,currency\nK2,\"Keychron\nK2\",79.99,EUR\n",
             ],
         ]);
 
-        $this->assertCount(1, $adapter->fetchOffers($source)->offers);
+        $offers = $adapter->fetchOffers($source)->offers;
+
+        $this->assertCount(1, $offers);
+        $this->assertSame("Keychron\nK2", $offers[0]['title']);
 
         $source->config_json = [];
         $this->assertSame([], $adapter->fetchOffers($source)->offers);
@@ -68,5 +73,58 @@ class CsvFeedPriceAdapterTest extends TestCase
 
         $this->expectException(InvalidArgumentException::class);
         app(CsvFeedPriceAdapter::class)->normalizeOffer($source, ['currency' => 'EUR']);
+    }
+
+    public function test_fetches_only_allowlisted_public_feed_hosts(): void
+    {
+        Http::fake([
+            'https://feeds.example.test/prices.csv' => Http::response(
+                "sku,title,price,currency\nK2,Keychron K2,79.99,EUR\n",
+            ),
+        ]);
+        $source = PriceSource::factory()->create([
+            'type' => PriceSourceType::CsvFeed,
+            'config_json' => [
+                'feed_url' => 'https://feeds.example.test/prices.csv',
+                'allowed_hosts' => ['feeds.example.test'],
+            ],
+        ]);
+        $adapter = new CsvFeedPriceAdapter(new OutboundPriceSourceUrlGuard(
+            static fn (string $host): array => ['93.184.216.34'],
+        ));
+
+        $this->assertCount(1, $adapter->fetchOffers($source)->offers);
+
+        $source->config_json = [
+            'feed_url' => 'https://feeds.example.test/prices.csv',
+            'allowed_hosts' => ['other.example.test'],
+        ];
+
+        $this->expectException(InvalidArgumentException::class);
+        $adapter->fetchOffers($source);
+    }
+
+    public function test_rejects_csv_feed_redirects(): void
+    {
+        Http::fake([
+            'https://feeds.example.test/prices.csv' => Http::response('', 302, [
+                'Location' => 'http://127.0.0.1/internal.csv',
+            ]),
+        ]);
+        $source = PriceSource::factory()->create([
+            'type' => PriceSourceType::CsvFeed,
+            'config_json' => [
+                'feed_url' => 'https://feeds.example.test/prices.csv',
+                'allowed_hosts' => ['feeds.example.test'],
+            ],
+        ]);
+        $adapter = new CsvFeedPriceAdapter(new OutboundPriceSourceUrlGuard(
+            static fn (string $host): array => ['93.184.216.34'],
+        ));
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('redirects');
+
+        $adapter->fetchOffers($source);
     }
 }

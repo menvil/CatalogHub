@@ -58,4 +58,24 @@ class FetchExternalOffersJobTest extends TestCase
             $this->assertNotNull($log->fresh()->error_message);
         }
     }
+
+    public function test_fetch_replay_replaces_raw_rows_for_the_same_sync_log(): void
+    {
+        Bus::fake();
+        $source = PriceSource::factory()->manual()->create([
+            'config_json' => [
+                'offers' => [['sku' => 'K2', 'price' => 79.99, 'currency' => 'EUR']],
+            ],
+        ]);
+        $log = PriceSourceSyncLog::factory()->for($source)->create();
+        $job = new FetchExternalOffersJob($source->id, $log->id);
+
+        $job->handle(app(PriceSourceAdapterRegistry::class));
+        RawPriceOffer::query()->sole()->update(['status' => 'normalized']);
+        $job->handle(app(PriceSourceAdapterRegistry::class));
+
+        $this->assertSame(1, RawPriceOffer::query()->where('price_source_sync_log_id', $log->id)->count());
+        $this->assertSame('fetched', RawPriceOffer::query()->sole()->getRawOriginal('status'));
+        $this->assertSame(1, $log->fresh()->items_fetched);
+    }
 }

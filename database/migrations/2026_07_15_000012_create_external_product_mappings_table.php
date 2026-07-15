@@ -26,7 +26,10 @@ return new class extends Migration
             $table->json('metadata')->nullable();
             $table->timestamps();
 
-            $table->unique(['price_source_id', 'external_product_id']);
+            $table->unique(
+                ['price_source_id', 'external_product_id'],
+                'external_mappings_source_product_unique',
+            );
             $table->index(['price_source_id', 'external_sku']);
             $table->index('central_product_id');
         });

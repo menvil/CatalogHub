@@ -41,6 +41,11 @@ final class UpdateMarketOffersJob implements ShouldQueue
 
         try {
             $offerIds = DB::transaction(function () use ($source, $log): array {
+                PriceSource::query()
+                    ->whereKey($source->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
                 $offerIds = [];
                 $rows = RawPriceOffer::query()
                     ->where('price_source_id', $source->id)
@@ -60,6 +65,11 @@ final class UpdateMarketOffersJob implements ShouldQueue
                     $normalized = $row->normalized_payload_json ?? [];
                     $merchant = $this->merchant($source->market_id, $normalized['merchant_name'] ?? $source->name);
                     $offer = $this->upsertOffer($source, $mapping, $merchant, $row, $normalized);
+
+                    if ($offer === null) {
+                        continue;
+                    }
+
                     $offerIds[$offer->id] = $offer->id;
                 }
 
@@ -145,8 +155,9 @@ final class UpdateMarketOffersJob implements ShouldQueue
             throw new InvalidArgumentException('Normalized offer merchant_name is required.');
         }
 
-        $slug = Str::slug($name);
-        $slug = $slug !== '' ? $slug : 'merchant-'.substr(hash('sha256', $name), 0, 12);
+        $slugBase = Str::slug($name);
+        $slugBase = $slugBase !== '' ? $slugBase : 'merchant';
+        $slug = Str::limit($slugBase, 238, '').'-'.substr(hash('sha256', $name), 0, 16);
 
         return MarketMerchant::query()->firstOrCreate([
             'market_id' => $marketId,
@@ -165,12 +176,17 @@ final class UpdateMarketOffersJob implements ShouldQueue
         MarketMerchant $merchant,
         RawPriceOffer $row,
         array $normalized,
-    ): MarketOffer {
+    ): ?MarketOffer {
         $price = $normalized['price'] ?? null;
         $currency = strtoupper((string) ($normalized['currency'] ?? ''));
+        $deliveryPrice = $normalized['delivery_price'] ?? null;
 
         if (! is_numeric($price) || (float) $price < 0 || strlen($currency) !== 3) {
             throw new InvalidArgumentException('Matched normalized offer requires valid price and currency.');
+        }
+
+        if (filled($deliveryPrice) && (! is_numeric($deliveryPrice) || (float) $deliveryPrice < 0)) {
+            throw new InvalidArgumentException('Matched normalized offer delivery_price must be a non-negative number.');
         }
 
         $availability = OfferAvailability::tryFrom((string) ($normalized['availability'] ?? ''))
@@ -180,20 +196,31 @@ final class UpdateMarketOffersJob implements ShouldQueue
         $fetchedAt = filled($normalized['fetched_at'] ?? null)
             ? CarbonImmutable::parse((string) $normalized['fetched_at'])
             : CarbonImmutable::instance($row->fetched_at);
-
-        return MarketOffer::query()->updateOrCreate([
+        $identity = [
             'market_merchant_id' => $merchant->id,
             'central_product_id' => $mapping->central_product_id,
             'price_source_id' => $source->id,
-        ], [
+        ];
+        $existing = MarketOffer::query()->where($identity)->lockForUpdate()->first();
+
+        if ($existing !== null && $fetchedAt->isBefore($existing->last_seen_at)) {
+            $row->update([
+                'status' => RawPriceOfferStatus::Ignored,
+                'error_message' => 'Skipped because a newer market offer snapshot already exists.',
+            ]);
+
+            return null;
+        }
+
+        return MarketOffer::query()->updateOrCreate($identity, [
             'market_id' => $source->market_id,
             'external_product_mapping_id' => $mapping->id,
             'price' => number_format((float) $price, 2, '.', ''),
             'currency' => $currency,
             'availability' => $availability,
             'condition' => $condition,
-            'delivery_price' => filled($normalized['delivery_price'] ?? null)
-                ? number_format((float) $normalized['delivery_price'], 2, '.', '')
+            'delivery_price' => filled($deliveryPrice)
+                ? number_format((float) $deliveryPrice, 2, '.', '')
                 : null,
             'delivery_time' => $this->scalarOrNull($normalized['delivery_time'] ?? null),
             'url' => $this->scalarOrNull($normalized['url'] ?? null),

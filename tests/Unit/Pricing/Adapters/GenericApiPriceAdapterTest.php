@@ -7,6 +7,7 @@ use App\Enums\OfferAvailability;
 use App\Enums\PriceSourceType;
 use App\Models\PriceSource;
 use App\Pricing\Adapters\GenericApiPriceAdapter;
+use App\Services\Pricing\OutboundPriceSourceUrlGuard;
 use App\Services\Pricing\PriceSourceCredentialService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
@@ -17,6 +18,15 @@ use Tests\TestCase;
 class GenericApiPriceAdapterTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->app->instance(OutboundPriceSourceUrlGuard::class, new OutboundPriceSourceUrlGuard(
+            static fn (string $host): array => ['93.184.216.34'],
+        ));
+    }
 
     public function test_fetches_json_array_with_encrypted_credential_header(): void
     {
@@ -81,6 +91,46 @@ class GenericApiPriceAdapterTest extends TestCase
         ]);
 
         $this->expectException(InvalidArgumentException::class);
+        app(GenericApiPriceAdapter::class)->fetchOffers($source);
+    }
+
+    public function test_rejects_api_endpoint_resolving_to_a_private_address_before_request(): void
+    {
+        Http::fake();
+        $source = PriceSource::factory()->create([
+            'type' => PriceSourceType::Api,
+            'config_json' => ['endpoint_url' => 'https://internal.example.test/offers'],
+        ]);
+        $adapter = new GenericApiPriceAdapter(
+            app(PriceSourceCredentialService::class),
+            new OutboundPriceSourceUrlGuard(static fn (string $host): array => ['127.0.0.1']),
+        );
+
+        try {
+            $adapter->fetchOffers($source);
+            $this->fail('Expected private endpoint rejection.');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertStringContainsString('private or reserved', strtolower($exception->getMessage()));
+        }
+
+        Http::assertNothingSent();
+    }
+
+    public function test_rejects_generic_api_redirects(): void
+    {
+        Http::fake([
+            'https://prices.example.test/offers' => Http::response('', 302, [
+                'Location' => 'http://169.254.169.254/latest/meta-data',
+            ]),
+        ]);
+        $source = PriceSource::factory()->create([
+            'type' => PriceSourceType::Api,
+            'config_json' => ['endpoint_url' => 'https://prices.example.test/offers'],
+        ]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('redirects');
+
         app(GenericApiPriceAdapter::class)->fetchOffers($source);
     }
 }

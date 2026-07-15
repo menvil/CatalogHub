@@ -36,6 +36,11 @@ final class FetchExternalOffersJob implements ShouldQueue
             $result = $adapterRegistry->for($source)->fetchOffers($source);
 
             DB::transaction(function () use ($source, $log, $result): void {
+                RawPriceOffer::query()
+                    ->where('price_source_id', $source->id)
+                    ->where('price_source_sync_log_id', $log->id)
+                    ->delete();
+
                 foreach ($result->offers as $payload) {
                     RawPriceOffer::query()->create([
                         'price_source_id' => $source->id,

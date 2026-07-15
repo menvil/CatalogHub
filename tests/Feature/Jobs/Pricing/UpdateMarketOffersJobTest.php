@@ -3,15 +3,18 @@
 namespace Tests\Feature\Jobs\Pricing;
 
 use App\Enums\ExternalProductMappingStatus;
+use App\Enums\RawPriceOfferStatus;
 use App\Jobs\Pricing\StorePriceHistoryJob;
 use App\Jobs\Pricing\UpdateMarketOffersJob;
 use App\Models\ExternalProductMapping;
+use App\Models\MarketMerchant;
 use App\Models\MarketOffer;
 use App\Models\PriceSource;
 use App\Models\PriceSourceSyncLog;
 use App\Models\RawPriceOffer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use InvalidArgumentException;
 use Tests\TestCase;
 
 class UpdateMarketOffersJobTest extends TestCase
@@ -79,6 +82,103 @@ class UpdateMarketOffersJobTest extends TestCase
         $this->assertSame(ExternalProductMappingStatus::Pending, $mapping->fresh()->status);
         $this->assertSame(0, MarketOffer::query()->count());
         $this->assertSame(0, $log->fresh()->items_updated);
+        Bus::assertNotDispatched(StorePriceHistoryJob::class);
+    }
+
+    public function test_distinct_merchant_names_with_the_same_lossy_slug_remain_distinct(): void
+    {
+        Bus::fake();
+        $source = PriceSource::factory()->manual()->create();
+        $firstMapping = ExternalProductMapping::factory()->approved()->for($source)->create([
+            'external_product_id' => 'external-acme-dot',
+            'external_sku' => 'ACME-DOT',
+        ]);
+        $secondMapping = ExternalProductMapping::factory()->approved()->for($source)->create([
+            'external_product_id' => 'external-acme-space',
+            'external_sku' => 'ACME-SPACE',
+        ]);
+        $log = PriceSourceSyncLog::factory()->running()->for($source)->create();
+
+        foreach ([[$firstMapping, 'ACME.com'], [$secondMapping, 'ACMEcom']] as [$mapping, $merchantName]) {
+            RawPriceOffer::factory()->matched()->forMapping($mapping)->create([
+                'price_source_sync_log_id' => $log->id,
+                'normalized_payload_json' => [
+                    'merchant_name' => $merchantName,
+                    'price' => '49.99',
+                    'currency' => 'EUR',
+                    'fetched_at' => now()->toISOString(),
+                ],
+            ]);
+        }
+
+        (new UpdateMarketOffersJob($source->id, $log->id))->handle();
+
+        $this->assertSame(2, MarketMerchant::query()->count());
+        $this->assertEqualsCanonicalizing(['ACME.com', 'ACMEcom'], MarketMerchant::query()->pluck('name')->all());
+        $this->assertSame(2, MarketOffer::query()->count());
+    }
+
+    public function test_rejects_non_numeric_or_negative_delivery_price(): void
+    {
+        Bus::fake();
+        $source = PriceSource::factory()->manual()->create();
+        $mapping = ExternalProductMapping::factory()->approved()->for($source)->create([
+            'external_product_id' => 'external-invalid-delivery',
+        ]);
+        $log = PriceSourceSyncLog::factory()->running()->for($source)->create();
+        RawPriceOffer::factory()->matched()->forMapping($mapping)->create([
+            'price_source_sync_log_id' => $log->id,
+            'normalized_payload_json' => [
+                'merchant_name' => 'Delivery Shop',
+                'price' => '49.99',
+                'currency' => 'EUR',
+                'delivery_price' => 'free',
+                'fetched_at' => now()->toISOString(),
+            ],
+        ]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('delivery_price');
+
+        (new UpdateMarketOffersJob($source->id, $log->id))->handle();
+    }
+
+    public function test_older_raw_offer_does_not_overwrite_current_offer_or_dispatch_history(): void
+    {
+        Bus::fake();
+        $source = PriceSource::factory()->manual()->create();
+        $mapping = ExternalProductMapping::factory()->approved()->for($source)->create([
+            'external_product_id' => 'external-ordered-offer',
+        ]);
+        $newerLog = PriceSourceSyncLog::factory()->running()->for($source)->create();
+        RawPriceOffer::factory()->matched()->forMapping($mapping)->create([
+            'price_source_sync_log_id' => $newerLog->id,
+            'normalized_payload_json' => [
+                'merchant_name' => 'Ordered Shop',
+                'price' => '99.99',
+                'currency' => 'EUR',
+                'fetched_at' => now()->toISOString(),
+            ],
+        ]);
+        (new UpdateMarketOffersJob($source->id, $newerLog->id))->handle();
+
+        Bus::fake();
+        $olderLog = PriceSourceSyncLog::factory()->running()->for($source)->create();
+        $olderRaw = RawPriceOffer::factory()->matched()->forMapping($mapping)->create([
+            'price_source_sync_log_id' => $olderLog->id,
+            'normalized_payload_json' => [
+                'merchant_name' => 'Ordered Shop',
+                'price' => '49.99',
+                'currency' => 'EUR',
+                'fetched_at' => now()->subHour()->toISOString(),
+            ],
+        ]);
+
+        (new UpdateMarketOffersJob($source->id, $olderLog->id))->handle();
+
+        $this->assertSame('99.99', MarketOffer::query()->sole()->price);
+        $this->assertSame(RawPriceOfferStatus::Ignored, $olderRaw->fresh()->status);
+        $this->assertSame(0, $olderLog->fresh()->items_updated);
         Bus::assertNotDispatched(StorePriceHistoryJob::class);
     }
 }

@@ -61,4 +61,23 @@ class MatchExternalOffersJobTest extends TestCase
         $this->assertSame(RawPriceOfferStatus::Matched, $raw->fresh()->status);
         $this->assertSame(1, $log->fresh()->items_matched);
     }
+
+    public function test_fails_rows_without_a_reusable_external_identity(): void
+    {
+        Bus::fake();
+        $source = PriceSource::factory()->manual()->create();
+        $log = PriceSourceSyncLog::factory()->running()->for($source)->create();
+        $raw = RawPriceOffer::factory()->normalized()->for($source)->create([
+            'price_source_sync_log_id' => $log->id,
+            'external_product_id' => null,
+            'external_sku' => null,
+        ]);
+
+        (new MatchExternalOffersJob($source->id, $log->id))->handle();
+
+        $this->assertSame(0, ExternalProductMapping::query()->count());
+        $this->assertSame(RawPriceOfferStatus::Failed, $raw->fresh()->status);
+        $this->assertStringContainsString('identity', (string) $raw->fresh()->error_message);
+        Bus::assertDispatched(UpdateMarketOffersJob::class);
+    }
 }

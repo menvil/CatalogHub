@@ -8,6 +8,7 @@ use App\Data\Pricing\PriceSourceFetchResult;
 use App\Enums\PriceSourceType;
 use App\Models\PriceSource;
 use App\Pricing\Adapters\Concerns\NormalizesExternalPriceOffers;
+use App\Services\Pricing\OutboundPriceSourceUrlGuard;
 use App\Services\Pricing\PriceSourceCredentialService;
 use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
@@ -18,6 +19,7 @@ final class GenericApiPriceAdapter implements PriceSourceAdapterInterface
 
     public function __construct(
         private readonly PriceSourceCredentialService $credentialService,
+        private readonly OutboundPriceSourceUrlGuard $urlGuard,
     ) {}
 
     public function supports(PriceSource $source): bool
@@ -37,7 +39,21 @@ final class GenericApiPriceAdapter implements PriceSourceAdapterInterface
 
         $headers = $this->resolvedRequestMap($source, $config['headers'] ?? [], 'headers');
         $query = $this->resolvedRequestMap($source, $config['query'] ?? [], 'query');
-        $response = Http::withHeaders($headers)->get($endpoint, $query)->throw()->json();
+        $allowedHosts = $config['allowed_hosts'] ?? [];
+
+        if (! is_array($allowedHosts)) {
+            throw new InvalidArgumentException('Generic API allowed_hosts must be an array.');
+        }
+
+        $httpResponse = Http::withOptions($this->urlGuard->requestOptions($endpoint, $allowedHosts))
+            ->withHeaders($headers)
+            ->get($endpoint, $query);
+
+        if ($httpResponse->redirect()) {
+            throw new InvalidArgumentException('Generic API redirects are not allowed.');
+        }
+
+        $response = $httpResponse->throw()->json();
         $items = filled($config['items_path'] ?? null)
             ? data_get($response, (string) $config['items_path'])
             : $response;

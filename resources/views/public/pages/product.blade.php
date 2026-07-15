@@ -27,6 +27,7 @@
     </div>
 
     <x-public.offers-block
+        :site="$site"
         :product-projection="$productProjection"
         :offers="$offers"
         :freshness="$offerFreshness"

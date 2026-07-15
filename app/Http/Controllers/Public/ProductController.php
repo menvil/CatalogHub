@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Review;
 use App\Models\SiteProductProjection;
 use App\Services\Content\RelatedContentResolver;
+use App\Services\Pricing\BestOfferResolver;
 use App\Services\Pricing\ValidMarketOfferQuery;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -25,6 +26,7 @@ final class ProductController extends Controller
         LocalizedUrlResolver $urls,
         RelatedContentResolver $relatedContent,
         ValidMarketOfferQuery $validOffers,
+        BestOfferResolver $bestOffers,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
         $projection = SiteProductProjection::query()
@@ -100,7 +102,7 @@ final class ProductController extends Controller
             'centralProductId' => (int) $projection->central_product_id,
             'productProjection' => $projection,
             'offers' => $offers,
-            'bestOffer' => null,
+            'bestOffer' => $bestOffers->resolve($site, (int) $projection->central_product_id),
             'reviewsEnabled' => $reviewsEnabled,
             'reviews' => $reviews,
             'leadsEnabled' => $leadsEnabled,

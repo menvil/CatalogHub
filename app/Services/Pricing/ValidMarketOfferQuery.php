@@ -19,7 +19,7 @@ final class ValidMarketOfferQuery
         return MarketOffer::query()
             ->where('market_offers.market_id', $site->market_id)
             ->where('market_offers.currency', $site->market->currency_code)
-            ->where('market_offers.status', MarketOfferStatus::Active)
+            ->whereIn('market_offers.status', [MarketOfferStatus::Active, MarketOfferStatus::Stale])
             ->whereHas('priceSource', function (Builder $query) use ($site): void {
                 $query
                     ->where('market_id', $site->market_id)

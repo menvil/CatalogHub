@@ -2,14 +2,17 @@
 
 namespace App\Domains\Projections\Builders;
 
+use App\Data\Pricing\ProductPriceSummary;
 use App\Domains\Projections\DTO\CategoryProjectionData;
 use App\Domains\Projections\DTO\ProductProjectionData;
 use App\Domains\Projections\DTO\SearchDocumentData;
 
 final class SearchDocumentBuilder
 {
-    public function fromProductProjection(ProductProjectionData $projection): SearchDocumentData
-    {
+    public function fromProductProjection(
+        ProductProjectionData $projection,
+        ?ProductPriceSummary $priceSummary = null,
+    ): SearchDocumentData {
         $attributes = $this->attributesFromPayload($projection->payload);
         $filterValues = [
             'brand_id' => data_get($projection->payload, 'brand.id'),
@@ -66,6 +69,7 @@ final class SearchDocumentBuilder
             filterValues: $filterValues,
             sortValues: $sortValues,
             payload: $projection->payload,
+            minPrice: $priceSummary?->minPrice,
         );
     }
 
@@ -100,6 +104,7 @@ final class SearchDocumentBuilder
             ], fn (mixed $value): bool => $value !== null),
             sortValues: ['title' => $projection->title],
             payload: $projection->payload,
+            minPrice: null,
         );
     }
 
@@ -120,6 +125,7 @@ final class SearchDocumentBuilder
         array $filterValues,
         array $sortValues,
         array $payload,
+        ?string $minPrice,
     ): SearchDocumentData {
         $checksum = hash('sha256', json_encode(
             compact(
@@ -134,6 +140,7 @@ final class SearchDocumentBuilder
                 'filterValues',
                 'sortValues',
                 'payload',
+                'minPrice',
             ),
             JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
         ));
@@ -151,6 +158,7 @@ final class SearchDocumentBuilder
             sortValues: $sortValues,
             payload: $payload,
             checksum: $checksum,
+            minPrice: $minPrice,
         );
     }
 

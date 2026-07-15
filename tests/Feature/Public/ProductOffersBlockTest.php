@@ -41,7 +41,8 @@ class ProductOffersBlockTest extends TestCase
             ->assertSee('data-offers-block', false)
             ->assertSee('Where to buy')
             ->assertSee('Example Merchant')
-            ->assertSee('249.99');
+            ->assertSee('249.99')
+            ->assertSee('data-price-freshness="fresh"', false);
     }
 
     public function test_product_page_renders_a_safe_no_offers_state(): void

@@ -29,6 +29,7 @@
     <x-public.offers-block
         :product-projection="$productProjection"
         :offers="$offers"
+        :freshness="$offerFreshness"
         :best-offer="$bestOffer"
         :locale="$locale"
     />

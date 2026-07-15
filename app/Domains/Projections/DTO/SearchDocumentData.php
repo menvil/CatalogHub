@@ -24,5 +24,6 @@ final readonly class SearchDocumentData
         public string $checksum,
         public ?string $minPrice,
         public ?string $maxPrice,
+        public int $offersCount,
     ) {}
 }

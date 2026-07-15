@@ -71,6 +71,7 @@ final class SearchDocumentBuilder
             payload: $projection->payload,
             minPrice: $priceSummary?->minPrice,
             maxPrice: $priceSummary?->maxPrice,
+            offersCount: $priceSummary === null ? 0 : $priceSummary->offersCount,
         );
     }
 
@@ -107,6 +108,7 @@ final class SearchDocumentBuilder
             payload: $projection->payload,
             minPrice: null,
             maxPrice: null,
+            offersCount: 0,
         );
     }
 
@@ -129,6 +131,7 @@ final class SearchDocumentBuilder
         array $payload,
         ?string $minPrice,
         ?string $maxPrice,
+        int $offersCount,
     ): SearchDocumentData {
         $checksum = hash('sha256', json_encode(
             compact(
@@ -145,6 +148,7 @@ final class SearchDocumentBuilder
                 'payload',
                 'minPrice',
                 'maxPrice',
+                'offersCount',
             ),
             JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
         ));
@@ -164,6 +168,7 @@ final class SearchDocumentBuilder
             checksum: $checksum,
             minPrice: $minPrice,
             maxPrice: $maxPrice,
+            offersCount: $offersCount,
         );
     }
 

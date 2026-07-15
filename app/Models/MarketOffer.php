@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * @property string $price
  * @property string|null $delivery_price
+ * @property string|null $delivery_time
  * @property OfferAvailability $availability
  * @property OfferCondition $condition
  * @property MarketOfferStatus $status

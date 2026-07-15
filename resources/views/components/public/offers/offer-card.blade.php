@@ -18,6 +18,7 @@
         <div class="space-y-2">
             <x-public.price-freshness-badge :status="$freshness" />
             <p class="text-xs text-slate-500">{{ $deliverySummary }}</p>
+            <p class="text-xs text-slate-500">{{ $deliveryTime }}</p>
         </div>
 
         @if ($actionUrl)

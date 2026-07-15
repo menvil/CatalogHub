@@ -21,7 +21,10 @@
                     </td>
                     <td class="whitespace-nowrap px-4 py-4 font-bold tabular-nums text-slate-950">{{ $formattedPrices[$offer->getKey()] }}</td>
                     <td class="whitespace-nowrap px-4 py-4 text-slate-600">{{ str($offer->availability->value)->headline() }}</td>
-                    <td class="whitespace-nowrap px-4 py-4 text-slate-500">{{ $formattedDeliveryPrices[$offer->getKey()] }}</td>
+                    <td class="whitespace-nowrap px-4 py-4 text-slate-500">
+                        <span class="block">{{ $formattedDeliveryPrices[$offer->getKey()] }}</span>
+                        <span class="mt-1 block text-xs">{{ $formattedDeliveryTimes[$offer->getKey()] }}</span>
+                    </td>
                     <td class="whitespace-nowrap px-4 py-4">
                         <x-public.price-freshness-badge :status="$freshness[$offer->getKey()] ?? \App\Enums\PriceFreshnessStatus::Unknown" />
                     </td>

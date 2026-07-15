@@ -21,6 +21,7 @@ final class ProductPriceSummaryBuilder
         return new ProductPriceSummary(
             minPrice: $this->money($minimum),
             maxPrice: $this->money($maximum),
+            offersCount: (clone $offers)->count(),
         );
     }
 

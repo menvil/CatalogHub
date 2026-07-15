@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 #[Fillable([
     'site_id', 'locale', 'document_type', 'document_id', 'title', 'slug', 'status', 'search_text', 'min_price', 'max_price',
+    'offers_count',
     'filter_values_json', 'sort_values_json', 'payload_json', 'checksum', 'built_at', 'stale_at',
 ])]
 final class SiteSearchDocument extends Model
@@ -35,6 +36,7 @@ final class SiteSearchDocument extends Model
             'status' => ProjectionStatus::class,
             'min_price' => 'decimal:2',
             'max_price' => 'decimal:2',
+            'offers_count' => 'integer',
             'filter_values_json' => 'array',
             'sort_values_json' => 'array',
             'payload_json' => 'array',

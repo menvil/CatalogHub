@@ -2,6 +2,8 @@
 
 namespace App\Data\Pricing;
 
+use Carbon\CarbonImmutable;
+
 final readonly class ProductPriceSummary
 {
     public function __construct(
@@ -9,5 +11,6 @@ final readonly class ProductPriceSummary
         public ?string $maxPrice,
         public int $offersCount,
         public bool $inStock,
+        public ?CarbonImmutable $lastPriceUpdateAt,
     ) {}
 }

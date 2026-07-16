@@ -49,3 +49,14 @@ Driver inspection may be used only in isolated compatibility code.
 Migration-only CI does not prove query compatibility. Queries involving JSON,
 escaped `LIKE`, NULL ordering, conditional aggregates, or calculated price
 sorting must run behavioral tests against SQLite, MariaDB, and PostgreSQL.
+
+The canonical suite is:
+
+```bash
+composer test:database-boundaries
+```
+
+CI runs this command in the MariaDB and PostgreSQL compatibility jobs; the main
+test job runs the same cases on SQLite. The architecture registry test requires
+every behavior-test path from an approved raw-SQL entry to appear in this suite,
+so a new exception cannot silently skip cross-database execution.

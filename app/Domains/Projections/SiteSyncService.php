@@ -505,6 +505,10 @@ final class SiteSyncService
 
     private function sourceVersion(Model $model): ?int
     {
+        if ($model instanceof CentralProduct) {
+            return (int) $model->version;
+        }
+
         $updatedAt = $model->getAttribute('updated_at');
 
         return $updatedAt instanceof DateTimeInterface ? (int) $updatedAt->format('U') : null;

@@ -5,8 +5,10 @@ namespace App\Actions\Corrections;
 use App\Actions\Versions\IncrementProductVersionAction;
 use App\Enums\ChangeRequestStatus;
 use App\Exceptions\Corrections\CannotApplyCorrectionException;
+use App\Jobs\Projections\RebuildProductProjectionJob;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\ChangeRequest;
+use App\Models\SiteProduct;
 use App\Models\User;
 use App\Services\Corrections\CanonicalCorrectionFieldResolver;
 use App\Services\Sync\SyncLogWriter;
@@ -77,6 +79,21 @@ final class ApplyCorrectionToCentralAction
                 'applied_at' => now(),
             ])->save();
 
+            $affectedSiteProductIds = SiteProduct::query()
+                ->where('central_product_id', $product->getKey())
+                ->pluck('id');
+
+            SiteProduct::query()
+                ->whereKey($affectedSiteProductIds)
+                ->update(['sync_status' => 'queued']);
+
+            foreach ($affectedSiteProductIds as $siteProductId) {
+                RebuildProductProjectionJob::dispatch(
+                    (int) $siteProductId,
+                    (int) $admin->getKey(),
+                )->afterCommit();
+            }
+
             $this->syncLogWriter->completed(
                 operation: 'apply_correction',
                 triggeredBy: 'correction',
@@ -88,6 +105,8 @@ final class ApplyCorrectionToCentralAction
                     'change_request_id' => $lockedRequest->getKey(),
                     'product_version' => $version->version,
                     'field_path' => $lockedRequest->field_path,
+                    'queued_site_product_ids' => $affectedSiteProductIds->all(),
+                    'queued_projection_count' => $affectedSiteProductIds->count(),
                 ],
             );
 

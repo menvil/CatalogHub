@@ -5,6 +5,7 @@ Use this checklist before every controlled production or public demo launch. Che
 Configuration references: [environment audit](environment-audit.md) and [production environment template](../../.env.production.example).
 Session controls: [admin session hardening](admin-session-hardening.md).
 Health check behavior: [health checks](health-checks.md).
+Recovery validation: [backup restore dry-run](../runbooks/backup-restore-dry-run.md).
 
 ## Environment
 

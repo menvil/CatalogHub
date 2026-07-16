@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property list<array<string, mixed>>|null $variants_json
+ * @property array<string, mixed>|null $metadata_json
+ */
 #[Fillable([
     'catalog_snapshot_id',
     'media_asset_id',

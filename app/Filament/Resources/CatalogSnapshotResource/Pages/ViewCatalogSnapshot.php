@@ -22,6 +22,7 @@ final class ViewCatalogSnapshot extends ViewRecord
                 ->label('Restore checklist')
                 ->icon(Heroicon::OutlinedClipboardDocumentCheck)
                 ->url(CatalogSnapshotResource::getUrl('restore-checklist', ['record' => $snapshot])),
+            CatalogSnapshotResource::downloadAction(),
         ];
     }
 }

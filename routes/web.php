@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CentralAdmin\Backup\SnapshotDownloadController;
 use App\Http\Controllers\CentralAdmin\Media\MediaAssetDetailController;
 use App\Http\Controllers\CentralAdmin\Media\MediaLibraryController;
 use App\Http\Controllers\CentralAdmin\Media\MediaUploadController;
@@ -106,6 +107,10 @@ Route::middleware(['auth', 'can:translations.manage'])->prefix('admin')->group(f
 });
 
 Route::middleware('auth')->prefix('central')->group(function (): void {
+    Route::get('/snapshots/{snapshot}/download/{fileKey}', SnapshotDownloadController::class)
+        ->where('fileKey', '[A-Za-z0-9_-]+')
+        ->name('central.snapshots.download');
+
     Route::get('/media', MediaLibraryController::class)
         ->name('central.media.index');
     Route::post('/media/upload', MediaUploadController::class)

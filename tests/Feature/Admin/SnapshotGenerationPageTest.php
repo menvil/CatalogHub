@@ -9,8 +9,10 @@ use App\Models\Site;
 use App\Models\User;
 use App\Services\Export\SnapshotGenerationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
+use Mockery;
 use Tests\TestCase;
 
 class SnapshotGenerationPageTest extends TestCase
@@ -19,6 +21,7 @@ class SnapshotGenerationPageTest extends TestCase
 
     public function test_generation_service_runs_selected_exporters_and_completes_snapshot(): void
     {
+        Log::spy();
         Storage::fake('local');
         CentralProduct::factory()->create();
         $admin = User::factory()->centralAdmin()->create();
@@ -35,6 +38,15 @@ class SnapshotGenerationPageTest extends TestCase
         foreach ($snapshot->files_json as $file) {
             Storage::disk($snapshot->storage_disk)->assertExists($file['path']);
         }
+
+        Log::shouldHaveReceived('info')
+            ->with(
+                'Catalog snapshot generation completed.',
+                Mockery::on(fn (array $context): bool => $context['snapshot_uuid'] === $snapshot->uuid
+                    && $context['files_count'] === 2
+                    && is_int($context['duration_ms'])),
+            )
+            ->once();
     }
 
     public function test_central_admin_can_open_screen_and_generate_snapshot(): void

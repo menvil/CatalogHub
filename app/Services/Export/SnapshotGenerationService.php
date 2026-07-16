@@ -4,6 +4,7 @@ namespace App\Services\Export;
 
 use App\Models\CatalogSnapshot;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 use Throwable;
 
@@ -57,15 +58,34 @@ final class SnapshotGenerationService
             'created_by_user_id' => $admin->getKey(),
         ]);
         $snapshot->markGenerating();
+        $startedAt = hrtime(true);
+        Log::info('Catalog snapshot generation started.', [
+            'snapshot_uuid' => $snapshot->uuid,
+            'snapshot_type' => $snapshotType,
+            'created_by_user_id' => $admin->getKey(),
+            'sections_count' => count($sections),
+        ]);
 
         try {
             foreach ($sections as $section) {
                 $this->exporter($section)->export($snapshot);
             }
 
-            return $snapshot->fresh()->markCompleted();
+            $completed = $snapshot->fresh()->markCompleted();
+            Log::info('Catalog snapshot generation completed.', [
+                'snapshot_uuid' => $completed->uuid,
+                'files_count' => count($completed->files_json ?? []),
+                'duration_ms' => (int) ((hrtime(true) - $startedAt) / 1_000_000),
+            ]);
+
+            return $completed;
         } catch (Throwable $exception) {
             $snapshot->markFailed($exception->getMessage());
+            Log::error('Catalog snapshot generation failed.', [
+                'snapshot_uuid' => $snapshot->uuid,
+                'error_class' => $exception::class,
+                'duration_ms' => (int) ((hrtime(true) - $startedAt) / 1_000_000),
+            ]);
 
             throw $exception;
         }

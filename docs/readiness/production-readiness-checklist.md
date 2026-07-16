@@ -12,6 +12,7 @@ Public performance limits: [public page performance budget](../performance/publi
 Database query coverage: [database index audit](../performance/database-index-audit.md).
 Authorization boundaries: [permissions audit](../security/permissions-audit.md).
 Release procedure: [deployment runbook](../runbooks/deployment.md).
+Recovery procedure: [rollback runbook](../runbooks/rollback.md).
 
 ## Environment
 

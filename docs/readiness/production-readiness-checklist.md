@@ -3,6 +3,7 @@
 Use this checklist before every controlled production or public demo launch. Check an item only after verifying it in the target environment, and record exceptions in the release notes.
 
 Configuration references: [environment audit](environment-audit.md) and [production environment template](../../.env.production.example).
+Session controls: [admin session hardening](admin-session-hardening.md).
 
 ## Environment
 

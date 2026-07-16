@@ -58,10 +58,9 @@ final class UpsertSiteOverrideAction
                 throw ValidationException::withMessages(['entity_id' => 'The selected product must belong to an enabled site category.']);
             }
 
-            if ($localeCode !== '' && ! DB::table('site_locales')
-                ->where('site_id', $lockedSite->getKey())
+            if ($localeCode !== '' && ! $lockedSite->locales()
                 ->where('locale_code', $localeCode)
-                ->where('is_enabled', true)
+                ->enabled()
                 ->exists()) {
                 throw ValidationException::withMessages(['locale_code' => 'The selected locale must be enabled for the site.']);
             }
@@ -86,11 +85,11 @@ final class UpsertSiteOverrideAction
 
     private function productCategoryIsEnabled(Site $site, int $productId): bool
     {
-        return DB::table('central_products')
-            ->join('site_categories', 'site_categories.central_category_id', '=', 'central_products.central_category_id')
-            ->where('central_products.id', $productId)
-            ->where('site_categories.site_id', $site->getKey())
-            ->where('site_categories.is_enabled', true)
+        return CentralProduct::query()
+            ->whereKey($productId)
+            ->whereIn('central_category_id', $site->categories()
+                ->select('central_category_id')
+                ->enabled())
             ->exists();
     }
 }

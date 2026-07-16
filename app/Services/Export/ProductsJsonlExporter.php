@@ -5,7 +5,7 @@ namespace App\Services\Export;
 use App\Models\CatalogSnapshot;
 use App\Models\CentralCatalog\CentralProduct;
 
-final class ProductsJsonlExporter
+final class ProductsJsonlExporter implements JsonlExporter
 {
     public function __construct(private readonly JsonlStreamWriter $writer) {}
 

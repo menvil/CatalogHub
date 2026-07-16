@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** @property array{value?: mixed} $value_json */
-#[Fillable(['site_id', 'entity_type', 'entity_id', 'field', 'locale_code', 'value_json', 'reason', 'status'])]
+#[Fillable(['site_id', 'market_id', 'entity_type', 'entity_id', 'field', 'locale_code', 'value_json', 'reason', 'status'])]
 final class SiteOverride extends Model
 {
     protected function casts(): array
@@ -19,6 +19,12 @@ final class SiteOverride extends Model
     public function site(): BelongsTo
     {
         return $this->belongsTo(Site::class);
+    }
+
+    /** @return BelongsTo<Market, $this> */
+    public function market(): BelongsTo
+    {
+        return $this->belongsTo(Market::class);
     }
 
     public function overrideValue(): mixed

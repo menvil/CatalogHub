@@ -19,6 +19,10 @@ final class ViewCentralProduct extends ViewRecord
                 ->label('Specs')
                 ->icon(Heroicon::OutlinedListBullet)
                 ->url(fn (): string => ProductSpecsEditor::getUrl(['record' => $this->getRecord()])),
+            Action::make('versions')
+                ->label('Version History')
+                ->icon(Heroicon::OutlinedClock)
+                ->url(fn (): string => ViewProductVersions::getUrl(['record' => $this->getRecord()])),
             EditAction::make(),
         ];
     }

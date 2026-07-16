@@ -13,6 +13,7 @@ Database query coverage: [database index audit](../performance/database-index-au
 Authorization boundaries: [permissions audit](../security/permissions-audit.md).
 Release procedure: [deployment runbook](../runbooks/deployment.md).
 Recovery procedure: [rollback runbook](../runbooks/rollback.md).
+Release regression coverage: [full regression checklist](full-regression-checklist.md).
 
 ## Environment
 

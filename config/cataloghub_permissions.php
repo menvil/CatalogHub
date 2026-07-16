@@ -20,6 +20,7 @@ return [
         'prices.manage',
         'backups.manage',
         'corrections.request',
+        'corrections.review',
     ],
 
     'roles' => [
@@ -35,6 +36,7 @@ return [
             'translations.manage',
             'prices.manage',
             'backups.manage',
+            'corrections.review',
         ],
         UserRole::CatalogEditor->value => [
             'central.view',

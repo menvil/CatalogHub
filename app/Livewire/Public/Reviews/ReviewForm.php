@@ -6,6 +6,7 @@ use App\Actions\Reviews\CreateReviewAction;
 use App\Exceptions\Reviews\CannotCreateReviewException;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Site;
+use App\Services\Security\PublicRequestRateLimiter;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -44,8 +45,12 @@ final class ReviewForm extends Component
             : app()->getLocale();
     }
 
-    public function submit(CreateReviewAction $createReview): void
-    {
+    public function submit(
+        CreateReviewAction $createReview,
+        PublicRequestRateLimiter $rateLimiter,
+    ): void {
+        $rateLimiter->consume('public-reviews', [$this->site->getKey(), $this->productId]);
+
         $data = $this->validate([
             'authorName' => ['required', 'string', 'max:255'],
             'authorEmail' => ['nullable', 'email', 'max:255'],

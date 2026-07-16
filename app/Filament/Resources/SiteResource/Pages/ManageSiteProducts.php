@@ -12,7 +12,6 @@ use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\DB;
 use Livewire\WithPagination;
 
 final class ManageSiteProducts extends Page
@@ -43,7 +42,7 @@ final class ManageSiteProducts extends Page
     public function getProducts(): LengthAwarePaginator
     {
         /** @var Site $site */ $site = $this->getRecord();
-        $categoryIds = DB::table('site_categories')->where('site_id', $site->id)->where('is_enabled', true)->pluck('central_category_id');
+        $categoryIds = $site->categories()->enabled()->pluck('central_category_id');
 
         return CentralProduct::query()
             ->whereIn('central_category_id', $categoryIds)

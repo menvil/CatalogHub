@@ -67,7 +67,7 @@ final class ContentItemResource extends Resource
             return $query->where('site_id', $user->site_id);
         }
 
-        return $query->whereRaw('1 = 0');
+        return $query->whereKey([]);
     }
 
     public static function form(Schema $schema): Schema

@@ -17,7 +17,6 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 use LogicException;
@@ -96,10 +95,9 @@ final class TranslationsRelationManager extends RelationManager
     private function enabledLocaleOptions(): array
     {
         $item = $this->contentItem();
-        $locales = DB::table('site_locales')
-            ->where('site_id', $item->site_id)
-            ->where('is_enabled', true)
-            ->orderBy('position')
+        $locales = $item->site->locales()
+            ->enabled()
+            ->ordered()
             ->pluck('locale_code', 'locale_code')
             ->all();
 

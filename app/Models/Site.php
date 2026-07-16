@@ -54,6 +54,18 @@ final class Site extends Model
         return $this->hasMany(SiteFeature::class);
     }
 
+    /** @return HasMany<SiteLocale, $this> */
+    public function locales(): HasMany
+    {
+        return $this->hasMany(SiteLocale::class);
+    }
+
+    /** @return HasMany<SiteCategory, $this> */
+    public function categories(): HasMany
+    {
+        return $this->hasMany(SiteCategory::class);
+    }
+
     /** @return HasMany<SiteProduct, $this> */
     public function products(): HasMany
     {

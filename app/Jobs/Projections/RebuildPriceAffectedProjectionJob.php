@@ -9,7 +9,6 @@ use App\Models\SiteProduct;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\DB;
 
 final class RebuildPriceAffectedProjectionJob implements ShouldBeUnique, ShouldQueue
 {
@@ -45,11 +44,9 @@ final class RebuildPriceAffectedProjectionJob implements ShouldBeUnique, ShouldQ
         }
 
         $sync ??= app(SiteSyncService::class);
-        $locales = DB::table('site_locales')
-            ->where('site_id', $site->id)
-            ->where('is_enabled', true)
-            ->orderBy('position')
-            ->orderBy('id')
+        $locales = $site->locales()
+            ->enabled()
+            ->ordered()
             ->pluck('locale_code')
             ->map(fn (mixed $locale): string => (string) $locale)
             ->all();

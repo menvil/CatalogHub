@@ -47,4 +47,17 @@ class ContentAdminResourceTest extends TestCase
 
         $this->actingAs($user)->get(ContentItemResource::getUrl())->assertForbidden();
     }
+
+    public function test_non_super_admin_without_a_site_has_an_empty_content_query(): void
+    {
+        ContentItem::factory()->create();
+        $user = User::factory()->create([
+            'role' => UserRole::SiteAdmin,
+            'site_id' => null,
+        ]);
+
+        $this->actingAs($user);
+
+        $this->assertSame(0, ContentItemResource::getEloquentQuery()->count());
+    }
 }

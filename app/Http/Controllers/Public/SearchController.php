@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Public;
 
-use App\Domains\Projections\Enums\ProjectionStatus;
 use App\Domains\PublicSite\LocalizedUrlResolver;
 use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Http\Controllers\Controller;
 use App\Models\SiteSearchDocument;
+use App\Queries\PublicSite\PublicProductSearchQuery;
 use App\Services\Pricing\ProductCardPricePresenter;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -21,6 +21,7 @@ final class SearchController extends Controller
         ThemeLayoutResolver $layouts,
         LocalizedUrlResolver $urls,
         ProductCardPricePresenter $pricePresenter,
+        PublicProductSearchQuery $search,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
         $site->loadMissing('market');
@@ -28,20 +29,7 @@ final class SearchController extends Controller
         $results = collect();
 
         if ($term !== '') {
-            $escapedTerm = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $term);
-            $pattern = "%{$escapedTerm}%";
-            $results = SiteSearchDocument::query()
-                ->where('site_id', $site->id)
-                ->where('locale', $locale)
-                ->where('document_type', 'product')
-                ->where('status', ProjectionStatus::Active)
-                ->where(function ($query) use ($pattern): void {
-                    $query->whereRaw("search_text LIKE ? ESCAPE '!'", [$pattern])
-                        ->orWhereRaw("title LIKE ? ESCAPE '!'", [$pattern]);
-                })
-                ->orderBy('title')
-                ->limit(24)
-                ->get()
+            $results = $search->search($site, $locale, $term)
                 ->map(fn (SiteSearchDocument $document): array => [
                     'title' => $document->title,
                     'slug' => $document->slug,

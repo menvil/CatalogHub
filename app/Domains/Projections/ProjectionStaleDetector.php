@@ -9,12 +9,14 @@ use App\Models\Site;
 use App\Models\SiteCategoryProjection;
 use App\Models\SiteProductProjection;
 use App\Models\SiteSearchDocument;
+use App\Queries\Projections\StaleProjectionQuery;
 use Illuminate\Support\Facades\DB;
-use LogicException;
 
 final class ProjectionStaleDetector
 {
     private const DETECTION_CHUNK_SIZE = 500;
+
+    public function __construct(private readonly StaleProjectionQuery $staleProjections) {}
 
     public function markStaleForProduct(
         CentralProduct $product,
@@ -74,26 +76,7 @@ final class ProjectionStaleDetector
     {
         $counts = ['products' => 0, 'categories' => 0];
         $siteId = (int) $site->getKey();
-        $productVersion = $this->sourceVersionExpression('central_products.updated_at');
-        $categoryVersion = $this->sourceVersionExpression('central_categories.updated_at');
-
-        SiteProductProjection::query()
-            ->join(
-                'central_products',
-                'central_products.id',
-                '=',
-                'site_product_projections.central_product_id',
-            )
-            ->where('site_product_projections.site_id', $site->getKey())
-            ->whereRaw($this->versionMismatchSql(
-                'site_product_projections.central_product_version',
-                'central_products.updated_at',
-                $productVersion,
-            ))
-            ->select([
-                'site_product_projections.id as projection_id',
-                'site_product_projections.central_product_id',
-            ])
+        $this->staleProjections->productsForSite($site)
             ->chunkById(
                 self::DETECTION_CHUNK_SIZE,
                 function ($projections) use ($siteId, &$counts): void {
@@ -115,23 +98,7 @@ final class ProjectionStaleDetector
                 'projection_id',
             );
 
-        SiteCategoryProjection::query()
-            ->join(
-                'central_categories',
-                'central_categories.id',
-                '=',
-                'site_category_projections.central_category_id',
-            )
-            ->where('site_category_projections.site_id', $site->getKey())
-            ->whereRaw($this->versionMismatchSql(
-                'site_category_projections.central_category_version',
-                'central_categories.updated_at',
-                $categoryVersion,
-            ))
-            ->select([
-                'site_category_projections.id as projection_id',
-                'site_category_projections.central_category_id',
-            ])
+        $this->staleProjections->categoriesForSite($site)
             ->chunkById(
                 self::DETECTION_CHUNK_SIZE,
                 function ($projections) use ($siteId, &$counts): void {
@@ -227,28 +194,6 @@ final class ProjectionStaleDetector
             ],
             $entityIds,
         ));
-    }
-
-    private function sourceVersionExpression(string $updatedAtColumn): string
-    {
-        return match (DB::getDriverName()) {
-            'pgsql' => "CAST(EXTRACT(EPOCH FROM {$updatedAtColumn}) AS BIGINT)",
-            'mysql', 'mariadb' => "UNIX_TIMESTAMP({$updatedAtColumn})",
-            'sqlite' => "CAST(strftime('%s', {$updatedAtColumn}) AS INTEGER)",
-            'sqlsrv' => "DATEDIFF_BIG(second, '1970-01-01', {$updatedAtColumn})",
-            default => throw new LogicException('Unsupported database driver for projection stale detection.'),
-        };
-    }
-
-    private function versionMismatchSql(
-        string $projectionVersionColumn,
-        string $sourceUpdatedAtColumn,
-        string $sourceVersionExpression,
-    ): string {
-        return "(({$projectionVersionColumn} IS NULL AND {$sourceUpdatedAtColumn} IS NOT NULL)"
-            ." OR ({$projectionVersionColumn} IS NOT NULL AND {$sourceUpdatedAtColumn} IS NULL)"
-            ." OR ({$projectionVersionColumn} IS NOT NULL AND {$sourceUpdatedAtColumn} IS NOT NULL"
-            ." AND {$projectionVersionColumn} <> {$sourceVersionExpression}))";
     }
 
     private function markProductIdStale(int $productId, ?int $siteId, string $reason): int

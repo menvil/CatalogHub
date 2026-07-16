@@ -37,30 +37,6 @@ parameters:
         lowLevelQueryExceptions: []
         rawSqlExceptions:
             -
-                class: App\Domains\Projections\ProjectionStaleDetector
-                methods: [whereRaw]
-                reason: 'Driver-aware projection version comparison uses only internally generated identifiers.'
-                bindings: internal_only
-                behaviorTests: [tests/Feature/Domains/Projections/ProjectionStaleDetectorTest.php]
-                status: legacy
-                target: 'MR 7: Projection query boundary'
-            -
-                class: App\Domains\PublicSite\SiteContextResolver
-                methods: [selectRaw]
-                reason: 'Legacy EXISTS projection selects a constant literal.'
-                bindings: literal_only
-                behaviorTests: [tests/Feature/Public/HomePageTest.php]
-                status: legacy
-                target: 'MR 7: Public query boundary'
-            -
-                class: App\Http\Controllers\Public\SearchController
-                methods: [whereRaw, orWhereRaw]
-                reason: 'Escaped LIKE search requires an explicit ESCAPE clause with bound patterns.'
-                bindings: required
-                behaviorTests: [tests/Feature/Public/SearchPageStubTest.php]
-                status: legacy
-                target: 'MR 7: Public search query boundary'
-            -
                 class: App\Queries\Translations\MissingTranslationsQuery
                 methods: [whereRaw]
                 reason: 'Escaped LIKE search requires an explicit ESCAPE clause with a bound pattern.'
@@ -68,29 +44,33 @@ parameters:
                 behaviorTests: [tests/Feature/Admin/MissingTranslationsScreenTest.php]
                 status: approved
             -
-                class: App\Services\Content\HomepageContentResolver
-                methods: [selectRaw]
-                reason: 'Legacy EXISTS projection selects a constant literal.'
-                bindings: literal_only
-                behaviorTests: [tests/Feature/Public/HomepageContentBlockTest.php]
-                status: legacy
-                target: 'MR 7: Content query boundary'
-            -
-                class: App\Services\Facets\FacetQueryBuilder
+                class: App\Queries\Facets\FacetDocumentExpressionQuery
                 methods: [orderByRaw]
-                reason: 'Driver-aware JSON numeric ordering and portable NULL-last ordering contain no dynamic values.'
+                reason: 'Portable numeric JSON ordering and NULL-last price ordering use validated internal identifiers and literal expressions.'
                 bindings: internal_only
-                behaviorTests: [tests/Feature/Facets/FacetQueryBuilderSortingTest.php]
-                status: legacy
-                target: 'MR 7: Facet expression boundary'
+                behaviorTests: [tests/Feature/Facets/FacetQueryBuilderSortingTest.php, tests/Feature/Public/ProductPriceSortTest.php]
+                status: approved
             -
-                class: App\Services\Facets\FacetQueryBuilder
+                class: App\Queries\Facets\FacetDocumentExpressionQuery
                 methods: [whereRaw]
-                reason: 'Driver-aware numeric JSON constraint binds the serialized comparison value.'
+                reason: 'Driver-aware numeric JSON comparison validates identifiers and operators and binds the serialized value.'
                 bindings: required
                 behaviorTests: [tests/Feature/Facets/FacetQueryBuilderRangeTest.php]
-                status: legacy
-                target: 'MR 7: Facet expression boundary'
+                status: approved
+            -
+                class: App\Queries\Projections\StaleProjectionQuery
+                methods: [whereRaw]
+                reason: 'Projection version comparison requires driver-aware timestamp conversion over fixed internal columns.'
+                bindings: internal_only
+                behaviorTests: [tests/Feature/Domains/Projections/ProjectionStaleDetectorTest.php]
+                status: approved
+            -
+                class: App\Queries\PublicSite\PublicProductSearchQuery
+                methods: [whereRaw, orWhereRaw]
+                reason: 'Literal wildcard search requires an explicit ESCAPE clause with separately bound patterns.'
+                bindings: required
+                behaviorTests: [tests/Feature/Public/SearchPageStubTest.php]
+                status: approved
             -
                 class: App\Queries\Pricing\CheapestProductsQuery
                 methods: [orderByRaw]

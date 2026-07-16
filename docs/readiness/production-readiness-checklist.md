@@ -2,6 +2,8 @@
 
 Use this checklist before every controlled production or public demo launch. Check an item only after verifying it in the target environment, and record exceptions in the release notes.
 
+Configuration references: [environment audit](environment-audit.md) and [production environment template](../../.env.production.example).
+
 ## Environment
 
 - [ ] `APP_ENV=production` and `APP_DEBUG=false` are effective.
@@ -86,4 +88,3 @@ Use this checklist before every controlled production or public demo launch. Che
 - [ ] Code rollback, maintenance mode, queue suspension, and data recovery steps are available.
 - [ ] Full regression checklist, build, migrations, and smoke suite pass at the release commit.
 - [ ] Known limitations and accepted risks are listed in the release notes.
-

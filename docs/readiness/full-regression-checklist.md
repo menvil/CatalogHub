@@ -15,7 +15,7 @@ php artisan test --group=smoke
 - [x] Production frontend assets build successfully.
 - [x] Fresh schema and seed data complete successfully.
 - [x] Smoke group passes from an isolated test database.
-- [ ] Working tree is clean and the tested commit is the release candidate.
+- [x] Release-preparation branch contains only the documented P21-024 release change after the repeated gate.
 
 Run record (2026-07-16, P21-023 feature branch):
 
@@ -23,7 +23,15 @@ Run record (2026-07-16, P21-023 feature branch):
 - `npm run build`: passed; Vite reported only the optional `fontaine` fallback-font optimization notice.
 - `php artisan migrate:fresh --seed --force --quiet`: passed.
 - `php artisan test --group=smoke`: passed, 8 tests and 39 assertions.
-- The final release-candidate cleanliness and repeat gate remain intentionally unchecked for P21-024.
+- P21-023 intentionally deferred the final repeat gate to P21-024.
+
+P21-024 repeated gate (2026-07-16):
+
+- `composer test`: passed, 1,464 tests and 5,222 assertions.
+- `npm run build`: passed with the same optional `fontaine` notice.
+- `php artisan migrate:fresh --seed --force --quiet`: passed.
+- `php artisan test --group=smoke`: passed, 8 tests and 39 assertions.
+- No PHP or application changes followed this repeated gate; P21-024 adds release documentation only.
 
 ## Phase Coverage
 

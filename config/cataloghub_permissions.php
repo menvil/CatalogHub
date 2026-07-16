@@ -19,6 +19,7 @@ return [
         'leads.manage',
         'prices.manage',
         'backups.manage',
+        'corrections.request',
     ],
 
     'roles' => [
@@ -48,6 +49,7 @@ return [
             'translations.manage',
             'reviews.moderate',
             'leads.manage',
+            'corrections.request',
         ],
         UserRole::Translator->value => [
             'translations.manage',

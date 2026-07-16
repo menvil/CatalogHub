@@ -81,4 +81,17 @@ class ChangeRequestsQueueTest extends TestCase
 
         $this->assertSame(ChangeRequestStatus::Approved, $request->fresh()->status);
     }
+
+    public function test_central_admin_can_reject_a_pending_request_from_the_queue(): void
+    {
+        $request = ChangeRequest::factory()->pending()->create();
+
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
+            ->test(ListChangeRequests::class)
+            ->callTableAction('reject', $request, data: ['reason' => 'Unsupported evidence.'])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame(ChangeRequestStatus::Rejected, $request->fresh()->status);
+        $this->assertSame('Unsupported evidence.', $request->fresh()->rejection_reason);
+    }
 }

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Actions\Corrections\ApproveCorrectionAction;
+use App\Actions\Corrections\RejectCorrectionAction;
 use App\Enums\ChangeRequestStatus;
 use App\Filament\Resources\ChangeRequestResource\Pages;
 use App\Models\ChangeRequest;
@@ -10,6 +11,7 @@ use App\Models\User;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Textarea;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -92,6 +94,24 @@ final class ChangeRequestResource extends Resource
                             ? app(ApproveCorrectionAction::class)->handle($user, $record)
                             : $record;
                     }),
+                Action::make('reject')
+                    ->label('Reject')
+                    ->color('danger')
+                    ->icon(Heroicon::OutlinedXCircle)
+                    ->visible(fn (ChangeRequest $record): bool => $record->status === ChangeRequestStatus::Pending)
+                    ->schema([
+                        Textarea::make('reason')
+                            ->label('Rejection reason')
+                            ->required()
+                            ->maxLength(5000),
+                    ])
+                    ->action(function (array $data, ChangeRequest $record): ChangeRequest {
+                        $user = auth()->user();
+
+                        return $user instanceof User
+                            ? app(RejectCorrectionAction::class)->handle($user, $record, (string) $data['reason'])
+                            : $record;
+                    }),
             ])
             ->defaultSort('created_at', 'desc')
             ->emptyStateHeading('No change requests');
@@ -115,6 +135,7 @@ final class ChangeRequestResource extends Resource
             TextEntry::make('evidence_note')->label('Evidence note')->placeholder('None'),
             TextEntry::make('created_at')->dateTime(),
             TextEntry::make('reviewed_at')->dateTime()->placeholder('Not reviewed'),
+            TextEntry::make('rejection_reason')->label('Rejection reason')->placeholder('Not rejected'),
         ]);
     }
 

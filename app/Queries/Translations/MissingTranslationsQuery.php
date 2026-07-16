@@ -2,6 +2,7 @@
 
 namespace App\Queries\Translations;
 
+use App\Contracts\Persistence\RawSqlPersistenceBoundary;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeSection;
@@ -10,7 +11,7 @@ use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Locale;
 use App\Models\MeasurementUnit;
 
-final class MissingTranslationsQuery
+final class MissingTranslationsQuery implements RawSqlPersistenceBoundary
 {
     /**
      * @return list<array{entity_type: string, entity_id: int, source_label: string, locale: string, editor_url: string}>

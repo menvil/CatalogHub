@@ -31,6 +31,9 @@
     },
     "autoload-dev": {
         "psr-4": {
+            "App\\Http\\Controllers\\ArchitectureFixtures\\": "tests/Fixtures/Architecture/Controllers/",
+            "App\\Services\\ArchitectureFixtures\\": "tests/Fixtures/Architecture/Services/",
+            "CatalogHub\\PHPStan\\": "tools/phpstan/src/",
             "Tests\\": "tests/"
         }
     },

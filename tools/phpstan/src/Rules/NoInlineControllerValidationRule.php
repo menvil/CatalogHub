@@ -66,7 +66,9 @@ final class NoInlineControllerValidationRule implements Rule
 
     private function isInlineValidation(Expr $node, Scope $scope): bool
     {
-        if ($node instanceof MethodCall && $node->name instanceof Identifier && $node->name->toString() === 'validate') {
+        if ($node instanceof MethodCall
+            && $node->name instanceof Identifier
+            && in_array($node->name->toString(), ['validate', 'validateWithBag'], true)) {
             if ($node->var instanceof Variable && $node->var->name === 'this') {
                 return true;
             }

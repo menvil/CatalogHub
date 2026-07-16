@@ -4,10 +4,11 @@ Architectural exceptions use an exact PHPStan allowlist, not the general
 PHPStan baseline. Every entry is bound to a class and method names, explains why
 raw SQL exists, declares its binding policy, and points to behavior tests.
 
-Legacy entries additionally name the MR that will remove or isolate them.
 Approved entries are allowed only in an explicitly declared persistence
 boundary. Registry tests reject missing tests, duplicate pairs, invalid entries,
-and entries whose raw method is no longer present.
+entries whose raw method is no longer present, and owners outside `App\\Queries`.
+Controller validation, controller permission, and low-level DB exception lists
+must remain empty.
 
 Example:
 
@@ -24,15 +25,17 @@ parameters:
                 status: approved
 ```
 
-| Area | Current reason | Target |
-| --- | --- | --- |
-| Facets | JSON numeric extraction and deterministic NULL-last sorting | MR 7: isolate facet expressions |
-| Projections | Atomic version comparison and driver-aware update behavior | MR 7: isolate projection queries |
-| Pricing reports | Conditional coverage aggregates and total-price sorting | MR 6: pricing query layer |
-| Translations | Grouped completeness aggregates and escaped search patterns | MR 6/7: query layer |
-| Public search | Explicit escaped `LIKE` behavior | MR 7: public search query |
-| Admin empty-state queries | Legacy `whereRaw('1 = 0')` sentinels | MR 4/7: replace with Eloquent empty scopes |
+| Boundary | Raw methods | Binding policy | Purpose |
+| --- | --- | --- | --- |
+| `FacetDocumentExpressionQuery` | `orderByRaw`, `whereRaw` | internal / required | Numeric JSON filters and portable NULL-last sorting |
+| `StaleProjectionQuery` | `whereRaw` | internal | Driver-aware timestamp version comparison |
+| `PublicProductSearchQuery` | `whereRaw`, `orWhereRaw` | required | Case-insensitive literal wildcard search |
+| `CheapestProductsQuery` | `orderByRaw` | literal | Total offer price ordering including delivery |
+| `OfferCoverageQuery` | `selectRaw` | literal | Conditional and distinct grouped coverage aggregates |
+| `TranslationStatusCountsQuery` | `selectRaw` | literal | Grouped translation status counts |
+| `MissingTranslationsQuery` | `whereRaw` | required | Literal escaped admin search |
 
-New exceptions are never added to the PHPStan baseline. They require an exact
-registry entry, bindings for dynamic values, behavior tests, and persistence
-boundary ownership.
+New exceptions are never added to the PHPStan baseline and are not introduced
+as legacy debt. They require an exact approved registry entry, bindings for
+dynamic values, behavior tests in `composer test:database-boundaries`, and
+persistence-boundary ownership.

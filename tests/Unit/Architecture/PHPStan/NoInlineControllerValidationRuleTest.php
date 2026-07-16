@@ -22,6 +22,7 @@ class NoInlineControllerValidationRuleTest extends RuleTestCase
             [$message, 13],
             [$message, 19],
             [$message, 25],
+            [$message, 30],
         ]);
     }
 }

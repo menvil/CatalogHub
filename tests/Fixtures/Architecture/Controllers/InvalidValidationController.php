@@ -24,4 +24,9 @@ final class InvalidValidationController extends Controller
     {
         validator($data, []);
     }
+
+    public function requestValidationWithBag(Request $request): void
+    {
+        $request->validateWithBag('form', []);
+    }
 }

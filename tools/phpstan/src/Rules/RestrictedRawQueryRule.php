@@ -30,7 +30,7 @@ final class RestrictedRawQueryRule implements Rule
     ];
 
     /**
-     * @param  list<array{class: class-string, methods: list<string>, reason: string, bindings: 'required'|'literal_only'|'internal_only', behaviorTests: list<string>, status: 'approved'|'legacy', target?: string}>  $rawSqlExceptions
+     * @param  list<array{class: class-string, methods: list<string>, reason: string, bindings: 'required'|'literal_only'|'internal_only', behaviorTests: list<string>, status: 'approved'}>  $rawSqlExceptions
      */
     public function __construct(private array $rawSqlExceptions) {}
 

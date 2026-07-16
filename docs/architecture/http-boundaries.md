@@ -16,7 +16,8 @@ A controller may:
 
 A controller must not:
 
-- call `Request::validate()`, `Validator::make()`, or the `validator()` helper;
+- call `Request::validate()`, `Request::validateWithBag()`, `Validator::make()`,
+  or the `validator()` helper;
 - call `hasCatalogHubPermission()` directly;
 - construct low-level or raw database queries;
 - manage database transactions;

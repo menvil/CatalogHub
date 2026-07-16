@@ -16,8 +16,11 @@ final class RebuildSiteProductProjectionAction
         private readonly SyncLogWriter $syncLogWriter,
     ) {}
 
-    public function handle(User $admin, SiteProduct $siteProduct): SiteProduct
-    {
+    public function handle(
+        User $admin,
+        SiteProduct $siteProduct,
+        string $triggeredBy = 'user',
+    ): SiteProduct {
         if (! $admin->hasCatalogHubPermission('central.manage')) {
             throw new AuthorizationException('Only a central administrator can rebuild projections.');
         }
@@ -49,7 +52,7 @@ final class RebuildSiteProductProjectionAction
 
             $this->syncLogWriter->completed(
                 operation: 'rebuild_product_projection',
-                triggeredBy: 'user',
+                triggeredBy: $triggeredBy,
                 actor: $admin,
                 site: $site,
                 product: $product,
@@ -62,7 +65,7 @@ final class RebuildSiteProductProjectionAction
             $siteProduct->forceFill(['sync_status' => 'failed'])->save();
             $this->syncLogWriter->failed(
                 operation: 'rebuild_product_projection',
-                triggeredBy: 'user',
+                triggeredBy: $triggeredBy,
                 error: $exception,
                 actor: $admin,
                 site: $site,

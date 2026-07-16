@@ -93,4 +93,17 @@ class SyncConflictResolverTest extends TestCase
         $this->assertSame(SyncConflictStatus::Resolved, $conflict->fresh()->status);
         $this->assertSame('use_central_value', $conflict->fresh()->resolution);
     }
+
+    public function test_central_admin_can_keep_local_override_from_the_resolver(): void
+    {
+        $conflict = SyncConflict::factory()->open()->create();
+
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
+            ->test(ListSyncConflicts::class)
+            ->callTableAction('keepLocalOverride', $conflict)
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame(SyncConflictStatus::Resolved, $conflict->fresh()->status);
+        $this->assertSame('keep_local_override', $conflict->fresh()->resolution);
+    }
 }

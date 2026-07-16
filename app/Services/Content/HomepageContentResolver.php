@@ -42,7 +42,7 @@ final readonly class HomepageContentResolver
             )
             ->when($categoryId !== null, fn (Builder $builder): Builder => $builder->whereExists(
                 fn ($relation) => $relation
-                    ->selectRaw('1')
+                    ->select('content_relations.id')
                     ->from('content_relations')
                     ->whereColumn('content_relations.content_item_id', 'content_items.id')
                     ->where('content_relations.related_type', ContentRelationTargetType::Category->value)

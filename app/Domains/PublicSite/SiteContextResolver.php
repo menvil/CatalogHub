@@ -28,7 +28,7 @@ final class SiteContextResolver
             ->where('domain', strtolower($host))
             ->where('status', SiteStatus::Active)
             ->whereExists(function ($query) use ($locale): void {
-                $query->selectRaw('1')
+                $query->select('site_locales.id')
                     ->from('site_locales')
                     ->whereColumn('site_locales.site_id', 'sites.id')
                     ->where('site_locales.locale_code', $locale)

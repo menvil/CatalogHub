@@ -19,10 +19,15 @@ use App\Services\Imports\Normalizers\EnumNormalizer;
 use App\Services\Imports\Normalizers\MultiEnumNormalizer;
 use App\Services\Imports\Normalizers\NumberNormalizer;
 use App\Services\Imports\Normalizers\UnitNormalizer;
+use App\Services\Security\PublicRequestRateLimiter;
+use App\Support\PermissionMatrix;
 use App\View\Composers\PublicNavigationComposer;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -59,12 +64,23 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        foreach (['public-reviews', 'public-leads', 'public-search', 'public-contact'] as $name) {
+            $definition = PublicRequestRateLimiter::definition($name);
+
+            RateLimiter::for(
+                $name,
+                fn (Request $request): Limit => Limit::perMinute($definition['max'])->by($request->ip()),
+            );
+        }
+
         Relation::morphMap([
             'central_product' => CentralProduct::class,
             'normalized_product_draft' => NormalizedProductDraft::class,
         ]);
 
-        Gate::define('translations.manage', fn (User $user): bool => $user->hasCatalogHubPermission('translations.manage'));
+        foreach (app(PermissionMatrix::class)->permissions() as $permission) {
+            Gate::define($permission, fn (User $user): bool => $user->hasCatalogHubPermission($permission));
+        }
 
         CentralProduct::observe(CentralProductObserver::class);
         Event::listen(MarketOfferUpdated::class, RebuildPriceAffectedProjections::class);

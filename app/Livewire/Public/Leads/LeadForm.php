@@ -8,6 +8,7 @@ use App\Exceptions\Leads\CannotCreateLeadException;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Site;
+use App\Services\Security\PublicRequestRateLimiter;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -55,8 +56,12 @@ final class LeadForm extends Component
         $this->source = $this->productId !== null ? 'product_page' : 'public_form';
     }
 
-    public function submit(CreateLeadAction $createLead): void
-    {
+    public function submit(
+        CreateLeadAction $createLead,
+        PublicRequestRateLimiter $rateLimiter,
+    ): void {
+        $rateLimiter->consume('public-leads', [$this->site->getKey(), $this->productId, $this->categoryId]);
+
         $data = $this->validate([
             ...CreateLeadAction::inputRules(),
             'consentAccepted' => ['accepted'],

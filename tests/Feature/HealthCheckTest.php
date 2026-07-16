@@ -2,17 +2,22 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class HealthCheckTest extends TestCase
 {
     public function test_health_check_returns_healthy_status(): void
     {
+        Carbon::setTestNow('2026-07-16T12:00:00+00:00');
+
         $this->getJson('/health')
             ->assertOk()
             ->assertJson([
                 'status' => 'ok',
                 'app' => 'CatalogHub',
+                'environment' => app()->environment(),
+                'timestamp' => '2026-07-16T12:00:00+00:00',
             ]);
     }
 

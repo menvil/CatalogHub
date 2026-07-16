@@ -55,6 +55,7 @@ Route::get('/{locale}/articles/{slug}', PublicContentController::class)
 
 Route::get('/{locale}/search', PublicSearchController::class)
     ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
+    ->middleware('throttle:public-search')
     ->name('public.search');
 
 if (app()->environment(['local', 'testing'])) {
@@ -110,7 +111,9 @@ Route::middleware('auth')->prefix('central')->group(function (): void {
     Route::get('/snapshots/{snapshot}/download/{fileKey}', SnapshotDownloadController::class)
         ->where('fileKey', '[A-Za-z0-9_-]+')
         ->name('central.snapshots.download');
+});
 
+Route::middleware(['auth', 'can:media.manage'])->prefix('central')->group(function (): void {
     Route::get('/media', MediaLibraryController::class)
         ->name('central.media.index');
     Route::post('/media/upload', MediaUploadController::class)

@@ -6,6 +6,7 @@ use App\Enums\CategorySchemaStatus;
 use App\Enums\CentralCategoryStatus;
 use App\Filament\Resources\CentralCategoryResource\Pages;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Models\User;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -17,6 +18,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 final class CentralCategoryResource extends Resource
@@ -30,6 +32,34 @@ final class CentralCategoryResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'Central Catalog';
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    public static function canViewAny(): bool
+    {
+        return self::canManageCategories();
+    }
+
+    public static function canView(Model $record): bool
+    {
+        return self::canManageCategories();
+    }
+
+    public static function canCreate(): bool
+    {
+        return self::canManageCategories();
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return self::canManageCategories();
+    }
+
+    private static function canManageCategories(): bool
+    {
+        $user = auth()->user();
+
+        return $user instanceof User
+            && $user->hasCatalogHubPermission('catalog.categories.manage');
+    }
 
     public static function form(Schema $schema): Schema
     {

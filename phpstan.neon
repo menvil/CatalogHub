@@ -33,22 +33,7 @@ services:
 parameters:
     architecture:
         controllerPermissionExceptions: []
-        controllerValidationExceptions:
-            -
-                class: App\Http\Controllers\CentralAdmin\MissingTranslationsController
-                methods: [__invoke]
-                reason: 'Legacy translation report filter validation.'
-                target: 'MR 3: Translation Form Requests'
-            -
-                class: App\Http\Controllers\CentralAdmin\OutdatedTranslationsController
-                methods: [__invoke]
-                reason: 'Legacy translation report filter validation.'
-                target: 'MR 3: Translation Form Requests'
-            -
-                class: App\Http\Controllers\CentralAdmin\TranslationEditorController
-                methods: [saveProduct, saveCategory, saveAttribute, saveSection, saveOption, saveUnit]
-                reason: 'Legacy entity-specific translation validation.'
-                target: 'MR 3: Translation Form Requests'
+        controllerValidationExceptions: []
         lowLevelQueryExceptions:
             -
                 class: App\Actions\Sites\CreateSiteAction

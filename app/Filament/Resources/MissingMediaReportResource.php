@@ -65,7 +65,7 @@ final class MissingMediaReportResource extends Resource
     /** @return Builder<MediaManifest> */
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        return MediaManifest::query()
             ->whereNull('catalog_snapshot_id')
             ->where('status', 'missing')
             ->with('mediaAsset');

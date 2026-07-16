@@ -10,6 +10,7 @@ use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -69,7 +70,7 @@ final class CatalogSnapshotResource extends Resource
     /** @return Builder<CatalogSnapshot> */
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with('createdBy');
+        return CatalogSnapshot::query()->with('createdBy');
     }
 
     public static function table(Table $table): Table
@@ -121,6 +122,7 @@ final class CatalogSnapshotResource extends Resource
                     ->label('Restore checklist')
                     ->icon(Heroicon::OutlinedClipboardDocumentCheck)
                     ->url(fn (CatalogSnapshot $record): string => self::getUrl('restore-checklist', ['record' => $record])),
+                self::downloadAction(),
             ])
             ->defaultSort('created_at', 'desc')
             ->emptyStateHeading('No catalog snapshots')
@@ -166,6 +168,28 @@ final class CatalogSnapshotResource extends Resource
             'view' => Pages\ViewCatalogSnapshot::route('/{record}'),
             'restore-checklist' => Pages\RestoreChecklistPage::route('/{record}/restore-checklist'),
         ];
+    }
+
+    public static function downloadAction(): Action
+    {
+        return Action::make('downloadFile')
+            ->label('Download file')
+            ->icon(Heroicon::OutlinedArrowDownTray)
+            ->visible(fn (CatalogSnapshot $record): bool => $record->isCompleted() && ($record->files_json ?? []) !== [])
+            ->schema([
+                Select::make('file_key')
+                    ->label('Snapshot file')
+                    ->options(fn (CatalogSnapshot $record): array => collect($record->files_json ?? [])
+                        ->mapWithKeys(fn (array $file, string $key): array => [
+                            $key => $key.' — '.($file['path'] ?? 'missing path'),
+                        ])
+                        ->all())
+                    ->required(),
+            ])
+            ->action(fn (array $data, CatalogSnapshot $record) => redirect()->route(
+                'central.snapshots.download',
+                [$record, (string) $data['file_key']],
+            ));
     }
 
     private static function canManageSnapshots(): bool

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Actions\Sync\UseCentralValueAction;
 use App\Filament\Resources\SyncConflictResource\Pages;
 use App\Models\SyncConflict;
 use App\Models\User;
@@ -82,7 +83,7 @@ final class SyncConflictResource extends Resource
             ])
             ->recordActions([
                 ViewAction::make(),
-                ...self::placeholderResolutionActions(),
+                ...self::resolutionActions(),
             ])
             ->defaultSort('created_at')
             ->emptyStateHeading('No open sync conflicts')
@@ -125,10 +126,21 @@ final class SyncConflictResource extends Resource
     }
 
     /** @return list<Action> */
-    public static function placeholderResolutionActions(): array
+    public static function resolutionActions(): array
     {
         return [
-            Action::make('useCentralValue')->label('Use central value')->icon(Heroicon::OutlinedArrowDown)->disabled(),
+            Action::make('useCentralValue')
+                ->label('Use central value')
+                ->icon(Heroicon::OutlinedArrowDown)
+                ->color('success')
+                ->requiresConfirmation()
+                ->action(function (SyncConflict $record): SyncConflict {
+                    $user = auth()->user();
+
+                    return $user instanceof User
+                        ? app(UseCentralValueAction::class)->handle($user, $record)
+                        : $record;
+                }),
             Action::make('keepLocalOverride')->label('Keep local override')->icon(Heroicon::OutlinedBookmark)->disabled(),
             Action::make('convertToMarketOverride')->label('Convert to market override')->icon(Heroicon::OutlinedGlobeAlt)->disabled(),
         ];

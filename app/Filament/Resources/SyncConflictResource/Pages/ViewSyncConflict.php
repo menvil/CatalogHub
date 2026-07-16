@@ -11,6 +11,6 @@ final class ViewSyncConflict extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return SyncConflictResource::placeholderResolutionActions();
+        return SyncConflictResource::resolutionActions();
     }
 }

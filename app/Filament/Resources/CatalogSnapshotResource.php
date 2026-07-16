@@ -7,6 +7,7 @@ use App\Models\CatalogSnapshot;
 use App\Models\User;
 use BackedEnum;
 use Carbon\CarbonImmutable;
+use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Infolists\Components\TextEntry;
@@ -114,7 +115,13 @@ final class CatalogSnapshotResource extends Resource
                         ->when(filled($data['until'] ?? null), fn (Builder $query): Builder => $query
                             ->where('created_at', '<', CarbonImmutable::parse((string) $data['until'])->addDay()->startOfDay()))),
             ])
-            ->recordActions([ViewAction::make()])
+            ->recordActions([
+                ViewAction::make(),
+                Action::make('restoreChecklist')
+                    ->label('Restore checklist')
+                    ->icon(Heroicon::OutlinedClipboardDocumentCheck)
+                    ->url(fn (CatalogSnapshot $record): string => self::getUrl('restore-checklist', ['record' => $record])),
+            ])
             ->defaultSort('created_at', 'desc')
             ->emptyStateHeading('No catalog snapshots')
             ->emptyStateDescription('Generate a portable catalog export to start snapshot history.');
@@ -157,6 +164,7 @@ final class CatalogSnapshotResource extends Resource
         return [
             'index' => Pages\ListCatalogSnapshots::route('/'),
             'view' => Pages\ViewCatalogSnapshot::route('/{record}'),
+            'restore-checklist' => Pages\RestoreChecklistPage::route('/{record}/restore-checklist'),
         ];
     }
 

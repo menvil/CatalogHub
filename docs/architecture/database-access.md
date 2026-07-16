@@ -1,0 +1,51 @@
+# Database Access
+
+CatalogHub is Eloquent-first and supports SQLite, MariaDB, and PostgreSQL. The
+goal is portable behavior and clear ownership, not the removal of every SQL
+expression at the expense of correctness or performance.
+
+## Allowed by default
+
+- `Model::query()` and other Eloquent entry points;
+- model relationships, scopes, `whereHas()`, `withCount()`, and subqueries built
+  with Eloquent;
+- `DB::transaction()` in Actions, Services, Jobs, and domain infrastructure;
+- schema operations in migrations.
+
+`Model::query()` returns an Eloquent Builder. It is not a low-level query-builder
+escape hatch and must not be banned.
+
+## Restricted
+
+- `DB::table()`, direct selects, statements, and `DB::raw()`;
+- `whereRaw()`, `selectRaw()`, `orderByRaw()`, and related methods;
+- transactions and database orchestration inside controllers.
+
+Low-level access must first be replaced with relationships, scopes, Eloquent
+aggregates, or Query Objects when an equivalent implementation remains efficient.
+
+## Raw SQL exceptions
+
+An unavoidable expression must be isolated in an explicitly approved
+persistence boundary. It needs:
+
+1. parameter bindings for every dynamic value;
+2. an exact allowlist entry containing class, methods, and a concrete reason;
+3. behavioral tests on every supported database;
+4. a review confirming that an Eloquent alternative would be incorrect or less
+   efficient.
+
+Literal expressions with no values declare `bindings: literal_only`; PHPStan
+verifies that the SQL argument is a literal string. Driver-aware expressions
+assembled only from internal identifiers declare `bindings: internal_only`.
+Expressions containing values declare `bindings: required`; PHPStan verifies
+that the raw method receives a separate bindings argument.
+
+`DB::transaction()` is not a raw query and remains allowed outside controllers.
+Driver inspection may be used only in isolated compatibility code.
+
+## Compatibility testing
+
+Migration-only CI does not prove query compatibility. Queries involving JSON,
+escaped `LIKE`, NULL ordering, conditional aggregates, or calculated price
+sorting must run behavioral tests against SQLite, MariaDB, and PostgreSQL.

@@ -1,7 +1,231 @@
 includes:
     - vendor/larastan/larastan/extension.neon
 
+parametersSchema:
+    architecture: mixed()
+
+services:
+    -
+        class: CatalogHub\PHPStan\Rules\NoInlineControllerValidationRule
+        arguments:
+            legacyExceptions: %architecture.controllerValidationExceptions%
+        tags:
+            - phpstan.rules.rule
+    -
+        class: CatalogHub\PHPStan\Rules\NoDirectControllerPermissionCheckRule
+        arguments:
+            legacyExceptions: %architecture.controllerPermissionExceptions%
+        tags:
+            - phpstan.rules.rule
+    -
+        class: CatalogHub\PHPStan\Rules\RestrictedDatabaseFacadeRule
+        arguments:
+            lowLevelQueryExceptions: %architecture.lowLevelQueryExceptions%
+        tags:
+            - phpstan.rules.rule
+    -
+        class: CatalogHub\PHPStan\Rules\RestrictedRawQueryRule
+        arguments:
+            rawSqlExceptions: %architecture.rawSqlExceptions%
+        tags:
+            - phpstan.rules.rule
+
 parameters:
+    architecture:
+        controllerPermissionExceptions:
+            -
+                class: App\Http\Controllers\CentralAdmin\Media\ProductMediaManagerController
+                methods: [authorizeMedia]
+                reason: 'Legacy permission check pending policy migration.'
+                target: 'MR 2: Media HTTP boundaries'
+        controllerValidationExceptions:
+            -
+                class: App\Http\Controllers\CentralAdmin\Media\MediaAssetDetailController
+                methods: [updateSource]
+                reason: 'Legacy inline source metadata validation.'
+                target: 'MR 2: Media HTTP boundaries'
+            -
+                class: App\Http\Controllers\CentralAdmin\Media\MediaUploadController
+                methods: [__invoke]
+                reason: 'Legacy upload and image-dimension validation.'
+                target: 'MR 2: Media HTTP boundaries'
+            -
+                class: App\Http\Controllers\CentralAdmin\Media\ProductMediaManagerController
+                methods: [show, assign]
+                reason: 'Legacy product media filters and assignment validation.'
+                target: 'MR 2: Media HTTP boundaries'
+            -
+                class: App\Http\Controllers\CentralAdmin\MissingTranslationsController
+                methods: [__invoke]
+                reason: 'Legacy translation report filter validation.'
+                target: 'MR 3: Translation Form Requests'
+            -
+                class: App\Http\Controllers\CentralAdmin\OutdatedTranslationsController
+                methods: [__invoke]
+                reason: 'Legacy translation report filter validation.'
+                target: 'MR 3: Translation Form Requests'
+            -
+                class: App\Http\Controllers\CentralAdmin\TranslationEditorController
+                methods: [saveProduct, saveCategory, saveAttribute, saveSection, saveOption, saveUnit]
+                reason: 'Legacy entity-specific translation validation.'
+                target: 'MR 3: Translation Form Requests'
+        lowLevelQueryExceptions:
+            -
+                class: App\Actions\Sites\CreateSiteAction
+                methods: [table]
+                reason: 'Legacy direct writes to site configuration tables.'
+                behaviorTests: [tests/Feature/Actions/CreateSiteActionTest.php]
+                target: 'MR 5: Site configuration writes'
+            -
+                class: App\Actions\Sites\UpdateSiteProductVisibilityAction
+                methods: [table]
+                reason: 'Legacy enabled-category lookup.'
+                behaviorTests: [tests/Feature/Sites/ProductVisibilityManagerTest.php]
+                target: 'MR 5: Site configuration writes'
+            -
+                class: App\Actions\Sites\UpsertSiteOverrideAction
+                methods: [table]
+                reason: 'Legacy locale and source-product lookups.'
+                behaviorTests: [tests/Feature/Actions/UpsertSiteOverrideActionTest.php]
+                target: 'MR 5: Site configuration writes'
+            -
+                class: App\Domains\Projections\SiteSyncService
+                methods: [table]
+                reason: 'Legacy site locale, category, and product subqueries.'
+                behaviorTests: [tests/Feature/Domains/Projections/SiteSyncServiceTest.php]
+                target: 'MR 4: Site configuration Eloquent relations'
+            -
+                class: App\Filament\Resources\ContentItemResource\RelationManagers\TranslationsRelationManager
+                methods: [table]
+                reason: 'Legacy site locale options query.'
+                behaviorTests: [tests/Feature/Admin/ContentTranslationEditorTest.php]
+                target: 'MR 4: Site configuration Eloquent relations'
+            -
+                class: App\Filament\Resources\SiteResource\Pages\ManageSiteProducts
+                methods: [table]
+                reason: 'Legacy enabled-category lookup.'
+                behaviorTests: [tests/Feature/Filament/SiteResourceTest.php]
+                target: 'MR 4: Site configuration Eloquent relations'
+            -
+                class: App\Http\Controllers\CentralAdmin\Media\ProductMediaManagerController
+                methods: [transaction]
+                reason: 'Legacy transaction owned by a controller.'
+                behaviorTests: [tests/Feature/Admin/ProductMediaManagerTest.php]
+                target: 'MR 2: Media HTTP boundaries'
+            -
+                class: App\Jobs\Projections\RebuildPriceAffectedProjectionJob
+                methods: [table]
+                reason: 'Legacy site locale lookup.'
+                behaviorTests: [tests/Feature/Projections/PriceAffectedProjectionRebuildTest.php]
+                target: 'MR 4: Site configuration Eloquent relations'
+            -
+                class: App\Services\Pricing\OfferCoverageDashboardBuilder
+                methods: [table]
+                reason: 'Legacy aggregate report base queries.'
+                behaviorTests: [tests/Feature/SiteAdmin/OffersCoverageDashboardTest.php]
+                target: 'MR 6: Pricing query layer'
+            -
+                class: App\Services\Sites\SiteDashboardMetrics
+                methods: [table]
+                reason: 'Legacy enabled site configuration counts.'
+                behaviorTests: [tests/Feature/Sites/SiteDashboardTest.php]
+                target: 'MR 4: Site configuration Eloquent relations'
+        rawSqlExceptions:
+            -
+                class: App\Domains\Projections\ProjectionStaleDetector
+                methods: [whereRaw]
+                reason: 'Driver-aware projection version comparison uses only internally generated identifiers.'
+                bindings: internal_only
+                behaviorTests: [tests/Feature/Domains/Projections/ProjectionStaleDetectorTest.php]
+                status: legacy
+                target: 'MR 7: Projection query boundary'
+            -
+                class: App\Domains\PublicSite\SiteContextResolver
+                methods: [selectRaw]
+                reason: 'Legacy EXISTS projection selects a constant literal.'
+                bindings: literal_only
+                behaviorTests: [tests/Feature/Public/HomePageTest.php]
+                status: legacy
+                target: 'MR 7: Public query boundary'
+            -
+                class: App\Filament\Resources\ContentItemResource
+                methods: [whereRaw]
+                reason: 'Legacy empty-result sentinel for unavailable site scope.'
+                bindings: literal_only
+                behaviorTests: [tests/Feature/Admin/ContentAdminResourceTest.php]
+                status: legacy
+                target: 'MR 4: Eloquent empty scopes'
+            -
+                class: App\Filament\Resources\LeadResource
+                methods: [whereRaw]
+                reason: 'Legacy empty-result sentinel for unavailable site scope.'
+                bindings: literal_only
+                behaviorTests: [tests/Feature/Filament/LeadsAdminScreenTest.php]
+                status: legacy
+                target: 'MR 4: Eloquent empty scopes'
+            -
+                class: App\Http\Controllers\Public\SearchController
+                methods: [whereRaw, orWhereRaw]
+                reason: 'Escaped LIKE search requires an explicit ESCAPE clause with bound patterns.'
+                bindings: required
+                behaviorTests: [tests/Feature/Public/SearchPageStubTest.php]
+                status: legacy
+                target: 'MR 7: Public search query boundary'
+            -
+                class: App\Queries\Translations\MissingTranslationsQuery
+                methods: [whereRaw]
+                reason: 'Escaped LIKE search requires an explicit ESCAPE clause with a bound pattern.'
+                bindings: required
+                behaviorTests: [tests/Feature/Admin/MissingTranslationsScreenTest.php]
+                status: approved
+            -
+                class: App\Services\Content\HomepageContentResolver
+                methods: [selectRaw]
+                reason: 'Legacy EXISTS projection selects a constant literal.'
+                bindings: literal_only
+                behaviorTests: [tests/Feature/Public/HomepageContentBlockTest.php]
+                status: legacy
+                target: 'MR 7: Content query boundary'
+            -
+                class: App\Services\Facets\FacetQueryBuilder
+                methods: [orderByRaw]
+                reason: 'Driver-aware JSON numeric ordering and portable NULL-last ordering contain no dynamic values.'
+                bindings: internal_only
+                behaviorTests: [tests/Feature/Facets/FacetQueryBuilderSortingTest.php]
+                status: legacy
+                target: 'MR 7: Facet expression boundary'
+            -
+                class: App\Services\Facets\FacetQueryBuilder
+                methods: [whereRaw]
+                reason: 'Driver-aware numeric JSON constraint binds the serialized comparison value.'
+                bindings: required
+                behaviorTests: [tests/Feature/Facets/FacetQueryBuilderRangeTest.php]
+                status: legacy
+                target: 'MR 7: Facet expression boundary'
+            -
+                class: App\Services\Pricing\CheapestProductsQuery
+                methods: [orderByRaw, selectRaw]
+                reason: 'Total-price ordering and EXISTS projection use literal SQL without dynamic values.'
+                bindings: literal_only
+                behaviorTests: [tests/Feature/SiteAdmin/CheapestProductsReportTest.php]
+                status: legacy
+                target: 'MR 6: Pricing query boundary'
+            -
+                class: App\Services\Pricing\OfferCoverageDashboardBuilder
+                methods: [selectRaw]
+                reason: 'Conditional coverage and distinct-product aggregates use literal SQL without dynamic values.'
+                bindings: literal_only
+                behaviorTests: [tests/Feature/SiteAdmin/OffersCoverageDashboardTest.php]
+                status: legacy
+                target: 'MR 6: Pricing query boundary'
+            -
+                class: App\Services\Translations\TranslationCompletenessService
+                methods: [selectRaw]
+                reason: 'Grouped status counts use a portable literal aggregate expression.'
+                bindings: literal_only
+                behaviorTests: [tests/Unit/Services/TranslationCompletenessServiceTest.php]
+                status: legacy
+                target: 'MR 6: Translation query boundary'
     level: 5
     paths:
         - app
@@ -9,5 +233,9 @@ parameters:
         - database
         - routes
         - tests
+        - tools
+    excludePaths:
+        analyse:
+            - tests/Fixtures/Architecture/*
     parallel:
         maximumNumberOfProcesses: 1

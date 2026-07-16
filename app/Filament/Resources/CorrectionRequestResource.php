@@ -2,13 +2,13 @@
 
 namespace App\Filament\Resources;
 
-use App\Actions\Corrections\CreateCorrectionRequestAction;
 use App\Enums\ChangeRequestStatus;
 use App\Filament\Resources\CorrectionRequestResource\Pages;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\ChangeRequest;
 use App\Models\SiteProduct;
 use App\Models\User;
+use App\Services\Corrections\CanonicalCorrectionFieldResolver;
 use BackedEnum;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -85,7 +85,7 @@ final class CorrectionRequestResource extends Resource
                 ->required(),
             Select::make('field_path')
                 ->label('Canonical field')
-                ->options(CreateCorrectionRequestAction::PRODUCT_FIELDS)
+                ->options(CanonicalCorrectionFieldResolver::PRODUCT_FIELDS)
                 ->live()
                 ->required(),
             TextEntry::make('current_value_preview')
@@ -158,7 +158,7 @@ final class CorrectionRequestResource extends Resource
     {
         $siteId = self::authenticatedUser()?->site_id;
 
-        if ($siteId === null || ! is_numeric($productId) || ! is_string($fieldPath) || ! array_key_exists($fieldPath, CreateCorrectionRequestAction::PRODUCT_FIELDS)) {
+        if ($siteId === null || ! is_numeric($productId) || ! is_string($fieldPath) || ! array_key_exists($fieldPath, CanonicalCorrectionFieldResolver::PRODUCT_FIELDS)) {
             return 'Select a product and field.';
         }
 

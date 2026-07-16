@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Actions\Corrections\ApplyCorrectionToCentralAction;
 use App\Actions\Corrections\ApproveCorrectionAction;
 use App\Actions\Corrections\RejectCorrectionAction;
 use App\Enums\ChangeRequestStatus;
@@ -110,6 +111,19 @@ final class ChangeRequestResource extends Resource
 
                         return $user instanceof User
                             ? app(RejectCorrectionAction::class)->handle($user, $record, (string) $data['reason'])
+                            : $record;
+                    }),
+                Action::make('apply')
+                    ->label('Apply to central')
+                    ->color('warning')
+                    ->icon(Heroicon::OutlinedArrowDownTray)
+                    ->requiresConfirmation()
+                    ->visible(fn (ChangeRequest $record): bool => $record->status === ChangeRequestStatus::Approved)
+                    ->action(function (ChangeRequest $record): ChangeRequest {
+                        $user = auth()->user();
+
+                        return $user instanceof User
+                            ? app(ApplyCorrectionToCentralAction::class)->handle($user, $record)
                             : $record;
                     }),
             ])

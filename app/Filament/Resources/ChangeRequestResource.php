@@ -2,11 +2,13 @@
 
 namespace App\Filament\Resources;
 
+use App\Actions\Corrections\ApproveCorrectionAction;
 use App\Enums\ChangeRequestStatus;
 use App\Filament\Resources\ChangeRequestResource\Pages;
 use App\Models\ChangeRequest;
 use App\Models\User;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
@@ -75,7 +77,22 @@ final class ChangeRequestResource extends Resource
                 SelectFilter::make('site_id')->label('Site')->relationship('site', 'name'),
                 SelectFilter::make('central_product_id')->label('Product')->relationship('centralProduct', 'name'),
             ])
-            ->recordActions([ViewAction::make()])
+            ->recordActions([
+                ViewAction::make(),
+                Action::make('approve')
+                    ->label('Approve')
+                    ->color('success')
+                    ->icon(Heroicon::OutlinedCheckCircle)
+                    ->requiresConfirmation()
+                    ->visible(fn (ChangeRequest $record): bool => $record->status === ChangeRequestStatus::Pending)
+                    ->action(function (ChangeRequest $record): ChangeRequest {
+                        $user = auth()->user();
+
+                        return $user instanceof User
+                            ? app(ApproveCorrectionAction::class)->handle($user, $record)
+                            : $record;
+                    }),
+            ])
             ->defaultSort('created_at', 'desc')
             ->emptyStateHeading('No change requests');
     }

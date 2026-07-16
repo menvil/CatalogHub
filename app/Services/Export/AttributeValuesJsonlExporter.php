@@ -5,7 +5,7 @@ namespace App\Services\Export;
 use App\Models\CatalogSnapshot;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
 
-final class AttributeValuesJsonlExporter
+final class AttributeValuesJsonlExporter implements JsonlExporter
 {
     public function __construct(private readonly JsonlStreamWriter $writer) {}
 

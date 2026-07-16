@@ -8,7 +8,7 @@ use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeSection;
 use Generator;
 
-final class AttributesJsonlExporter
+final class AttributesJsonlExporter implements JsonlExporter
 {
     public function __construct(private readonly JsonlStreamWriter $writer) {}
 

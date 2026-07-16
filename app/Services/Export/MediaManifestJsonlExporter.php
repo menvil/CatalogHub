@@ -9,7 +9,7 @@ use App\Models\MediaManifest;
 use App\Models\MediaVariant;
 use Generator;
 
-final class MediaManifestJsonlExporter
+final class MediaManifestJsonlExporter implements JsonlExporter
 {
     public function __construct(private readonly JsonlStreamWriter $writer) {}
 

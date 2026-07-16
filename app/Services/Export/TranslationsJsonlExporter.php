@@ -14,7 +14,7 @@ use BackedEnum;
 use Generator;
 use Illuminate\Database\Eloquent\Model;
 
-final class TranslationsJsonlExporter
+final class TranslationsJsonlExporter implements JsonlExporter
 {
     private const SOURCES = [
         [

@@ -11,7 +11,7 @@ use App\Models\SiteHomeBlock;
 use App\Models\SiteLocale;
 use Generator;
 
-final class SiteConfigJsonlExporter
+final class SiteConfigJsonlExporter implements JsonlExporter
 {
     public function __construct(
         private readonly JsonlStreamWriter $writer,

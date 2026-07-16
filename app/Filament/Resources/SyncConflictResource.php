@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Actions\Sync\ConvertToMarketOverrideAction;
 use App\Actions\Sync\KeepLocalOverrideAction;
 use App\Actions\Sync\UseCentralValueAction;
 use App\Filament\Resources\SyncConflictResource\Pages;
@@ -154,7 +155,18 @@ final class SyncConflictResource extends Resource
                         ? app(KeepLocalOverrideAction::class)->handle($user, $record)
                         : $record;
                 }),
-            Action::make('convertToMarketOverride')->label('Convert to market override')->icon(Heroicon::OutlinedGlobeAlt)->disabled(),
+            Action::make('convertToMarketOverride')
+                ->label('Convert to market override')
+                ->icon(Heroicon::OutlinedGlobeAlt)
+                ->color('info')
+                ->requiresConfirmation()
+                ->action(function (SyncConflict $record): SyncConflict {
+                    $user = auth()->user();
+
+                    return $user instanceof User
+                        ? app(ConvertToMarketOverrideAction::class)->handle($user, $record)
+                        : $record;
+                }),
         ];
     }
 

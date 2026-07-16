@@ -106,4 +106,17 @@ class SyncConflictResolverTest extends TestCase
         $this->assertSame(SyncConflictStatus::Resolved, $conflict->fresh()->status);
         $this->assertSame('keep_local_override', $conflict->fresh()->resolution);
     }
+
+    public function test_central_admin_can_convert_to_market_override_from_the_resolver(): void
+    {
+        $conflict = SyncConflict::factory()->open()->create();
+
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
+            ->test(ListSyncConflicts::class)
+            ->callTableAction('convertToMarketOverride', $conflict)
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame(SyncConflictStatus::Resolved, $conflict->fresh()->status);
+        $this->assertSame('convert_to_market_override', $conflict->fresh()->resolution);
+    }
 }

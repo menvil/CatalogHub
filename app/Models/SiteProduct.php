@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\CentralCatalog\CentralProduct;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -25,5 +26,11 @@ final class SiteProduct extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(CentralProduct::class, 'central_product_id');
+    }
+
+    /** @param Builder<SiteProduct> $query */
+    public function scopeVisible(Builder $query): void
+    {
+        $query->where('visibility', 'visible');
     }
 }

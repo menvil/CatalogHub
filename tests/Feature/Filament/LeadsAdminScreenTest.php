@@ -57,6 +57,19 @@ class LeadsAdminScreenTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_non_super_admin_without_a_site_has_an_empty_lead_query(): void
+    {
+        Lead::factory()->create();
+        $user = User::factory()->create([
+            'role' => UserRole::SiteAdmin,
+            'site_id' => null,
+        ]);
+
+        $this->actingAs($user);
+
+        $this->assertSame(0, LeadResource::getEloquentQuery()->count());
+    }
+
     public function test_leads_resource_is_read_only_and_filters_status_and_type(): void
     {
         $this->assertSame(['index'], array_keys(LeadResource::getPages()));

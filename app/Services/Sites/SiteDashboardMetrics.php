@@ -3,7 +3,6 @@
 namespace App\Services\Sites;
 
 use App\Models\Site;
-use Illuminate\Support\Facades\DB;
 
 final class SiteDashboardMetrics
 {
@@ -16,8 +15,8 @@ final class SiteDashboardMetrics
         return [
             'visible_products' => $visibleIds->count(),
             'hidden_products' => $site->products()->where('visibility', 'hidden')->count(),
-            'enabled_categories' => DB::table('site_categories')->where('site_id', $site->id)->where('is_enabled', true)->count(),
-            'enabled_locales' => DB::table('site_locales')->where('site_id', $site->id)->where('is_enabled', true)->count(),
+            'enabled_categories' => $site->categories()->enabled()->count(),
+            'enabled_locales' => $site->locales()->enabled()->count(),
             'enabled_features' => $site->features()->where('is_enabled', true)->count(),
             'products_without_local_seo' => $visibleIds->diff($seoOverrideIds)->count(),
             'products_without_prices' => 'Phase 17',

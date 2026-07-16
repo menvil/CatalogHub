@@ -54,41 +54,11 @@ parameters:
                 behaviorTests: [tests/Feature/Actions/UpsertSiteOverrideActionTest.php]
                 target: 'MR 5: Site configuration writes'
             -
-                class: App\Domains\Projections\SiteSyncService
-                methods: [table]
-                reason: 'Legacy site locale, category, and product subqueries.'
-                behaviorTests: [tests/Feature/Domains/Projections/SiteSyncServiceTest.php]
-                target: 'MR 4: Site configuration Eloquent relations'
-            -
-                class: App\Filament\Resources\ContentItemResource\RelationManagers\TranslationsRelationManager
-                methods: [table]
-                reason: 'Legacy site locale options query.'
-                behaviorTests: [tests/Feature/Admin/ContentTranslationEditorTest.php]
-                target: 'MR 4: Site configuration Eloquent relations'
-            -
-                class: App\Filament\Resources\SiteResource\Pages\ManageSiteProducts
-                methods: [table]
-                reason: 'Legacy enabled-category lookup.'
-                behaviorTests: [tests/Feature/Filament/SiteResourceTest.php]
-                target: 'MR 4: Site configuration Eloquent relations'
-            -
-                class: App\Jobs\Projections\RebuildPriceAffectedProjectionJob
-                methods: [table]
-                reason: 'Legacy site locale lookup.'
-                behaviorTests: [tests/Feature/Projections/PriceAffectedProjectionRebuildTest.php]
-                target: 'MR 4: Site configuration Eloquent relations'
-            -
                 class: App\Services\Pricing\OfferCoverageDashboardBuilder
                 methods: [table]
                 reason: 'Legacy aggregate report base queries.'
                 behaviorTests: [tests/Feature/SiteAdmin/OffersCoverageDashboardTest.php]
                 target: 'MR 6: Pricing query layer'
-            -
-                class: App\Services\Sites\SiteDashboardMetrics
-                methods: [table]
-                reason: 'Legacy enabled site configuration counts.'
-                behaviorTests: [tests/Feature/Sites/SiteDashboardTest.php]
-                target: 'MR 4: Site configuration Eloquent relations'
         rawSqlExceptions:
             -
                 class: App\Domains\Projections\ProjectionStaleDetector
@@ -106,22 +76,6 @@ parameters:
                 behaviorTests: [tests/Feature/Public/HomePageTest.php]
                 status: legacy
                 target: 'MR 7: Public query boundary'
-            -
-                class: App\Filament\Resources\ContentItemResource
-                methods: [whereRaw]
-                reason: 'Legacy empty-result sentinel for unavailable site scope.'
-                bindings: literal_only
-                behaviorTests: [tests/Feature/Admin/ContentAdminResourceTest.php]
-                status: legacy
-                target: 'MR 4: Eloquent empty scopes'
-            -
-                class: App\Filament\Resources\LeadResource
-                methods: [whereRaw]
-                reason: 'Legacy empty-result sentinel for unavailable site scope.'
-                bindings: literal_only
-                behaviorTests: [tests/Feature/Filament/LeadsAdminScreenTest.php]
-                status: legacy
-                target: 'MR 4: Eloquent empty scopes'
             -
                 class: App\Http\Controllers\Public\SearchController
                 methods: [whereRaw, orWhereRaw]

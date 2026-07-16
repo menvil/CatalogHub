@@ -13,7 +13,7 @@ final class PublicProductSearchQuery implements RawSqlPersistenceBoundary
     /** @return Collection<int, SiteSearchDocument> */
     public function search(Site $site, string $locale, string $term, int $limit = 24): Collection
     {
-        $escapedTerm = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $term);
+        $escapedTerm = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($term));
         $pattern = "%{$escapedTerm}%";
 
         return SiteSearchDocument::query()
@@ -22,8 +22,8 @@ final class PublicProductSearchQuery implements RawSqlPersistenceBoundary
             ->where('document_type', 'product')
             ->where('status', ProjectionStatus::Active)
             ->where(function ($query) use ($pattern): void {
-                $query->whereRaw("search_text LIKE ? ESCAPE '!'", [$pattern])
-                    ->orWhereRaw("title LIKE ? ESCAPE '!'", [$pattern]);
+                $query->whereRaw("LOWER(search_text) LIKE ? ESCAPE '!'", [$pattern])
+                    ->orWhereRaw("LOWER(title) LIKE ? ESCAPE '!'", [$pattern]);
             })
             ->orderBy('title')
             ->limit(max(1, min($limit, 100)))

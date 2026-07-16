@@ -55,6 +55,7 @@ Route::get('/{locale}/articles/{slug}', PublicContentController::class)
 
 Route::get('/{locale}/search', PublicSearchController::class)
     ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
+    ->middleware('throttle:public-search')
     ->name('public.search');
 
 if (app()->environment(['local', 'testing'])) {

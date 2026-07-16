@@ -22,6 +22,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
@@ -48,7 +49,9 @@ final class SiteResource extends Resource
 
     public static function canView(Model $record): bool
     {
-        return self::canViewSites();
+        return $record instanceof Site
+            && self::canViewSites()
+            && self::canAccessSite($record);
     }
 
     public static function canCreate(): bool
@@ -66,7 +69,37 @@ final class SiteResource extends Resource
 
     public static function canEdit(Model $record): bool
     {
-        return self::canManageSettings();
+        return $record instanceof Site
+            && self::canManageSettings()
+            && self::canAccessSite($record);
+    }
+
+    /** @return Builder<Site> */
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+
+        if (
+            $user instanceof User
+            && $user->site_id !== null
+            && ! $user->isSuperAdmin()
+            && ! $user->isCentralAdmin()
+        ) {
+            return $query->whereKey($user->site_id);
+        }
+
+        return $query;
+    }
+
+    public static function canAccessSite(Site $site): bool
+    {
+        $user = auth()->user();
+
+        return $user instanceof User
+            && ($user->isSuperAdmin()
+                || $user->isCentralAdmin()
+                || ($user->site_id !== null && (int) $user->site_id === (int) $site->getKey()));
     }
 
     private static function canViewSites(): bool

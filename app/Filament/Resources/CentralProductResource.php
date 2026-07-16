@@ -7,6 +7,7 @@ use App\Actions\CentralCatalog\RestoreCentralProductAction;
 use App\Enums\CentralProductStatus;
 use App\Filament\Resources\CentralProductResource\Pages;
 use App\Models\CentralCatalog\CentralProduct;
+use App\Models\User;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -19,6 +20,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 final class CentralProductResource extends Resource
@@ -32,6 +34,34 @@ final class CentralProductResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'Central Catalog';
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    public static function canViewAny(): bool
+    {
+        return self::canManageProducts();
+    }
+
+    public static function canView(Model $record): bool
+    {
+        return self::canManageProducts();
+    }
+
+    public static function canCreate(): bool
+    {
+        return self::canManageProducts();
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return self::canManageProducts();
+    }
+
+    private static function canManageProducts(): bool
+    {
+        $user = auth()->user();
+
+        return $user instanceof User
+            && $user->hasCatalogHubPermission('catalog.products.manage');
+    }
 
     public static function form(Schema $schema): Schema
     {

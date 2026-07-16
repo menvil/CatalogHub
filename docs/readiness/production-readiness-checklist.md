@@ -7,6 +7,7 @@ Session controls: [admin session hardening](admin-session-hardening.md).
 Health check behavior: [health checks](health-checks.md).
 Recovery validation: [backup restore dry-run](../runbooks/backup-restore-dry-run.md).
 Operational signals: [observability baseline](../ops/observability-baseline.md).
+Error delivery and redaction: [error reporting](../ops/error-reporting.md).
 
 ## Environment
 

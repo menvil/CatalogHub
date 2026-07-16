@@ -3,6 +3,7 @@
 namespace App\Models\CentralCatalog;
 
 use App\Enums\CentralProductStatus;
+use App\Models\ProductVersion;
 use App\Models\Translations\ProductTranslation;
 use Database\Factories\CentralProductFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -15,7 +16,7 @@ use Illuminate\Database\QueryException;
 /**
  * @property CentralProductStatus $status
  */
-#[Fillable(['central_brand_id', 'central_category_id', 'name', 'model', 'slug', 'status'])]
+#[Fillable(['central_brand_id', 'central_category_id', 'name', 'model', 'slug', 'status', 'version'])]
 final class CentralProduct extends Model
 {
     /** @use HasFactory<CentralProductFactory> */
@@ -34,6 +35,7 @@ final class CentralProduct extends Model
     {
         return [
             'status' => CentralProductStatus::class,
+            'version' => 'integer',
         ];
     }
 
@@ -98,6 +100,14 @@ final class CentralProduct extends Model
     public function translations(): HasMany
     {
         return $this->hasMany(ProductTranslation::class, 'product_id');
+    }
+
+    /**
+     * @return HasMany<ProductVersion, $this>
+     */
+    public function versions(): HasMany
+    {
+        return $this->hasMany(ProductVersion::class, 'central_product_id');
     }
 
     private function isSlugUniqueConstraintViolation(QueryException $exception): bool

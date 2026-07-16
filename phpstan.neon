@@ -36,24 +36,6 @@ parameters:
         controllerValidationExceptions: []
         lowLevelQueryExceptions:
             -
-                class: App\Actions\Sites\CreateSiteAction
-                methods: [table]
-                reason: 'Legacy direct writes to site configuration tables.'
-                behaviorTests: [tests/Feature/Actions/CreateSiteActionTest.php]
-                target: 'MR 5: Site configuration writes'
-            -
-                class: App\Actions\Sites\UpdateSiteProductVisibilityAction
-                methods: [table]
-                reason: 'Legacy enabled-category lookup.'
-                behaviorTests: [tests/Feature/Sites/ProductVisibilityManagerTest.php]
-                target: 'MR 5: Site configuration writes'
-            -
-                class: App\Actions\Sites\UpsertSiteOverrideAction
-                methods: [table]
-                reason: 'Legacy locale and source-product lookups.'
-                behaviorTests: [tests/Feature/Actions/UpsertSiteOverrideActionTest.php]
-                target: 'MR 5: Site configuration writes'
-            -
                 class: App\Services\Pricing\OfferCoverageDashboardBuilder
                 methods: [table]
                 reason: 'Legacy aggregate report base queries.'

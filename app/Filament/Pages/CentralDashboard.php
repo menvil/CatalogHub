@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Widgets\BackupStatusWidget;
 use Filament\Pages\Page;
 use Filament\Panel;
 
@@ -21,5 +22,11 @@ class CentralDashboard extends Page
     public static function getRelativeRouteName(Panel $panel): string
     {
         return 'central-dashboard';
+    }
+
+    /** @return array<class-string<BackupStatusWidget>> */
+    protected function getHeaderWidgets(): array
+    {
+        return [BackupStatusWidget::class];
     }
 }

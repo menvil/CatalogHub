@@ -111,7 +111,9 @@ Route::middleware('auth')->prefix('central')->group(function (): void {
     Route::get('/snapshots/{snapshot}/download/{fileKey}', SnapshotDownloadController::class)
         ->where('fileKey', '[A-Za-z0-9_-]+')
         ->name('central.snapshots.download');
+});
 
+Route::middleware(['auth', 'can:media.manage'])->prefix('central')->group(function (): void {
     Route::get('/media', MediaLibraryController::class)
         ->name('central.media.index');
     Route::post('/media/upload', MediaUploadController::class)

@@ -20,6 +20,7 @@ use App\Services\Imports\Normalizers\MultiEnumNormalizer;
 use App\Services\Imports\Normalizers\NumberNormalizer;
 use App\Services\Imports\Normalizers\UnitNormalizer;
 use App\Services\Security\PublicRequestRateLimiter;
+use App\Support\PermissionMatrix;
 use App\View\Composers\PublicNavigationComposer;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -77,7 +78,9 @@ class AppServiceProvider extends ServiceProvider
             'normalized_product_draft' => NormalizedProductDraft::class,
         ]);
 
-        Gate::define('translations.manage', fn (User $user): bool => $user->hasCatalogHubPermission('translations.manage'));
+        foreach (app(PermissionMatrix::class)->permissions() as $permission) {
+            Gate::define($permission, fn (User $user): bool => $user->hasCatalogHubPermission($permission));
+        }
 
         CentralProduct::observe(CentralProductObserver::class);
         Event::listen(MarketOfferUpdated::class, RebuildPriceAffectedProjections::class);

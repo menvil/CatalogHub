@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Enums\CentralBrandStatus;
 use App\Filament\Resources\CentralBrandResource\Pages;
 use App\Models\CentralCatalog\CentralBrand;
+use App\Models\User;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
@@ -14,6 +15,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 final class CentralBrandResource extends Resource
@@ -27,6 +29,34 @@ final class CentralBrandResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'Central Catalog';
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    public static function canViewAny(): bool
+    {
+        return self::canManageBrands();
+    }
+
+    public static function canView(Model $record): bool
+    {
+        return self::canManageBrands();
+    }
+
+    public static function canCreate(): bool
+    {
+        return self::canManageBrands();
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return self::canManageBrands();
+    }
+
+    private static function canManageBrands(): bool
+    {
+        $user = auth()->user();
+
+        return $user instanceof User
+            && $user->hasCatalogHubPermission('catalog.products.manage');
+    }
 
     public static function form(Schema $schema): Schema
     {

@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Enums\MarketStatus;
 use App\Filament\Resources\MarketResource\Pages;
 use App\Models\Market;
+use App\Models\User;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
@@ -14,6 +15,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 final class MarketResource extends Resource
@@ -23,6 +25,34 @@ final class MarketResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedGlobeAlt;
 
     protected static string|UnitEnum|null $navigationGroup = 'Portal Admin';
+
+    public static function canViewAny(): bool
+    {
+        return self::canManageMarkets();
+    }
+
+    public static function canView(Model $record): bool
+    {
+        return self::canManageMarkets();
+    }
+
+    public static function canCreate(): bool
+    {
+        return self::canManageMarkets();
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return self::canManageMarkets();
+    }
+
+    private static function canManageMarkets(): bool
+    {
+        $user = auth()->user();
+
+        return $user instanceof User
+            && $user->hasCatalogHubPermission('central.manage');
+    }
 
     public static function form(Schema $schema): Schema
     {

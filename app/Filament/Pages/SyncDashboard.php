@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Filament\Resources\ProjectionConflictResource;
 use App\Filament\Resources\ProjectionJobResource;
+use App\Filament\Resources\StaleProductResource;
 use App\Filament\Widgets\SyncStatusWidget;
 use App\Models\SyncLog;
 use App\Models\User;
@@ -58,6 +59,10 @@ final class SyncDashboard extends Page
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('staleProducts')
+                ->label('Stale products')
+                ->icon(Heroicon::OutlinedExclamationCircle)
+                ->url(StaleProductResource::getUrl()),
             Action::make('projectionJobs')
                 ->label('Projection jobs')
                 ->icon(Heroicon::OutlinedQueueList)

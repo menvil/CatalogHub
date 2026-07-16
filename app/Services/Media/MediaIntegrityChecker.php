@@ -20,7 +20,9 @@ final class MediaIntegrityChecker
             $assetMissingPaths = [];
             $checkedFileCount++;
 
-            if (! Storage::disk($asset->disk)->exists($asset->original_path)) {
+            $originalExists = Storage::disk($asset->disk)->exists($asset->original_path);
+
+            if (! $originalExists) {
                 $path = "{$asset->disk}:{$asset->original_path}";
                 $missingPaths[] = $path;
                 $assetMissingPaths[] = $path;
@@ -47,6 +49,7 @@ final class MediaIntegrityChecker
                 })
                 ->values()
                 ->all();
+            $missingVariantCount = collect($variants)->where('exists', false)->count();
 
             MediaManifest::query()->updateOrCreate(
                 [
@@ -63,6 +66,8 @@ final class MediaIntegrityChecker
                     'status' => $assetMissingPaths === [] ? 'verified' : 'missing',
                     'metadata_json' => [
                         'original_disk' => $asset->disk,
+                        'missing_original' => ! $originalExists,
+                        'missing_variant_count' => $missingVariantCount,
                         'missing_paths' => $assetMissingPaths,
                         'last_checked_at' => now()->toISOString(),
                     ],

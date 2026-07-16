@@ -32,28 +32,8 @@ services:
 
 parameters:
     architecture:
-        controllerPermissionExceptions:
-            -
-                class: App\Http\Controllers\CentralAdmin\Media\ProductMediaManagerController
-                methods: [authorizeMedia]
-                reason: 'Legacy permission check pending policy migration.'
-                target: 'MR 2: Media HTTP boundaries'
+        controllerPermissionExceptions: []
         controllerValidationExceptions:
-            -
-                class: App\Http\Controllers\CentralAdmin\Media\MediaAssetDetailController
-                methods: [updateSource]
-                reason: 'Legacy inline source metadata validation.'
-                target: 'MR 2: Media HTTP boundaries'
-            -
-                class: App\Http\Controllers\CentralAdmin\Media\MediaUploadController
-                methods: [__invoke]
-                reason: 'Legacy upload and image-dimension validation.'
-                target: 'MR 2: Media HTTP boundaries'
-            -
-                class: App\Http\Controllers\CentralAdmin\Media\ProductMediaManagerController
-                methods: [show, assign]
-                reason: 'Legacy product media filters and assignment validation.'
-                target: 'MR 2: Media HTTP boundaries'
             -
                 class: App\Http\Controllers\CentralAdmin\MissingTranslationsController
                 methods: [__invoke]
@@ -106,12 +86,6 @@ parameters:
                 reason: 'Legacy enabled-category lookup.'
                 behaviorTests: [tests/Feature/Filament/SiteResourceTest.php]
                 target: 'MR 4: Site configuration Eloquent relations'
-            -
-                class: App\Http\Controllers\CentralAdmin\Media\ProductMediaManagerController
-                methods: [transaction]
-                reason: 'Legacy transaction owned by a controller.'
-                behaviorTests: [tests/Feature/Admin/ProductMediaManagerTest.php]
-                target: 'MR 2: Media HTTP boundaries'
             -
                 class: App\Jobs\Projections\RebuildPriceAffectedProjectionJob
                 methods: [table]

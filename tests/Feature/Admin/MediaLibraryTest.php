@@ -35,6 +35,37 @@ class MediaLibraryTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_filters_media_library_through_validated_query_filters(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        MediaAsset::factory()->create([
+            'original_filename' => 'matching-monitor.jpg',
+            'status' => 'active',
+        ]);
+        MediaAsset::factory()->create([
+            'original_filename' => 'archived-monitor.jpg',
+            'status' => 'archived',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('central.media.index', [
+                'status' => 'active',
+                'search' => 'monitor',
+            ]))
+            ->assertOk()
+            ->assertSee('matching-monitor.jpg')
+            ->assertDontSee('archived-monitor.jpg');
+    }
+
+    public function test_rejects_array_media_library_filters(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+
+        $this->actingAs($admin)
+            ->get(route('central.media.index', ['status' => ['active']]))
+            ->assertSessionHasErrors('status');
+    }
+
     public function test_allows_central_admin_to_upload_media_from_library(): void
     {
         Storage::fake('public');

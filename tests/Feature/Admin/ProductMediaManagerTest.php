@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Enums\UserRole;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\MediaAsset;
 use App\Models\MediaAssignment;
@@ -105,5 +106,95 @@ class ProductMediaManagerTest extends TestCase
                 'preview_site_id' => ['1', '2'],
             ]))
             ->assertSessionHasErrors('preview_site_id');
+    }
+
+    public function test_filters_available_media_assets_by_search(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        $product = CentralProduct::factory()->create();
+        MediaAsset::factory()->create(['original_filename' => 'matching-monitor.jpg']);
+        MediaAsset::factory()->create(['original_filename' => 'unrelated-keyboard.jpg']);
+
+        $this->actingAs($admin)
+            ->get(route('central.products.media', [
+                'product' => $product,
+                'media_search' => 'monitor',
+            ]))
+            ->assertOk()
+            ->assertSee('matching-monitor.jpg')
+            ->assertDontSee('unrelated-keyboard.jpg');
+    }
+
+    public function test_replaces_singular_media_assignment_in_the_same_scope(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        $product = CentralProduct::factory()->create();
+        $firstAsset = MediaAsset::factory()->create();
+        $secondAsset = MediaAsset::factory()->create();
+
+        $this->actingAs($admin)->post(route('central.products.media.assign', $product), [
+            'media_asset_id' => $firstAsset->id,
+            'role' => 'main',
+        ])->assertRedirect();
+
+        $this->actingAs($admin)->post(route('central.products.media.assign', $product), [
+            'media_asset_id' => $secondAsset->id,
+            'role' => 'main',
+        ])->assertRedirect();
+
+        $this->assertDatabaseMissing('media_assignments', [
+            'media_asset_id' => $firstAsset->id,
+            'entity_type' => 'central_product',
+            'entity_id' => $product->id,
+            'role' => 'main',
+        ]);
+        $this->assertDatabaseHas('media_assignments', [
+            'media_asset_id' => $secondAsset->id,
+            'entity_type' => 'central_product',
+            'entity_id' => $product->id,
+            'role' => 'main',
+            'is_primary' => true,
+        ]);
+        $this->assertSame(1, MediaAssignment::query()
+            ->forEntity('central_product', $product->id)
+            ->forRole('main')
+            ->count());
+    }
+
+    public function test_blocks_product_media_management_without_media_permission(): void
+    {
+        $user = User::factory()->create(['role' => UserRole::SiteAdmin]);
+        $product = CentralProduct::factory()->create();
+        $asset = MediaAsset::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('central.products.media', $product))
+            ->assertForbidden();
+
+        $this->actingAs($user)
+            ->post(route('central.products.media.assign', $product), [
+                'media_asset_id' => $asset->id,
+                'role' => 'main',
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('media_assignments', [
+            'entity_type' => 'central_product',
+            'entity_id' => $product->id,
+        ]);
+    }
+
+    public function test_rejects_invalid_assignment_role(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        $product = CentralProduct::factory()->create();
+        $asset = MediaAsset::factory()->create();
+
+        $this->actingAs($admin)
+            ->post(route('central.products.media.assign', $product), [
+                'media_asset_id' => $asset->id,
+                'role' => 'unsupported',
+            ])
+            ->assertSessionHasErrors('role');
     }
 }

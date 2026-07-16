@@ -16,9 +16,12 @@ use App\Models\Translations\AttributeTranslation;
 use App\Models\Translations\CategoryTranslation;
 use App\Models\Translations\ProductTranslation;
 use App\Models\Translations\UnitTranslation;
+use App\Queries\Translations\TranslationStatusCountsQuery;
 
 final class TranslationCompletenessService
 {
+    public function __construct(private readonly TranslationStatusCountsQuery $statusCounts) {}
+
     /**
      * @return array<string, mixed>
      */
@@ -33,15 +36,11 @@ final class TranslationCompletenessService
 
         foreach ($this->configs() as $config) {
             $required = (int) ($sourceCounts[$config['key']] ?? 0);
-            $statusCounts = $config['translation']::query()
-                ->selectRaw('status, count(*) as aggregate')
-                ->where('locale', $locale)
-                ->groupBy('status')
-                ->pluck('aggregate', 'status');
+            $statusCounts = $this->statusCounts->forLocale($config['translation'], $locale);
 
             $approved = (int) ($statusCounts[TranslationStatus::Approved->value] ?? 0);
             $outdated = (int) ($statusCounts[TranslationStatus::Outdated->value] ?? 0);
-            $existing = (int) $statusCounts->sum();
+            $existing = array_sum($statusCounts);
             $missing = max(0, $required - $existing);
             $coverage = $required === 0 ? 100.0 : round(($approved / $required) * 100, 1);
 

@@ -9,7 +9,7 @@ use App\Models\CentralCatalog\CentralCategory;
 use App\Models\MarketMerchant;
 use App\Models\Site;
 use App\Models\SiteSearchDocument;
-use App\Services\Pricing\CheapestProductsQuery;
+use App\Queries\Pricing\CheapestProductsQuery;
 use App\Services\Pricing\PriceFreshnessCalculator;
 use App\Services\Pricing\ValidMarketOfferQuery;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;

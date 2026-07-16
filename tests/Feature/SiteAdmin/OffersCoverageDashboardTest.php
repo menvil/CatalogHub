@@ -56,6 +56,23 @@ class OffersCoverageDashboardTest extends TestCase
         $this->assertArrayHasKey('offers-coverage', SiteResource::getPages());
     }
 
+    public function test_products_without_a_category_are_reported_as_uncategorised(): void
+    {
+        $site = Site::factory()->create(['default_locale' => 'en']);
+        $product = CentralProduct::factory()->create(['central_category_id' => null]);
+        SiteProduct::query()->create([
+            'site_id' => $site->id,
+            'central_product_id' => $product->id,
+            'visibility' => 'visible',
+        ]);
+
+        $dashboard = app(OfferCoverageDashboardBuilder::class)->build($site);
+
+        $this->assertSame([
+            ['name' => 'Uncategorised', 'total' => 1, 'covered' => 0, 'percent' => 0.0],
+        ], $dashboard->categoryCoverage);
+    }
+
     /** @return array{Site, PriceSource} */
     private function scenario(): array
     {

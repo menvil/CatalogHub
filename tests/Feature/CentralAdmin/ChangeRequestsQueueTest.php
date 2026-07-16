@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\CentralAdmin;
 
+use App\Enums\ChangeRequestStatus;
 use App\Filament\Resources\ChangeRequestResource;
 use App\Filament\Resources\ChangeRequestResource\Pages\ListChangeRequests;
 use App\Models\ChangeRequest;
@@ -67,5 +68,17 @@ class ChangeRequestsQueueTest extends TestCase
         $this->actingAs(User::factory()->siteAdmin($site)->create())
             ->get(ChangeRequestResource::getUrl())
             ->assertForbidden();
+    }
+
+    public function test_central_admin_can_approve_a_pending_request_from_the_queue(): void
+    {
+        $request = ChangeRequest::factory()->pending()->create();
+
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
+            ->test(ListChangeRequests::class)
+            ->callTableAction('approve', $request)
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame(ChangeRequestStatus::Approved, $request->fresh()->status);
     }
 }

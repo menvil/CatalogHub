@@ -128,11 +128,9 @@ final class SiteSyncService
 
         $job = $this->startJob($site, 'site', 'site', (int) $site->getKey(), $locale);
         $locales = $locale === null || $locale === ''
-            ? DB::table('site_locales')
-                ->where('site_id', $site->getKey())
-                ->where('is_enabled', true)
-                ->orderBy('position')
-                ->orderBy('id')
+            ? $site->locales()
+                ->enabled()
+                ->ordered()
                 ->pluck('locale_code')
                 ->map(fn (mixed $locale): string => (string) $locale)
                 ->all()
@@ -153,10 +151,9 @@ final class SiteSyncService
             foreach ($locales as $locale) {
                 if (! $productsOnly) {
                     CentralCategory::query()
-                        ->whereIn('id', DB::table('site_categories')
+                        ->whereIn('id', $site->categories()
                             ->select('central_category_id')
-                            ->where('site_id', $site->getKey())
-                            ->where('is_enabled', true))
+                            ->enabled())
                         ->chunkById(self::SYNC_CHUNK_SIZE, function ($categories) use (
                             $site,
                             $locale,
@@ -183,10 +180,9 @@ final class SiteSyncService
 
                 if (! $categoriesOnly) {
                     CentralProduct::query()
-                        ->whereIn('id', DB::table('site_products')
+                        ->whereIn('id', $site->products()
                             ->select('central_product_id')
-                            ->where('site_id', $site->getKey())
-                            ->where('visibility', 'visible'))
+                            ->visible())
                         ->chunkById(self::SYNC_CHUNK_SIZE, function ($products) use (
                             $site,
                             $locale,
@@ -509,6 +505,10 @@ final class SiteSyncService
 
     private function sourceVersion(Model $model): ?int
     {
+        if ($model instanceof CentralProduct) {
+            return (int) $model->version;
+        }
+
         $updatedAt = $model->getAttribute('updated_at');
 
         return $updatedAt instanceof DateTimeInterface ? (int) $updatedAt->format('U') : null;

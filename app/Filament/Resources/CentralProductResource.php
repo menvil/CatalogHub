@@ -97,6 +97,10 @@ final class CentralProductResource extends Resource
                     ->label('Specs')
                     ->icon(Heroicon::OutlinedListBullet)
                     ->url(fn (CentralProduct $record): string => Pages\ProductSpecsEditor::getUrl(['record' => $record])),
+                Action::make('versions')
+                    ->label('Versions')
+                    ->icon(Heroicon::OutlinedClock)
+                    ->url(fn (CentralProduct $record): string => Pages\ViewProductVersions::getUrl(['record' => $record])),
                 Action::make('archive')
                     ->color('danger')
                     ->requiresConfirmation()
@@ -145,6 +149,7 @@ final class CentralProductResource extends Resource
             'view' => Pages\ViewCentralProduct::route('/{record}'),
             'edit' => Pages\EditCentralProduct::route('/{record}/edit'),
             'specs' => Pages\ProductSpecsEditor::route('/{record}/specs'),
+            'versions' => Pages\ViewProductVersions::route('/{record}/versions'),
         ];
     }
 }

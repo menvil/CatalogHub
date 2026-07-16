@@ -25,6 +25,7 @@ class SiteSyncServiceTest extends TestCase
             'name' => 'Projection Product',
             'slug' => 'projection-product',
             'status' => CentralProductStatus::Active,
+            'version' => 7,
         ]);
 
         app(SiteSyncService::class)->syncProduct($site, $product, 'en');
@@ -33,6 +34,7 @@ class SiteSyncServiceTest extends TestCase
             'site_id' => $site->id,
             'locale' => 'en',
             'central_product_id' => $product->id,
+            'central_product_version' => 7,
             'status' => 'active',
             'stale_at' => null,
             'failed_at' => null,

@@ -14,6 +14,7 @@ use App\Enums\PublicProductSort;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Site;
 use App\Models\SiteSearchDocument;
+use App\Queries\Facets\FacetDocumentExpressionQuery;
 use App\Services\Pricing\MerchantFilterOptionsBuilder;
 use App\Services\Pricing\ValidMarketOfferQuery;
 use App\Support\Facets\BooleanFacetValueParser;
@@ -31,6 +32,7 @@ final readonly class FacetQueryBuilder
         private NumericRangeFacetParser $ranges,
         private MerchantFilterOptionsBuilder $merchantOptions,
         private ValidMarketOfferQuery $validOffers,
+        private FacetDocumentExpressionQuery $expressions,
     ) {}
 
     /**
@@ -410,19 +412,11 @@ final readonly class FacetQueryBuilder
         }
 
         match ($sort) {
-            PublicProductSort::RatingDesc => $query
-                ->orderByRaw($this->numericJsonValueExpression($query, 'sort_values_json', 'rating').' DESC')
-                ->orderByDesc('id'),
+            PublicProductSort::RatingDesc => $this->expressions->orderByRatingDesc($query),
             PublicProductSort::NameAsc => $query->orderBy('title')->orderBy('id'),
             PublicProductSort::NameDesc => $query->orderByDesc('title')->orderByDesc('id'),
-            PublicProductSort::PriceAsc => $query
-                ->orderByRaw('CASE WHEN min_price IS NULL THEN 1 ELSE 0 END')
-                ->orderBy('min_price')
-                ->orderBy('id'),
-            PublicProductSort::PriceDesc => $query
-                ->orderByRaw('CASE WHEN min_price IS NULL THEN 1 ELSE 0 END')
-                ->orderByDesc('min_price')
-                ->orderByDesc('id'),
+            PublicProductSort::PriceAsc => $this->expressions->orderByPriceAsc($query),
+            PublicProductSort::PriceDesc => $this->expressions->orderByPriceDesc($query),
             PublicProductSort::Default,
             PublicProductSort::Newest => $query->orderByDesc('built_at')->orderByDesc('id'),
         };
@@ -436,29 +430,13 @@ final readonly class FacetQueryBuilder
         string $operator,
         float $value,
     ): void {
-        $serialized = $this->ranges->serialize($value);
-        $driver = $query->getModel()->getConnection()->getDriverName();
-
-        $valueExpression = $this->numericJsonValueExpression($query, $column, $code);
-        $placeholder = match ($driver) {
-            'mysql', 'mariadb' => 'CAST(? AS DECIMAL(65, 20))',
-            'pgsql' => 'CAST(? AS NUMERIC)',
-            'sqlsrv' => 'TRY_CAST(? AS FLOAT)',
-            default => 'CAST(? AS REAL)',
-        };
-
-        $query->whereRaw("{$valueExpression} {$operator} {$placeholder}", [$serialized]);
-    }
-
-    /** @param Builder<SiteSearchDocument> $query */
-    private function numericJsonValueExpression(Builder $query, string $column, string $code): string
-    {
-        return match ($query->getModel()->getConnection()->getDriverName()) {
-            'mysql', 'mariadb' => "CAST(JSON_UNQUOTE(JSON_EXTRACT(`{$column}`, '$.\"{$code}\"')) AS DECIMAL(65, 20))",
-            'pgsql' => "CAST(\"{$column}\"->>'{$code}' AS NUMERIC)",
-            'sqlsrv' => "TRY_CAST(JSON_VALUE([{$column}], '$.{$code}') AS FLOAT)",
-            default => "CAST(json_extract(\"{$column}\", '$.\"{$code}\"') AS REAL)",
-        };
+        $this->expressions->whereNumeric(
+            $query,
+            $column,
+            $code,
+            $operator,
+            $this->ranges->serialize($value),
+        );
     }
 
     /**

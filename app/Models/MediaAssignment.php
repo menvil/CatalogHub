@@ -23,6 +23,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 final class MediaAssignment extends Model
 {
+    public const ENTITY_TYPE_CENTRAL_PRODUCT = 'central_product';
+
     /** @use HasFactory<MediaAssignmentFactory> */
     use HasFactory;
 

@@ -31,6 +31,9 @@
     },
     "autoload-dev": {
         "psr-4": {
+            "App\\Http\\Controllers\\ArchitectureFixtures\\": "tests/Fixtures/Architecture/Controllers/",
+            "App\\Services\\ArchitectureFixtures\\": "tests/Fixtures/Architecture/Services/",
+            "CatalogHub\\PHPStan\\": "tools/phpstan/src/",
             "Tests\\": "tests/"
         }
     },
@@ -53,6 +56,10 @@
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test"
+        ],
+        "test:database-boundaries": [
+            "@php artisan config:clear --ansi @no_additional_args",
+            "@php artisan test tests/Feature/Admin/MissingTranslationsScreenTest.php tests/Feature/Facets/FacetQueryBuilderSortingTest.php tests/Feature/Public/ProductPriceSortTest.php tests/Feature/Facets/FacetQueryBuilderRangeTest.php tests/Feature/Domains/Projections/ProjectionStaleDetectorTest.php tests/Feature/Public/SearchPageStubTest.php tests/Feature/SiteAdmin/CheapestProductsReportTest.php tests/Feature/SiteAdmin/OffersCoverageDashboardTest.php tests/Unit/Services/TranslationCompletenessServiceTest.php"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

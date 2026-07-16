@@ -47,7 +47,10 @@ final class UpdateSiteProductVisibilityAction
             throw ValidationException::withMessages(['product' => 'Only active products can be managed for a site.']);
         }
 
-        $categoryEnabled = DB::table('site_categories')->where('site_id', $site->id)->where('central_category_id', $product->central_category_id)->where('is_enabled', true)->exists();
+        $categoryEnabled = $site->categories()
+            ->enabled()
+            ->where('central_category_id', $product->central_category_id)
+            ->exists();
         if (! $categoryEnabled) {
             throw ValidationException::withMessages(['product' => 'The product category is not enabled for this site.']);
         }

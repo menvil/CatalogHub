@@ -119,13 +119,25 @@ final class CreateSiteAction
                 'mode' => $data['mode'], 'default_locale' => $data['default_locale'], 'status' => $data['status'], 'settings_json' => $data['settings_json'] ?? [],
             ]);
             foreach ($data['locales'] as $position => $locale) {
-                DB::table('site_locales')->insert(['site_id' => $site->id, 'locale_code' => $locale, 'is_default' => $locale === $data['default_locale'], 'is_enabled' => true, 'position' => $position, 'created_at' => now(), 'updated_at' => now()]);
+                $site->locales()->create([
+                    'locale_code' => $locale,
+                    'is_default' => $locale === $data['default_locale'],
+                    'is_enabled' => true,
+                    'position' => $position,
+                ]);
             }
             foreach ($data['categories'] as $position => $categoryId) {
-                DB::table('site_categories')->insert(['site_id' => $site->id, 'central_category_id' => $categoryId, 'is_enabled' => true, 'position' => $position, 'created_at' => now(), 'updated_at' => now()]);
+                $site->categories()->create([
+                    'central_category_id' => $categoryId,
+                    'is_enabled' => true,
+                    'position' => $position,
+                ]);
             }
             foreach ($data['features'] as $feature => $enabled) {
-                DB::table('site_features')->insert(['site_id' => $site->id, 'feature_key' => $feature, 'is_enabled' => $enabled, 'created_at' => now(), 'updated_at' => now()]);
+                $site->features()->create([
+                    'feature_key' => $feature,
+                    'is_enabled' => $enabled,
+                ]);
             }
 
             return $site;

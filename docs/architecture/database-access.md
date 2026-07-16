@@ -27,7 +27,8 @@ aggregates, or Query Objects when an equivalent implementation remains efficient
 ## Raw SQL exceptions
 
 An unavoidable expression must be isolated in an explicitly approved
-persistence boundary. It needs:
+persistence boundary under `app/Queries` that implements
+`RawSqlPersistenceBoundary`. It needs:
 
 1. parameter bindings for every dynamic value;
 2. an exact allowlist entry containing class, methods, and a concrete reason;

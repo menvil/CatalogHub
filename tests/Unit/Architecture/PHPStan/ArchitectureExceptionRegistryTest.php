@@ -5,7 +5,6 @@ namespace Tests\Unit\Architecture\PHPStan;
 use App\Contracts\Persistence\RawSqlPersistenceBoundary;
 use PHPStan\Testing\PHPStanTestCase;
 use ReflectionClass;
-use ReflectionMethod;
 
 class ArchitectureExceptionRegistryTest extends PHPStanTestCase
 {
@@ -46,7 +45,7 @@ class ArchitectureExceptionRegistryTest extends PHPStanTestCase
             $this->assertIsString($entry['class'] ?? null);
             $this->assertNotSame('', trim((string) ($entry['reason'] ?? '')));
             $this->assertContains($entry['bindings'] ?? null, ['required', 'literal_only', 'internal_only']);
-            $this->assertContains($entry['status'] ?? null, ['approved', 'legacy']);
+            $this->assertSame('approved', $entry['status'] ?? null);
             $this->assertNotEmpty($entry['methods'] ?? []);
             $this->assertBehaviorTestsExist($entry['behaviorTests'] ?? []);
 
@@ -54,11 +53,8 @@ class ArchitectureExceptionRegistryTest extends PHPStanTestCase
             $source = file_get_contents((string) $reflection->getFileName());
             $this->assertIsString($source);
 
-            if ($entry['status'] === 'approved') {
-                $this->assertTrue($reflection->implementsInterface(RawSqlPersistenceBoundary::class));
-            } else {
-                $this->assertNotSame('', trim((string) ($entry['target'] ?? '')));
-            }
+            $this->assertStringStartsWith('App\\Queries\\', $entry['class']);
+            $this->assertTrue($reflection->implementsInterface(RawSqlPersistenceBoundary::class));
 
             foreach ($entry['methods'] as $method) {
                 $key = $entry['class'].'::'.$method;
@@ -69,17 +65,11 @@ class ArchitectureExceptionRegistryTest extends PHPStanTestCase
         }
     }
 
-    public function test_legacy_architecture_entries_are_exact_and_not_stale(): void
+    public function test_legacy_architecture_exception_lists_are_empty(): void
     {
-        $this->assertLegacyMethodEntries(
-            self::$architecture['controllerValidationExceptions'] ?? null,
-            '->validate(',
-        );
-        $this->assertLegacyMethodEntries(
-            self::$architecture['controllerPermissionExceptions'] ?? null,
-            'hasCatalogHubPermission(',
-        );
-        $this->assertLowLevelQueryEntries(self::$architecture['lowLevelQueryExceptions'] ?? null);
+        $this->assertSame([], self::$architecture['controllerValidationExceptions'] ?? null);
+        $this->assertSame([], self::$architecture['controllerPermissionExceptions'] ?? null);
+        $this->assertSame([], self::$architecture['lowLevelQueryExceptions'] ?? null);
     }
 
     public function test_approved_raw_sql_behavior_tests_run_in_the_cross_database_suite(): void
@@ -111,49 +101,6 @@ class ArchitectureExceptionRegistryTest extends PHPStanTestCase
         }
     }
 
-    private function assertLegacyMethodEntries(mixed $entries, string $expectedCall): void
-    {
-        $this->assertIsArray($entries);
-        $seen = [];
-
-        foreach ($entries as $entry) {
-            $this->assertNotSame('', trim((string) ($entry['reason'] ?? '')));
-            $this->assertNotSame('', trim((string) ($entry['target'] ?? '')));
-
-            $reflection = new ReflectionClass($entry['class']);
-
-            foreach ($entry['methods'] as $method) {
-                $key = $entry['class'].'::'.$method;
-                $this->assertArrayNotHasKey($key, $seen, "Duplicate architecture exception {$key}.");
-                $this->assertStringContainsString($expectedCall, $this->methodSource($reflection->getMethod($method)), "Stale architecture exception {$key}.");
-                $seen[$key] = true;
-            }
-        }
-    }
-
-    private function assertLowLevelQueryEntries(mixed $entries): void
-    {
-        $this->assertIsArray($entries);
-        $seen = [];
-
-        foreach ($entries as $entry) {
-            $this->assertNotSame('', trim((string) ($entry['reason'] ?? '')));
-            $this->assertNotSame('', trim((string) ($entry['target'] ?? '')));
-            $this->assertBehaviorTestsExist($entry['behaviorTests'] ?? []);
-
-            $reflection = new ReflectionClass($entry['class']);
-            $source = file_get_contents((string) $reflection->getFileName());
-            $this->assertIsString($source);
-
-            foreach ($entry['methods'] as $method) {
-                $key = $entry['class'].'::DB::'.$method;
-                $this->assertArrayNotHasKey($key, $seen, "Duplicate low-level query exception {$key}.");
-                $this->assertMatchesRegularExpression('/DB::'.preg_quote($method, '/').'\\s*\\(/', $source, "Stale low-level query exception {$key}.");
-                $seen[$key] = true;
-            }
-        }
-    }
-
     private function assertBehaviorTestsExist(mixed $paths): void
     {
         $this->assertIsArray($paths);
@@ -162,17 +109,5 @@ class ArchitectureExceptionRegistryTest extends PHPStanTestCase
         foreach ($paths as $path) {
             $this->assertFileExists(dirname(__DIR__, 4).'/'.$path);
         }
-    }
-
-    private function methodSource(ReflectionMethod $method): string
-    {
-        $lines = file((string) $method->getFileName());
-        $this->assertIsArray($lines);
-
-        return implode('', array_slice(
-            $lines,
-            $method->getStartLine() - 1,
-            $method->getEndLine() - $method->getStartLine() + 1,
-        ));
     }
 }

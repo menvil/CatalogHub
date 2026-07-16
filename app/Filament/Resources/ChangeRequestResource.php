@@ -14,6 +14,7 @@ use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Textarea;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -139,12 +140,10 @@ final class ChangeRequestResource extends Resource
             TextEntry::make('field_path')->label('Canonical field'),
             TextEntry::make('status')->badge(),
             TextEntry::make('createdBy.name')->label('Created by'),
-            TextEntry::make('old_value_json')
-                ->label('Current value')
-                ->formatStateUsing(self::formatJson(...)),
-            TextEntry::make('proposed_value_json')
-                ->label('Proposed value')
-                ->formatStateUsing(self::formatJson(...)),
+            ViewEntry::make('correction_diff')
+                ->label('Correction diff')
+                ->view('filament.infolists.correction-diff')
+                ->columnSpanFull(),
             TextEntry::make('evidence_url')->label('Evidence URL')->url(fn (?string $state): ?string => $state)->placeholder('None'),
             TextEntry::make('evidence_note')->label('Evidence note')->placeholder('None'),
             TextEntry::make('created_at')->dateTime(),
@@ -167,17 +166,5 @@ final class ChangeRequestResource extends Resource
 
         return $user instanceof User
             && $user->hasCatalogHubPermission('corrections.review');
-    }
-
-    private static function formatJson(mixed $state): string
-    {
-        if (! is_array($state)) {
-            return $state === null ? 'Empty' : (string) $state;
-        }
-
-        return json_encode(
-            $state,
-            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
-        ) ?: 'Empty';
     }
 }

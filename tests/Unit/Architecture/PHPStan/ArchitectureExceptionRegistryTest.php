@@ -82,6 +82,35 @@ class ArchitectureExceptionRegistryTest extends PHPStanTestCase
         $this->assertLowLevelQueryEntries(self::$architecture['lowLevelQueryExceptions'] ?? null);
     }
 
+    public function test_approved_raw_sql_behavior_tests_run_in_the_cross_database_suite(): void
+    {
+        $composer = json_decode(
+            (string) file_get_contents(dirname(__DIR__, 4).'/composer.json'),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+        $this->assertIsArray($composer);
+        $scripts = $composer['scripts'] ?? null;
+        $this->assertIsArray($scripts);
+        $suite = $scripts['test:database-boundaries'] ?? null;
+        $this->assertIsArray($suite);
+        $command = implode("\n", $suite);
+
+        foreach (self::$architecture['rawSqlExceptions'] ?? [] as $entry) {
+            if (($entry['status'] ?? null) !== 'approved') {
+                continue;
+            }
+
+            foreach ($entry['behaviorTests'] ?? [] as $path) {
+                $this->assertStringContainsString(
+                    (string) $path,
+                    $command,
+                    "Approved raw SQL behavior test {$path} is missing from the cross-database suite.",
+                );
+            }
+        }
+    }
+
     private function assertLegacyMethodEntries(mixed $entries, string $expectedCall): void
     {
         $this->assertIsArray($entries);

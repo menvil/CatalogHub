@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ChangeRequestResource\Pages;
 
+use App\Actions\Corrections\ApplyCorrectionToCentralAction;
 use App\Actions\Corrections\ApproveCorrectionAction;
 use App\Actions\Corrections\RejectCorrectionAction;
 use App\Enums\ChangeRequestStatus;
@@ -59,6 +60,24 @@ final class ViewChangeRequest extends ViewRecord
                             'reviewed_by_user_id',
                             'reviewed_at',
                             'rejection_reason',
+                        ]);
+                    }
+                }),
+            Action::make('apply')
+                ->label('Apply to central')
+                ->color('warning')
+                ->icon(Heroicon::OutlinedArrowDownTray)
+                ->requiresConfirmation()
+                ->visible(fn (): bool => $this->changeRequest()->status === ChangeRequestStatus::Approved)
+                ->action(function (): void {
+                    $user = auth()->user();
+
+                    if ($user instanceof User) {
+                        app(ApplyCorrectionToCentralAction::class)->handle($user, $this->changeRequest());
+                        $this->refreshFormData([
+                            'status',
+                            'applied_by_user_id',
+                            'applied_at',
                         ]);
                     }
                 }),

@@ -8,18 +8,12 @@ use App\Models\CentralCatalog\CentralProduct;
 use App\Models\ChangeRequest;
 use App\Models\SiteProduct;
 use App\Models\User;
+use App\Services\Corrections\CanonicalCorrectionFieldResolver;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Validator;
 
 final class CreateCorrectionRequestAction
 {
-    /** @var array<string, string> */
-    public const PRODUCT_FIELDS = [
-        'name' => 'Canonical name',
-        'model' => 'Model',
-        'slug' => 'Canonical slug',
-    ];
-
     public function handle(
         User $creator,
         CentralProduct $product,
@@ -45,7 +39,7 @@ final class CreateCorrectionRequestAction
             'evidence_url' => $this->nullableText($evidenceUrl),
             'evidence_note' => $this->nullableText($evidenceNote),
         ], [
-            'field_path' => ['required', 'string', 'in:'.implode(',', array_keys(self::PRODUCT_FIELDS))],
+            'field_path' => ['required', 'string', 'in:'.implode(',', array_keys(CanonicalCorrectionFieldResolver::PRODUCT_FIELDS))],
             'proposed_value' => ['required', 'string', 'max:10000'],
             'evidence_url' => ['nullable', 'url:http,https', 'max:2048'],
             'evidence_note' => ['nullable', 'string', 'max:5000'],

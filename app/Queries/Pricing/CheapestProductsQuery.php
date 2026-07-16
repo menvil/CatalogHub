@@ -1,14 +1,17 @@
 <?php
 
-namespace App\Services\Pricing;
+namespace App\Queries\Pricing;
 
+use App\Contracts\Persistence\RawSqlPersistenceBoundary;
 use App\Enums\OfferAvailability;
 use App\Enums\PriceFreshnessStatus;
 use App\Models\Site;
 use App\Models\SiteSearchDocument;
+use App\Services\Pricing\PriceFreshnessCalculator;
+use App\Services\Pricing\ValidMarketOfferQuery;
 use Illuminate\Database\Eloquent\Builder;
 
-final readonly class CheapestProductsQuery
+final readonly class CheapestProductsQuery implements RawSqlPersistenceBoundary
 {
     public function __construct(
         private ValidMarketOfferQuery $validOffers,
@@ -69,7 +72,7 @@ final readonly class CheapestProductsQuery
             $merchantOffers = $this->validOffers->forSite($site)
                 ->whereColumn('market_offers.central_product_id', 'site_search_documents.document_id')
                 ->where('market_offers.market_merchant_id', $merchantId)
-                ->selectRaw('1');
+                ->select('market_offers.id');
             $query->whereExists($merchantOffers->toBase());
         }
 

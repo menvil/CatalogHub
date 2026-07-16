@@ -34,13 +34,7 @@ parameters:
     architecture:
         controllerPermissionExceptions: []
         controllerValidationExceptions: []
-        lowLevelQueryExceptions:
-            -
-                class: App\Services\Pricing\OfferCoverageDashboardBuilder
-                methods: [table]
-                reason: 'Legacy aggregate report base queries.'
-                behaviorTests: [tests/Feature/SiteAdmin/OffersCoverageDashboardTest.php]
-                target: 'MR 6: Pricing query layer'
+        lowLevelQueryExceptions: []
         rawSqlExceptions:
             -
                 class: App\Domains\Projections\ProjectionStaleDetector
@@ -98,29 +92,26 @@ parameters:
                 status: legacy
                 target: 'MR 7: Facet expression boundary'
             -
-                class: App\Services\Pricing\CheapestProductsQuery
-                methods: [orderByRaw, selectRaw]
-                reason: 'Total-price ordering and EXISTS projection use literal SQL without dynamic values.'
+                class: App\Queries\Pricing\CheapestProductsQuery
+                methods: [orderByRaw]
+                reason: 'Best-merchant selection requires portable total-price ordering over price plus nullable delivery price.'
                 bindings: literal_only
                 behaviorTests: [tests/Feature/SiteAdmin/CheapestProductsReportTest.php]
-                status: legacy
-                target: 'MR 6: Pricing query boundary'
+                status: approved
             -
-                class: App\Services\Pricing\OfferCoverageDashboardBuilder
+                class: App\Queries\Pricing\OfferCoverageQuery
                 methods: [selectRaw]
-                reason: 'Conditional coverage and distinct-product aggregates use literal SQL without dynamic values.'
+                reason: 'Coverage reports require portable conditional and distinct grouped aggregates over site-scoped Eloquent queries.'
                 bindings: literal_only
                 behaviorTests: [tests/Feature/SiteAdmin/OffersCoverageDashboardTest.php]
-                status: legacy
-                target: 'MR 6: Pricing query boundary'
+                status: approved
             -
-                class: App\Services\Translations\TranslationCompletenessService
+                class: App\Queries\Translations\TranslationStatusCountsQuery
                 methods: [selectRaw]
-                reason: 'Grouped status counts use a portable literal aggregate expression.'
+                reason: 'Translation completeness requires portable grouped status counts without loading every translation row.'
                 bindings: literal_only
                 behaviorTests: [tests/Unit/Services/TranslationCompletenessServiceTest.php]
-                status: legacy
-                target: 'MR 6: Translation query boundary'
+                status: approved
     level: 5
     paths:
         - app

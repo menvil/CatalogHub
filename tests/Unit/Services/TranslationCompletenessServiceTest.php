@@ -27,9 +27,18 @@ class TranslationCompletenessServiceTest extends TestCase
                 'status' => TranslationStatus::Approved,
             ]);
         }
+        CategoryTranslation::factory()->create([
+            'category_id' => $categories[7]->id,
+            'locale_id' => $locale->id,
+            'locale' => 'de-DE',
+            'status' => TranslationStatus::Outdated,
+        ]);
 
         $stats = app(TranslationCompletenessService::class)->forLocale('de-DE');
 
         $this->assertSame(70.0, $stats['categoryCoverage']);
+        $this->assertSame(7, $stats['by_entity']['categories']['approved']);
+        $this->assertSame(1, $stats['by_entity']['categories']['outdated']);
+        $this->assertSame(2, $stats['by_entity']['categories']['missing']);
     }
 }

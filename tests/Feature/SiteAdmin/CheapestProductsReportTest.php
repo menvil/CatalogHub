@@ -14,7 +14,7 @@ use App\Models\Site;
 use App\Models\SiteProduct;
 use App\Models\SiteSearchDocument;
 use App\Models\User;
-use App\Services\Pricing\CheapestProductsQuery;
+use App\Queries\Pricing\CheapestProductsQuery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -46,6 +46,29 @@ class CheapestProductsReportTest extends TestCase
 
         $this->assertEquals([$cheap->id], $results->pluck('document_id')->all());
         $this->assertFalse($results->contains('document_id', $expensive->id));
+    }
+
+    public function test_best_merchant_is_selected_by_total_price_including_delivery(): void
+    {
+        [$site, $cheap] = $this->scenario();
+        $source = $site->priceSources()->firstOrFail();
+        $lowerBasePriceMerchant = MarketMerchant::factory()->create([
+            'market_id' => $site->market_id,
+            'name' => 'High Delivery Merchant',
+        ]);
+        MarketOffer::factory()->create([
+            'market_id' => $site->market_id,
+            'market_merchant_id' => $lowerBasePriceMerchant->id,
+            'central_product_id' => $cheap->id,
+            'price_source_id' => $source->id,
+            'currency' => $site->market->currency_code,
+            'price' => '90.00',
+            'delivery_price' => '20.00',
+        ]);
+
+        $result = app(CheapestProductsQuery::class)->forSite($site)->firstOrFail();
+
+        $this->assertSame('Cheap Merchant', $result->getAttribute('best_merchant'));
     }
 
     public function test_site_admin_can_open_the_cheapest_products_report(): void

@@ -101,7 +101,7 @@ Price/import source credentials are stored encrypted in application records rath
 ## Gaps and Follow-up
 
 - `.env.production.example` must add secure cookie values and clearly separate required production values from optional driver settings.
-- Error-reporting variables are not configured yet; Phase 21 will add safe placeholders after the provider decision boundary is documented.
+- Error-reporting variables use a provider-neutral, opt-in configuration; selecting and installing an external SDK remains a separate reviewed change.
 - `BROADCAST_CONNECTION` exists in `.env.example` but no real-time Phase 19–21 feature depends on it.
 - `EXPORTS_DISK` and `BACKUPS_DISK` are unused by current PHP configuration and should remain documented as reserved until wired deliberately.
 - Never run `env()` outside configuration files; deployment relies on `php artisan config:cache`.
@@ -113,4 +113,3 @@ Price/import source credentials are stored encrypted in application records rath
 3. Run application, queue, and storage health checks.
 4. Confirm `APP_DEBUG=false`, secure session cookies, and private snapshot storage from an HTTP client.
 5. Record missing conditional variables only for integrations that are actually enabled.
-

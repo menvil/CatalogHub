@@ -4,7 +4,9 @@ namespace App\Models;
 
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
+use Database\Factories\SyncLogFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -24,6 +26,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 final class SyncLog extends Model
 {
+    /** @use HasFactory<SyncLogFactory> */
+    use HasFactory;
+
+    protected static function newFactory(): SyncLogFactory
+    {
+        return SyncLogFactory::new();
+    }
+
     protected function casts(): array
     {
         return [

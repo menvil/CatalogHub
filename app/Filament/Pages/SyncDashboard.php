@@ -6,6 +6,7 @@ use App\Filament\Resources\ProjectionConflictResource;
 use App\Filament\Resources\ProjectionJobResource;
 use App\Filament\Resources\StaleProductResource;
 use App\Filament\Resources\SyncConflictResource;
+use App\Filament\Resources\SyncLogResource;
 use App\Filament\Widgets\SyncStatusWidget;
 use App\Models\SyncLog;
 use App\Models\User;
@@ -72,6 +73,10 @@ final class SyncDashboard extends Page
                 ->label('Sync conflicts')
                 ->icon(Heroicon::OutlinedExclamationTriangle)
                 ->url(SyncConflictResource::getUrl()),
+            Action::make('syncLogs')
+                ->label('Sync logs')
+                ->icon(Heroicon::OutlinedDocumentText)
+                ->url(SyncLogResource::getUrl()),
             Action::make('projectionConflicts')
                 ->label('Projection diagnostics')
                 ->icon(Heroicon::OutlinedWrenchScrewdriver)

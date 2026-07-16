@@ -17,7 +17,11 @@
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
                         @forelse ($this->recentLogs() as $log)
                             <tr>
-                                <td class="px-5 py-3 font-medium text-gray-950 dark:text-white">{{ $log->operation }}</td>
+                                <td class="px-5 py-3 font-medium text-gray-950 dark:text-white">
+                                    <a class="hover:underline" href="{{ \App\Filament\Resources\SyncLogResource::getUrl('view', ['record' => $log]) }}">
+                                        {{ $log->operation }}
+                                    </a>
+                                </td>
                                 <td class="px-5 py-3 text-gray-600 dark:text-gray-300">{{ $log->site?->name ?? 'All sites' }}</td>
                                 <td class="px-5 py-3 text-gray-600 dark:text-gray-300">{{ $log->status }}</td>
                                 <td class="px-5 py-3 text-gray-600 dark:text-gray-300">{{ $log->finished_at?->diffForHumans() ?? 'In progress' }}</td>

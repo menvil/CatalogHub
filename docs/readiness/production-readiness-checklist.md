@@ -11,6 +11,7 @@ Error delivery and redaction: [error reporting](../ops/error-reporting.md).
 Public performance limits: [public page performance budget](../performance/public-page-budget.md).
 Database query coverage: [database index audit](../performance/database-index-audit.md).
 Authorization boundaries: [permissions audit](../security/permissions-audit.md).
+Release procedure: [deployment runbook](../runbooks/deployment.md).
 
 ## Environment
 

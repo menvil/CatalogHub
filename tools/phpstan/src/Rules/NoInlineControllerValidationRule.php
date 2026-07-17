@@ -23,11 +23,6 @@ use PHPStan\Type\ObjectType;
 /** @implements Rule<Expr> */
 final class NoInlineControllerValidationRule implements Rule
 {
-    /**
-     * @param  list<array{class: class-string, methods: list<string>, reason: string, target: string}>  $legacyExceptions
-     */
-    public function __construct(private array $legacyExceptions) {}
-
     public function getNodeType(): string
     {
         return Expr::class;
@@ -37,8 +32,7 @@ final class NoInlineControllerValidationRule implements Rule
     public function processNode(Node $node, Scope $scope): array
     {
         if (! ArchitectureScope::isController($scope)
-            || ! $this->isInlineValidation($node, $scope)
-            || $this->isLegacyException($scope)) {
+            || ! $this->isInlineValidation($node, $scope)) {
             return [];
         }
 
@@ -48,20 +42,6 @@ final class NoInlineControllerValidationRule implements Rule
                 ->line($node->getStartLine())
                 ->build(),
         ];
-    }
-
-    private function isLegacyException(Scope $scope): bool
-    {
-        $className = $scope->getClassReflection()?->getName();
-        $methodName = $scope->getFunctionName();
-
-        foreach ($this->legacyExceptions as $exception) {
-            if ($exception['class'] === $className && in_array($methodName, $exception['methods'], true)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private function isInlineValidation(Expr $node, Scope $scope): bool

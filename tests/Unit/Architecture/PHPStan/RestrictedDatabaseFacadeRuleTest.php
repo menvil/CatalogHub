@@ -11,7 +11,7 @@ class RestrictedDatabaseFacadeRuleTest extends RuleTestCase
 {
     protected function getRule(): Rule
     {
-        return new RestrictedDatabaseFacadeRule([]);
+        return new RestrictedDatabaseFacadeRule;
     }
 
     public function test_reports_low_level_queries_and_controller_transactions(): void

@@ -15,11 +15,6 @@ use PHPStan\Rules\RuleErrorBuilder;
 /** @implements Rule<MethodCall> */
 final class NoDirectControllerPermissionCheckRule implements Rule
 {
-    /**
-     * @param  list<array{class: class-string, methods: list<string>, reason: string, target: string}>  $legacyExceptions
-     */
-    public function __construct(private array $legacyExceptions) {}
-
     public function getNodeType(): string
     {
         return MethodCall::class;
@@ -30,8 +25,7 @@ final class NoDirectControllerPermissionCheckRule implements Rule
     {
         if (! ArchitectureScope::isController($scope)
             || ! $node->name instanceof Identifier
-            || $node->name->toString() !== 'hasCatalogHubPermission'
-            || $this->isLegacyException($scope)) {
+            || $node->name->toString() !== 'hasCatalogHubPermission') {
             return [];
         }
 
@@ -41,19 +35,5 @@ final class NoDirectControllerPermissionCheckRule implements Rule
                 ->line($node->getStartLine())
                 ->build(),
         ];
-    }
-
-    private function isLegacyException(Scope $scope): bool
-    {
-        $className = $scope->getClassReflection()?->getName();
-        $methodName = $scope->getFunctionName();
-
-        foreach ($this->legacyExceptions as $exception) {
-            if ($exception['class'] === $className && in_array($methodName, $exception['methods'], true)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

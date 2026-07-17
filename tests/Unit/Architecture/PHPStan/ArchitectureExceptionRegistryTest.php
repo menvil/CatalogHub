@@ -36,6 +36,7 @@ class ArchitectureExceptionRegistryTest extends PHPStanTestCase
 
     public function test_raw_sql_registry_entries_are_exact_tested_and_not_stale(): void
     {
+        $this->assertSame(['rawSqlExceptions'], array_keys(self::$architecture));
         $entries = self::$architecture['rawSqlExceptions'] ?? null;
 
         $this->assertIsArray($entries);
@@ -63,13 +64,6 @@ class ArchitectureExceptionRegistryTest extends PHPStanTestCase
                 $seen[$key] = true;
             }
         }
-    }
-
-    public function test_legacy_architecture_exception_lists_are_empty(): void
-    {
-        $this->assertSame([], self::$architecture['controllerValidationExceptions'] ?? null);
-        $this->assertSame([], self::$architecture['controllerPermissionExceptions'] ?? null);
-        $this->assertSame([], self::$architecture['lowLevelQueryExceptions'] ?? null);
     }
 
     public function test_approved_raw_sql_behavior_tests_run_in_the_cross_database_suite(): void

@@ -11,7 +11,7 @@ class NoDirectControllerPermissionCheckRuleTest extends RuleTestCase
 {
     protected function getRule(): Rule
     {
-        return new NoDirectControllerPermissionCheckRule([]);
+        return new NoDirectControllerPermissionCheckRule;
     }
 
     public function test_reports_direct_permission_checks_in_controllers(): void

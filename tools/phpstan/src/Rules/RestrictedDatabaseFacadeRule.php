@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace CatalogHub\PHPStan\Rules;
 
+use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Facades\DB;
 use PhpParser\Node;
+use PhpParser\Node\Expr\CallLike;
+use PhpParser\Node\Expr\MethodCall;
+use PhpParser\Node\Expr\NullsafeMethodCall;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
@@ -13,10 +17,23 @@ use PHPStan\Analyser\Scope;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleError;
 use PHPStan\Rules\RuleErrorBuilder;
+use PHPStan\Type\ObjectType;
+use PHPStan\Type\TypeCombinator;
 
-/** @implements Rule<StaticCall> */
+/** @implements Rule<CallLike> */
 final class RestrictedDatabaseFacadeRule implements Rule
 {
+    /** @var array<string, true> */
+    private array $reported = [];
+
+    /** @var list<string> */
+    private const TRANSACTION_METHODS = [
+        'beginTransaction',
+        'commit',
+        'rollBack',
+        'transaction',
+    ];
+
     /** @var list<string> */
     private const LOW_LEVEL_METHODS = [
         'affectingStatement',
@@ -34,21 +51,43 @@ final class RestrictedDatabaseFacadeRule implements Rule
 
     public function getNodeType(): string
     {
-        return StaticCall::class;
+        return CallLike::class;
     }
 
     /** @return list<RuleError> */
     public function processNode(Node $node, Scope $scope): array
     {
-        if (! $node->class instanceof Name
+        if (($node instanceof MethodCall || $node instanceof NullsafeMethodCall)
+            && $node->name instanceof Identifier
+            && in_array($node->name->toString(), self::TRANSACTION_METHODS, true)
+            && ArchitectureScope::isPresentationLayer($scope)
+            && (new ObjectType(ConnectionInterface::class))->isSuperTypeOf(
+                TypeCombinator::removeNull($scope->getType($node->var)),
+            )->yes()) {
+            return $this->errorsOnce(
+                $node,
+                $scope,
+                'Presentation classes must not manage database transactions; move orchestration to an Action or Service.',
+                'cataloghub.presentation.transaction',
+            );
+        }
+
+        if (! $node instanceof StaticCall
+            || ! $node->class instanceof Name
             || ! $node->name instanceof Identifier
             || $scope->resolveName($node->class) !== DB::class) {
             return [];
         }
 
         $method = $node->name->toString();
-        if ($method === 'transaction' && ArchitectureScope::isController($scope)) {
-            return [$this->error($node, 'Database transactions must be moved from controllers to an Action or Service.')];
+        if (in_array($method, self::TRANSACTION_METHODS, true)
+            && ArchitectureScope::isPresentationLayer($scope)) {
+            return $this->errorsOnce(
+                $node,
+                $scope,
+                'Presentation classes must not manage database transactions; move orchestration to an Action or Service.',
+                'cataloghub.presentation.transaction',
+            );
         }
 
         if (! ArchitectureScope::isApplicationCode($scope)
@@ -56,14 +95,30 @@ final class RestrictedDatabaseFacadeRule implements Rule
             return [];
         }
 
-        return [$this->error($node, 'Low-level DB facade queries must be replaced with Eloquent or isolated in an approved Query Object.')];
+        return $this->errorsOnce(
+            $node,
+            $scope,
+            'Low-level DB facade queries must be replaced with Eloquent or isolated in an approved Query Object.',
+            'cataloghub.database.restrictedFacade',
+        );
     }
 
-    private function error(StaticCall $node, string $message): RuleError
+    /** @return list<RuleError> */
+    private function errorsOnce(CallLike $node, Scope $scope, string $message, string $identifier): array
     {
-        return RuleErrorBuilder::message($message)
-            ->identifier('cataloghub.database.restrictedFacade')
-            ->line($node->getStartLine())
-            ->build();
+        $key = implode(':', [$scope->getFile(), (string) $node->getStartLine(), $identifier]);
+
+        if (isset($this->reported[$key])) {
+            return [];
+        }
+
+        $this->reported[$key] = true;
+
+        return [
+            RuleErrorBuilder::message($message)
+                ->identifier($identifier)
+                ->line($node->getStartLine())
+                ->build(),
+        ];
     }
 }

@@ -59,3 +59,8 @@ save hooks may delegate to an Action, but application-owned presentation code
 must not call model, builder, or relation mutation methods directly. Read-side
 composition belongs in Eloquent scopes or Query Objects. A controller should be
 readable as a short sequence of authorize, invoke, respond.
+
+This transaction boundary covers Controllers, Form Requests, Livewire, and
+Filament. Both `DB::transaction()` and manual facade/connection transaction
+methods are forbidden there; the Action that defines the atomic use case owns
+the transaction.

@@ -18,6 +18,8 @@ A controller must not:
 
 - call `Request::validate()`, `Request::validateWithBag()`, `Validator::make()`,
   or the `validator()` helper;
+- read request payload or query values through `input()`, `query()`, `string()`,
+  array access, magic properties, or equivalent unvalidated accessors;
 - call `hasCatalogHubPermission()` directly;
 - construct low-level or raw database queries;
 - manage database transactions;
@@ -27,7 +29,10 @@ A controller must not:
 
 Every HTTP use case with input has a dedicated class under `app/Http/Requests`.
 Form Requests own normalization, validation rules, messages, and validated input
-access. Resource authorization remains explicit through policies and Gate; Form
+access. Controllers consume typed accessors or data objects exposed by that Form
+Request; they do not interpret the array returned by `validated()` themselves.
+Context-only request metadata such as host, authenticated user, session, IP, and
+URL remains available to transport code. Resource authorization remains explicit through policies and Gate; Form
 Requests return `true` from `authorize()` unless a use case deliberately adopts
 a documented alternative convention.
 

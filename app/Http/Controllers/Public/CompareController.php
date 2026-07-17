@@ -7,26 +7,21 @@ use App\Domains\PublicSite\ComparisonViewModelBuilder;
 use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PublicSite\CompareProductsRequest;
 use App\Models\SiteProductProjection;
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\Request;
 
 final class CompareController extends Controller
 {
     public function __invoke(
-        Request $request,
+        CompareProductsRequest $request,
         string $locale,
         SiteContextResolver $sites,
         ThemeLayoutResolver $layouts,
         ComparisonViewModelBuilder $comparison,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
-        $rawSlugs = $request->query('products', []);
-        $rawSlugs = is_string($rawSlugs) ? explode(',', $rawSlugs) : $rawSlugs;
-        $slugs = array_slice(array_values(array_unique(array_filter(array_map(
-            fn (mixed $slug): string => is_string($slug) ? trim($slug) : '',
-            $rawSlugs,
-        )))), 0, 4);
+        $slugs = $request->comparisonData()->slugs;
         $available = SiteProductProjection::query()
             ->where('site_id', $site->id)
             ->where('locale', $locale)

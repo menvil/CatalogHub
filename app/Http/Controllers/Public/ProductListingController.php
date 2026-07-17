@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Public;
 
-use App\Data\Facets\FacetFilterSet;
 use App\Domains\Projections\Enums\ProjectionStatus;
 use App\Domains\PublicSite\LocalizedUrlResolver;
 use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Enums\PublicProductSort;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PublicSite\ListProductsRequest;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\SiteCategoryProjection;
 use App\Models\SiteProductProjection;
@@ -19,12 +19,11 @@ use App\Services\Pricing\MerchantFilterOptionsBuilder;
 use App\Services\Pricing\ProductCardPricePresenter;
 use App\Support\Facets\FacetUrlBuilder;
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\Request;
 
 final class ProductListingController extends Controller
 {
     public function __invoke(
-        Request $request,
+        ListProductsRequest $request,
         string $locale,
         string $slug,
         SiteContextResolver $sites,
@@ -49,7 +48,8 @@ final class ProductListingController extends Controller
         $centralCategory = new CentralCategory;
         $centralCategory->setAttribute($centralCategory->getKeyName(), $category->central_category_id);
         $centralCategory->exists = true;
-        $filters = FacetFilterSet::fromQuery($request->query());
+        $listing = $request->listingData();
+        $filters = $listing->filters;
         $query = $facetQuery->apply(
             SiteSearchDocument::query()->where('locale', $locale),
             $site,
@@ -57,8 +57,7 @@ final class ProductListingController extends Controller
             $filters,
         );
 
-        $perPage = max(1, min($request->integer('per_page', 12), 24));
-        $documents = $query->paginate($perPage)->withQueryString();
+        $documents = $query->paginate($listing->perPage)->withQueryString();
         $projections = SiteProductProjection::query()
             ->where('site_id', $site->id)
             ->where('locale', $locale)

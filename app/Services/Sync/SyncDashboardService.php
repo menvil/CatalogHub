@@ -5,9 +5,9 @@ namespace App\Services\Sync;
 use App\Domains\Projections\Enums\ProjectionStatus;
 use App\Models\Site;
 use App\Models\SiteProductProjection;
+use App\Models\SyncConflict;
 use App\Models\SyncLog;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\DB;
 
 final class SyncDashboardService
 {
@@ -24,7 +24,7 @@ final class SyncDashboardService
                         ->orWhereNotNull('failed_at');
                 })
                 ->count(),
-            'open_conflicts' => DB::table('sync_conflicts')->where('status', 'open')->count(),
+            'open_conflicts' => SyncConflict::query()->open()->count(),
             'sites' => Site::query()->count(),
         ];
     }

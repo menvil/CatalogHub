@@ -7,6 +7,7 @@ use App\Filament\Resources\StaleProductResource\Pages;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\SiteProduct;
 use App\Models\User;
+use App\Queries\Sync\StaleProductVersionGapQuery;
 use App\Services\Sync\StaleProductDetector;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -105,10 +106,8 @@ final class StaleProductResource extends Resource
 
                         return $query->when(
                             filled($gap),
-                            fn (Builder $query): Builder => $query->whereRaw(
-                                'central_products.version - site_products.published_version >= ?',
-                                [(int) $gap],
-                            ),
+                            fn (Builder $query): Builder => app(StaleProductVersionGapQuery::class)
+                                ->apply($query, (int) $gap),
                         );
                     }),
             ])

@@ -65,6 +65,13 @@ parameters:
                 behaviorTests: [tests/Feature/Domains/Projections/ProjectionStaleDetectorTest.php]
                 status: approved
             -
+                class: App\Queries\Sync\StaleProductVersionGapQuery
+                methods: [whereRaw]
+                reason: 'Filtering stale products by a bound numeric gap requires arithmetic over two fixed version columns.'
+                bindings: required
+                behaviorTests: [tests/Feature/CentralAdmin/StaleProductsScreenTest.php]
+                status: approved
+            -
                 class: App\Queries\PublicSite\PublicProductSearchQuery
                 methods: [whereRaw, orWhereRaw]
                 reason: 'Literal wildcard search requires an explicit ESCAPE clause with separately bound patterns.'

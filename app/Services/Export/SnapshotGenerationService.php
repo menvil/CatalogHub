@@ -102,6 +102,7 @@ final class SnapshotGenerationService
             'translations' => $this->translations,
             'media_manifest' => $this->mediaManifest,
             'site_config' => $this->siteConfig,
+            default => throw new InvalidArgumentException("Unsupported snapshot section: {$section}."),
         };
     }
 }

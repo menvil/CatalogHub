@@ -42,4 +42,34 @@ final class EloquentCallInspector
             ->isSuperTypeOf($scope->resolveTypeByName($node->class))
             ->yes();
     }
+
+    public static function hasQueryReceiver(
+        Scope $scope,
+        MethodCall|NullsafeMethodCall $node,
+    ): bool {
+        $type = TypeCombinator::removeNull($scope->getType($node->var));
+
+        foreach ([EloquentBuilder::class, QueryBuilder::class, Relation::class] as $class) {
+            if ((new ObjectType($class))->isSuperTypeOf($type)->yes()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static function returnsQuery(
+        Scope $scope,
+        MethodCall|NullsafeMethodCall|StaticCall $node,
+    ): bool {
+        $type = TypeCombinator::removeNull($scope->getType($node));
+
+        foreach ([EloquentBuilder::class, QueryBuilder::class, Relation::class] as $class) {
+            if ((new ObjectType($class))->isSuperTypeOf($type)->yes()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

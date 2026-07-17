@@ -21,6 +21,8 @@ A controller must not:
 - read request payload or query values through `input()`, `query()`, `string()`,
   array access, magic properties, or equivalent unvalidated accessors;
 - call `hasCatalogHubPermission()` directly;
+- start or compose Eloquent queries, relation queries, or model loading; delegate
+  read access to a Query Object;
 - construct low-level or raw database queries;
 - persist Eloquent models or relations directly from Controllers, Form Requests,
   Livewire components, or Filament resources/pages;

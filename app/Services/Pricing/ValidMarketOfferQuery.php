@@ -37,4 +37,11 @@ final class ValidMarketOfferQuery
         return $this->forSite($site)
             ->where('market_offers.central_product_id', $centralProductId);
     }
+
+    public function findForSite(Site $site, MarketOffer|int $offer): MarketOffer
+    {
+        $offerId = $offer instanceof MarketOffer ? $offer->getKey() : $offer;
+
+        return $this->forSite($site)->whereKey($offerId)->firstOrFail();
+    }
 }

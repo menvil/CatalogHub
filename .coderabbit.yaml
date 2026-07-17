@@ -1,12 +1,13 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 # CodeRabbit — opt in only for internal release/* and hotfix/* PRs.
 # Automatic reviews are disabled by default. CodeRabbit starts only when this
 # repository's label workflow applies the release/hotfix label to an internal PR
 # whose source branch starts with release/ or hotfix/.
 
-language: en
+language: en-US
 
 reviews:
-  profile: chill
+  profile: assertive
   auto_review:
     enabled: false
     labels:
@@ -16,7 +17,55 @@ reviews:
   request_changes_workflow: false
   high_level_summary: true
   poem: false
-  review_status: false
+  review_status: true
+  path_instructions:
+    - path: "app/Http/{Controllers,Requests}/**/*.php"
+      instructions: |
+        Enforce docs/architecture/http-boundaries.md. Controllers may authorize,
+        invoke Actions or Query Objects, and shape a response. Validation belongs
+        in a dedicated Form Request with typed accessors. Flag controller-owned
+        Eloquent reads/loading, direct persistence, transactions, raw SQL, and
+        direct role/capability checks. Authorization must use Policy/Gate.
+    - path: "app/{Livewire,Filament}/**/*.php"
+      instructions: |
+        Keep presentation code thin. Framework-native validation and local UI
+        state are allowed. Persistence and transactions belong in Actions;
+        authorization uses Policy/Gate. Flag direct roles/capabilities, Eloquent
+        mutations, raw SQL, and business rules in presentation classes.
+    - path: "app/Actions/**/*.php"
+      instructions: |
+        Actions own mutations and transaction boundaries. Check atomicity,
+        authorization defence in depth where required, idempotency, and N+1 writes.
+    - path: "app/Queries/**/*.php"
+      instructions: |
+        Enforce docs/architecture/database-access.md. Query Objects are read-only:
+        flag writes, locks, and transactions. Pagination requires an exact
+        architecture.paginationBoundaries entry, unique final order, and tied-sort
+        cross-page behavior test. Raw SQL requires RawSqlPersistenceBoundary,
+        bindings policy, exact class+owner method+raw method registration, reason,
+        and a cross-database behavior test. Check N+1 risks and aggregate efficiency.
+    - path: "tools/{phpstan,architecture}/**/*.php"
+      instructions: |
+        Architecture rules require violation and false-positive fixtures. Keep
+        matching type-aware for Model, Eloquent Builder, base Query Builder,
+        Relation, and Connection receivers. cataloghub.* identifiers and wildcard
+        ignores must remain unsuppressible. Debt registries must reject stale,
+        duplicate, mismatched, expired, and forbidden entries.
+    - path: "database/migrations/**/*.php"
+      instructions: |
+        Preserve SQLite, MariaDB, and PostgreSQL compatibility. Review foreign keys,
+        rollback behavior, portable column/index definitions, and query-path indexes.
+    - path: "tests/**/*.php"
+      instructions: |
+        Require behavior-focused regression coverage. Verify denial paths,
+        validation boundaries, query semantics, stable pagination, cross-database
+        behavior for approved raw SQL, query-count scaling, and false-positive
+        fixtures for custom PHPStan rules.
+    - path: ".github/workflows/**/*.yml"
+      instructions: |
+        Keep architecture checks blocking. The CI summary, PR comment, and JSON
+        artifact must expose registered/actual, inline/baseline, unregistered,
+        stale, mismatched, expired, and forbidden suppression metrics.
 
 chat:
   auto_reply: true

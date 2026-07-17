@@ -17,6 +17,28 @@ final class ArchitectureScope
         return $class !== null && str_starts_with($class->getName(), self::CONTROLLER_NAMESPACE);
     }
 
+    public static function isPresentationLayer(Scope $scope): bool
+    {
+        $class = $scope->getClassReflection();
+
+        if ($class === null) {
+            return false;
+        }
+
+        foreach ([
+            'App\\Filament\\',
+            'App\\Http\\Controllers\\',
+            'App\\Http\\Requests\\',
+            'App\\Livewire\\',
+        ] as $namespace) {
+            if (str_starts_with($class->getName(), $namespace)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static function isApplicationCode(Scope $scope): bool
     {
         $class = $scope->getClassReflection();

@@ -11,6 +11,10 @@ services:
         tags:
             - phpstan.rules.rule
     -
+        class: CatalogHub\PHPStan\Rules\NoPresentationEloquentMutationRule
+        tags:
+            - phpstan.rules.rule
+    -
         class: CatalogHub\PHPStan\Rules\NoDirectControllerPermissionCheckRule
         tags:
             - phpstan.rules.rule

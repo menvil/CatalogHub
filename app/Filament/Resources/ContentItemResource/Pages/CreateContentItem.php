@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ContentItemResource\Pages;
 
+use App\Actions\Content\UpsertContentTranslationAction;
 use App\Enums\ContentType;
 use App\Filament\Resources\ContentItemResource;
 use App\Models\ContentItem;
@@ -32,7 +33,7 @@ final class CreateContentItem extends CreateRecord
 
     protected function afterCreate(): void
     {
-        $this->contentItem()->translations()->create($this->translationData);
+        app(UpsertContentTranslationAction::class)->handle($this->contentItem(), $this->translationData);
     }
 
     /**

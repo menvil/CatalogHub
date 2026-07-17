@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Public;
 
+use App\Actions\Pricing\RecordOfferClickAction;
 use App\Domains\PublicSite\SiteContextResolver;
 use App\Http\Controllers\Controller;
 use App\Models\MarketOffer;
-use App\Models\OfferClick;
 use App\Services\Pricing\ValidMarketOfferQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +17,7 @@ final class TrackOfferClickController extends Controller
         MarketOffer $offer,
         SiteContextResolver $sites,
         ValidMarketOfferQuery $validOffers,
+        RecordOfferClickAction $recordClick,
     ): RedirectResponse {
         $site = $sites->resolveHost($request->getHost());
         $offer = $validOffers->forSite($site)->whereKey($offer->getKey())->firstOrFail();
@@ -24,17 +25,14 @@ final class TrackOfferClickController extends Controller
 
         abort_if($destination === null, 404);
 
-        OfferClick::query()->create([
-            'site_id' => $site->id,
-            'market_offer_id' => $offer->id,
-            'central_product_id' => $offer->central_product_id,
-            'merchant_id' => $offer->market_merchant_id,
-            'user_id' => $request->user()?->getAuthIdentifier(),
-            'session_id' => $request->session()->getId(),
-            'ip_hash' => $this->privacyHash($request->ip()),
-            'user_agent_hash' => $this->privacyHash($request->userAgent()),
-            'clicked_at' => now(),
-        ]);
+        $recordClick->handle(
+            $site,
+            $offer,
+            $request->user()?->getAuthIdentifier(),
+            $request->session()->getId(),
+            $request->ip(),
+            $request->userAgent(),
+        );
 
         return redirect()->away($destination);
     }
@@ -48,14 +46,5 @@ final class TrackOfferClickController extends Controller
         $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
 
         return in_array($scheme, ['http', 'https'], true) ? $url : null;
-    }
-
-    private function privacyHash(?string $value): ?string
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        return hash_hmac('sha256', $value, (string) config('app.key'));
     }
 }

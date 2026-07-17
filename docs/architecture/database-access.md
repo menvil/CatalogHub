@@ -31,7 +31,8 @@ persistence boundary under `app/Queries` that implements
 `RawSqlPersistenceBoundary`. It needs:
 
 1. parameter bindings for every dynamic value;
-2. an exact allowlist entry containing class, methods, and a concrete reason;
+2. an exact allowlist entry containing class, owner methods, raw methods, and a
+   concrete reason;
 3. behavioral tests on every supported database;
 4. a review confirming that an Eloquent alternative would be incorrect or less
    efficient.

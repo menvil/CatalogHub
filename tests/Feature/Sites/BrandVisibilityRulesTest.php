@@ -8,6 +8,7 @@ use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Site;
 use App\Models\User;
+use App\Queries\Sites\SiteBrandVisibilityQuery;
 use App\Services\Sites\SiteBrandVisibilityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -16,6 +17,18 @@ use Tests\TestCase;
 class BrandVisibilityRulesTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_brand_manager_pagination_is_stable_when_names_are_tied(): void
+    {
+        $brands = CentralBrand::factory()->count(3)->create(['name' => 'Tied Brand Name']);
+        $query = app(SiteBrandVisibilityQuery::class);
+
+        $first = $query->paginate(perPage: 2, page: 1)->getCollection()->pluck('id')->all();
+        $second = $query->paginate(perPage: 2, page: 2)->getCollection()->pluck('id')->all();
+
+        $this->assertSame($brands->pluck('id')->sort()->values()->all(), [...$first, ...$second]);
+        $this->assertSame([], array_values(array_intersect($first, $second)));
+    }
 
     public function test_brand_can_be_hidden_and_allowed_without_mutating_central_brand(): void
     {

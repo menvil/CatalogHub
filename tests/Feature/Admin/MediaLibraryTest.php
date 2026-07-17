@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Data\Media\MediaLibraryFiltersData;
 use App\Enums\UserRole;
 use App\Models\MediaAsset;
 use App\Models\User;
+use App\Queries\Media\MediaLibraryQuery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -13,6 +15,22 @@ use Tests\TestCase;
 class MediaLibraryTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_media_library_pagination_is_stable_when_created_times_are_tied(): void
+    {
+        $assets = MediaAsset::factory()->count(3)->create([
+            'created_at' => '2026-07-17 10:00:00',
+            'updated_at' => '2026-07-17 10:00:00',
+        ]);
+        $filters = new MediaLibraryFiltersData(null, null, null);
+        $query = app(MediaLibraryQuery::class);
+
+        $first = $query->paginate($filters, perPage: 2, page: 1)->getCollection()->pluck('id')->all();
+        $second = $query->paginate($filters, perPage: 2, page: 2)->getCollection()->pluck('id')->all();
+
+        $this->assertSame($assets->pluck('id')->sortDesc()->values()->all(), [...$first, ...$second]);
+        $this->assertSame([], array_values(array_intersect($first, $second)));
+    }
 
     public function test_allows_central_admin_to_view_media_library(): void
     {

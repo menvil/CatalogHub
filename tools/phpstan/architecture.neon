@@ -23,6 +23,12 @@ services:
         tags:
             - phpstan.rules.rule
     -
+        class: CatalogHub\PHPStan\Rules\RegisteredPaginationBoundaryRule
+        arguments:
+            boundaries: %architecture.paginationBoundaries%
+        tags:
+            - phpstan.rules.rule
+    -
         class: CatalogHub\PHPStan\Rules\RestrictedDatabaseFacadeRule
         tags:
             - phpstan.rules.rule
@@ -107,4 +113,41 @@ parameters:
                 reason: 'Translation completeness requires portable grouped status counts without loading every translation row.'
                 bindings: literal_only
                 behaviorTests: [tests/Unit/Services/TranslationCompletenessServiceTest.php]
+                status: approved
+        paginationBoundaries:
+            -
+                class: App\Queries\Media\MediaLibraryQuery
+                method: paginate
+                uniqueOrder: [media_assets.id DESC]
+                behaviorTests: [tests/Feature/Admin/MediaLibraryTest.php]
+                status: approved
+            -
+                class: App\Queries\PublicSite\PublicProductListingQuery
+                method: get
+                uniqueOrder: [site_search_documents.id]
+                behaviorTests: [tests/Feature/Public/ProductListingPageTest.php]
+                status: approved
+            -
+                class: App\Queries\Pricing\ProductsWithoutOffersQuery
+                method: paginate
+                uniqueOrder: [site_products.id]
+                behaviorTests: [tests/Feature/SiteAdmin/ProductsWithoutOffersReportTest.php]
+                status: approved
+            -
+                class: App\Queries\Pricing\CheapestProductsQuery
+                method: paginate
+                uniqueOrder: [site_search_documents.id]
+                behaviorTests: [tests/Feature/SiteAdmin/CheapestProductsReportTest.php]
+                status: approved
+            -
+                class: App\Queries\Sites\SiteProductManagementQuery
+                method: paginate
+                uniqueOrder: [central_products.id]
+                behaviorTests: [tests/Feature/Sites/ProductVisibilityManagerTest.php]
+                status: approved
+            -
+                class: App\Queries\Sites\SiteBrandVisibilityQuery
+                method: paginate
+                uniqueOrder: [central_brands.id]
+                behaviorTests: [tests/Feature/Sites/BrandVisibilityRulesTest.php]
                 status: approved

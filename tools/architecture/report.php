@@ -25,7 +25,9 @@ try {
             'baseline='.$report['baseline'],
             'unregistered='.count($report['unregistered']),
             'stale='.count($report['stale']),
+            'mismatched='.count($report['mismatched']),
             'expired='.count($report['expired']),
+            'forbidden='.count($report['forbidden']),
             '',
         ]), FILE_APPEND);
     }

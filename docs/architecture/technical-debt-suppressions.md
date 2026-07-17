@@ -19,7 +19,14 @@ The architecture debt scanner rejects:
 - count mismatches;
 - registry entries whose suppression no longer exists;
 - expired debt;
+- count mismatches between registry and source;
+- wildcard ignores;
+- every suppression of a `cataloghub.*` architecture-rule identifier;
 - missing files or incomplete metadata.
+
+Architecture rules are permanent executable boundaries, not technical debt.
+They cannot be placed in the registry or a baseline. The debt mechanism is only
+for an explicitly owned, expiring type-level finding whose removal task is known.
 
 Run the contract locally with:
 
@@ -27,6 +34,9 @@ Run the contract locally with:
 composer test:architecture
 ```
 
-The GitHub CI summary reports active, inline, baseline, unregistered, stale,
-and expired suppression counts. Approved raw SQL persistence boundaries are not
-technical debt and remain governed separately by the raw SQL registry.
+The GitHub workflow summary and its single updated PR comment report registered,
+actual, inline, baseline, unregistered, stale, mismatched, expired, and forbidden
+counts. The downloadable JSON artifact includes the complete registered and
+observed suppression entries, not only aggregate counters. Approved raw SQL
+persistence boundaries are not technical debt and remain governed separately by
+the raw SQL registry.

@@ -40,6 +40,9 @@ final readonly class ArchitectureDebtScanner
      *     stale: list<string>,
      *     mismatched: list<string>,
      *     expired: list<string>,
+     *     forbidden: list<string>,
+     *     registered: list<array{id: string, source: string, file: string, identifier: string, count: int, reason: string, owner: string, target: string, expiresOn: string}>,
+     *     observed: list<array{source: string, file: string, identifier: string, count: int}>,
      *     valid: bool
      * }
      */
@@ -50,6 +53,7 @@ final readonly class ArchitectureDebtScanner
         $registeredByKey = [];
         $actualByKey = [];
         $expired = [];
+        $forbidden = [];
 
         foreach ($registered as $suppression) {
             $key = $this->key($suppression);
@@ -60,6 +64,10 @@ final readonly class ArchitectureDebtScanner
 
             $registeredByKey[$key] = $suppression;
 
+            if ($this->isForbiddenIdentifier($suppression['identifier'])) {
+                $forbidden[$key] = true;
+            }
+
             if (new DateTimeImmutable($suppression['expiresOn']) < new DateTimeImmutable('today')) {
                 $expired[] = $suppression['id'];
             }
@@ -68,6 +76,10 @@ final readonly class ArchitectureDebtScanner
         foreach ($actual as $suppression) {
             $key = $this->key($suppression);
             $actualByKey[$key] = ($actualByKey[$key] ?? 0) + $suppression['count'];
+
+            if ($this->isForbiddenIdentifier($suppression['identifier'])) {
+                $forbidden[$key] = true;
+            }
         }
 
         $unregistered = array_values(array_diff(array_keys($actualByKey), array_keys($registeredByKey)));
@@ -98,7 +110,14 @@ final readonly class ArchitectureDebtScanner
             'stale' => $stale,
             'mismatched' => $mismatched,
             'expired' => $expired,
-            'valid' => $unregistered === [] && $stale === [] && $mismatched === [] && $expired === [],
+            'forbidden' => array_keys($forbidden),
+            'registered' => $registered,
+            'observed' => $actual,
+            'valid' => $unregistered === []
+                && $stale === []
+                && $mismatched === []
+                && $expired === []
+                && $forbidden === [],
         ];
     }
 
@@ -248,6 +267,11 @@ final readonly class ArchitectureDebtScanner
     private function key(array $suppression): string
     {
         return $suppression['source'].':'.$suppression['file'].':'.$suppression['identifier'];
+    }
+
+    private function isForbiddenIdentifier(string $identifier): bool
+    {
+        return $identifier === '*' || str_starts_with($identifier, 'cataloghub.');
     }
 
     private function relativePath(string $path): string

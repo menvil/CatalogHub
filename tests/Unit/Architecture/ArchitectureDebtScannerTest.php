@@ -34,6 +34,9 @@ final class ArchitectureDebtScannerTest extends TestCase
         $this->assertTrue($report['valid']);
         $this->assertSame(0, $report['active']);
         $this->assertSame(0, $report['actual']);
+        $this->assertSame([], $report['registered']);
+        $this->assertSame([], $report['observed']);
+        $this->assertSame([], $report['forbidden']);
     }
 
     #[Test]
@@ -65,7 +68,10 @@ final class ArchitectureDebtScannerTest extends TestCase
         ]]);
 
         $scanner = new ArchitectureDebtScanner($this->fixtureRoot);
-        $this->assertSame([], $scanner->scan()['stale']);
+        $registered = $scanner->scan();
+        $this->assertSame([], $registered['stale']);
+        $this->assertSame('ARCH-DEBT-001', $registered['registered'][0]['id']);
+        $this->assertSame('argument.type', $registered['observed'][0]['identifier']);
 
         file_put_contents($this->fixtureRoot.'/app/Example.php', "<?php\n");
         $report = $scanner->scan();
@@ -116,6 +122,34 @@ NEON);
 
         $this->assertFalse($report['valid']);
         $this->assertSame(['ARCH-DEBT-001'], $report['expired']);
+    }
+
+    #[Test]
+    public function architecture_rule_and_wildcard_suppressions_are_never_allowed(): void
+    {
+        file_put_contents(
+            $this->fixtureRoot.'/app/Example.php',
+            "<?php\n// @phpstan-ignore cataloghub.controller.eloquentQuery\n// @phpstan-ignore-line\n",
+        );
+        $this->writeRegistry([[
+            'id' => 'ARCH-DEBT-001',
+            'source' => 'phpstan_inline',
+            'file' => 'app/Example.php',
+            'identifier' => 'cataloghub.controller.eloquentQuery',
+            'count' => 1,
+            'reason' => 'Architecture rules must remain unsuppressible.',
+            'owner' => 'architecture',
+            'target' => 'ARCH-999',
+            'expiresOn' => '2099-12-31',
+        ]]);
+
+        $report = (new ArchitectureDebtScanner($this->fixtureRoot))->scan();
+
+        $this->assertFalse($report['valid']);
+        $this->assertSame([
+            'phpstan_inline:app/Example.php:cataloghub.controller.eloquentQuery',
+            'phpstan_inline:app/Example.php:*',
+        ], $report['forbidden']);
     }
 
     /** @param list<array<string, mixed>> $suppressions */

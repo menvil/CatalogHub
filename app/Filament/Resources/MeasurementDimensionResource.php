@@ -85,7 +85,7 @@ final class MeasurementDimensionResource extends Resource
     {
         $user = auth()->user();
 
-        return $user !== null && ($user->isCentralAdmin() || $user->isSuperAdmin());
+        return $user !== null && $user->can('central.manage');
     }
 
     public static function getPages(): array

@@ -34,7 +34,7 @@ final class LeadResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return self::canManage();
+        return auth()->user()?->can('viewAny', Lead::class) === true;
     }
 
     public static function canView(Model $record): bool
@@ -43,8 +43,7 @@ final class LeadResource extends Resource
 
         return $record instanceof Lead
             && $user instanceof User
-            && self::canManage()
-            && ($user->isSuperAdmin() || (int) $user->site_id === (int) $record->site_id);
+            && $user->can('view', $record);
     }
 
     public static function canCreate(): bool
@@ -58,7 +57,7 @@ final class LeadResource extends Resource
         $query = Lead::query();
         $user = auth()->user();
 
-        if ($user instanceof User && $user->isSuperAdmin()) {
+        if ($user instanceof User && $user->can('system.super-admin')) {
             return $query;
         }
 
@@ -127,13 +126,5 @@ final class LeadResource extends Resource
         return [
             'index' => Pages\ListLeads::route('/'),
         ];
-    }
-
-    private static function canManage(): bool
-    {
-        $user = auth()->user();
-
-        return $user instanceof User
-            && $user->hasCatalogHubPermission('leads.manage');
     }
 }

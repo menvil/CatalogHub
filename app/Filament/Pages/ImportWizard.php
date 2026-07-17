@@ -43,7 +43,7 @@ final class ImportWizard extends Page
     {
         $user = auth()->user();
 
-        return $user instanceof User && $user->canManageImports();
+        return $user instanceof User && $user->can('imports.manage');
     }
 
     /** @return Collection<int, ImportSource> */

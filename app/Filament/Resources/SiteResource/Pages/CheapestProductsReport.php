@@ -10,8 +10,8 @@ use App\Models\MarketMerchant;
 use App\Models\Site;
 use App\Models\SiteSearchDocument;
 use App\Queries\Pricing\CheapestProductsQuery;
+use App\Queries\Pricing\ValidMarketOfferQuery;
 use App\Services\Pricing\PriceFreshnessCalculator;
-use App\Services\Pricing\ValidMarketOfferQuery;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -36,14 +36,14 @@ final class CheapestProductsReport extends Page
     /** @return LengthAwarePaginator<int, SiteSearchDocument> */
     public function getProducts(): LengthAwarePaginator
     {
-        return app(CheapestProductsQuery::class)->forSite(
+        return app(CheapestProductsQuery::class)->paginate(
             $this->siteRecord(),
             categoryId: $this->filterId(request()->query('category_id')),
             brandId: $this->filterId(request()->query('brand_id')),
             merchantId: $this->filterId(request()->query('merchant_id')),
             freshness: PriceFreshnessStatus::tryFrom((string) request()->query('freshness')),
             inStockOnly: request()->boolean('in_stock'),
-        )->paginate(50)->withQueryString();
+        )->withQueryString();
     }
 
     /** @return array<int, string> */

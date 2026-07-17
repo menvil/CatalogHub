@@ -9,6 +9,7 @@ use App\Models\PriceSource;
 use App\Models\PriceSourceSyncLog;
 use App\Models\Site;
 use App\Models\SiteProduct;
+use App\Queries\Pricing\ValidMarketOfferQuery;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Number;
 

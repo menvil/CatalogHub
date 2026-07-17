@@ -1,0 +1,157 @@
+parametersSchema:
+    architecture: mixed()
+
+services:
+    -
+        class: CatalogHub\PHPStan\Rules\NoInlineControllerValidationRule
+        tags:
+            - phpstan.rules.rule
+    -
+        class: CatalogHub\PHPStan\Rules\NoUnvalidatedControllerInputRule
+        tags:
+            - phpstan.rules.rule
+    -
+        class: CatalogHub\PHPStan\Rules\NoPresentationEloquentMutationRule
+        tags:
+            - phpstan.rules.rule
+    -
+        class: CatalogHub\PHPStan\Rules\NoDirectPresentationAuthorizationCheckRule
+        tags:
+            - phpstan.rules.rule
+    -
+        class: CatalogHub\PHPStan\Rules\NoControllerEloquentQueryRule
+        tags:
+            - phpstan.rules.rule
+    -
+        class: CatalogHub\PHPStan\Rules\RegisteredPaginationBoundaryRule
+        arguments:
+            boundaries: %architecture.paginationBoundaries%
+        tags:
+            - phpstan.rules.rule
+    -
+        class: CatalogHub\PHPStan\Rules\NoReadOnlyLayerMutationRule
+        tags:
+            - phpstan.rules.rule
+    -
+        class: CatalogHub\PHPStan\Rules\RestrictedDatabaseFacadeRule
+        tags:
+            - phpstan.rules.rule
+    -
+        class: CatalogHub\PHPStan\Rules\RestrictedRawQueryRule
+        arguments:
+            rawSqlExceptions: %architecture.rawSqlExceptions%
+        tags:
+            - phpstan.rules.rule
+
+parameters:
+    architecture:
+        rawSqlExceptions:
+            -
+                class: App\Queries\Translations\MissingTranslationsQuery
+                ownerMethods: [get]
+                methods: [whereRaw]
+                reason: 'Escaped LIKE search requires an explicit ESCAPE clause with a bound pattern.'
+                bindings: required
+                behaviorTests: [tests/Feature/Admin/MissingTranslationsScreenTest.php]
+                status: approved
+            -
+                class: App\Queries\Facets\FacetDocumentExpressionQuery
+                ownerMethods: [orderByRatingDesc, orderByPriceAsc, orderByPriceDesc]
+                methods: [orderByRaw]
+                reason: 'Portable numeric JSON ordering and NULL-last price ordering use validated internal identifiers and literal expressions.'
+                bindings: internal_only
+                behaviorTests: [tests/Feature/Facets/FacetQueryBuilderSortingTest.php, tests/Feature/Public/ProductPriceSortTest.php]
+                status: approved
+            -
+                class: App\Queries\Facets\FacetDocumentExpressionQuery
+                ownerMethods: [whereNumeric]
+                methods: [whereRaw]
+                reason: 'Driver-aware numeric JSON comparison validates identifiers and operators and binds the serialized value.'
+                bindings: required
+                behaviorTests: [tests/Feature/Facets/FacetQueryBuilderRangeTest.php]
+                status: approved
+            -
+                class: App\Queries\Projections\StaleProjectionQuery
+                ownerMethods: [productsForSite, categoriesForSite]
+                methods: [whereRaw]
+                reason: 'Projection version comparison requires driver-aware timestamp conversion over fixed internal columns.'
+                bindings: internal_only
+                behaviorTests: [tests/Feature/Domains/Projections/ProjectionStaleDetectorTest.php]
+                status: approved
+            -
+                class: App\Queries\Sync\StaleProductVersionGapQuery
+                ownerMethods: [apply]
+                methods: [whereRaw]
+                reason: 'Filtering stale products by a bound numeric gap requires arithmetic over two fixed version columns.'
+                bindings: required
+                behaviorTests: [tests/Feature/CentralAdmin/StaleProductsScreenTest.php]
+                status: approved
+            -
+                class: App\Queries\PublicSite\PublicProductSearchQuery
+                ownerMethods: [applyLiteralSearch]
+                methods: [whereRaw, orWhereRaw]
+                reason: 'Literal wildcard search requires an explicit ESCAPE clause with separately bound patterns.'
+                bindings: required
+                behaviorTests: [tests/Feature/Public/SearchPageStubTest.php]
+                status: approved
+            -
+                class: App\Queries\Pricing\CheapestProductsQuery
+                ownerMethods: [forSite]
+                methods: [orderByRaw]
+                reason: 'Best-merchant selection requires portable total-price ordering over price plus nullable delivery price.'
+                bindings: literal_only
+                behaviorTests: [tests/Feature/SiteAdmin/CheapestProductsReportTest.php]
+                status: approved
+            -
+                class: App\Queries\Pricing\OfferCoverageQuery
+                ownerMethods: [overall, byCategory, bySource]
+                methods: [selectRaw]
+                reason: 'Coverage reports require portable conditional and distinct grouped aggregates over site-scoped Eloquent queries.'
+                bindings: literal_only
+                behaviorTests: [tests/Feature/SiteAdmin/OffersCoverageDashboardTest.php]
+                status: approved
+            -
+                class: App\Queries\Translations\TranslationStatusCountsQuery
+                ownerMethods: [forLocale]
+                methods: [selectRaw]
+                reason: 'Translation completeness requires portable grouped status counts without loading every translation row.'
+                bindings: literal_only
+                behaviorTests: [tests/Unit/Services/TranslationCompletenessServiceTest.php]
+                status: approved
+        paginationBoundaries:
+            -
+                class: App\Queries\Media\MediaLibraryQuery
+                method: paginate
+                uniqueOrder: [media_assets.id DESC]
+                behaviorTests: [tests/Feature/Admin/MediaLibraryTest.php]
+                status: approved
+            -
+                class: App\Queries\PublicSite\PublicProductListingQuery
+                method: get
+                uniqueOrder: [site_search_documents.id]
+                behaviorTests: [tests/Feature/Public/ProductListingPageTest.php]
+                status: approved
+            -
+                class: App\Queries\Pricing\ProductsWithoutOffersQuery
+                method: paginate
+                uniqueOrder: [site_products.id]
+                behaviorTests: [tests/Feature/SiteAdmin/ProductsWithoutOffersReportTest.php]
+                status: approved
+            -
+                class: App\Queries\Pricing\CheapestProductsQuery
+                method: paginate
+                uniqueOrder: [site_search_documents.id]
+                behaviorTests: [tests/Feature/SiteAdmin/CheapestProductsReportTest.php]
+                status: approved
+            -
+                class: App\Queries\Sites\SiteProductManagementQuery
+                method: paginate
+                uniqueOrder: [central_products.id]
+                behaviorTests: [tests/Feature/Sites/ProductVisibilityManagerTest.php]
+                status: approved
+            -
+                class: App\Queries\Sites\SiteBrandVisibilityQuery
+                method: paginate
+                uniqueOrder: [central_brands.id]
+                behaviorTests: [tests/Feature/Sites/BrandVisibilityRulesTest.php]
+                status: approved

@@ -67,7 +67,7 @@ final class SyncLogResource extends Resource
     /** @return Builder<SyncLog> */
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        return SyncLog::query()
             ->with(['site', 'centralProduct', 'centralCategory', 'triggeredByUser']);
     }
 
@@ -188,7 +188,7 @@ final class SyncLogResource extends Resource
         $user = auth()->user();
 
         return $user instanceof User
-            && $user->hasCatalogHubPermission('central.manage');
+            && $user->can('central.manage');
     }
 
     private static function statusColor(string $status): string

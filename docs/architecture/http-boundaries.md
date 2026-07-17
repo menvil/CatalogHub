@@ -18,8 +18,14 @@ A controller must not:
 
 - call `Request::validate()`, `Request::validateWithBag()`, `Validator::make()`,
   or the `validator()` helper;
+- read request payload or query values through `input()`, `query()`, `string()`,
+  array access, magic properties, or equivalent unvalidated accessors;
 - call `hasCatalogHubPermission()` directly;
+- start or compose Eloquent queries, relation queries, or model loading; delegate
+  read access to a Query Object;
 - construct low-level or raw database queries;
+- persist Eloquent models or relations directly from Controllers, Form Requests,
+  Livewire components, or Filament resources/pages;
 - manage database transactions;
 - contain reusable domain rules.
 
@@ -27,7 +33,10 @@ A controller must not:
 
 Every HTTP use case with input has a dedicated class under `app/Http/Requests`.
 Form Requests own normalization, validation rules, messages, and validated input
-access. Resource authorization remains explicit through policies and Gate; Form
+access. Controllers consume typed accessors or data objects exposed by that Form
+Request; they do not interpret the array returned by `validated()` themselves.
+Context-only request metadata such as host, authenticated user, session, IP, and
+URL remains available to transport code. Resource authorization remains explicit through policies and Gate; Form
 Requests return `true` from `authorize()` unless a use case deliberately adopts
 a documented alternative convention.
 
@@ -42,11 +51,23 @@ matrix. Controllers must not inspect roles or permission keys directly.
 
 - model/resource rules belong in policies;
 - non-resource rules belong in named Gate abilities;
+- presentation code uses Laravel's `can()` / `Gate` APIs and must not call role
+  helpers, `PermissionMatrix`, or `hasCatalogHubPermission()` directly;
 - permission-key changes are product decisions and are not inferred during a
   transport refactor.
 
 ## Application layer
 
-State changes and transactions belong in Actions or domain Services. Read-side
+State changes and transactions belong in Actions or domain Services. Framework
+save hooks may delegate to an Action, but application-owned presentation code
+must not call model, builder, or relation mutation methods directly. Read-side
 composition belongs in Eloquent scopes or Query Objects. A controller should be
 readable as a short sequence of authorize, invoke, respond.
+
+This transaction boundary covers Controllers, Form Requests, Livewire, and
+Filament. Both `DB::transaction()` and manual facade/connection transaction
+methods are forbidden there; the Action that defines the atomic use case owns
+the transaction.
+
+Query Objects and policies are read-only decision/read boundaries. They cannot
+mutate Eloquent state, acquire row locks, or open transactions.

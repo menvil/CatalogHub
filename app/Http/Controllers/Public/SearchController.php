@@ -6,16 +6,16 @@ use App\Domains\PublicSite\LocalizedUrlResolver;
 use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PublicSite\SearchProductsRequest;
 use App\Models\SiteSearchDocument;
 use App\Queries\PublicSite\PublicProductSearchQuery;
 use App\Services\Pricing\ProductCardPricePresenter;
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\Request;
 
 final class SearchController extends Controller
 {
     public function __invoke(
-        Request $request,
+        SearchProductsRequest $request,
         string $locale,
         SiteContextResolver $sites,
         ThemeLayoutResolver $layouts,
@@ -24,8 +24,7 @@ final class SearchController extends Controller
         PublicProductSearchQuery $search,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
-        $site->loadMissing('market');
-        $term = trim($request->string('q')->toString());
+        $term = $request->searchData()->term;
         $results = collect();
 
         if ($term !== '') {

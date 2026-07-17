@@ -66,7 +66,7 @@ final class CorrectionRequestResource extends Resource
     {
         $user = self::authenticatedUser();
 
-        return parent::getEloquentQuery()
+        return ChangeRequest::query()
             ->when(
                 $user?->site_id !== null,
                 fn (Builder $query): Builder => $query->where('site_id', $user->site_id),
@@ -172,7 +172,7 @@ final class CorrectionRequestResource extends Resource
 
     private static function canRequest(): bool
     {
-        return self::authenticatedUser()?->hasCatalogHubPermission('corrections.request') ?? false;
+        return self::authenticatedUser()?->can('corrections.request') ?? false;
     }
 
     private static function authenticatedUser(): ?User

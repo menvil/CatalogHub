@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
+use ReflectionMethod;
 use Tests\TestCase;
 
 class SiteFeatureFlagsTest extends TestCase
@@ -63,8 +64,8 @@ class SiteFeatureFlagsTest extends TestCase
         ]);
 
         try {
-            /** @phpstan-ignore-next-line Intentionally malformed payload exercises runtime validation. */
-            app(UpdateSiteFeaturesAction::class)->handle($site, ['reviews' => []]);
+            $action = app(UpdateSiteFeaturesAction::class);
+            (new ReflectionMethod($action, 'handle'))->invoke($action, $site, ['reviews' => []]);
 
             $this->fail('A feature without is_enabled was accepted.');
         } catch (ValidationException $exception) {

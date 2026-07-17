@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/** @property array<string, mixed>|null $settings_json */
 #[Fillable(['site_id', 'central_category_id', 'is_enabled', 'position', 'local_status', 'settings_json'])]
 final class SiteCategory extends Model
 {

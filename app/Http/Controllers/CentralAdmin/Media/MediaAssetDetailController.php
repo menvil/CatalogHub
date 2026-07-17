@@ -6,6 +6,7 @@ use App\Actions\Media\UpdateMediaSourceAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CentralAdmin\Media\UpdateMediaSourceRequest;
 use App\Models\MediaAsset;
+use App\Queries\Media\MediaAssetDetailQuery;
 use App\Services\Media\MediaUrlGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -13,11 +14,11 @@ use Illuminate\View\View;
 
 final class MediaAssetDetailController extends Controller
 {
-    public function show(MediaAsset $asset, MediaUrlGenerator $urls): View
+    public function show(MediaAsset $asset, MediaUrlGenerator $urls, MediaAssetDetailQuery $assets): View
     {
         Gate::authorize('view', $asset);
 
-        $asset->load(['sources', 'variants']);
+        $asset = $assets->get($asset);
 
         return view('central-admin.media.detail', [
             'asset' => $asset,

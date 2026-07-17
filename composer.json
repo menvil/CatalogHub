@@ -31,8 +31,10 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "App\\Http\\Controllers\\ArchitectureFixtures\\": "tests/Fixtures/Architecture/Controllers/",
-            "App\\Services\\ArchitectureFixtures\\": "tests/Fixtures/Architecture/Services/",
+                "App\\Http\\Controllers\\ArchitectureFixtures\\": "tests/Fixtures/Architecture/Controllers/",
+                "App\\Policies\\ArchitectureFixtures\\": "tests/Fixtures/Architecture/Policies/",
+                "App\\Queries\\ArchitectureFixtures\\": "tests/Fixtures/Architecture/Queries/",
+                "App\\Services\\ArchitectureFixtures\\": "tests/Fixtures/Architecture/Services/",
             "CatalogHub\\PHPStan\\": "tools/phpstan/src/",
             "Tests\\": "tests/"
         }
@@ -57,9 +59,21 @@
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test"
         ],
+        "test:architecture": [
+            "@php artisan test tests/Unit/Architecture",
+            "@php tools/architecture/report.php"
+        ],
         "test:database-boundaries": [
             "@php artisan config:clear --ansi @no_additional_args",
-            "@php artisan test tests/Feature/Admin/MissingTranslationsScreenTest.php tests/Feature/Facets/FacetQueryBuilderSortingTest.php tests/Feature/Public/ProductPriceSortTest.php tests/Feature/Facets/FacetQueryBuilderRangeTest.php tests/Feature/Domains/Projections/ProjectionStaleDetectorTest.php tests/Feature/Public/SearchPageStubTest.php tests/Feature/SiteAdmin/CheapestProductsReportTest.php tests/Feature/SiteAdmin/OffersCoverageDashboardTest.php tests/Unit/Services/TranslationCompletenessServiceTest.php"
+            "@php artisan test tests/Feature/Admin/MissingTranslationsScreenTest.php tests/Feature/Facets/FacetQueryBuilderSortingTest.php tests/Feature/Public/ProductPriceSortTest.php tests/Feature/Facets/FacetQueryBuilderRangeTest.php tests/Feature/Domains/Projections/ProjectionStaleDetectorTest.php tests/Feature/Public/SearchPageStubTest.php tests/Feature/SiteAdmin/CheapestProductsReportTest.php tests/Feature/SiteAdmin/OffersCoverageDashboardTest.php tests/Feature/CentralAdmin/StaleProductsScreenTest.php tests/Unit/Services/TranslationCompletenessServiceTest.php"
+        ],
+        "test:pagination-boundaries": [
+            "@php artisan config:clear --ansi @no_additional_args",
+            "@php artisan test tests/Feature/Admin/MediaLibraryTest.php tests/Feature/Public/ProductListingPageTest.php tests/Feature/SiteAdmin/ProductsWithoutOffersReportTest.php tests/Feature/SiteAdmin/CheapestProductsReportTest.php tests/Feature/Sites/ProductVisibilityManagerTest.php tests/Feature/Sites/BrandVisibilityRulesTest.php"
+        ],
+        "test:query-contracts": [
+            "@php artisan config:clear --ansi @no_additional_args",
+            "@php artisan test tests/Feature/Public/ProductListingPriceBlockTest.php tests/Feature/Public/ProductOffersBlockTest.php"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

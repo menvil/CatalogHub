@@ -39,19 +39,18 @@ final class SiteResource extends Resource
         $user = auth()->user();
 
         return $user instanceof User
-            && ($user->isSuperAdmin() || $user->isCentralAdmin() || $user->hasCatalogHubPermission('site.content.manage'));
+            && ($user->can('central.manage') || $user->can('site.content.manage'));
     }
 
     public static function canViewAny(): bool
     {
-        return self::canViewSites();
+        return auth()->user()?->can('viewAny', Site::class) === true;
     }
 
     public static function canView(Model $record): bool
     {
         return $record instanceof Site
-            && self::canViewSites()
-            && self::canAccessSite($record);
+            && auth()->user()?->can('view', $record) === true;
     }
 
     public static function canCreate(): bool
@@ -64,27 +63,26 @@ final class SiteResource extends Resource
         $user = auth()->user();
 
         return $user instanceof User
-            && ($user->isSuperAdmin() || $user->isCentralAdmin() || $user->hasCatalogHubPermission('site.settings.manage'));
+            && ($user->can('central.manage') || $user->can('site.settings.manage'));
     }
 
     public static function canEdit(Model $record): bool
     {
         return $record instanceof Site
-            && self::canManageSettings()
-            && self::canAccessSite($record);
+            && auth()->user()?->can('update', $record) === true;
     }
 
     /** @return Builder<Site> */
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
+        $query = Site::query();
         $user = auth()->user();
 
         if (
             $user instanceof User
             && $user->site_id !== null
-            && ! $user->isSuperAdmin()
-            && ! $user->isCentralAdmin()
+            && ! $user->can('system.super-admin')
+            && ! $user->can('central.manage')
         ) {
             return $query->whereKey($user->site_id);
         }
@@ -96,18 +94,7 @@ final class SiteResource extends Resource
     {
         $user = auth()->user();
 
-        return $user instanceof User
-            && ($user->isSuperAdmin()
-                || $user->isCentralAdmin()
-                || ($user->site_id !== null && (int) $user->site_id === (int) $site->getKey()));
-    }
-
-    private static function canViewSites(): bool
-    {
-        $user = auth()->user();
-
-        return $user instanceof User
-            && ($user->isSuperAdmin() || $user->isCentralAdmin() || $user->hasCatalogHubPermission('sites.manage'));
+        return $user instanceof User && $user->can('view', $site);
     }
 
     public static function form(Schema $schema): Schema

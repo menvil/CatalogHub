@@ -55,7 +55,7 @@ final class CentralBrandResource extends Resource
         $user = auth()->user();
 
         return $user instanceof User
-            && $user->hasCatalogHubPermission('catalog.products.manage');
+            && $user->can('catalog.products.manage');
     }
 
     public static function form(Schema $schema): Schema

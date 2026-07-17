@@ -11,7 +11,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/** @property SyncConflictStatus $status */
+/**
+ * @property SyncConflictStatus $status
+ * @property mixed $central_value_json
+ * @property mixed $local_value_json
+ * @property array<string, mixed>|null $metadata_json
+ */
 #[Fillable([
     'site_id',
     'central_product_id',
@@ -49,7 +54,10 @@ final class SyncConflict extends Model
         ];
     }
 
-    /** @param Builder<SyncConflict> $query */
+    /**
+     * @param  Builder<SyncConflict>  $query
+     * @return Builder<SyncConflict>
+     */
     public function scopeOpen(Builder $query): Builder
     {
         return $query->where('status', SyncConflictStatus::Open);

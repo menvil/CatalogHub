@@ -166,6 +166,6 @@ final class FacetDefinitionResource extends Resource
         $user = auth()->user();
 
         return $user instanceof User
-            && $user->hasCatalogHubPermission('catalog.categories.manage');
+            && $user->can('catalog.categories.manage');
     }
 }

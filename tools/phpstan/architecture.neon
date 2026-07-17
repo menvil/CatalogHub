@@ -7,6 +7,10 @@ services:
         tags:
             - phpstan.rules.rule
     -
+        class: CatalogHub\PHPStan\Rules\NoUnvalidatedControllerInputRule
+        tags:
+            - phpstan.rules.rule
+    -
         class: CatalogHub\PHPStan\Rules\NoDirectControllerPermissionCheckRule
         tags:
             - phpstan.rules.rule

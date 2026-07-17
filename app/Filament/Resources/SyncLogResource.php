@@ -67,7 +67,7 @@ final class SyncLogResource extends Resource
     /** @return Builder<SyncLog> */
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        return SyncLog::query()
             ->with(['site', 'centralProduct', 'centralCategory', 'triggeredByUser']);
     }
 

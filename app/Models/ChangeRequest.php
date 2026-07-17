@@ -10,7 +10,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/** @property ChangeRequestStatus $status */
+/**
+ * @property ChangeRequestStatus $status
+ * @property mixed $old_value_json
+ * @property mixed $proposed_value_json
+ * @property array<string, mixed>|null $metadata_json
+ */
 #[Fillable([
     'site_id',
     'central_product_id',

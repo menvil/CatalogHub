@@ -59,7 +59,7 @@
         ],
         "test:database-boundaries": [
             "@php artisan config:clear --ansi @no_additional_args",
-            "@php artisan test tests/Feature/Admin/MissingTranslationsScreenTest.php tests/Feature/Facets/FacetQueryBuilderSortingTest.php tests/Feature/Public/ProductPriceSortTest.php tests/Feature/Facets/FacetQueryBuilderRangeTest.php tests/Feature/Domains/Projections/ProjectionStaleDetectorTest.php tests/Feature/Public/SearchPageStubTest.php tests/Feature/SiteAdmin/CheapestProductsReportTest.php tests/Feature/SiteAdmin/OffersCoverageDashboardTest.php tests/Unit/Services/TranslationCompletenessServiceTest.php"
+            "@php artisan test tests/Feature/Admin/MissingTranslationsScreenTest.php tests/Feature/Facets/FacetQueryBuilderSortingTest.php tests/Feature/Public/ProductPriceSortTest.php tests/Feature/Facets/FacetQueryBuilderRangeTest.php tests/Feature/Domains/Projections/ProjectionStaleDetectorTest.php tests/Feature/Public/SearchPageStubTest.php tests/Feature/SiteAdmin/CheapestProductsReportTest.php tests/Feature/SiteAdmin/OffersCoverageDashboardTest.php tests/Feature/CentralAdmin/StaleProductsScreenTest.php tests/Unit/Services/TranslationCompletenessServiceTest.php"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

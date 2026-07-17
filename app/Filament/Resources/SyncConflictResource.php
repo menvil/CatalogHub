@@ -58,7 +58,7 @@ final class SyncConflictResource extends Resource
     /** @return Builder<SyncConflict> */
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        return SyncConflict::query()
             ->open()
             ->with(['site', 'centralProduct']);
     }

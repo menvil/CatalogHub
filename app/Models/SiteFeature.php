@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/** @property array<string, mixed>|null $config_json */
 #[Fillable(['site_id', 'feature_key', 'is_enabled', 'config_json'])]
 final class SiteFeature extends Model
 {

@@ -77,7 +77,7 @@ final class SiteResource extends Resource
     /** @return Builder<Site> */
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
+        $query = Site::query();
         $user = auth()->user();
 
         if (

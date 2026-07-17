@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers\Public;
 
-use App\Domains\Projections\Enums\ProjectionStatus;
 use App\Domains\PublicSite\LocalizedUrlResolver;
 use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Http\Controllers\Controller;
-use App\Models\SiteCategoryProjection;
+use App\Queries\PublicSite\PublicCategoryQuery;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -20,14 +19,10 @@ final class CategoryController extends Controller
         SiteContextResolver $sites,
         ThemeLayoutResolver $layouts,
         LocalizedUrlResolver $urls,
+        PublicCategoryQuery $categories,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
-        $projection = SiteCategoryProjection::query()
-            ->where('site_id', $site->id)
-            ->where('locale', $locale)
-            ->where('slug', $slug)
-            ->where('status', ProjectionStatus::Active)
-            ->firstOrFail();
+        $projection = $categories->findActive($site, $locale, $slug);
         $projectionSeo = $projection->seo_json;
         $seo = is_array($projectionSeo) ? $projectionSeo : [];
         $seo = array_replace([

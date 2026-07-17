@@ -7,8 +7,8 @@ use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Http\Controllers\Controller;
 use App\Models\ContentTranslation;
+use App\Queries\PublicSite\PublishedContentQuery;
 use Illuminate\Contracts\View\View;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 final class ContentController extends Controller
@@ -20,17 +20,10 @@ final class ContentController extends Controller
         SiteContextResolver $sites,
         ThemeLayoutResolver $layouts,
         LocalizedUrlResolver $urls,
+        PublishedContentQuery $content,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
-        $translation = ContentTranslation::query()
-            ->where('locale', $locale)
-            ->where('slug', $slug)
-            ->where('status', 'published')
-            ->whereHas('contentItem', fn (Builder $query): Builder => $query
-                ->where('site_id', $site->id)
-                ->where('status', 'published'))
-            ->with('contentItem')
-            ->first();
+        $translation = $content->find($site, $locale, $slug);
 
         abort_unless($translation instanceof ContentTranslation, 404);
 

@@ -24,7 +24,6 @@ final class SearchController extends Controller
         PublicProductSearchQuery $search,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
-        $site->loadMissing('market');
         $term = $request->searchData()->term;
         $results = collect();
 

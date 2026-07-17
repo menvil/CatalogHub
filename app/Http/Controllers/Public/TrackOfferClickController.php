@@ -20,7 +20,7 @@ final class TrackOfferClickController extends Controller
         RecordOfferClickAction $recordClick,
     ): RedirectResponse {
         $site = $sites->resolveHost($request->getHost());
-        $offer = $validOffers->forSite($site)->whereKey($offer->getKey())->firstOrFail();
+        $offer = $validOffers->findForSite($site, $offer);
         $destination = $this->safeDestination($offer->url);
 
         abort_if($destination === null, 404);

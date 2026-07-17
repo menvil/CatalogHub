@@ -2,18 +2,15 @@
 
 namespace App\Http\Controllers\Public;
 
-use App\Domains\Projections\Enums\ProjectionStatus;
 use App\Domains\PublicSite\LocalizedUrlResolver;
 use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Enums\PublicProductSort;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PublicSite\ListProductsRequest;
-use App\Models\CentralCatalog\CentralCategory;
-use App\Models\SiteCategoryProjection;
 use App\Models\SiteProductProjection;
 use App\Models\SiteSearchDocument;
-use App\Services\Facets\FacetQueryBuilder;
+use App\Queries\PublicSite\PublicProductListingQuery;
 use App\Services\Facets\SiteFacetConfigResolver;
 use App\Services\Pricing\MerchantFilterOptionsBuilder;
 use App\Services\Pricing\ProductCardPricePresenter;
@@ -29,42 +26,26 @@ final class ProductListingController extends Controller
         SiteContextResolver $sites,
         ThemeLayoutResolver $layouts,
         LocalizedUrlResolver $urls,
-        FacetQueryBuilder $facetQuery,
+        PublicProductListingQuery $listingQuery,
         SiteFacetConfigResolver $facetConfig,
         FacetUrlBuilder $facetUrls,
         MerchantFilterOptionsBuilder $merchantOptions,
         ProductCardPricePresenter $pricePresenter,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
-        $site->loadMissing('market');
-        $category = SiteCategoryProjection::query()
-            ->where('site_id', $site->id)
-            ->where('locale', $locale)
-            ->where('slug', $slug)
-            ->where('status', ProjectionStatus::Active)
-            ->firstOrFail();
-
-        // Facet resolvers only require the category key; avoid hydrating central data in public runtime.
-        $centralCategory = new CentralCategory;
-        $centralCategory->setAttribute($centralCategory->getKeyName(), $category->central_category_id);
-        $centralCategory->exists = true;
         $listing = $request->listingData();
         $filters = $listing->filters;
-        $query = $facetQuery->apply(
-            SiteSearchDocument::query()->where('locale', $locale),
-            $site,
-            $centralCategory,
-            $filters,
+        $result = $listingQuery->get(
+            site: $site,
+            locale: $locale,
+            slug: $slug,
+            filters: $filters,
+            perPage: $listing->perPage,
         );
-
-        $documents = $query->paginate($listing->perPage)->withQueryString();
-        $projections = SiteProductProjection::query()
-            ->where('site_id', $site->id)
-            ->where('locale', $locale)
-            ->where('status', ProjectionStatus::Active)
-            ->whereIn('central_product_id', $documents->getCollection()->pluck('document_id'))
-            ->get()
-            ->keyBy('central_product_id');
+        $category = $result->category;
+        $centralCategory = $result->centralCategory;
+        $documents = $result->documents->withQueryString();
+        $projections = $result->projections;
         $products = $documents->through(function (SiteSearchDocument $document) use (
             $projections,
             $site,

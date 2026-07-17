@@ -19,6 +19,10 @@ services:
         tags:
             - phpstan.rules.rule
     -
+        class: CatalogHub\PHPStan\Rules\NoControllerEloquentQueryRule
+        tags:
+            - phpstan.rules.rule
+    -
         class: CatalogHub\PHPStan\Rules\RestrictedDatabaseFacadeRule
         tags:
             - phpstan.rules.rule

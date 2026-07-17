@@ -7,6 +7,7 @@ use App\Models\CentralCatalog\CentralCategory;
 use App\Models\MarketMerchant;
 use App\Models\Site;
 use App\Models\SiteSearchDocument;
+use App\Queries\Pricing\ValidMarketOfferQuery;
 use Illuminate\Database\Eloquent\Collection;
 
 final readonly class MerchantFilterOptionsBuilder

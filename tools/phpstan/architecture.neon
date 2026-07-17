@@ -29,6 +29,10 @@ services:
         tags:
             - phpstan.rules.rule
     -
+        class: CatalogHub\PHPStan\Rules\NoReadOnlyLayerMutationRule
+        tags:
+            - phpstan.rules.rule
+    -
         class: CatalogHub\PHPStan\Rules\RestrictedDatabaseFacadeRule
         tags:
             - phpstan.rules.rule

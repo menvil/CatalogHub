@@ -76,3 +76,17 @@ The canonical suite is:
 ```bash
 composer test:pagination-boundaries
 ```
+
+## Read-only and query-count contracts
+
+Classes under `app/Queries` and `app/Policies` are read-only. Eloquent writes,
+row locks, and database transactions are rejected there by PHPStan; atomic work
+belongs in an Action transaction.
+
+High-traffic read paths also need scaling tests that compare a small result set
+with a larger one and assert that database query count does not grow per row.
+Current listing-card and product-offer contracts run through:
+
+```bash
+composer test:query-contracts
+```

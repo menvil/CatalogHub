@@ -6,6 +6,7 @@ use App\Data\Pricing\ProductPriceSummary;
 use App\Enums\OfferAvailability;
 use App\Models\MarketOffer;
 use App\Models\Site;
+use App\Queries\Pricing\ValidMarketOfferQuery;
 use Carbon\CarbonImmutable;
 
 final class ProductPriceSummaryBuilder

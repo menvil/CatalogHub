@@ -9,7 +9,6 @@ use App\Enums\PriceFreshnessStatus;
 use App\Models\Site;
 use App\Models\SiteSearchDocument;
 use App\Services\Pricing\PriceFreshnessCalculator;
-use App\Services\Pricing\ValidMarketOfferQuery;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 

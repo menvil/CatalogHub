@@ -35,7 +35,7 @@ final class SnapshotGenerationPage extends Page
         $user = auth()->user();
 
         return $user instanceof User
-            && $user->hasCatalogHubPermission('central.manage');
+            && $user->can('central.manage');
     }
 
     public function generatedSnapshot(): ?CatalogSnapshot

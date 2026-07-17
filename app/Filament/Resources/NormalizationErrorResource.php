@@ -137,6 +137,6 @@ final class NormalizationErrorResource extends Resource
         $user = auth()->user();
 
         return $user instanceof User
-            && ($user->isSuperAdmin() || $user->isCentralAdmin() || $user->isCatalogEditor());
+            && $user->can('central.view');
     }
 }

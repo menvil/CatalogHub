@@ -37,7 +37,7 @@ final class SyncDashboard extends Page
         $user = auth()->user();
 
         return $user instanceof User
-            && $user->hasCatalogHubPermission('central.manage');
+            && $user->can('central.manage');
     }
 
     /** @return array<class-string<SyncStatusWidget>> */

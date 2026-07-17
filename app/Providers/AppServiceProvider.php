@@ -82,6 +82,8 @@ class AppServiceProvider extends ServiceProvider
             Gate::define($permission, fn (User $user): bool => $user->hasCatalogHubPermission($permission));
         }
 
+        Gate::define('system.super-admin', fn (User $user): bool => $user->isSuperAdmin());
+
         CentralProduct::observe(CentralProductObserver::class);
         Event::listen(MarketOfferUpdated::class, RebuildPriceAffectedProjections::class);
 

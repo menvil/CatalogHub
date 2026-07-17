@@ -24,7 +24,7 @@ final class ViewProductVersions extends ManageRelatedRecords
         $user = auth()->user();
 
         return $user instanceof User
-            && $user->hasCatalogHubPermission('central.view');
+            && $user->can('central.view');
     }
 
     public function table(Table $table): Table

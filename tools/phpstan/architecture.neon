@@ -15,7 +15,7 @@ services:
         tags:
             - phpstan.rules.rule
     -
-        class: CatalogHub\PHPStan\Rules\NoDirectControllerPermissionCheckRule
+        class: CatalogHub\PHPStan\Rules\NoDirectPresentationAuthorizationCheckRule
         tags:
             - phpstan.rules.rule
     -

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ContentItemResource\Pages;
 
+use App\Actions\Content\UpsertContentTranslationAction;
 use App\Enums\ContentType;
 use App\Filament\Resources\ContentItemResource;
 use App\Models\ContentItem;
@@ -64,10 +65,7 @@ final class EditContentItem extends EditRecord
 
     protected function afterSave(): void
     {
-        $this->contentItem()->translations()->updateOrCreate(
-            ['locale' => $this->translationData['locale']],
-            $this->translationData,
-        );
+        app(UpsertContentTranslationAction::class)->handle($this->contentItem(), $this->translationData);
     }
 
     /**

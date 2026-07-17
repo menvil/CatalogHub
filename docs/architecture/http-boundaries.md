@@ -22,6 +22,8 @@ A controller must not:
   array access, magic properties, or equivalent unvalidated accessors;
 - call `hasCatalogHubPermission()` directly;
 - construct low-level or raw database queries;
+- persist Eloquent models or relations directly from Controllers, Form Requests,
+  Livewire components, or Filament resources/pages;
 - manage database transactions;
 - contain reusable domain rules.
 
@@ -52,6 +54,8 @@ matrix. Controllers must not inspect roles or permission keys directly.
 
 ## Application layer
 
-State changes and transactions belong in Actions or domain Services. Read-side
+State changes and transactions belong in Actions or domain Services. Framework
+save hooks may delegate to an Action, but application-owned presentation code
+must not call model, builder, or relation mutation methods directly. Read-side
 composition belongs in Eloquent scopes or Query Objects. A controller should be
 readable as a short sequence of authorize, invoke, respond.

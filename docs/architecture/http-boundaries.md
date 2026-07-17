@@ -49,6 +49,8 @@ matrix. Controllers must not inspect roles or permission keys directly.
 
 - model/resource rules belong in policies;
 - non-resource rules belong in named Gate abilities;
+- presentation code uses Laravel's `can()` / `Gate` APIs and must not call role
+  helpers, `PermissionMatrix`, or `hasCatalogHubPermission()` directly;
 - permission-key changes are product decisions and are not inferred during a
   transport refactor.
 

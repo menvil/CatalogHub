@@ -188,7 +188,7 @@ final class SyncLogResource extends Resource
         $user = auth()->user();
 
         return $user instanceof User
-            && $user->hasCatalogHubPermission('central.manage');
+            && $user->can('central.manage');
     }
 
     private static function statusColor(string $status): string

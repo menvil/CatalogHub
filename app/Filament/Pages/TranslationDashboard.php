@@ -22,7 +22,7 @@ final class TranslationDashboard extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->hasCatalogHubPermission('translations.manage') === true;
+        return auth()->user()?->can('translations.manage') === true;
     }
 
     /**

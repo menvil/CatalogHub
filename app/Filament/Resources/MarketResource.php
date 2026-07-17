@@ -51,7 +51,7 @@ final class MarketResource extends Resource
         $user = auth()->user();
 
         return $user instanceof User
-            && $user->hasCatalogHubPermission('central.manage');
+            && $user->can('central.manage');
     }
 
     public static function form(Schema $schema): Schema

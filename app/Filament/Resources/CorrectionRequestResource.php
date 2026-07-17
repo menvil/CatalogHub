@@ -172,7 +172,7 @@ final class CorrectionRequestResource extends Resource
 
     private static function canRequest(): bool
     {
-        return self::authenticatedUser()?->hasCatalogHubPermission('corrections.request') ?? false;
+        return self::authenticatedUser()?->can('corrections.request') ?? false;
     }
 
     private static function authenticatedUser(): ?User

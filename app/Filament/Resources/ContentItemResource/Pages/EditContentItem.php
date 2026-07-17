@@ -29,7 +29,7 @@ final class EditContentItem extends EditRecord
         $user = auth()->user();
 
         if ($user instanceof User) {
-            $data['site_id'] = $user->isSuperAdmin() ? $data['site_id'] : $user->site_id;
+            $data['site_id'] = $user->can('system.super-admin') ? $data['site_id'] : $user->site_id;
             $data['updated_by_user_id'] = $user->getKey();
         }
 

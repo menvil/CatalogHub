@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Public;
 
+use App\Data\Facets\FacetFilterSet;
 use App\Domains\Projections\Enums\ProjectionStatus;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
@@ -9,6 +10,7 @@ use App\Models\Site;
 use App\Models\SiteCategoryProjection;
 use App\Models\SiteProductProjection;
 use App\Models\SiteSearchDocument;
+use App\Queries\PublicSite\PublicProductListingQuery;
 use Database\Seeders\Demo\MultiCategorySiteSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +19,47 @@ use Tests\TestCase;
 class ProductListingPageTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_listing_pagination_is_stable_when_primary_sort_values_are_tied(): void
+    {
+        $site = Site::factory()->create();
+        $category = CentralCategory::factory()->create();
+        SiteCategoryProjection::query()->create([
+            'site_id' => $site->id,
+            'locale' => 'en-US',
+            'central_category_id' => $category->id,
+            'slug' => 'stable-listing',
+            'status' => ProjectionStatus::Active,
+            'payload_json' => [],
+        ]);
+        $documents = SiteSearchDocument::factory()->count(3)->create([
+            'site_id' => $site->id,
+            'locale' => 'en-US',
+            'built_at' => '2026-07-17 10:00:00',
+            'filter_values_json' => ['category_id' => $category->id],
+        ]);
+        $query = app(PublicProductListingQuery::class);
+
+        $first = $query->get(
+            $site,
+            'en-US',
+            'stable-listing',
+            FacetFilterSet::fromArray([]),
+            perPage: 2,
+            page: 1,
+        )->documents->getCollection()->pluck('id')->all();
+        $second = $query->get(
+            $site,
+            'en-US',
+            'stable-listing',
+            FacetFilterSet::fromArray([]),
+            perPage: 2,
+            page: 2,
+        )->documents->getCollection()->pluck('id')->all();
+
+        $this->assertSame($documents->pluck('id')->sortDesc()->values()->all(), [...$first, ...$second]);
+        $this->assertSame([], array_values(array_intersect($first, $second)));
+    }
 
     public function test_listing_paginates_current_site_and_locale_product_projections(): void
     {

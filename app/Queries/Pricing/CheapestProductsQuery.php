@@ -3,6 +3,7 @@
 namespace App\Queries\Pricing;
 
 use App\Contracts\Persistence\RawSqlPersistenceBoundary;
+use App\Contracts\Persistence\StablePaginationBoundary;
 use App\Enums\OfferAvailability;
 use App\Enums\PriceFreshnessStatus;
 use App\Models\Site;
@@ -10,8 +11,9 @@ use App\Models\SiteSearchDocument;
 use App\Services\Pricing\PriceFreshnessCalculator;
 use App\Services\Pricing\ValidMarketOfferQuery;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 
-final readonly class CheapestProductsQuery implements RawSqlPersistenceBoundary
+final readonly class CheapestProductsQuery implements RawSqlPersistenceBoundary, StablePaginationBoundary
 {
     public function __construct(
         private ValidMarketOfferQuery $validOffers,
@@ -79,6 +81,27 @@ final readonly class CheapestProductsQuery implements RawSqlPersistenceBoundary
         $this->applyFreshness($query, $freshness);
 
         return $query;
+    }
+
+    /** @return LengthAwarePaginator<int, SiteSearchDocument> */
+    public function paginate(
+        Site $site,
+        ?int $categoryId = null,
+        ?int $brandId = null,
+        ?int $merchantId = null,
+        ?PriceFreshnessStatus $freshness = null,
+        bool $inStockOnly = false,
+        int $perPage = 50,
+        ?int $page = null,
+    ): LengthAwarePaginator {
+        return $this->forSite(
+            $site,
+            $categoryId,
+            $brandId,
+            $merchantId,
+            $freshness,
+            $inStockOnly,
+        )->paginate($perPage, ['*'], 'page', $page);
     }
 
     /** @param Builder<SiteSearchDocument> $query */

@@ -2,6 +2,7 @@
 
 namespace App\Queries\PublicSite;
 
+use App\Contracts\Persistence\StablePaginationBoundary;
 use App\Data\Facets\FacetFilterSet;
 use App\Data\PublicSite\PublicProductListingResult;
 use App\Domains\Projections\Enums\ProjectionStatus;
@@ -11,7 +12,7 @@ use App\Models\SiteProductProjection;
 use App\Models\SiteSearchDocument;
 use App\Services\Facets\FacetQueryBuilder;
 
-final readonly class PublicProductListingQuery
+final readonly class PublicProductListingQuery implements StablePaginationBoundary
 {
     public function __construct(
         private PublicCategoryQuery $categories,
@@ -24,6 +25,7 @@ final readonly class PublicProductListingQuery
         string $slug,
         FacetFilterSet $filters,
         int $perPage,
+        ?int $page = null,
     ): PublicProductListingResult {
         $category = $this->categories->findActive($site, $locale, $slug);
 
@@ -36,7 +38,7 @@ final readonly class PublicProductListingQuery
             $site,
             $centralCategory,
             $filters,
-        )->paginate($perPage);
+        )->paginate($perPage, ['*'], 'page', $page);
         $projections = SiteProductProjection::query()
             ->where('site_id', $site->id)
             ->where('locale', $locale)

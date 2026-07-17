@@ -11,13 +11,37 @@ use App\Models\Site;
 use App\Models\SiteProduct;
 use App\Models\SiteSearchDocument;
 use App\Models\User;
-use App\Services\Pricing\ProductsWithoutOffersQuery;
+use App\Queries\Pricing\ProductsWithoutOffersQuery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ProductsWithoutOffersReportTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_report_pagination_is_stable_when_product_names_are_tied(): void
+    {
+        $site = Site::factory()->create(['default_locale' => 'en']);
+        $products = CentralProduct::factory()->count(3)->create(['name' => 'Tied Product']);
+
+        foreach ($products as $product) {
+            SiteProduct::query()->create([
+                'site_id' => $site->id,
+                'central_product_id' => $product->id,
+                'visibility' => 'visible',
+            ]);
+        }
+
+        $query = app(ProductsWithoutOffersQuery::class);
+        $first = $query->paginate($site, perPage: 2, page: 1)->getCollection()->pluck('id')->all();
+        $second = $query->paginate($site, perPage: 2, page: 2)->getCollection()->pluck('id')->all();
+
+        $this->assertSame(
+            SiteProduct::query()->orderBy('id')->pluck('id')->all(),
+            [...$first, ...$second],
+        );
+        $this->assertSame([], array_values(array_intersect($first, $second)));
+    }
 
     public function test_it_lists_visible_site_products_without_offers_and_excludes_hidden_or_covered_products(): void
     {

@@ -10,6 +10,7 @@ use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Site;
 use App\Models\User;
+use App\Queries\Sites\SiteProductManagementQuery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
@@ -20,6 +21,25 @@ class ProductVisibilityManagerTest extends TestCase
 {
     use EnablesSiteProductCategories;
     use RefreshDatabase;
+
+    public function test_product_manager_pagination_is_stable_when_names_are_tied(): void
+    {
+        $site = Site::factory()->create();
+        $category = CentralCategory::factory()->create();
+        $this->enableSiteCategory($site, $category);
+        $products = CentralProduct::factory()->count(3)->create([
+            'central_category_id' => $category->id,
+            'status' => CentralProductStatus::Active,
+            'name' => 'Tied Product Name',
+        ]);
+        $query = app(SiteProductManagementQuery::class);
+
+        $first = $query->paginate($site, perPage: 2, page: 1)->getCollection()->pluck('id')->all();
+        $second = $query->paginate($site, perPage: 2, page: 2)->getCollection()->pluck('id')->all();
+
+        $this->assertSame($products->pluck('id')->sort()->values()->all(), [...$first, ...$second]);
+        $this->assertSame([], array_values(array_intersect($first, $second)));
+    }
 
     public function test_visibility_and_featured_state_are_local_to_site(): void
     {

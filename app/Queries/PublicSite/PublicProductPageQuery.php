@@ -7,7 +7,7 @@ use App\Domains\Projections\Enums\ProjectionStatus;
 use App\Models\Review;
 use App\Models\Site;
 use App\Models\SiteProductProjection;
-use App\Services\Pricing\ValidMarketOfferQuery;
+use App\Queries\Pricing\ValidMarketOfferQuery;
 
 final readonly class PublicProductPageQuery
 {

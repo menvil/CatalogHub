@@ -45,4 +45,19 @@ final class ArchitectureScope
 
         return $class !== null && str_starts_with($class->getName(), 'App\\');
     }
+
+    public static function readOnlyLayer(Scope $scope): ?string
+    {
+        $class = $scope->getClassReflection()?->getName();
+
+        if ($class === null) {
+            return null;
+        }
+
+        return match (true) {
+            str_starts_with($class, 'App\\Queries\\') => 'Query Objects',
+            str_starts_with($class, 'App\\Policies\\') => 'Policies',
+            default => null,
+        };
+    }
 }

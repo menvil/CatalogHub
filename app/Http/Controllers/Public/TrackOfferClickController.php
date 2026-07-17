@@ -6,7 +6,7 @@ use App\Actions\Pricing\RecordOfferClickAction;
 use App\Domains\PublicSite\SiteContextResolver;
 use App\Http\Controllers\Controller;
 use App\Models\MarketOffer;
-use App\Services\Pricing\ValidMarketOfferQuery;
+use App\Queries\Pricing\ValidMarketOfferQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 

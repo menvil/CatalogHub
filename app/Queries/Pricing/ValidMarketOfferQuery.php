@@ -1,16 +1,17 @@
 <?php
 
-namespace App\Services\Pricing;
+namespace App\Queries\Pricing;
 
 use App\Enums\MarketMerchantStatus;
 use App\Enums\MarketOfferStatus;
 use App\Models\MarketOffer;
 use App\Models\Site;
+use App\Services\Pricing\SitePriceSourceSelection;
 use Illuminate\Database\Eloquent\Builder;
 
-final class ValidMarketOfferQuery
+final readonly class ValidMarketOfferQuery
 {
-    public function __construct(private readonly SitePriceSourceSelection $sourceSelection) {}
+    public function __construct(private SitePriceSourceSelection $sourceSelection) {}
 
     /** @return Builder<MarketOffer> */
     public function forSite(Site $site): Builder

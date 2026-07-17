@@ -31,8 +31,10 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "App\\Http\\Controllers\\ArchitectureFixtures\\": "tests/Fixtures/Architecture/Controllers/",
-            "App\\Services\\ArchitectureFixtures\\": "tests/Fixtures/Architecture/Services/",
+                "App\\Http\\Controllers\\ArchitectureFixtures\\": "tests/Fixtures/Architecture/Controllers/",
+                "App\\Policies\\ArchitectureFixtures\\": "tests/Fixtures/Architecture/Policies/",
+                "App\\Queries\\ArchitectureFixtures\\": "tests/Fixtures/Architecture/Queries/",
+                "App\\Services\\ArchitectureFixtures\\": "tests/Fixtures/Architecture/Services/",
             "CatalogHub\\PHPStan\\": "tools/phpstan/src/",
             "Tests\\": "tests/"
         }
@@ -68,6 +70,10 @@
         "test:pagination-boundaries": [
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test tests/Feature/Admin/MediaLibraryTest.php tests/Feature/Public/ProductListingPageTest.php tests/Feature/SiteAdmin/ProductsWithoutOffersReportTest.php tests/Feature/SiteAdmin/CheapestProductsReportTest.php tests/Feature/Sites/ProductVisibilityManagerTest.php tests/Feature/Sites/BrandVisibilityRulesTest.php"
+        ],
+        "test:query-contracts": [
+            "@php artisan config:clear --ansi @no_additional_args",
+            "@php artisan test tests/Feature/Public/ProductListingPriceBlockTest.php tests/Feature/Public/ProductOffersBlockTest.php"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

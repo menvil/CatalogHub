@@ -7,6 +7,7 @@ use App\Enums\PriceFreshnessStatus;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\MarketOffer;
 use App\Models\Site;
+use App\Queries\Pricing\ValidMarketOfferQuery;
 use Illuminate\Support\Collection;
 
 final readonly class BestOfferResolver

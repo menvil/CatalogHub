@@ -68,3 +68,6 @@ This transaction boundary covers Controllers, Form Requests, Livewire, and
 Filament. Both `DB::transaction()` and manual facade/connection transaction
 methods are forbidden there; the Action that defines the atomic use case owns
 the transaction.
+
+Query Objects and policies are read-only decision/read boundaries. They cannot
+mutate Eloquent state, acquire row locks, or open transactions.

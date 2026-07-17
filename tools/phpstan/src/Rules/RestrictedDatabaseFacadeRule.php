@@ -32,11 +32,6 @@ final class RestrictedDatabaseFacadeRule implements Rule
         'update',
     ];
 
-    /**
-     * @param  list<array{class: class-string, methods: list<string>, reason: string, behaviorTests: list<string>, target: string}>  $lowLevelQueryExceptions
-     */
-    public function __construct(private array $lowLevelQueryExceptions) {}
-
     public function getNodeType(): string
     {
         return StaticCall::class;
@@ -52,14 +47,6 @@ final class RestrictedDatabaseFacadeRule implements Rule
         }
 
         $method = $node->name->toString();
-        $className = $scope->getClassReflection()?->getName();
-
-        foreach ($this->lowLevelQueryExceptions as $exception) {
-            if ($exception['class'] === $className && in_array($method, $exception['methods'], true)) {
-                return [];
-            }
-        }
-
         if ($method === 'transaction' && ArchitectureScope::isController($scope)) {
             return [$this->error($node, 'Database transactions must be moved from controllers to an Action or Service.')];
         }

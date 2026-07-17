@@ -8,7 +8,8 @@ Approved entries are allowed only in an explicitly declared persistence
 boundary. Registry tests reject missing tests, duplicate pairs, invalid entries,
 entries whose raw method is no longer present, and owners outside `App\\Queries`.
 Controller validation, controller permission, and low-level DB exception lists
-must remain empty.
+do not exist. Temporary PHPStan suppressions are tracked separately by the
+[technical debt registry](technical-debt-suppressions.md).
 
 Example:
 

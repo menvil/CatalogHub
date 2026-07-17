@@ -11,7 +11,7 @@ class NoInlineControllerValidationRuleTest extends RuleTestCase
 {
     protected function getRule(): Rule
     {
-        return new NoInlineControllerValidationRule([]);
+        return new NoInlineControllerValidationRule;
     }
 
     public function test_reports_inline_http_validation_in_controllers(): void

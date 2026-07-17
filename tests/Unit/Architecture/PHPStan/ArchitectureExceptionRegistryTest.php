@@ -5,6 +5,7 @@ namespace Tests\Unit\Architecture\PHPStan;
 use App\Contracts\Persistence\RawSqlPersistenceBoundary;
 use PHPStan\Testing\PHPStanTestCase;
 use ReflectionClass;
+use ReflectionMethod;
 
 class ArchitectureExceptionRegistryTest extends PHPStanTestCase
 {
@@ -43,25 +44,32 @@ class ArchitectureExceptionRegistryTest extends PHPStanTestCase
         $seen = [];
 
         foreach ($entries as $entry) {
+            $this->assertSame(
+                ['class', 'ownerMethods', 'methods', 'reason', 'bindings', 'behaviorTests', 'status'],
+                array_keys($entry),
+            );
             $this->assertIsString($entry['class'] ?? null);
             $this->assertNotSame('', trim((string) ($entry['reason'] ?? '')));
             $this->assertContains($entry['bindings'] ?? null, ['required', 'literal_only', 'internal_only']);
             $this->assertSame('approved', $entry['status'] ?? null);
+            $this->assertNotEmpty($entry['ownerMethods'] ?? []);
             $this->assertNotEmpty($entry['methods'] ?? []);
             $this->assertBehaviorTestsExist($entry['behaviorTests'] ?? []);
 
             $reflection = new ReflectionClass($entry['class']);
-            $source = file_get_contents((string) $reflection->getFileName());
-            $this->assertIsString($source);
-
             $this->assertStringStartsWith('App\\Queries\\', $entry['class']);
             $this->assertTrue($reflection->implementsInterface(RawSqlPersistenceBoundary::class));
 
-            foreach ($entry['methods'] as $method) {
-                $key = $entry['class'].'::'.$method;
-                $this->assertArrayNotHasKey($key, $seen, "Duplicate raw SQL exception {$key}.");
-                $this->assertMatchesRegularExpression('/->\\s*'.preg_quote($method, '/').'\\s*\\(/', $source, "Stale raw SQL exception {$key}.");
-                $seen[$key] = true;
+            foreach ($entry['ownerMethods'] as $ownerMethod) {
+                $this->assertTrue($reflection->hasMethod($ownerMethod), "Unknown raw SQL owner method {$entry['class']}::{$ownerMethod}.");
+                $source = $this->methodSource($reflection->getMethod($ownerMethod));
+
+                foreach ($entry['methods'] as $method) {
+                    $key = $entry['class'].'::'.$ownerMethod.'::'.$method;
+                    $this->assertArrayNotHasKey($key, $seen, "Duplicate raw SQL exception {$key}.");
+                    $this->assertMatchesRegularExpression('/(?:->|::)\\s*'.preg_quote($method, '/').'\\s*\\(/', $source, "Stale raw SQL exception {$key}.");
+                    $seen[$key] = true;
+                }
             }
         }
     }
@@ -103,5 +111,17 @@ class ArchitectureExceptionRegistryTest extends PHPStanTestCase
         foreach ($paths as $path) {
             $this->assertFileExists(dirname(__DIR__, 4).'/'.$path);
         }
+    }
+
+    private function methodSource(ReflectionMethod $method): string
+    {
+        $lines = file((string) $method->getFileName());
+        $this->assertIsArray($lines);
+
+        return implode('', array_slice(
+            $lines,
+            $method->getStartLine() - 1,
+            $method->getEndLine() - $method->getStartLine() + 1,
+        ));
     }
 }

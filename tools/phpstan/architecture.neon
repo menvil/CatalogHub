@@ -26,6 +26,7 @@ parameters:
         rawSqlExceptions:
             -
                 class: App\Queries\Translations\MissingTranslationsQuery
+                ownerMethods: [get]
                 methods: [whereRaw]
                 reason: 'Escaped LIKE search requires an explicit ESCAPE clause with a bound pattern.'
                 bindings: required
@@ -33,6 +34,7 @@ parameters:
                 status: approved
             -
                 class: App\Queries\Facets\FacetDocumentExpressionQuery
+                ownerMethods: [orderByRatingDesc, orderByPriceAsc, orderByPriceDesc]
                 methods: [orderByRaw]
                 reason: 'Portable numeric JSON ordering and NULL-last price ordering use validated internal identifiers and literal expressions.'
                 bindings: internal_only
@@ -40,6 +42,7 @@ parameters:
                 status: approved
             -
                 class: App\Queries\Facets\FacetDocumentExpressionQuery
+                ownerMethods: [whereNumeric]
                 methods: [whereRaw]
                 reason: 'Driver-aware numeric JSON comparison validates identifiers and operators and binds the serialized value.'
                 bindings: required
@@ -47,6 +50,7 @@ parameters:
                 status: approved
             -
                 class: App\Queries\Projections\StaleProjectionQuery
+                ownerMethods: [productsForSite, categoriesForSite]
                 methods: [whereRaw]
                 reason: 'Projection version comparison requires driver-aware timestamp conversion over fixed internal columns.'
                 bindings: internal_only
@@ -54,6 +58,7 @@ parameters:
                 status: approved
             -
                 class: App\Queries\Sync\StaleProductVersionGapQuery
+                ownerMethods: [apply]
                 methods: [whereRaw]
                 reason: 'Filtering stale products by a bound numeric gap requires arithmetic over two fixed version columns.'
                 bindings: required
@@ -61,6 +66,7 @@ parameters:
                 status: approved
             -
                 class: App\Queries\PublicSite\PublicProductSearchQuery
+                ownerMethods: [applyLiteralSearch]
                 methods: [whereRaw, orWhereRaw]
                 reason: 'Literal wildcard search requires an explicit ESCAPE clause with separately bound patterns.'
                 bindings: required
@@ -68,6 +74,7 @@ parameters:
                 status: approved
             -
                 class: App\Queries\Pricing\CheapestProductsQuery
+                ownerMethods: [forSite]
                 methods: [orderByRaw]
                 reason: 'Best-merchant selection requires portable total-price ordering over price plus nullable delivery price.'
                 bindings: literal_only
@@ -75,6 +82,7 @@ parameters:
                 status: approved
             -
                 class: App\Queries\Pricing\OfferCoverageQuery
+                ownerMethods: [overall, byCategory, bySource]
                 methods: [selectRaw]
                 reason: 'Coverage reports require portable conditional and distinct grouped aggregates over site-scoped Eloquent queries.'
                 bindings: literal_only
@@ -82,6 +90,7 @@ parameters:
                 status: approved
             -
                 class: App\Queries\Translations\TranslationStatusCountsQuery
+                ownerMethods: [forLocale]
                 methods: [selectRaw]
                 reason: 'Translation completeness requires portable grouped status counts without loading every translation row.'
                 bindings: literal_only

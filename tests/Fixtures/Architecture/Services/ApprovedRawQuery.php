@@ -11,4 +11,10 @@ final class ApprovedRawQuery
     {
         $query->whereRaw('id = ?', [$id]);
     }
+
+    /** @param Builder<*> $query */
+    public function unrelated(Builder $query): void
+    {
+        $query->whereRaw('id = 1');
+    }
 }

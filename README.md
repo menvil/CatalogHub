@@ -6,7 +6,7 @@ Laravel monolith for Central Catalog and localized portal projections.
 
 ## Local Development
 
-Node.js 26 is required for frontend tooling. The repository includes an `.nvmrc` file for local version selection.
+PHP 8.5 or newer and PostgreSQL 18.4 or newer are required for the supported runtime. Node.js 26 is required for frontend tooling. The repository includes an `.nvmrc` file for local version selection.
 
 ```bash
 nvm use
@@ -14,16 +14,18 @@ composer install
 cp .env.example .env
 php artisan key:generate
 docker compose up -d postgres
+php artisan cataloghub:platform-check
 php artisan migrate
 php artisan serve
 ```
 
 ## Local Infrastructure
 
-PostgreSQL is the primary application database.
+PostgreSQL 18.4 or newer is the required production database. SQLite and MariaDB are retained only for automated compatibility coverage.
 
 ```bash
 docker compose up -d postgres
+php artisan cataloghub:platform-check
 php artisan migrate:fresh
 php artisan db:show
 ```
@@ -65,6 +67,7 @@ npm install
 npm run build
 composer format:test
 composer analyse
+composer test:architecture
 ```
 
 ## Testing

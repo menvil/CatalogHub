@@ -3,6 +3,7 @@
 Use this checklist before every controlled production or public demo launch. Check an item only after verifying it in the target environment, and record exceptions in the release notes.
 
 Configuration references: [environment audit](environment-audit.md) and [production environment template](../../.env.production.example).
+Runtime requirements: [PHP 8.5+ and PostgreSQL 18.4+](../architecture/runtime-platform.md).
 Session controls: [admin session hardening](admin-session-hardening.md).
 Health check behavior: [health checks](health-checks.md).
 Recovery validation: [backup restore dry-run](../runbooks/backup-restore-dry-run.md).
@@ -18,6 +19,7 @@ Release regression coverage: [full regression checklist](full-regression-checkli
 ## Environment
 
 - [ ] `APP_ENV=production` and `APP_DEBUG=false` are effective.
+- [ ] `php artisan cataloghub:platform-check` confirms PHP 8.5+ and PostgreSQL 18.4+.
 - [ ] `APP_URL`, database, cache, queue, session, mail, and storage settings match the target environment.
 - [ ] Production secrets are stored outside the repository and differ from local/test values.
 - [ ] Configuration cache builds successfully with the production environment.
@@ -32,6 +34,7 @@ Release regression coverage: [full regression checklist](full-regression-checkli
 
 ## Database
 
+- [ ] The active production driver is PostgreSQL 18.4 or newer.
 - [ ] A current database backup exists and its retention location is known.
 - [ ] `php artisan migrate --pretend` has been reviewed for the release.
 - [ ] Release migrations have a documented rollback or forward-fix strategy.

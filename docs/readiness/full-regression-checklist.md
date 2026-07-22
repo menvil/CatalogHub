@@ -7,6 +7,7 @@ Use this checklist for the Phase 21 release candidate. Automated results apply o
 ```bash
 composer test
 npm run build
+php artisan cataloghub:platform-check
 php artisan migrate:fresh --seed --force
 php artisan test --group=smoke
 ```
@@ -42,7 +43,7 @@ P21-024 repeated gate (2026-07-16):
 
 ### Phase 1 — Technical Foundation
 
-- [ ] Laravel boots with the supported PHP/database/Redis stack.
+- [ ] Laravel boots with PHP 8.5+, PostgreSQL 18.4+, and the supported Redis stack.
 - [ ] CI, local infrastructure, migrations, queues, cache, and health baseline work.
 
 ### Phase 2 — Admin UI Kit

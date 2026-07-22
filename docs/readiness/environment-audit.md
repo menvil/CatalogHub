@@ -30,7 +30,7 @@ Scope: application configuration after Phase 20. Values below are variable names
 
 | Variable | Class | Purpose / production rule |
 | --- | --- | --- |
-| `DB_CONNECTION` | Required | Production database driver; PostgreSQL is the project default. |
+| `DB_CONNECTION` | Required | Must be `pgsql`; production requires PostgreSQL 18.4 or newer. |
 | `DB_URL` | Conditional, secret | May replace individual connection fields. |
 | `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | Required unless `DB_URL` is used | Database connection; credentials are secrets. |
 | `DB_SSLMODE` | Conditional | PostgreSQL TLS policy; set according to the provider. |
@@ -109,7 +109,8 @@ Price/import source credentials are stored encrypted in application records rath
 ## Verification Procedure
 
 1. Compare the target environment keys with this inventory without printing their values.
-2. Run `php artisan config:cache` and boot the application.
-3. Run application, queue, and storage health checks.
-4. Confirm `APP_DEBUG=false`, secure session cookies, and private snapshot storage from an HTTP client.
-5. Record missing conditional variables only for integrations that are actually enabled.
+2. Run `php artisan cataloghub:platform-check`; require PHP 8.5+ and PostgreSQL 18.4+.
+3. Run `php artisan config:cache` and boot the application.
+4. Run application, queue, and storage health checks.
+5. Confirm `APP_DEBUG=false`, secure session cookies, and private snapshot storage from an HTTP client.
+6. Record missing conditional variables only for integrations that are actually enabled.

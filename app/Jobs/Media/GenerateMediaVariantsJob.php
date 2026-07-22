@@ -127,9 +127,7 @@ final class GenerateMediaVariantsJob implements ShouldQueue
             }
             imagealphablending($target, false);
             imagesavealpha($target, true);
-            if (! imagecopyresampled($target, $image, $offsetX, $offsetY, 0, 0, $resizedWidth, $resizedHeight, $sourceWidth, $sourceHeight)) {
-                throw new RuntimeException('Unable to resize source image.');
-            }
+            imagecopyresampled($target, $image, $offsetX, $offsetY, 0, 0, $resizedWidth, $resizedHeight, $sourceWidth, $sourceHeight);
 
             return [$target, $targetWidth, $targetHeight];
         }
@@ -143,9 +141,7 @@ final class GenerateMediaVariantsJob implements ShouldQueue
         }
         imagealphablending($target, false);
         imagesavealpha($target, true);
-        if (! imagecopyresampled($target, $image, 0, 0, 0, 0, $width, $height, $sourceWidth, $sourceHeight)) {
-            throw new RuntimeException('Unable to resize source image.');
-        }
+        imagecopyresampled($target, $image, 0, 0, 0, 0, $width, $height, $sourceWidth, $sourceHeight);
 
         return [$target, $width, $height];
     }

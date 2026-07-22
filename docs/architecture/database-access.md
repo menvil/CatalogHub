@@ -1,8 +1,10 @@
 # Database Access
 
-CatalogHub is Eloquent-first and supports SQLite, MariaDB, and PostgreSQL. The
-goal is portable behavior and clear ownership, not the removal of every SQL
-expression at the expense of correctness or performance.
+CatalogHub is Eloquent-first. PostgreSQL 18.4 or newer is the supported
+production database; SQLite and MariaDB remain automated portability targets.
+The goal is portable behavior and clear ownership, not the removal of every SQL
+expression at the expense of correctness or performance. The version contract
+is defined in [runtime-platform.md](runtime-platform.md).
 
 ## Allowed by default
 

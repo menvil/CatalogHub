@@ -26,7 +26,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.5'
           extensions: gd, mbstring
           coverage: none
 
@@ -34,7 +34,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: vendor
-          key: composer-${{ runner.os }}-php-8.3-${{ hashFiles('composer.lock') }}
+          key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
 
       - name: Validate composer.json
         run: composer validate --strict
@@ -65,7 +65,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.5'
           extensions: gd, mbstring
           coverage: none
 
@@ -73,7 +73,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: vendor
-          key: composer-${{ runner.os }}-php-8.3-${{ hashFiles('composer.lock') }}
+          key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
 
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
@@ -148,7 +148,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.5'
           extensions: gd, mbstring, pdo_sqlite
           coverage: none
 
@@ -156,7 +156,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: vendor
-          key: composer-${{ runner.os }}-php-8.3-${{ hashFiles('composer.lock') }}
+          key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
 
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
@@ -263,7 +263,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.5'
           extensions: gd, mbstring, pdo_mysql
           coverage: none
 
@@ -271,7 +271,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: vendor
-          key: composer-${{ runner.os }}-php-8.3-${{ hashFiles('composer.lock') }}
+          key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
 
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
@@ -347,7 +347,7 @@ jobs:
       rollback: ${{ steps.rollback.outcome }}
     services:
       postgres:
-        image: postgres:17-alpine
+        image: postgres:18.4-alpine
         env:
           POSTGRES_DB: cataloghub
           POSTGRES_USER: cataloghub
@@ -366,7 +366,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.5'
           extensions: gd, mbstring, pdo_pgsql
           coverage: none
 
@@ -374,7 +374,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: vendor
-          key: composer-${{ runner.os }}-php-8.3-${{ hashFiles('composer.lock') }}
+          key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
 
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
@@ -389,6 +389,16 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate --force
+
+      - name: Verify runtime platform minimums
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: cataloghub
+          DB_USERNAME: cataloghub
+          DB_PASSWORD: cataloghub
+        run: php artisan cataloghub:platform-check
 
       - name: Run migrations and seed on PostgreSQL
         env:
@@ -457,7 +467,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.5'
           extensions: gd, mbstring
           coverage: none
 

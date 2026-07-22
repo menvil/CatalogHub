@@ -32,11 +32,13 @@ Package application code, `vendor/`, and `public/build/` according to the hostin
 2. Confirm `APP_ENV=production`, `APP_DEBUG=false`, HTTPS URL, secure sessions, async queue, and private media/snapshot disks.
 3. Ensure writable `storage/` and `bootstrap/cache/` for the application and worker identities.
 4. Verify database, Redis, object storage, mail, and optional error-reporting endpoints without printing credentials.
+5. Require PHP 8.5+ and PostgreSQL 18.4+ using the read-only runtime platform check.
 
 Validate configuration before traffic is switched:
 
 ```bash
 php artisan config:clear
+php artisan cataloghub:platform-check
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
@@ -94,4 +96,3 @@ php artisan test --group=smoke
 - Keep the previous deploy artifact and backup references for the rollback window.
 - Monitor errors, queue failures, source sync, public latency, and storage for the agreed observation period.
 - Close the release only after the release owner confirms the production readiness checklist or explicitly records accepted risks.
-

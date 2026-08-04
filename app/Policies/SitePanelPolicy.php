@@ -10,17 +10,21 @@ use App\Enums\SiteStatus;
 use App\Models\Site;
 use App\Models\SiteMembership;
 use App\Models\User;
+use App\Services\Auth\AuthorizationService;
 use Illuminate\Database\Eloquent\Builder;
 
 final class SitePanelPolicy implements SiteAdminAccess
 {
+    public function __construct(private readonly AuthorizationService $authorization) {}
+
     public function allows(User $user, ?Site $site = null): bool
     {
-        if (! $user->hasCatalogHubPermission(Permission::SitePanelAccess->value)) {
-            return false;
+        if ($site instanceof Site) {
+            return $this->authorization->allowsPanel($user, Permission::SitePanelAccess, $site);
         }
 
-        return $this->memberships($user, $site?->getKey())->exists();
+        return $user->hasCatalogHubPermission(Permission::SitePanelAccess->value)
+            && $this->memberships($user)->exists();
     }
 
     public function resolveSite(User $user, ?int $requestedSiteId = null): ?Site

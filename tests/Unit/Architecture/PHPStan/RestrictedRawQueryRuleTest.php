@@ -14,6 +14,7 @@ class RestrictedRawQueryRuleTest extends RuleTestCase
         return new RestrictedRawQueryRule([
             [
                 'class' => 'App\\Services\\ArchitectureFixtures\\ApprovedRawQuery',
+                'ownerMethods' => ['query'],
                 'methods' => ['whereRaw'],
                 'reason' => 'Fixture with a bound value.',
                 'bindings' => 'required',
@@ -22,6 +23,7 @@ class RestrictedRawQueryRuleTest extends RuleTestCase
             ],
             [
                 'class' => 'App\\Services\\ArchitectureFixtures\\MissingRawBindingsQuery',
+                'ownerMethods' => ['query'],
                 'methods' => ['whereRaw'],
                 'reason' => 'Fixture missing its required bindings argument.',
                 'bindings' => 'required',
@@ -31,15 +33,22 @@ class RestrictedRawQueryRuleTest extends RuleTestCase
         ]);
     }
 
-    public function test_reports_unapproved_raw_sql_and_missing_bindings(): void
+    public function test_reports_unapproved_raw_sql_call_shapes_and_missing_bindings(): void
     {
         $this->analyse([
             __DIR__.'/../../../Fixtures/Architecture/Services/InvalidRawService.php',
             __DIR__.'/../../../Fixtures/Architecture/Services/ApprovedRawQuery.php',
             __DIR__.'/../../../Fixtures/Architecture/Services/MissingRawBindingsQuery.php',
+            __DIR__.'/../../../Fixtures/Architecture/Services/StaticRawQuery.php',
+            __DIR__.'/../../../Fixtures/Architecture/Services/NullableRawQuery.php',
+            __DIR__.'/../../../Fixtures/Architecture/Services/NonDatabaseRawApi.php',
+            __DIR__.'/../../../Fixtures/Architecture/Services/NonDatabaseRawConsumer.php',
         ], [
-            ['Raw query expressions must be replaced with Eloquent or isolated in an approved Query Object.', 12],
+            ['Raw query expressions must be replaced with Eloquent or isolated in an approved Query Object method.', 12],
+            ['Raw query expressions must be replaced with Eloquent or isolated in an approved Query Object method.', 18],
             ['This approved raw SQL call requires a separate bindings argument.', 12],
+            ['Raw query expressions must be replaced with Eloquent or isolated in an approved Query Object method.', 11],
+            ['Raw query expressions must be replaced with Eloquent or isolated in an approved Query Object method.', 13],
         ]);
     }
 }

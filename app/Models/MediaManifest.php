@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * @property list<array<string, mixed>>|null $variants_json
  * @property array<string, mixed>|null $metadata_json
+ * @property-read MediaAsset|null $mediaAsset
  */
 #[Fillable([
     'catalog_snapshot_id',

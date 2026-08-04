@@ -46,8 +46,18 @@ jobs:
         run: composer format:test
 
   static-analysis:
-    name: Static analysis (PHPStan)
+    name: Architecture & static analysis (PHPStan)
     runs-on: ubuntu-latest
+    outputs:
+      debt-active: ${{ steps.architecture-debt.outputs.active }}
+      debt-actual: ${{ steps.architecture-debt.outputs.actual }}
+      debt-inline: ${{ steps.architecture-debt.outputs.inline }}
+      debt-baseline: ${{ steps.architecture-debt.outputs.baseline }}
+      debt-unregistered: ${{ steps.architecture-debt.outputs.unregistered }}
+      debt-stale: ${{ steps.architecture-debt.outputs.stale }}
+      debt-mismatched: ${{ steps.architecture-debt.outputs.mismatched }}
+      debt-expired: ${{ steps.architecture-debt.outputs.expired }}
+      debt-forbidden: ${{ steps.architecture-debt.outputs.forbidden }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -68,8 +78,25 @@ jobs:
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
+      - name: Run architecture contract tests
+        run: composer test:architecture
+
       - name: Run PHPStan
         run: composer analyse -- --no-progress
+
+      - name: Audit architecture debt suppressions
+        id: architecture-debt
+        if: always()
+        run: php tools/architecture/report.php --github-output="$GITHUB_OUTPUT" --json=architecture-debt-report.json
+
+      - name: Upload architecture debt report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: architecture-debt-report
+          path: architecture-debt-report.json
+          if-no-files-found: ignore
+          retention-days: 14
 
   frontend-build:
     name: Frontend build (Vite)
@@ -513,6 +540,15 @@ jobs:
         env:
           CODE_STYLE_RESULT: ${{ needs['code-style'].result }}
           STATIC_ANALYSIS_RESULT: ${{ needs['static-analysis'].result }}
+          DEBT_ACTIVE: ${{ needs['static-analysis'].outputs.debt-active }}
+          DEBT_ACTUAL: ${{ needs['static-analysis'].outputs.debt-actual }}
+          DEBT_INLINE: ${{ needs['static-analysis'].outputs.debt-inline }}
+          DEBT_BASELINE: ${{ needs['static-analysis'].outputs.debt-baseline }}
+          DEBT_UNREGISTERED: ${{ needs['static-analysis'].outputs.debt-unregistered }}
+          DEBT_STALE: ${{ needs['static-analysis'].outputs.debt-stale }}
+          DEBT_MISMATCHED: ${{ needs['static-analysis'].outputs.debt-mismatched }}
+          DEBT_EXPIRED: ${{ needs['static-analysis'].outputs.debt-expired }}
+          DEBT_FORBIDDEN: ${{ needs['static-analysis'].outputs.debt-forbidden }}
           FRONTEND_BUILD_RESULT: ${{ needs['frontend-build'].result }}
           BUILD_FILES: ${{ needs['frontend-build'].outputs.files }}
           BUILD_SIZE: ${{ needs['frontend-build'].outputs.size }}
@@ -558,7 +594,8 @@ jobs:
               '| Check | Summary |',
               '|---|---|',
               `| Code style | ${details(process.env.CODE_STYLE_RESULT, 'Pint: no changes required')} |`,
-              `| Static analysis | ${details(process.env.STATIC_ANALYSIS_RESULT, 'PHPStan: 0 errors')} |`,
+              `| Architecture & static analysis | ${details(process.env.STATIC_ANALYSIS_RESULT, 'contract tests passed · PHPStan: 0 errors')} |`,
+              `| Architecture debt | ${value('DEBT_ACTIVE')} registered / ${value('DEBT_ACTUAL')} actual · inline ${value('DEBT_INLINE')} · baseline ${value('DEBT_BASELINE')} · unregistered ${value('DEBT_UNREGISTERED')} · stale ${value('DEBT_STALE')} · mismatched ${value('DEBT_MISMATCHED')} · expired ${value('DEBT_EXPIRED')} · forbidden ${value('DEBT_FORBIDDEN')} |`,
               `| Frontend build | ${details(process.env.FRONTEND_BUILD_RESULT, `${value('BUILD_FILES')} files · ${value('BUILD_SIZE')}`)} |`,
               `| Tests & SQLite | ${details(process.env.TESTS_RESULT, `${tests} tests · ${assertions} assertions · ${value('SQLITE_MIGRATIONS')} migrations · seed passed`)} |`,
               `| MariaDB | ${details(process.env.MARIADB_RESULT, `${value('MARIADB_MIGRATIONS')} migrations · approved queries ${value('MARIADB_QUERY_BOUNDARIES')} · rollback ${value('MARIADB_ROLLBACK')}`)} |`,

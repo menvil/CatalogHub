@@ -2,17 +2,14 @@
 
 namespace App\Http\Controllers\Public;
 
-use App\Domains\Projections\Enums\ProjectionStatus;
 use App\Domains\PublicSite\LocalizedUrlResolver;
 use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Http\Controllers\Controller;
-use App\Models\Review;
-use App\Models\SiteProductProjection;
+use App\Queries\PublicSite\PublicProductPageQuery;
 use App\Services\Content\RelatedContentResolver;
 use App\Services\Pricing\BestOfferResolver;
 use App\Services\Pricing\PriceFreshnessCalculator;
-use App\Services\Pricing\ValidMarketOfferQuery;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -26,17 +23,13 @@ final class ProductController extends Controller
         ThemeLayoutResolver $layouts,
         LocalizedUrlResolver $urls,
         RelatedContentResolver $relatedContent,
-        ValidMarketOfferQuery $validOffers,
+        PublicProductPageQuery $products,
         BestOfferResolver $bestOffers,
         PriceFreshnessCalculator $freshness,
     ): View {
         $site = $sites->resolve($request->getHost(), $locale);
-        $projection = SiteProductProjection::query()
-            ->where('site_id', $site->id)
-            ->where('locale', $locale)
-            ->where('slug', $slug)
-            ->where('status', ProjectionStatus::Active)
-            ->firstOrFail();
+        $page = $products->get($site, $locale, $slug);
+        $projection = $page->projection;
         $payload = $projection->payload_json ?? [];
         $productPayload = data_get($payload, 'product', []);
         $benefitPayload = data_get($payload, 'benefits', data_get($payload, 'product.benefits'));
@@ -63,26 +56,7 @@ final class ProductController extends Controller
             ];
         }
         $breadcrumbs[] = ['label' => $projection->title, 'url' => null];
-        $enabledFeatures = $site->features()
-            ->where('is_enabled', true)
-            ->pluck('feature_key');
-        $reviewsEnabled = $enabledFeatures->contains('reviews');
-        $leadsEnabled = $enabledFeatures->contains('leads');
-        $reviews = $reviewsEnabled
-            ? Review::query()
-                ->visiblePublicly()
-                ->forSite($site)
-                ->where('central_product_id', $projection->central_product_id)
-                ->latest('approved_at')
-                ->latest('id')
-                ->limit(50)
-                ->get()
-            : collect();
-        $offers = $validOffers->forProduct($site, (int) $projection->central_product_id)
-            ->with(['merchant.logoMediaAsset', 'priceSource'])
-            ->orderBy('price')
-            ->orderBy('id')
-            ->get();
+        $offers = $page->offers;
         $offerFreshness = $offers->mapWithKeys(fn ($offer): array => [
             (int) $offer->getKey() => $freshness->calculate($offer, site: $site),
         ])->all();
@@ -109,9 +83,9 @@ final class ProductController extends Controller
             'offers' => $offers,
             'offerFreshness' => $offerFreshness,
             'bestOffer' => $bestOffers->resolveFromOffers($site, $offers, $offerFreshness),
-            'reviewsEnabled' => $reviewsEnabled,
-            'reviews' => $reviews,
-            'leadsEnabled' => $leadsEnabled,
+            'reviewsEnabled' => $page->reviewsEnabled,
+            'reviews' => $page->reviews,
+            'leadsEnabled' => $page->leadsEnabled,
             'relatedContent' => $relatedContent->resolveForProduct(
                 site: $site,
                 locale: $locale,

@@ -63,6 +63,9 @@ return new class extends Migration
         });
 
         Schema::table('import_batches', function (Blueprint $table): void {
+            // MariaDB may choose the composite readiness index to enforce this foreign key.
+            // Keep a temporary single-column index until the older table migration drops it.
+            $table->index('import_source_id', 'import_batches_source_rollback_idx');
             $table->dropIndex('import_batches_source_status_created_idx');
         });
     }

@@ -58,7 +58,7 @@ final class SyncConflictResource extends Resource
     /** @return Builder<SyncConflict> */
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        return SyncConflict::query()
             ->open()
             ->with(['site', 'centralProduct']);
     }
@@ -175,7 +175,7 @@ final class SyncConflictResource extends Resource
         $user = auth()->user();
 
         return $user instanceof User
-            && $user->hasCatalogHubPermission('central.manage');
+            && $user->can('central.manage');
     }
 
     private static function prettyJson(mixed $value): string

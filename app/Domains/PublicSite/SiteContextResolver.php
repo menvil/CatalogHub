@@ -34,7 +34,7 @@ final class SiteContextResolver
                     ->where('site_locales.locale_code', $locale)
                     ->where('site_locales.is_enabled', true);
             })
-            ->with('theme.manifest')
+            ->with(['theme.manifest', 'market'])
             ->first();
 
         if (! $site instanceof Site) {

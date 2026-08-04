@@ -2,6 +2,7 @@
 
 namespace App\Services\Health;
 
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\Str;
 use Throwable;
@@ -31,7 +32,7 @@ final class StorageHealthCheck
                 ]);
             }
 
-            if (! $disk->delete($path) || $disk->exists($path)) {
+            if (! $disk->delete($path) || $this->pathExists($disk, $path)) {
                 return new HealthCheckResult('error', 'Storage cleanup verification failed.', [
                     'disk' => $diskName,
                 ]);
@@ -52,5 +53,10 @@ final class StorageHealthCheck
                 // The result already reports an unavailable or unclean storage disk.
             }
         }
+    }
+
+    private function pathExists(Filesystem $disk, string $path): bool
+    {
+        return $disk->exists($path);
     }
 }

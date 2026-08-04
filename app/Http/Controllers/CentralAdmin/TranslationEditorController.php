@@ -22,18 +22,21 @@ use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Locale;
 use App\Models\MeasurementUnit;
+use App\Queries\Translations\TranslationEditorQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 final class TranslationEditorController extends Controller
 {
+    public function __construct(private readonly TranslationEditorQuery $translations) {}
+
     public function editProduct(CentralProduct $product, Locale $locale): View
     {
         return view('central-admin.translations.editor', [
             'title' => 'Product Translation Editor',
             'sourceLabel' => $product->name,
             'locale' => $locale,
-            'translation' => $product->translations()->where('locale', $locale->code)->first(),
+            'translation' => $this->translations->product($product, $locale->code),
             'fields' => ['name', 'subtitle', 'short_description', 'description', 'seo_title', 'seo_description'],
             'saveRoute' => route('central.products.translations.save', [$product, $locale]),
         ]);
@@ -52,7 +55,7 @@ final class TranslationEditorController extends Controller
             'title' => 'Category Translation Editor',
             'sourceLabel' => $category->name,
             'locale' => $locale,
-            'translation' => $category->translations()->where('locale', $locale->code)->first(),
+            'translation' => $this->translations->category($category, $locale->code),
             'fields' => ['name', 'description', 'seo_title', 'seo_description'],
             'saveRoute' => route('central.categories.translations.save', [$category, $locale]),
         ]);
@@ -71,7 +74,7 @@ final class TranslationEditorController extends Controller
             'title' => 'Attribute Translation Editor',
             'sourceLabel' => $attribute->name,
             'locale' => $locale,
-            'translation' => $attribute->translations()->where('locale', $locale->code)->first(),
+            'translation' => $this->translations->attribute($attribute, $locale->code),
             'fields' => ['label', 'short_label', 'help_text'],
             'saveRoute' => route('central.attributes.translations.save', [$attribute, $locale]),
         ]);
@@ -90,7 +93,7 @@ final class TranslationEditorController extends Controller
             'title' => 'Attribute Section Translation Editor',
             'sourceLabel' => $section->name,
             'locale' => $locale,
-            'translation' => $section->translations()->where('locale', $locale->code)->first(),
+            'translation' => $this->translations->section($section, $locale->code),
             'fields' => ['name', 'description'],
             'saveRoute' => route('central.attribute-sections.translations.save', [$section, $locale]),
         ]);
@@ -109,7 +112,7 @@ final class TranslationEditorController extends Controller
             'title' => 'Attribute Option Translation Editor',
             'sourceLabel' => $option->label,
             'locale' => $locale,
-            'translation' => $option->translations()->where('locale', $locale->code)->first(),
+            'translation' => $this->translations->option($option, $locale->code),
             'fields' => ['label', 'description'],
             'saveRoute' => route('central.attribute-options.translations.save', [$option, $locale]),
         ]);
@@ -128,7 +131,7 @@ final class TranslationEditorController extends Controller
             'title' => 'Unit Translation Editor',
             'sourceLabel' => $unit->name,
             'locale' => $locale,
-            'translation' => $unit->translations()->where('locale', $locale->code)->first(),
+            'translation' => $this->translations->unit($unit, $locale->code),
             'fields' => ['short_name', 'long_name', 'plural_name', 'symbol_position', 'space_between_value_and_unit'],
             'saveRoute' => route('central.units.translations.save', [$unit, $locale]),
             'preview' => '100 '.($unit->symbol ?? $unit->code),

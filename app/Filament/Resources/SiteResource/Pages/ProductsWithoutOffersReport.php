@@ -8,7 +8,7 @@ use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Site;
 use App\Models\SiteProduct;
-use App\Services\Pricing\ProductsWithoutOffersQuery;
+use App\Queries\Pricing\ProductsWithoutOffersQuery;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -33,12 +33,11 @@ final class ProductsWithoutOffersReport extends Page
     public function getProducts(): LengthAwarePaginator
     {
         return app(ProductsWithoutOffersQuery::class)
-            ->forSite(
+            ->paginate(
                 $this->siteRecord(),
                 $this->filterId(request()->query('category_id')),
                 $this->filterId(request()->query('brand_id')),
             )
-            ->paginate(50)
             ->withQueryString();
     }
 

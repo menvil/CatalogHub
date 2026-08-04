@@ -66,9 +66,17 @@ class ProjectionSmokeTest extends TestCase
         $this->assertSame($product->id, $projection->central_product_id);
         $this->assertSame('en', $projection->locale);
         $this->assertSame('Acme Smoke Monitor', $projection->title);
-        $this->assertSame('display', $projection->payload_json['spec_sections'][0]['code']);
-        $this->assertSame('refresh_rate', $projection->payload_json['spec_sections'][0]['attributes'][0]['code']);
-        $this->assertSame('165 hertz', $projection->payload_json['spec_sections'][0]['attributes'][0]['display_value']);
+        $specSections = $projection->payload_json['spec_sections'] ?? null;
+        $this->assertIsArray($specSections);
+        $firstSection = $specSections[0] ?? null;
+        $this->assertIsArray($firstSection);
+        $attributes = $firstSection['attributes'] ?? null;
+        $this->assertIsArray($attributes);
+        $firstAttribute = $attributes[0] ?? null;
+        $this->assertIsArray($firstAttribute);
+        $this->assertSame('display', $firstSection['code']);
+        $this->assertSame('refresh_rate', $firstAttribute['code']);
+        $this->assertSame('165 hertz', $firstAttribute['display_value']);
         $this->assertSame('active', $projection->status->value);
         $this->assertSame(3, $projection->central_product_version);
         $this->assertDatabaseHas('site_search_documents', [

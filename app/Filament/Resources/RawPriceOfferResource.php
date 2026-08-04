@@ -163,6 +163,6 @@ final class RawPriceOfferResource extends Resource
         $user = auth()->user();
 
         return $user instanceof User
-            && $user->hasCatalogHubPermission('prices.manage');
+            && $user->can('prices.manage');
     }
 }

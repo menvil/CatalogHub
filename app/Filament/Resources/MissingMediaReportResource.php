@@ -39,7 +39,7 @@ final class MissingMediaReportResource extends Resource
         $user = auth()->user();
 
         return $user instanceof User
-            && $user->hasCatalogHubPermission('central.manage');
+            && $user->can('central.manage');
     }
 
     public static function canView(Model $record): bool

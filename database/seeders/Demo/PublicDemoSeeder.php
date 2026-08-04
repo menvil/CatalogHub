@@ -61,7 +61,7 @@ class PublicDemoSeeder extends Seeder
                         'visibility' => 'visible',
                         'is_featured' => $position < 4,
                         'position' => $position,
-                        'published_version' => 'demo-v1',
+                        'published_version' => 0,
                         'settings_json' => ['demo' => true],
                     ],
                 );

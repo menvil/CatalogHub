@@ -165,6 +165,6 @@ final class ChangeRequestResource extends Resource
         $user = auth()->user();
 
         return $user instanceof User
-            && $user->hasCatalogHubPermission('corrections.review');
+            && $user->can('corrections.review');
     }
 }

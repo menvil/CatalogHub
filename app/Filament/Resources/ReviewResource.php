@@ -33,7 +33,7 @@ final class ReviewResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return self::canModerate();
+        return auth()->user()?->can('viewAny', Review::class) === true;
     }
 
     public static function canView(Model $record): bool
@@ -42,8 +42,7 @@ final class ReviewResource extends Resource
 
         return $record instanceof Review
             && $user instanceof User
-            && self::canModerate()
-            && ($user->isSuperAdmin() || (int) $user->site_id === (int) $record->site_id);
+            && $user->can('view', $record);
     }
 
     public static function canCreate(): bool
@@ -57,7 +56,7 @@ final class ReviewResource extends Resource
         $query = Review::query();
         $user = auth()->user();
 
-        if ($user instanceof User && $user->isSuperAdmin()) {
+        if ($user instanceof User && $user->can('system.super-admin')) {
             return $query;
         }
 
@@ -147,13 +146,5 @@ final class ReviewResource extends Resource
         return [
             'index' => Pages\ListReviews::route('/'),
         ];
-    }
-
-    private static function canModerate(): bool
-    {
-        $user = auth()->user();
-
-        return $user instanceof User
-            && $user->hasCatalogHubPermission('reviews.moderate');
     }
 }

@@ -2,15 +2,19 @@
 
 namespace App\Queries\Media;
 
+use App\Contracts\Persistence\StablePaginationBoundary;
 use App\Data\Media\MediaLibraryFiltersData;
 use App\Models\MediaAsset;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\LengthAwarePaginator;
 
-final class MediaLibraryQuery
+final class MediaLibraryQuery implements StablePaginationBoundary
 {
     /** @return LengthAwarePaginator<int, MediaAsset> */
-    public function paginate(MediaLibraryFiltersData $filters): LengthAwarePaginator
-    {
+    public function paginate(
+        MediaLibraryFiltersData $filters,
+        int $perPage = 24,
+        ?int $page = null,
+    ): LengthAwarePaginator {
         return MediaAsset::query()
             ->with(['variants' => fn ($query) => $query->where('variant_type', 'thumbnail')->where('status', 'ready')])
             ->when($filters->status !== null, fn ($query) => $query->where('status', $filters->status))
@@ -22,6 +26,7 @@ final class MediaLibraryQuery
                 });
             })
             ->latest()
-            ->paginate(24);
+            ->latest('id')
+            ->paginate($perPage, ['*'], 'page', $page);
     }
 }

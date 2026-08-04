@@ -1,13 +1,15 @@
 <?php
 
-namespace App\Services\Pricing;
+namespace App\Queries\Pricing;
 
+use App\Contracts\Persistence\StablePaginationBoundary;
 use App\Models\Site;
 use App\Models\SiteProduct;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\JoinClause;
+use Illuminate\Pagination\LengthAwarePaginator;
 
-final class ProductsWithoutOffersQuery
+final class ProductsWithoutOffersQuery implements StablePaginationBoundary
 {
     /** @return Builder<SiteProduct> */
     public function forSite(Site $site, ?int $categoryId = null, ?int $brandId = null): Builder
@@ -53,5 +55,17 @@ final class ProductsWithoutOffersQuery
         }
 
         return $query;
+    }
+
+    /** @return LengthAwarePaginator<int, SiteProduct> */
+    public function paginate(
+        Site $site,
+        ?int $categoryId = null,
+        ?int $brandId = null,
+        int $perPage = 50,
+        ?int $page = null,
+    ): LengthAwarePaginator {
+        return $this->forSite($site, $categoryId, $brandId)
+            ->paginate($perPage, ['*'], 'page', $page);
     }
 }

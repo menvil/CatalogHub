@@ -35,12 +35,12 @@ final class ContentItemResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return self::canManage();
+        return self::authenticatedUser()?->can('viewAny', ContentItem::class) ?? false;
     }
 
     public static function canCreate(): bool
     {
-        return self::canManage();
+        return self::authenticatedUser()?->can('create', ContentItem::class) ?? false;
     }
 
     public static function canEdit(Model $record): bool
@@ -49,8 +49,7 @@ final class ContentItemResource extends Resource
 
         return $record instanceof ContentItem
             && $user instanceof User
-            && self::canManage()
-            && ($user->isSuperAdmin() || (int) $user->site_id === (int) $record->site_id);
+            && $user->can('update', $record);
     }
 
     /** @return Builder<ContentItem> */
@@ -59,7 +58,7 @@ final class ContentItemResource extends Resource
         $query = ContentItem::query();
         $user = auth()->user();
 
-        if ($user instanceof User && $user->isSuperAdmin()) {
+        if ($user instanceof User && $user->can('system.super-admin')) {
             return $query;
         }
 
@@ -76,7 +75,7 @@ final class ContentItemResource extends Resource
             Select::make('site_id')
                 ->relationship('site', 'name')
                 ->default(fn (): ?int => self::authenticatedUser()?->site_id)
-                ->disabled(fn (): bool => ! (self::authenticatedUser()?->isSuperAdmin() ?? false))
+                ->disabled(fn (): bool => ! (self::authenticatedUser()?->can('system.super-admin') ?? false))
                 ->dehydrated()
                 ->required(),
             Select::make('type')
@@ -132,11 +131,6 @@ final class ContentItemResource extends Resource
     public static function getRelations(): array
     {
         return [TranslationsRelationManager::class, RelationsRelationManager::class];
-    }
-
-    private static function canManage(): bool
-    {
-        return self::authenticatedUser()?->hasCatalogHubPermission('site.content.manage') ?? false;
     }
 
     private static function authenticatedUser(): ?User

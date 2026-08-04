@@ -58,7 +58,7 @@ final class CentralCategoryResource extends Resource
         $user = auth()->user();
 
         return $user instanceof User
-            && $user->hasCatalogHubPermission('catalog.categories.manage');
+            && $user->can('catalog.categories.manage');
     }
 
     public static function form(Schema $schema): Schema

@@ -3,11 +3,11 @@
 namespace App\Filament\Resources\SiteResource\Pages;
 
 use App\Actions\Sites\UpdateSiteProductVisibilityAction;
-use App\Enums\CentralProductStatus;
 use App\Filament\Resources\SiteResource;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Site;
 use App\Models\SiteProduct;
+use App\Queries\Sites\SiteProductManagementQuery;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -27,6 +27,13 @@ final class ManageSiteProducts extends Page
 
     public string $search = '';
 
+    private SiteProductManagementQuery $products;
+
+    public function boot(SiteProductManagementQuery $products): void
+    {
+        $this->products = $products;
+    }
+
     public function mount(int|string $record): void
     {
         $this->record = $this->resolveRecord($record);
@@ -42,15 +49,8 @@ final class ManageSiteProducts extends Page
     public function getProducts(): LengthAwarePaginator
     {
         /** @var Site $site */ $site = $this->getRecord();
-        $categoryIds = $site->categories()->enabled()->pluck('central_category_id');
 
-        return CentralProduct::query()
-            ->whereIn('central_category_id', $categoryIds)
-            ->where('status', CentralProductStatus::Active)
-            ->when($this->search !== '', fn ($query) => $query->whereLike('name', '%'.$this->search.'%'))
-            ->with('brand')
-            ->orderBy('name')
-            ->paginate(50);
+        return $this->products->paginate($site, $this->search);
     }
 
     /** @param list<int> $productIds
@@ -60,7 +60,7 @@ final class ManageSiteProducts extends Page
     {
         /** @var Site $site */ $site = $this->getRecord();
 
-        return $site->products()->whereIn('central_product_id', $productIds)->get();
+        return $this->products->states($site, $productIds);
     }
 
     public function updatedSearch(): void
@@ -71,12 +71,19 @@ final class ManageSiteProducts extends Page
     public function setVisibility(int $productId, string $visibility): void
     {
         /** @var Site $site */ $site = $this->getRecord();
-        app(UpdateSiteProductVisibilityAction::class)->handle($site, CentralProduct::query()->findOrFail($productId), $visibility);
+        app(UpdateSiteProductVisibilityAction::class)->handle(
+            $site,
+            $this->products->findProduct($productId),
+            $visibility,
+        );
     }
 
     public function toggleFeatured(int $productId): void
     {
         /** @var Site $site */ $site = $this->getRecord();
-        app(UpdateSiteProductVisibilityAction::class)->toggleFeatured($site, CentralProduct::query()->findOrFail($productId));
+        app(UpdateSiteProductVisibilityAction::class)->toggleFeatured(
+            $site,
+            $this->products->findProduct($productId),
+        );
     }
 }

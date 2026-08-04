@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ContentItemResource\Pages;
 
+use App\Actions\Content\UpsertContentTranslationAction;
 use App\Enums\ContentType;
 use App\Filament\Resources\ContentItemResource;
 use App\Models\ContentItem;
@@ -22,7 +23,7 @@ final class CreateContentItem extends CreateRecord
         $user = auth()->user();
 
         if ($user instanceof User) {
-            $data['site_id'] = $user->isSuperAdmin() ? $data['site_id'] : $user->site_id;
+            $data['site_id'] = $user->can('system.super-admin') ? $data['site_id'] : $user->site_id;
             $data['created_by_user_id'] = $user->getKey();
             $data['updated_by_user_id'] = $user->getKey();
         }
@@ -32,7 +33,7 @@ final class CreateContentItem extends CreateRecord
 
     protected function afterCreate(): void
     {
-        $this->contentItem()->translations()->create($this->translationData);
+        app(UpsertContentTranslationAction::class)->handle($this->contentItem(), $this->translationData);
     }
 
     /**

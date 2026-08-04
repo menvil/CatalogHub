@@ -10,6 +10,7 @@ use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Locale;
 use App\Models\MeasurementUnit;
+use App\Support\Database\LiteralLikePattern;
 
 final class MissingTranslationsQuery implements RawSqlPersistenceBoundary
 {
@@ -39,10 +40,9 @@ final class MissingTranslationsQuery implements RawSqlPersistenceBoundary
                 ->orderBy($config['model']::query()->getModel()->getKeyName());
 
             if ($search !== null && $search !== '') {
-                $escapedSearch = addcslashes($search, '\%_');
                 $column = $query->getQuery()->getGrammar()->wrap($config['label']);
 
-                $query->whereRaw("{$column} like ? escape '\\'", ["%{$escapedSearch}%"]);
+                $query->whereRaw("{$column} LIKE ? ESCAPE '!'", [LiteralLikePattern::containing($search)]);
             }
 
             foreach ($query->lazy() as $entity) {

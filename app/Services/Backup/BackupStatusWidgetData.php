@@ -22,22 +22,24 @@ final class BackupStatusWidgetData
     public function resolve(): array
     {
         $snapshot = CatalogSnapshot::query()->latest()->first();
-        $snapshotAt = $snapshot?->completed_at ?? $snapshot?->failed_at ?? $snapshot?->created_at;
+        $snapshotAt = $snapshot === null
+            ? null
+            : ($snapshot->completed_at ?? $snapshot->failed_at ?? $snapshot->created_at);
         $checksumLog = SyncLog::query()
             ->where('operation', 'verify_snapshot_checksums')
             ->latest()
             ->first();
 
         return [
-            'last_snapshot_status' => $snapshot?->status ?? 'not_generated',
+            'last_snapshot_status' => $snapshot === null ? 'not_generated' : $snapshot->status,
             'last_snapshot_at' => $snapshotAt?->toISOString(),
             'last_snapshot_age_hours' => $snapshotAt === null
                 ? null
                 : (int) floor($snapshotAt->diffInHours(now())),
-            'last_snapshot_size' => (int) collect($snapshot?->files_json ?? [])->sum(
+            'last_snapshot_size' => (int) collect($snapshot === null ? [] : ($snapshot->files_json ?? []))->sum(
                 fn (array $file): int => (int) ($file['file_size'] ?? 0),
             ),
-            'last_checksum_verification_status' => $checksumLog?->status ?? 'not_run',
+            'last_checksum_verification_status' => $checksumLog === null ? 'not_run' : $checksumLog->status,
             'missing_media_count' => MediaManifest::query()
                 ->whereNull('catalog_snapshot_id')
                 ->where('status', 'missing')

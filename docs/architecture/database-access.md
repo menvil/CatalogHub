@@ -31,7 +31,8 @@ persistence boundary under `app/Queries` that implements
 `RawSqlPersistenceBoundary`. It needs:
 
 1. parameter bindings for every dynamic value;
-2. an exact allowlist entry containing class, methods, and a concrete reason;
+2. an exact allowlist entry containing class, owner methods, raw methods, and a
+   concrete reason;
 3. behavioral tests on every supported database;
 4. a review confirming that an Eloquent alternative would be incorrect or less
    efficient.
@@ -61,3 +62,31 @@ CI runs this command in the MariaDB and PostgreSQL compatibility jobs; the main
 test job runs the same cases on SQLite. The architecture registry test requires
 every behavior-test path from an approved raw-SQL entry to appear in this suite,
 so a new exception cannot silently skip cross-database execution.
+
+## Stable pagination
+
+Eloquent pagination belongs in a Query Object implementing
+`StablePaginationBoundary`. Every paginated method must have an exact entry in
+`architecture.paginationBoundaries` with its unique final ordering column and a
+behavior test that reads consecutive pages containing tied primary sort values.
+The test must prove that rows remain deterministic and never overlap.
+
+The canonical suite is:
+
+```bash
+composer test:pagination-boundaries
+```
+
+## Read-only and query-count contracts
+
+Classes under `app/Queries` and `app/Policies` are read-only. Eloquent writes,
+row locks, and database transactions are rejected there by PHPStan; atomic work
+belongs in an Action transaction.
+
+High-traffic read paths also need scaling tests that compare a small result set
+with a larger one and assert that database query count does not grow per row.
+Current listing-card and product-offer contracts run through:
+
+```bash
+composer test:query-contracts
+```

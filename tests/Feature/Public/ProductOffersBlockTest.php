@@ -13,6 +13,7 @@ use App\Models\SiteProductProjection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Concerns\EnablesSiteLocales;
+use Tests\Support\DatabaseQueryCounter;
 use Tests\TestCase;
 
 class ProductOffersBlockTest extends TestCase
@@ -66,6 +67,28 @@ class ProductOffersBlockTest extends TestCase
             ->assertSee('No current offers');
     }
 
+    public function test_product_offer_query_count_does_not_grow_with_more_offers(): void
+    {
+        [$site, $product] = $this->productPageScenario();
+        $source = PriceSource::factory()->active()->create(['market_id' => $site->market_id]);
+        $this->offer($site, $product, $source, 1);
+        $url = 'http://offers.test/en/products/test-product';
+        $this->get($url)->assertOk();
+
+        $baseline = DatabaseQueryCounter::measure(fn () => $this->get($url));
+
+        foreach (range(2, 10) as $index) {
+            $this->offer($site, $product, $source, $index);
+        }
+
+        $expanded = DatabaseQueryCounter::measure(fn () => $this->get($url));
+
+        $baseline['result']->assertOk();
+        $expanded['result']->assertOk();
+        $this->assertLessThanOrEqual($baseline['count'], $expanded['count']);
+        $this->assertLessThanOrEqual(20, $expanded['count']);
+    }
+
     /** @return array{Site, CentralProduct} */
     private function productPageScenario(): array
     {
@@ -88,5 +111,22 @@ class ProductOffersBlockTest extends TestCase
         ]);
 
         return [$site, $product];
+    }
+
+    private function offer(Site $site, CentralProduct $product, PriceSource $source, int $index): MarketOffer
+    {
+        $merchant = MarketMerchant::factory()->create([
+            'market_id' => $site->market_id,
+            'name' => "Merchant {$index}",
+        ]);
+
+        return MarketOffer::factory()->create([
+            'market_id' => $site->market_id,
+            'market_merchant_id' => $merchant->id,
+            'central_product_id' => $product->id,
+            'price_source_id' => $source->id,
+            'price' => (string) (200 + $index),
+            'currency' => $site->market->currency_code,
+        ]);
     }
 }

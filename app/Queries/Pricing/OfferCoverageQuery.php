@@ -6,7 +6,6 @@ use App\Contracts\Persistence\RawSqlPersistenceBoundary;
 use App\Models\MarketOffer;
 use App\Models\Site;
 use App\Models\SiteProduct;
-use App\Services\Pricing\ValidMarketOfferQuery;
 
 final readonly class OfferCoverageQuery implements RawSqlPersistenceBoundary
 {

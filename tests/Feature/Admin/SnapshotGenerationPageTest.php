@@ -12,7 +12,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
-use Mockery;
+use Psr\Log\AbstractLogger;
+use Stringable;
 use Tests\TestCase;
 
 class SnapshotGenerationPageTest extends TestCase
@@ -21,7 +22,8 @@ class SnapshotGenerationPageTest extends TestCase
 
     public function test_generation_service_runs_selected_exporters_and_completes_snapshot(): void
     {
-        Log::spy();
+        $log = new RecordingLogger;
+        Log::swap($log);
         Storage::fake('local');
         CentralProduct::factory()->create();
         $admin = User::factory()->centralAdmin()->create();
@@ -39,14 +41,13 @@ class SnapshotGenerationPageTest extends TestCase
             Storage::disk($snapshot->storage_disk)->assertExists($file['path']);
         }
 
-        Log::shouldHaveReceived('info')
-            ->with(
-                'Catalog snapshot generation completed.',
-                Mockery::on(fn (array $context): bool => $context['snapshot_uuid'] === $snapshot->uuid
-                    && $context['files_count'] === 2
-                    && is_int($context['duration_ms'])),
-            )
-            ->once();
+        $completedLog = collect($log->records)
+            ->first(fn (array $record): bool => $record['message'] === 'Catalog snapshot generation completed.');
+        $this->assertIsArray($completedLog);
+        $this->assertSame($snapshot->uuid, $completedLog['context']['snapshot_uuid']);
+        $this->assertSame(2, $completedLog['context']['files_count']);
+        $this->assertIsInt($completedLog['context']['duration_ms']);
+
     }
 
     public function test_central_admin_can_open_screen_and_generate_snapshot(): void
@@ -80,5 +81,21 @@ class SnapshotGenerationPageTest extends TestCase
         $this->actingAs(User::factory()->siteAdmin($site)->create())
             ->get(SnapshotGenerationPage::getUrl())
             ->assertForbidden();
+    }
+}
+
+final class RecordingLogger extends AbstractLogger
+{
+    /** @var list<array{level: mixed, message: string, context: array<string, mixed>}> */
+    public array $records = [];
+
+    /** @param array<string, mixed> $context */
+    public function log(mixed $level, string|Stringable $message, array $context = []): void
+    {
+        $this->records[] = [
+            'level' => $level,
+            'message' => (string) $message,
+            'context' => $context,
+        ];
     }
 }

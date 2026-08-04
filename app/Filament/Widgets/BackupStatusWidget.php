@@ -19,7 +19,7 @@ final class BackupStatusWidget extends Widget
         $user = auth()->user();
 
         return $user instanceof User
-            && $user->hasCatalogHubPermission('central.manage');
+            && $user->can('central.manage');
     }
 
     /** @return array<string, int|string|null> */

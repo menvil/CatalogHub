@@ -80,7 +80,7 @@ final class CreateSiteWizard extends Page
     {
         $user = auth()->user();
 
-        return $user instanceof User && ($user->isSuperAdmin() || $user->isCentralAdmin() || $user->isSiteAdmin());
+        return $user instanceof User && ($user->can('central.manage') || $user->can('sites.manage'));
     }
 
     /** @return Collection<int, Market> */

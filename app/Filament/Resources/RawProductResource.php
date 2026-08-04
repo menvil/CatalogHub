@@ -112,6 +112,6 @@ final class RawProductResource extends Resource
     {
         $user = auth()->user();
 
-        return $user instanceof User && $user->canManageImports();
+        return $user instanceof User && $user->can('imports.manage');
     }
 }

@@ -22,6 +22,36 @@ class CheapestProductsReportTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_report_pagination_is_stable_when_prices_are_tied(): void
+    {
+        $site = Site::factory()->create(['default_locale' => 'en']);
+        $products = CentralProduct::factory()->count(3)->create();
+
+        foreach ($products as $product) {
+            SiteProduct::query()->create([
+                'site_id' => $site->id,
+                'central_product_id' => $product->id,
+                'visibility' => 'visible',
+            ]);
+            SiteSearchDocument::factory()->create([
+                'site_id' => $site->id,
+                'locale' => 'en',
+                'document_id' => $product->id,
+                'min_price' => '100.00',
+            ]);
+        }
+
+        $query = app(CheapestProductsQuery::class);
+        $first = $query->paginate($site, perPage: 2, page: 1)->getCollection()->pluck('id')->all();
+        $second = $query->paginate($site, perPage: 2, page: 2)->getCollection()->pluck('id')->all();
+
+        $this->assertSame(
+            SiteSearchDocument::query()->orderBy('id')->pluck('id')->all(),
+            [...$first, ...$second],
+        );
+        $this->assertSame([], array_values(array_intersect($first, $second)));
+    }
+
     public function test_it_lists_products_ordered_by_min_price_and_excludes_products_without_price(): void
     {
         [$site, $cheap, $expensive] = $this->scenario();

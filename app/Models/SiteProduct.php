@@ -9,7 +9,13 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $published_version
+ * @property Carbon|null $last_synced_at
+ * @property array<string, mixed>|null $settings_json
+ */
 #[Fillable([
     'site_id', 'central_product_id', 'visibility', 'is_featured', 'position', 'published_version',
     'last_synced_at', 'sync_status', 'settings_json',

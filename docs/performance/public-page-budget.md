@@ -52,9 +52,13 @@ Budgets are per request. A query executed once per result card is an N+1 defect 
 ## Initial Audit
 
 - Existing public page tests explicitly verify that product/listing rendering does not query `central_products` in the covered paths.
-- Product/listing/public smoke tests exercise projection-driven routes, but do not yet enforce timing or query ceilings.
+- Listing cards have a scaling contract proving that query count does not grow
+  from one to twenty cards and remains within the current request ceiling.
+- Product offers have a scaling contract proving that query count does not grow
+  from one to ten offers and remains within the current request ceiling.
+- Other public smoke tests exercise projection-driven routes; production-like
+  timing and query ceilings for home, compare, and search remain measurement gaps.
 - Vite produces content-hashed production assets.
 - Production-like p95 latency, full payload sizes, cache hit rate, and browser Core Web Vitals remain measurement gaps.
 
 If a page exceeds a budget, document the query/asset cause and owner. Do not raise the budget solely to make an unexplained regression pass.
-

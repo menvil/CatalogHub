@@ -3,6 +3,7 @@
 namespace App\Services\Backup;
 
 use App\Models\CatalogSnapshot;
+use App\Models\MediaAsset;
 use App\Models\MediaManifest;
 use Illuminate\Support\Facades\Storage;
 
@@ -22,7 +23,7 @@ final class ChecksumVerifier
             $snapshotFound = true;
 
             foreach ($snapshot->files_json ?? [] as $fileKey => $file) {
-                if (! is_array($file) || blank($file['checksum'] ?? null) || blank($file['path'] ?? null)) {
+                if (blank($file['checksum'] ?? null) || blank($file['path'] ?? null)) {
                     continue;
                 }
 
@@ -60,7 +61,9 @@ final class ChecksumVerifier
                 }
 
                 $checkedCount++;
-                $disk = (string) ($manifest->metadata_json['original_disk'] ?? $manifest->mediaAsset?->disk ?? 'media');
+                $relatedAsset = $manifest->getRelation('mediaAsset');
+                $assetDisk = $relatedAsset instanceof MediaAsset ? $relatedAsset->disk : null;
+                $disk = (string) ($manifest->metadata_json['original_disk'] ?? $assetDisk ?? 'media');
                 $this->verifyFile(
                     $disk,
                     (string) $manifest->original_path,
@@ -92,7 +95,7 @@ final class ChecksumVerifier
 
         $stream = $filesystem->readStream($path);
 
-        if ($stream === false) {
+        if (! is_resource($stream)) {
             $issues[] = "unreadable file: {$label} [{$disk}:{$path}]";
 
             return;

@@ -12,6 +12,7 @@ use App\Models\SiteSearchDocument;
 use Database\Seeders\Demo\MultiCategorySiteSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\DatabaseQueryCounter;
 use Tests\TestCase;
 
 class ProductListingPriceBlockTest extends TestCase
@@ -87,6 +88,32 @@ class ProductListingPriceBlockTest extends TestCase
             ->filter(fn (array $query): bool => str_contains($query['query'], 'market_offers'));
 
         $this->assertLessThanOrEqual(1, $offerQueries->count());
+    }
+
+    public function test_listing_query_count_does_not_grow_with_more_cards(): void
+    {
+        [$site, $category] = $this->listingScenario();
+        $url = 'http://tech-compare.test/en-US/categories/monitors/products';
+        $this->productDocument($site, $category, 'budget-display-1', 'Budget Display 1');
+        $this->get($url)->assertOk();
+
+        $baseline = DatabaseQueryCounter::measure(fn () => $this->get($url));
+
+        foreach (range(2, 20) as $index) {
+            $this->productDocument(
+                $site,
+                $category,
+                "budget-display-{$index}",
+                "Budget Display {$index}",
+            );
+        }
+
+        $expanded = DatabaseQueryCounter::measure(fn () => $this->get($url));
+
+        $baseline['result']->assertOk();
+        $expanded['result']->assertOk();
+        $this->assertLessThanOrEqual($baseline['count'], $expanded['count']);
+        $this->assertLessThanOrEqual(20, $expanded['count']);
     }
 
     /** @return array{Site, CentralCategory} */

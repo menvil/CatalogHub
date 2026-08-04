@@ -1,8 +1,37 @@
 # CatalogHub v2 Product Contract
 
-Status: approved planning contract
+| Field | Value |
+| --- | --- |
+| Contract version | 2.1.0 |
+| Status | Proposed; approval required before implementation |
+| Owner | CatalogHub Product Owner |
+| Approver | `TBD — approver must be named` |
+| Approval date | `TBD — YYYY-MM-DD` |
+| Last updated | 2026-08-04 |
 
-Contract date: 2026-08-04
+## Changelog
+
+| Version | Date | Change |
+| --- | --- | --- |
+| 2.0.0 | 2026-08-04 | Recorded the three product surfaces and the Central/Site ownership boundary. |
+| 2.1.0 | 2026-08-04 | Added document precedence, deterministic projection ownership, immutable Site context rules, and serial-first delivery governance. |
+
+## Authority and precedence
+
+When two sources disagree, the higher source in this order controls:
+
+1. this Product ownership contract;
+2. the authoritative screen registry (`cataloghub-v2-screen-registry.md`);
+3. the approved visual reference manifest (`cataloghub-v2-visual-reference-manifest.md`);
+4. Roadmap v2 (`roadmap-v2-screen-driven.md`);
+5. discovery information architecture and wireframes;
+6. the existing v1 implementation.
+
+If documents, screenshots, discovery notes, or the existing implementation
+conflict, the work package is blocked until a product decision updates this
+contract and/or the authoritative screen registry. An implementer must not
+resolve the conflict by copying v1, guessing from a filename, or creating a new
+screen. Approval metadata and the changelog must be updated with the decision.
 
 ## Product shape
 
@@ -60,6 +89,18 @@ Site Admin may display canonical values for context, but it must not directly
 mutate Central-owned truth. A reusable canonical correction is proposed through
 the correction-request workflow.
 
+### Projection ownership
+
+Site owns projection policy, visibility, local inputs, preview requests, and
+rebuild requests. Projection records are derived artifacts and are never edited
+directly. Central owns the canonical inputs. The projection engine
+deterministically combines those canonical inputs with Site-owned local inputs.
+
+An editor that writes directly to a projection record, a Site action that writes
+a canonical product field, or a Central action that silently overwrites a local
+presentation choice violates this contract even if the resulting screen looks
+correct.
+
 ## Workspace contract
 
 ### Shared admin shell
@@ -92,6 +133,19 @@ capabilities; it does not start a second admin application.
   switcher may have one option but there is no separate admin instance.
 - Central workspace state and Site workspace state must not leak into one
   another.
+
+Every Site-context implementation must also satisfy all of these invariants:
+
+- every Site mutation carries an explicit, immutable `site_id` captured when the
+  operation is submitted;
+- every Site queue job carries an explicit, immutable `site_id` in its payload;
+- authorization for that `site_id` and operation is rechecked when an
+  asynchronous job executes;
+- every Site-scoped cache key and query key includes `site_id`;
+- switching the selected site in the UI does not change the meaning or target of
+  an operation that has already been submitted;
+- two browser tabs using different Site contexts remain isolated in navigation,
+  reads, writes, jobs, notifications, and caches.
 
 The exact persistence mechanism for authorized sites and active-site state is an
 implementation decision for the Admin Shell phase. It must satisfy this contract
@@ -137,14 +191,15 @@ they must never become accidental canonical changes.
 
 ## Approved screen map
 
-The v2 admin screen boundary is the workspace reference set:
+The authoritative product boundary is
+`docs/planning/cataloghub-v2-screen-registry.md`: CA-001 through CA-085,
+SA-001 through SA-064, and PUB-001 through PUB-080. A listed ID whose definition
+is marked blocked is not implementable until an approved product decision fills
+that row; it is not permission to invent the missing screen.
 
-- `pictures/1. Central Admin/`: CA-001 through CA-085;
-- `pictures/2. Site Admin/`: SA-001 through SA-064.
-
-The public boundary is the existing approved inventory in
-`docs/discovery/screens/public-demo-site-pages.md` and
-`docs/discovery/information-architecture/public-demo-site.md`.
+Known visual sources and their reproducibility status are controlled by
+`docs/planning/cataloghub-v2-visual-reference-manifest.md`. Local, untracked, or
+missing images cannot support reproducible automated visual regression.
 
 Reference images define the expected information hierarchy, visible states,
 actions, and visual direction. Their example names, counts, dates, domains, and
@@ -188,3 +243,6 @@ the following gate:
 
 A phase is not complete when only migrations, models, resources, service tests,
 or static markup exist. The working approved screen is the unit of delivery.
+
+The current delivery mode is serial-first: one agent completes one work package
+in one MR at a time. Parallel UI phase execution is not part of this contract.

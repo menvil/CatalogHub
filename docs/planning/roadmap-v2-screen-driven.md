@@ -1,564 +1,564 @@
-# CatalogHub Roadmap v2 — Screen-Driven Delivery
+# CatalogHub Roadmap v2 — Serial, Screen-Driven Delivery
 
-Status: proposed implementation roadmap
+| Field | Value |
+| --- | --- |
+| Roadmap version | 2.1.0 |
+| Status | Proposed; contract/registry approval required |
+| Delivery mode | Serial-first |
+| Unit of delivery | One agent, one active work package/MR |
+| Phases | 16 vertical phases |
 
-Phases: 16 vertical phases
+## Execution rules
 
-Source of scope: product contract, CA-001…CA-085, SA-001…SA-064, and the
-approved public page inventory.
+1. Exactly one implementation work package/MR is active at a time. Phases execute
+   in numeric order; no parallel UI phases are assumed.
+2. The default is one phase equals one independently mergeable work package/MR.
+   A phase may be split only by an approved roadmap amendment; split MRs still
+   execute serially and each leaves the repository green.
+3. Each phase ends with working registry-owned screens, deterministic seeded demo
+   data, functional primary actions, server-side permissions, tests and
+   semantic/manual visual acceptance. Backend-only or static-UI delivery does
+   not close a phase.
+4. Shared layout/design-system/site-context changes belong to Phase 01 or a
+   separate serial prerequisite MR merged before the dependent phase.
+5. Schema/model changes are forbidden unless explicitly listed in the phase's
+   **Schema/model changes** field. A prerequisite schema MR is serial and must
+   merge before its screen MR.
+6. Screen phases contain no hidden broad refactors, unrelated cleanup, new
+   product features, unregistered screens, temporary navigation or dead primary
+   actions.
+7. The product contract, screen registry and visual manifest gates apply before
+   implementation. A blocked registry or artifact row blocks that screen's work.
+8. Every MR passes `composer format:test`, `composer analyse`,
+   `composer test` and `npm run build`.
 
-## Roadmap rules
+## Shared acceptance conventions
 
-This roadmap preserves verified v1 domain behavior and completes the approved
-product surfaces. It does not authorize additional product features or screens.
+A read-model name in the matrices is a behavioral contract, not an instruction
+to create a class with that exact name. Routes and screen ownership come from
+the authoritative registry. Seed scenario IDs must be implemented
+deterministically by the phase. Tests must assert server behavior, not only
+navigation visibility.
 
-Every phase delivers its owned screens as working vertical slices. A migration,
-model, service, resource, static template, or test in isolation is not a phase
-deliverable.
+### Dashboard contribution contract
 
-### Mandatory gate for every phase
+Phase 01 owns the CA-001/SA-001 layout, card/alert/link interfaces and empty/error
+behavior. Later modules may contribute KPI/link adapters from their own module
+work, without editing dashboard layout or design tokens. Each contribution
+declares a stable registry destination, actor/capability, Central or immutable
+`site_id` scope, deterministic ordering, loading/error behavior and seed data.
 
-- All owned screens are reachable from the correct workspace and have working
-  primary actions.
-- Deterministic seed data demonstrates relevant happy, empty, warning, error,
-  stale, and permission states.
-- Authorization is enforced server-side, including active-site isolation for Site
-  Admin.
-- Unit, feature, integration, and screen/browser acceptance tests pass.
-- Desktop screenshots are compared with the exact matching reference images;
-  responsive evidence is recorded at 375, 768, 1280, and 1440 pixels.
-- No unresolved severity-1 visual or functional deviation remains. Accepted
-  lower-severity deviations are documented with an owner.
-- `composer format:test`, `composer analyse`, `composer test`, and
-  `npm run build` pass on the integrated commit.
-
-### File-area enforcement
-
-Allowed areas below are maximum boundaries, not a requirement to edit every
-path. Existing persistence and services should be reused when they satisfy the
-contract. Migration/model changes require proof that the approved screen cannot
-be completed safely with the current schema.
-
-For phases 02–16, the following shared areas are forbidden unless changed in a
-separate, small prerequisite MR owned by the shell/integration maintainer:
-
-- `app/Providers/Filament/AdminPanelProvider.php`;
-- shared workspace/site-context support;
-- `resources/css/app.css` and global admin JavaScript;
-- `resources/views/components/admin/**` and admin layouts;
-- `composer.json`, `composer.lock`, `package.json`, and lockfiles;
-- `database/seeders/DatabaseSeeder.php`;
-- global permission configuration;
-- unrelated routes or modules.
+A dashboard adapter must never link to a temporary v1 generic screen or alias
+that will disappear. After each major Central phase (02–08), CA-001 is
+re-accepted; after each major Site phase (09–15), SA-001 is re-accepted. Phase 16
+runs link integrity for both dashboards but adds no Public link unless already
+approved in their reference/registry contract.
 
 ## Phase 01 — Admin Shell, Design System, Workspace and Site Switcher
 
-- **Owned screens:** CA-001 Central Dashboard; SA-001 Site Dashboard. The shared
-  shell behavior is accepted on both screens and becomes mandatory for every
-  later CA/SA screen.
-- **Owned domains:** authenticated admin context, Central/Site workspace context,
-  authorized-site selection, active-site lifecycle, common navigation, design
-  tokens, accessibility, dashboard composition.
-- **Dependencies:** v1 authentication, `User`, `Site`, permission matrix, existing
-  metric/query services, and approved CA-001/SA-001 references.
-- **Allowed file areas:** `app/Providers/Filament/AdminPanelProvider.php`;
-  `app/Filament/Pages/CentralDashboard.php`; Site Dashboard page; new narrowly
-  scoped `app/Filament/Support/*Workspace*` and `*SiteContext*`; relevant
-  middleware/policies; `app/Models/User.php` and `app/Models/Site.php` only if the
-  access contract requires it; one minimal site-access migration if proven
-  necessary; shared admin CSS/JS/components/layouts; phase-specific factories,
-  seeders, and Admin/Authorization tests; visual-test tooling configuration.
-- **Forbidden file areas:** catalog/import/media/pricing/content domain behavior;
-  public controllers/views; unrelated models/migrations; any second Filament
-  panel or per-site admin route tree.
-- **Required seed data:** Central Admin, Site Admin, specialist and denied-role
-  accounts; at least three sites; one user with multiple authorized sites and one
-  with a single site; dashboard metrics with healthy, warning, critical, and
-  empty queues.
-- **Definition of Done:** one `/admin` shell exposes two permission-aware
-  workspaces; the Site workspace always shows and changes the active authorized
-  site; all dashboard links resolve; dashboard data is real; cross-workspace and
-  cross-site context cannot leak; no placeholder/disabled shell controls are
-  presented as functional.
-- **Test acceptance:** workspace switch, persistence and deep-link tests; allowed
-  and denied site-resolution tests; navigation tests for every role; dashboard
-  query/action tests; accessibility and responsive browser smoke tests.
-- **Visual acceptance:** CA-001 and SA-001 match their references in hierarchy,
-  navigation, context controls, cards, tables/charts, alerts, and quick actions;
-  shell screenshots pass at all four target widths and establish the baseline for
-  later phases.
+- **Owned screens:** CA-001; SA-001.
+- **Owned domains:** single authenticated admin shell; design tokens and shared page chrome; Central/Site workspace selection; immutable Site context; dashboard composition.
+- **Dependencies:** approved product contract, registry and visual manifest; v1 authentication, User, Site, policies and permission matrix.
+- **Change boundary:** This is the only phase that may change shared admin layout, design tokens, workspace/site-context infrastructure and dashboard composition. It must not change catalog, import, pricing, content or Public domain behavior.
+- **Schema/model changes:** None planned. If the existing User-to-Site authorization model cannot satisfy the immutable context contract, a separately approved prerequisite schema/model MR must be added to this roadmap before Phase 01 implementation.
+- **Required seed data:** Central Admin, Site Admin, specialist and denied users; three sites; multi-site and single-site access; healthy, warning, critical and empty dashboard contributions.
+- **Definition of Done:** One admin shell exposes both workspaces; the Site switcher is authorization-safe and tab-isolated; CA-001 and SA-001 use real read models and only stable destinations; no dead control or second admin panel exists.
+- **Test acceptance:** workspace/site switch, immutable submitted operation, two-tab isolation, cache/query key scoping, queued-job reauthorization, navigation/permission and dashboard link tests.
+- **Visual acceptance:** Semantic/manual sign-off of CA-001 and SA-001 after their PNGs are versioned in the manifest.
+
+### Screen Acceptance Matrix
+
+| Screen | Actor | Route | Read model | Primary actions | Seed scenario | Permission test | Functional test | Visual artifact |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| CA-001 Dashboard | Central Admin | `/admin/central` | CentralDashboardReadModel + module contribution adapters | Inspect KPIs/alerts; open only stable registry destinations | `V2-P01-CA-001-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central; execute primary action; assert result; reload same context | VR-CA-001-POPULATED (manifest; semantic/manual MVP) |
+| SA-001 Site Dashboard | Site Admin | `/admin/sites/{site}` | SiteDashboardReadModel(site_id) + module contribution adapters | Inspect KPIs/alerts; open only stable registry destinations | `V2-P01-SA-001-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}; execute primary action; assert result; reload same context | VR-SA-001-POPULATED (manifest; semantic/manual MVP) |
 
 ## Phase 02 — Central Products and Brands
 
-- **Owned screens:** CA-002…CA-010 Products List, Product Detail, Product
-  Create/Edit, Product Variants, Product Specs Editor, Product Media Manager,
-  Product Translations, Product Version History, Product Data Quality View;
-  CA-011…CA-015 Brands List, Brand Detail, Brand Create/Edit, Brand Media/Logo,
-  Brand Translations.
-- **Owned domains:** canonical product/variant/brand identity and lifecycle,
-  product attributes, versions, catalog quality, canonical brand media and
-  translation composition.
-- **Dependencies:** Phase 01; existing Central catalog models/actions/policies;
-  current media and translation services as stable dependencies.
-- **Allowed file areas:** CentralProduct/CentralBrand Filament resources and
-  pages; `app/Actions/CentralCatalog/**`, `ProductAttributes/**`, `Versions/**`;
-  relevant Central catalog models/policies/services/queries; screen-specific
-  Central views; product/brand factories and a phase-owned seeder; matching
-  Feature/Unit/Authorization tests; narrowly named migrations only when an
-  approved field/state is absent.
-- **Forbidden file areas:** shared shell; Site models/resources; imports, pricing,
-  sync, themes, public pages; generic media/translation internals unless a
-  separately reviewed dependency MR is required.
-- **Required seed data:** multiple brands and product states; products with and
-  without variants/media/translations/required specs; archived and restored
-  products; version history; duplicate and quality-warning examples.
-- **Definition of Done:** all fourteen screens support the reference filters,
-  details, tabs, previews and primary actions using canonical services; product
-  lifecycle/version rules remain intact; brand usage and assets are visible; no
-  Site-local field is edited here.
-- **Test acceptance:** CRUD/lifecycle/variant/spec/version/media/translation
-  journeys; action failure/validation tests; permission matrix for Central Admin,
-  Catalog Editor, Translator and denied Site Admin; screen route and seed smoke.
-- **Visual acceptance:** one approved screenshot per CA-002…CA-015 plus empty,
-  validation, archive, missing-data and responsive evidence; comparison is made
-  against the identically numbered PNG.
+- **Owned screens:** CA-002…CA-015.
+- **Owned domains:** canonical products, variants, specifications, versions, quality, brands, canonical media/translation composition.
+- **Dependencies:** Phase 01; existing Central catalog, media and translation contracts.
+- **Change boundary:** Owned Central product/brand screens plus their module actions, queries, policies, seeders and tests. Shared shell/design changes require a prior separate MR; Site/Public code is out of scope.
+- **Schema/model changes:** None planned; existing product/brand models and migrations are reused.
+- **Required seed data:** Brands and products across draft/active/archived states, with/without variants, media, translations, required specs, versions and quality warnings.
+- **Definition of Done:** All 14 registry screens work end to end without editing Site-owned fields; lifecycle and version actions persist and dashboard adapters point only to stable routes.
+- **Test acceptance:** Central catalog role matrix, lifecycle/CRUD/spec/media/translation/version journeys, failure validation and route smoke.
+- **Visual acceptance:** Semantic/manual review for every CA-002…CA-015 manifest artifact; re-accept CA-001 after dashboard adapter integration.
+
+### Screen Acceptance Matrix
+
+| Screen | Actor | Route | Read model | Primary actions | Seed scenario | Permission test | Functional test | Visual artifact |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| CA-002 Products List | Central catalog operator | `/admin/central/products` | CentralCatalogScreenReadModel | Search/filter products; open CA-003; start CA-004 | `V2-P02-CA-002-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/products; execute primary action; assert result; reload same context | VR-CA-002-POPULATED (manifest; semantic/manual MVP) |
+| CA-003 Product Detail | Central catalog operator | `/admin/central/products/{product}` | CentralCatalogScreenReadModel | Inspect canonical data and lifecycle; open CA-004, CA-005, CA-006, CA-007, CA-008 or CA-009 | `V2-P02-CA-003-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/products/{product}; execute primary action; assert result; reload same context | VR-CA-003-POPULATED (manifest; semantic/manual MVP) |
+| CA-004 Product Create / Edit | Central catalog operator | `/admin/central/products/{product?}/edit` | CentralCatalogScreenReadModel | Validate and create/update Product; reload saved record | `V2-P02-CA-004-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/products/{product?}/edit; execute primary action; assert result; reload same context | VR-CA-004-POPULATED (manifest; semantic/manual MVP) |
+| CA-005 Product Variants | Central catalog operator | `/admin/central/products/{product}/variants` | CentralCatalogScreenReadModel | Add or edit a variant; archive/restore it with confirmation | `V2-P02-CA-005-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/products/{product}/variants; execute primary action; assert result; reload same context | VR-CA-005-POPULATED (manifest; semantic/manual MVP) |
+| CA-006 Product Specs Editor | Central catalog operator | `/admin/central/products/{product}/specs` | CentralCatalogScreenReadModel | Validate and save Product Specs Editor; reload persisted values | `V2-P02-CA-006-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/products/{product}/specs; execute primary action; assert result; reload same context | VR-CA-006-POPULATED (manifest; semantic/manual MVP) |
+| CA-007 Product Media Manager | Central catalog operator | `/admin/central/products/{product}/media` | CentralCatalogScreenReadModel | Select and persist changes in Product Media Manager; verify resulting state | `V2-P02-CA-007-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/products/{product}/media; execute primary action; assert result; reload same context | VR-CA-007-POPULATED (manifest; semantic/manual MVP) |
+| CA-008 Product Translations | Central catalog operator | `/admin/central/products/{product}/translations` | CentralCatalogScreenReadModel | Select locale; edit Product Translations; save and inspect review status | `V2-P02-CA-008-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/products/{product}/translations; execute primary action; assert result; reload same context | VR-CA-008-POPULATED (manifest; semantic/manual MVP) |
+| CA-009 Product Version History | Central catalog operator | `/admin/central/products/{product}/versions` | CentralCatalogScreenReadModel | Filter Product Version History; inspect a version/artifact and its diff or download | `V2-P02-CA-009-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/products/{product}/versions; execute primary action; assert result; reload same context | VR-CA-009-POPULATED (manifest; semantic/manual MVP) |
+| CA-010 Product Data Quality View | Central catalog operator | `/admin/central/products/quality` | CentralCatalogScreenReadModel | Filter quality issues; open the affected product and its approved editor | `V2-P02-CA-010-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/products/quality; execute primary action; assert result; reload same context | VR-CA-010-POPULATED (manifest; semantic/manual MVP) |
+| CA-011 Brands List | Central catalog operator | `/admin/central/brands` | CentralCatalogScreenReadModel | Search/filter brands; open CA-012; start CA-013 | `V2-P02-CA-011-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/brands; execute primary action; assert result; reload same context | VR-CA-011-POPULATED (manifest; semantic/manual MVP) |
+| CA-012 Brand Detail | Central catalog operator | `/admin/central/brands/{brand}` | CentralCatalogScreenReadModel | Inspect Brand Detail and follow its registered edit/related route | `V2-P02-CA-012-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/brands/{brand}; execute primary action; assert result; reload same context | VR-CA-012-POPULATED (manifest; semantic/manual MVP) |
+| CA-013 Brand Create / Edit | Central catalog operator | `/admin/central/brands/{brand?}/edit` | CentralCatalogScreenReadModel | Validate and create/update Brand; reload saved record | `V2-P02-CA-013-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/brands/{brand?}/edit; execute primary action; assert result; reload same context | VR-CA-013-POPULATED (manifest; semantic/manual MVP) |
+| CA-014 Brand Media  /  Logo | Central catalog operator | `/admin/central/brands/{brand}/media` | CentralCatalogScreenReadModel | Assign or replace the canonical logo/media role; clear an assignment | `V2-P02-CA-014-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/brands/{brand}/media; execute primary action; assert result; reload same context | VR-CA-014-POPULATED (manifest; semantic/manual MVP) |
+| CA-015 Brand Translations | Central catalog operator | `/admin/central/brands/{brand}/translations` | CentralCatalogScreenReadModel | Select locale; edit Brand Translations; save and inspect review status | `V2-P02-CA-015-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/brands/{brand}/translations; execute primary action; assert result; reload same context | VR-CA-015-POPULATED (manifest; semantic/manual MVP) |
 
 ## Phase 03 — Central Categories, Schema and Units
 
-- **Owned screens:** CA-016…CA-026 Categories List, Category Detail, Category
-  Create/Edit, Category Schema Builder, Attribute Sections, Definitions and
-  Options Editors, Facet Config, Comparison Config, SEO Templates, Category
-  Translation Editor; CA-027…CA-032 Measurement Dimensions, Measurement Units,
-  Unit Aliases, Unit Translations, Market Unit Preferences, Attribute Display
-  Rules.
-- **Owned domains:** category hierarchy/lifecycle, schema status/validation,
-  sections/attributes/options, facets/comparison/SEO templates, units,
-  conversions, aliases, preferences, and display rules.
-- **Dependencies:** Phase 01; v1 category/schema/unit models and services; Phase 02
-  only for representative product impact previews, not for shell work.
-- **Allowed file areas:** CentralCategory, Facet, Measurement, MarketUnit and
-  AttributeDisplay Filament resources/pages; `app/Actions/CategorySchema/**`;
-  category-schema, facets, units and product-attribute services; relevant models,
-  enums, DTOs, rules, factories, phase seeder, tests and narrowly named
-  category/attribute/facet/unit migrations.
-- **Forbidden file areas:** shared shell; product identity CRUD; imports/media
-  ingestion; Site workspace; pricing; public rendering except read-only test
-  fixtures in integration tests.
-- **Required seed data:** category tree with active/draft/incomplete states; a
-  Gaming Monitors-style schema with multiple sections/data types/options;
-  invalid and approval-ready schemas; facet/comparison/SEO configurations;
-  metric/imperial units, aliases, locales and market preferences.
-- **Definition of Done:** all seventeen screens compose one safe schema workflow;
-  ordering, validation, clone/review/approve/archive/export and configuration
-  actions work; units convert and preview correctly; schema impact is visible
-  without mutating Site state.
-- **Test acceptance:** hierarchy and lifecycle tests; every schema action and
-  validation failure; unit parsing/conversion/alias/preference tests; permission
-  tests; projection/import contract regression tests for affected fields.
-- **Visual acceptance:** CA-016…CA-032 are individually reviewed against their
-  references, including drag/order states, previews, validation issues, empty
-  options and responsive overflow behavior.
+- **Owned screens:** CA-016…CA-032.
+- **Owned domains:** category hierarchy, schemas, attributes/options, facets/comparison, SEO templates, dimensions, units and display rules.
+- **Dependencies:** Phases 01–02; existing category/schema/unit contracts.
+- **Change boundary:** Owned category/schema/unit screens plus their module actions, queries, policies, seeds and tests. Shared shell and unrelated product identity/Site/Public behavior are excluded.
+- **Schema/model changes:** None planned; existing category, schema, facet and unit models/migrations are reused.
+- **Required seed data:** Category tree; draft, invalid and approval-ready schemas; sections and all attribute data types; facets/comparison/SEO rules; metric/imperial units, aliases and market preferences.
+- **Definition of Done:** Every owned editor/preview/lifecycle action is working and schema/unit impacts are visible without mutating Site state.
+- **Test acceptance:** hierarchy, schema validation/order/clone/approval, facet/comparison, conversion/alias/preference, permissions and downstream contract regression.
+- **Visual acceptance:** Semantic/manual review for CA-016…CA-032; re-accept CA-001 after dashboard adapter integration.
+
+### Screen Acceptance Matrix
+
+| Screen | Actor | Route | Read model | Primary actions | Seed scenario | Permission test | Functional test | Visual artifact |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| CA-016 Categories List | Central schema operator | `/admin/central/categories` | CategorySchemaAndUnitsReadModel | Search/filter categories; open CA-017; start CA-018 | `V2-P03-CA-016-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/categories; execute primary action; assert result; reload same context | VR-CA-016-POPULATED (manifest; semantic/manual MVP) |
+| CA-017 Category Detail | Central schema operator | `/admin/central/categories/{category}` | CategorySchemaAndUnitsReadModel | Inspect Category Detail and follow its registered edit/related route | `V2-P03-CA-017-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/categories/{category}; execute primary action; assert result; reload same context | VR-CA-017-POPULATED (manifest; semantic/manual MVP) |
+| CA-018 Category Create / Edit | Central schema operator | `/admin/central/categories/{category?}/edit` | CategorySchemaAndUnitsReadModel | Validate and create/update Category; reload saved record | `V2-P03-CA-018-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/categories/{category?}/edit; execute primary action; assert result; reload same context | VR-CA-018-POPULATED (manifest; semantic/manual MVP) |
+| CA-019 Category Schema Builder | Central schema operator | `/admin/central/categories/{category}/schema` | CategorySchemaAndUnitsReadModel | Add/reorder schema sections and attributes; validate and approve schema | `V2-P03-CA-019-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/categories/{category}/schema; execute primary action; assert result; reload same context | VR-CA-019-POPULATED (manifest; semantic/manual MVP) |
+| CA-020 Attribute Sections Editor | Central schema operator | `/admin/central/categories/{category}/schema/sections` | CategorySchemaAndUnitsReadModel | Validate and save Attribute Sections Editor; reload persisted values | `V2-P03-CA-020-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/categories/{category}/schema/sections; execute primary action; assert result; reload same context | VR-CA-020-POPULATED (manifest; semantic/manual MVP) |
+| CA-021 Attribute Definitions Editor | Central schema operator | `/admin/central/categories/{category}/schema/attributes` | CategorySchemaAndUnitsReadModel | Validate and save Attribute Definitions Editor; reload persisted values | `V2-P03-CA-021-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/categories/{category}/schema/attributes; execute primary action; assert result; reload same context | VR-CA-021-POPULATED (manifest; semantic/manual MVP) |
+| CA-022 Attribute Options Editor | Central schema operator | `/admin/central/categories/{category}/schema/options` | CategorySchemaAndUnitsReadModel | Validate and save Attribute Options Editor; reload persisted values | `V2-P03-CA-022-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/categories/{category}/schema/options; execute primary action; assert result; reload same context | VR-CA-022-POPULATED (manifest; semantic/manual MVP) |
+| CA-023 Category Facets Config | Central schema operator | `/admin/central/categories/{category}/facets` | CategorySchemaAndUnitsReadModel | Edit and validate Category Facets Config; save and refresh preview | `V2-P03-CA-023-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/categories/{category}/facets; execute primary action; assert result; reload same context | VR-CA-023-POPULATED (manifest; semantic/manual MVP) |
+| CA-024 Category Comparison Config | Central schema operator | `/admin/central/categories/{category}/comparison` | CategorySchemaAndUnitsReadModel | Edit and validate Category Comparison Config; save and refresh preview | `V2-P03-CA-024-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/categories/{category}/comparison; execute primary action; assert result; reload same context | VR-CA-024-POPULATED (manifest; semantic/manual MVP) |
+| CA-025 Category SEO Templates | Central schema operator | `/admin/central/categories/{category}/seo-template` | CategorySchemaAndUnitsReadModel | Validate and save SEO inputs; inspect resolved preview | `V2-P03-CA-025-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/categories/{category}/seo-template; execute primary action; assert result; reload same context | VR-CA-025-POPULATED (manifest; semantic/manual MVP) |
+| CA-026 Category Translation Editor | Central schema operator | `/admin/central/categories/{category}/translations` | CategorySchemaAndUnitsReadModel | Select locale; edit Category Translation Editor; save and inspect review status | `V2-P03-CA-026-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/categories/{category}/translations; execute primary action; assert result; reload same context | VR-CA-026-POPULATED (manifest; semantic/manual MVP) |
+| CA-027 Measurement Dimensions | Central schema operator | `/admin/central/measurements/dimensions` | CategorySchemaAndUnitsReadModel | Create or edit a measurement dimension; inspect its units | `V2-P03-CA-027-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/measurements/dimensions; execute primary action; assert result; reload same context | VR-CA-027-POPULATED (manifest; semantic/manual MVP) |
+| CA-028 Measurement Units | Central schema operator | `/admin/central/measurements/units` | CategorySchemaAndUnitsReadModel | Create or edit a unit; validate conversion metadata | `V2-P03-CA-028-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/measurements/units; execute primary action; assert result; reload same context | VR-CA-028-POPULATED (manifest; semantic/manual MVP) |
+| CA-029 Unit Aliases | Central schema operator | `/admin/central/measurements/aliases` | CategorySchemaAndUnitsReadModel | Create, edit or disable an import alias | `V2-P03-CA-029-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/measurements/aliases; execute primary action; assert result; reload same context | VR-CA-029-POPULATED (manifest; semantic/manual MVP) |
+| CA-030 Unit Translations | Central schema operator | `/admin/central/measurements/translations` | CategorySchemaAndUnitsReadModel | Select locale; edit Unit Translations; save and inspect review status | `V2-P03-CA-030-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/measurements/translations; execute primary action; assert result; reload same context | VR-CA-030-POPULATED (manifest; semantic/manual MVP) |
+| CA-031 Market Unit Preferences | Central schema operator | `/admin/central/measurements/market-preferences` | CategorySchemaAndUnitsReadModel | Choose market preferences; save and inspect formatted preview | `V2-P03-CA-031-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/measurements/market-preferences; execute primary action; assert result; reload same context | VR-CA-031-POPULATED (manifest; semantic/manual MVP) |
+| CA-032 Attribute Display Rules | Central schema operator | `/admin/central/measurements/attribute-display-rules` | CategorySchemaAndUnitsReadModel | Edit and order rules; save and inspect formatted preview | `V2-P03-CA-032-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/measurements/attribute-display-rules; execute primary action; assert result; reload same context | VR-CA-032-POPULATED (manifest; semantic/manual MVP) |
 
 ## Phase 04 — Central Imports
 
-- **Owned screens:** CA-033…CA-043 Import Sources, Import Batches List, Import
-  Batch Detail, Import Wizard, Raw Product Viewer, Normalized Draft Review,
-  Mapping Rules Editor, Unmapped Fields, Duplicate Candidates, Normalization
-  Errors, Media Download Errors.
-- **Owned domains:** source configuration, batch/artifact lifecycle, raw
-  persistence, mapping, normalization, review/publish/reject, duplicates, and
-  import media failure handling.
-- **Dependencies:** Phases 01–03; existing import contracts/services/jobs/actions;
-  stable canonical schema and unit rules.
-- **Allowed file areas:** `app/Filament/Pages/ImportWizard.php` and Import/Raw/
-  Mapping/Draft/Error/Duplicate resources; `app/Actions/Imports/**`;
-  `app/Services/Imports/**`; `app/Contracts/Imports/**`; `app/Jobs/Imports/**`;
-  import models/importers/DTOs/factories/views; phase seeder and import tests;
-  narrowly named import migrations only when required.
-- **Forbidden file areas:** shared shell; canonical editor behavior; generic media
-  library; Site workspace, pricing, public pages, themes and sync internals.
-- **Required seed data:** at least two sources and batches in queued/running/
-  needs-mapping/review/failed/completed states; raw payloads; high/low confidence
-  drafts; unmapped fields; duplicates; normalization and media-download errors;
-  an approvable draft.
-- **Definition of Done:** an operator can configure/start an import, follow batch
-  progress, inspect raw data, resolve mapping/error/duplicate issues, review a
-  normalized draft and publish it through existing canonical actions; retries
-  and failures remain idempotent and visible.
-- **Test acceptance:** full seeded import journey; job retry/idempotency tests;
-  mapping/unit/enum normalization; duplicate/error resolution; authorization;
-  offline smoke without production network dependency.
-- **Visual acceptance:** CA-033…CA-043 match their references for queues, filters,
-  progress, side-by-side review, errors and empty states at desktop and required
-  responsive widths.
+- **Owned screens:** CA-033…CA-043.
+- **Owned domains:** sources, batches, raw payloads, mappings, normalization, drafts, duplicates and import media errors.
+- **Dependencies:** Phases 01–03; stable canonical schema and unit contracts.
+- **Change boundary:** Owned import screens plus import actions, services, jobs, queries, policies, seeders and tests. Shared UI, canonical editors and Site/Public code are excluded.
+- **Schema/model changes:** None planned; existing import persistence is reused.
+- **Required seed data:** Sources and batches in queued/running/mapping/review/failed/completed states; raw payloads, drafts, unmapped fields, duplicates, normalization failures and media-download failures.
+- **Definition of Done:** An operator can start, inspect, resolve, retry, approve/reject and publish the seeded import journey with idempotent visible state.
+- **Test acceptance:** end-to-end import, retry/idempotency, mapping/normalization/duplicate/error flows, permissions and offline deterministic execution.
+- **Visual acceptance:** Semantic/manual review for CA-033…CA-043; re-accept CA-001 after dashboard adapter integration.
+
+### Screen Acceptance Matrix
+
+| Screen | Actor | Route | Read model | Primary actions | Seed scenario | Permission test | Functional test | Visual artifact |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| CA-033 Import Sources | Import operator | `/admin/central/imports/sources` | ImportOperationsReadModel | Create/edit an import source; start an import through CA-036 | `V2-P04-CA-033-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/imports/sources; execute primary action; assert result; reload same context | VR-CA-033-POPULATED (manifest; semantic/manual MVP) |
+| CA-034 Import Batches List | Import operator | `/admin/central/imports/batches` | ImportOperationsReadModel | Filter batches; open CA-035; start a new import at CA-036 | `V2-P04-CA-034-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/imports/batches; execute primary action; assert result; reload same context | VR-CA-034-POPULATED (manifest; semantic/manual MVP) |
+| CA-035 Import Batch Detail | Import operator | `/admin/central/imports/batches/{batch}` | ImportOperationsReadModel | Inspect batch progress/artifacts; retry failure or open its review queue | `V2-P04-CA-035-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/imports/batches/{batch}; execute primary action; assert result; reload same context | VR-CA-035-POPULATED (manifest; semantic/manual MVP) |
+| CA-036 Import Wizard | Import operator | `/admin/central/imports/new` | ImportOperationsReadModel | Complete validated wizard steps; submit once; inspect success/failure | `V2-P04-CA-036-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/imports/new; execute primary action; assert result; reload same context | VR-CA-036-POPULATED (manifest; semantic/manual MVP) |
+| CA-037 Raw Product Viewer | Import operator | `/admin/central/imports/raw-products/{rawProduct}` | ImportOperationsReadModel | Filter Raw Product Viewer; inspect raw/manifest record without mutating source data | `V2-P04-CA-037-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/imports/raw-products/{rawProduct}; execute primary action; assert result; reload same context | VR-CA-037-POPULATED (manifest; semantic/manual MVP) |
+| CA-038 Normalized Draft Review | Import operator | `/admin/central/imports/drafts/{draft}/review` | ImportOperationsReadModel | Compare normalized draft; approve, reject or publish it | `V2-P04-CA-038-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/imports/drafts/{draft}/review; execute primary action; assert result; reload same context | VR-CA-038-POPULATED (manifest; semantic/manual MVP) |
+| CA-039 Mapping Rules Editor | Import operator | `/admin/central/imports/mappings` | ImportOperationsReadModel | Validate and save Mapping Rules Editor; reload persisted values | `V2-P04-CA-039-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/imports/mappings; execute primary action; assert result; reload same context | VR-CA-039-POPULATED (manifest; semantic/manual MVP) |
+| CA-040 Unmapped Fields | Import operator | `/admin/central/imports/unmapped-fields` | ImportOperationsReadModel | Filter unmapped fields; create a mapping or ignore with a recorded reason | `V2-P04-CA-040-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/imports/unmapped-fields; execute primary action; assert result; reload same context | VR-CA-040-POPULATED (manifest; semantic/manual MVP) |
+| CA-041 Duplicate Candidates | Import operator | `/admin/central/imports/duplicate-candidates` | ImportOperationsReadModel | Compare candidates; merge or dismiss the seeded candidate | `V2-P04-CA-041-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/imports/duplicate-candidates; execute primary action; assert result; reload same context | VR-CA-041-POPULATED (manifest; semantic/manual MVP) |
+| CA-042 Normalization Errors | Import operator | `/admin/central/imports/errors/normalization` | ImportOperationsReadModel | Inspect failed value/rule; correct mapping/input and retry normalization | `V2-P04-CA-042-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/imports/errors/normalization; execute primary action; assert result; reload same context | VR-CA-042-POPULATED (manifest; semantic/manual MVP) |
+| CA-043 Media Download Errors | Import operator | `/admin/central/imports/errors/media` | ImportOperationsReadModel | Inspect source/error; retry the seeded media download and observe result | `V2-P04-CA-043-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/imports/errors/media; execute primary action; assert result; reload same context | VR-CA-043-POPULATED (manifest; semantic/manual MVP) |
 
 ## Phase 05 — Central Media and Translations
 
-- **Owned screens:** CA-044…CA-051 Media Library, Asset Detail, Upload, Variants
-  Preview, Assignments, Localized Media Manager, Sources/Licenses, Integrity
-  Report; CA-052…CA-059 Translation Dashboard, Missing, Outdated, Product,
-  Category, Attribute and Unit Editors, Bulk Translation Review.
-- **Owned domains:** canonical assets/variants/assignments/sources, localized
-  media, integrity, canonical translations, source hashes, status/approval,
-  coverage and bulk review.
-- **Dependencies:** Phases 01–03; existing media and translation actions/services;
-  product/brand/category/unit records from Phases 02–03.
-- **Allowed file areas:** Central Media/Translation controllers and routes only;
-  media/translation Filament pages/resources; `app/Actions/Media/**` and
-  `Translations/**`; media/translation services, queries, models, value objects,
-  jobs and Central views; related factories/phase seeder/tests; narrowly named
-  media/translation migrations if required.
-- **Forbidden file areas:** shared shell; unrelated Central CRUD; Site-local media
-  override screens; imports except read-only source linkage; pricing/themes/
-  public rendering.
-- **Required seed data:** original assets and variants in processing/ready/failed/
-  missing states; global/localized assignments; licensed/broken sources;
-  integrity failures; multiple locales and entity translations in missing,
-  outdated, draft, review and approved states.
-- **Definition of Done:** upload/generate/assign/localize/source/integrity actions
-  and every translation edit/review action work in the Central workspace;
-  `/central/*` presentation is reconciled into the one admin experience; bulk
-  review preserves per-record authorization and audit data.
-- **Test acceptance:** storage/variant/assignment/source/integrity journeys;
-  translation save/hash/outdated/approve/bulk tests; media and translator role
-  boundaries; broken-file and cross-entity validation.
-- **Visual acceptance:** CA-044…CA-059 are reviewed individually against the
-  corresponding PNGs, including upload progress, variant grids, side-by-side
-  translation, coverage and report states.
+- **Owned screens:** CA-044…CA-059.
+- **Owned domains:** canonical media assets/variants/assignments/integrity and canonical translation status/edit/review.
+- **Dependencies:** Phases 01–04; existing media and translation contracts.
+- **Change boundary:** One serial phase with two internal gates in the same MR: Media CA-044…CA-051 first, then Translations CA-052…CA-059. Each gate owns only its module code/seeds/tests. No generic shared UI change is allowed.
+- **Schema/model changes:** None planned; existing media and translation models/migrations are reused.
+- **Required seed data:** Media with sources, licenses, variants, assignments, localized variants and integrity failures; translations in missing/draft/outdated/review/approved states across locales.
+- **Definition of Done:** Media gate passes before translation work begins; then every asset and translation action works, failures remain visible, and both gates pass together.
+- **Test acceptance:** media upload/variant/assignment/integrity and translation hash/status/bulk review journeys; role separation; full phase regression after the second gate.
+- **Visual acceptance:** Gate A signs CA-044…CA-051; Gate B signs CA-052…CA-059 and rechecks Gate A; re-accept CA-001 after dashboard integration.
+
+### Screen Acceptance Matrix
+
+| Screen | Actor | Route | Read model | Primary actions | Seed scenario | Permission test | Functional test | Visual artifact |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| CA-044 Media Library | Media operator | `/admin/central/media` | CanonicalMediaReadModel | Search/filter assets; open detail; start registered upload flow | `V2-P05-CA-044-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/media; execute primary action; assert result; reload same context | VR-CA-044-POPULATED (manifest; semantic/manual MVP) |
+| CA-045 Media Asset Detail | Media operator | `/admin/central/media/{asset}` | CanonicalMediaReadModel | Inspect asset metadata/variants/usage; update source metadata | `V2-P05-CA-045-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/media/{asset}; execute primary action; assert result; reload same context | VR-CA-045-POPULATED (manifest; semantic/manual MVP) |
+| CA-046 Media Upload | Media operator | `/admin/central/media/upload` | CanonicalMediaReadModel | Select valid/invalid files; upload; inspect completion/failure | `V2-P05-CA-046-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/media/upload; execute primary action; assert result; reload same context | VR-CA-046-POPULATED (manifest; semantic/manual MVP) |
+| CA-047 Media Variants Preview | Media operator | `/admin/central/media/{asset}/variants` | CanonicalMediaReadModel | Generate/refresh Media Variants Preview; inspect success, warning and failure states | `V2-P05-CA-047-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/media/{asset}/variants; execute primary action; assert result; reload same context | VR-CA-047-POPULATED (manifest; semantic/manual MVP) |
+| CA-048 Media Assignments | Media operator | `/admin/central/media/assignments` | CanonicalMediaReadModel | Assign or unassign an asset role on a canonical entity | `V2-P05-CA-048-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/media/assignments; execute primary action; assert result; reload same context | VR-CA-048-POPULATED (manifest; semantic/manual MVP) |
+| CA-049 Localized Media Manager | Media operator | `/admin/central/media/localized` | CanonicalMediaReadModel | Select and persist changes in Localized Media Manager; verify resulting state | `V2-P05-CA-049-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/media/localized; execute primary action; assert result; reload same context | VR-CA-049-POPULATED (manifest; semantic/manual MVP) |
+| CA-050 Media Sources  /  Licenses | Media operator | `/admin/central/media/sources` | CanonicalMediaReadModel | Create or update source, attribution and license metadata | `V2-P05-CA-050-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/media/sources; execute primary action; assert result; reload same context | VR-CA-050-POPULATED (manifest; semantic/manual MVP) |
+| CA-051 Media Integrity Report | Media operator | `/admin/central/media/integrity` | CanonicalMediaReadModel | Filter Media Integrity Report; inspect seeded issue and follow its registered remediation link | `V2-P05-CA-051-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/media/integrity; execute primary action; assert result; reload same context | VR-CA-051-POPULATED (manifest; semantic/manual MVP) |
+| CA-052 Translation Dashboard | Translator | `/admin/central/translations` | CanonicalTranslationReadModel | Inspect KPIs/alerts; open only stable registry destinations | `V2-P05-CA-052-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/translations; execute primary action; assert result; reload same context | VR-CA-052-POPULATED (manifest; semantic/manual MVP) |
+| CA-053 Missing Translations | Translator | `/admin/central/translations/missing` | CanonicalTranslationReadModel | Select locale; edit Missing Translations; save and inspect review status | `V2-P05-CA-053-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/translations/missing; execute primary action; assert result; reload same context | VR-CA-053-POPULATED (manifest; semantic/manual MVP) |
+| CA-054 Outdated Translations | Translator | `/admin/central/translations/outdated` | CanonicalTranslationReadModel | Select locale; edit Outdated Translations; save and inspect review status | `V2-P05-CA-054-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/translations/outdated; execute primary action; assert result; reload same context | VR-CA-054-POPULATED (manifest; semantic/manual MVP) |
+| CA-055 Product Translation Editor | Translator | `/admin/central/translations/products/{product}` | CanonicalTranslationReadModel | Select locale; edit Product Translation Editor; save and inspect review status | `V2-P05-CA-055-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/translations/products/{product}; execute primary action; assert result; reload same context | VR-CA-055-POPULATED (manifest; semantic/manual MVP) |
+| CA-056 Category Translation Editor | Translator | `/admin/central/translations/categories/{category}` | CanonicalTranslationReadModel | Select locale; edit Category Translation Editor; save and inspect review status | `V2-P05-CA-056-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/translations/categories/{category}; execute primary action; assert result; reload same context | VR-CA-056-POPULATED (manifest; semantic/manual MVP) |
+| CA-057 Attribute Translation Editor | Translator | `/admin/central/translations/attributes/{attribute}` | CanonicalTranslationReadModel | Select locale; edit Attribute Translation Editor; save and inspect review status | `V2-P05-CA-057-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/translations/attributes/{attribute}; execute primary action; assert result; reload same context | VR-CA-057-POPULATED (manifest; semantic/manual MVP) |
+| CA-058 Unit Translation Editor | Translator | `/admin/central/translations/units/{unit}` | CanonicalTranslationReadModel | Select locale; edit Unit Translation Editor; save and inspect review status | `V2-P05-CA-058-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/translations/units/{unit}; execute primary action; assert result; reload same context | VR-CA-058-POPULATED (manifest; semantic/manual MVP) |
+| CA-059 Bulk Translation Review | Translator | `/admin/central/translations/review` | CanonicalTranslationReadModel | Select translations; approve or return them for revision | `V2-P05-CA-059-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/translations/review; execute primary action; assert result; reload same context | VR-CA-059-POPULATED (manifest; semantic/manual MVP) |
 
 ## Phase 06 — Central Change Requests and Conflicts
 
-- **Owned screens:** CA-060 Change Requests Queue; CA-061 Change Request Detail;
-  CA-062 Correction Diff Viewer; CA-063 Conflicts List; CA-064 Conflict Resolver;
-  CA-065 Data Source Comparison.
-- **Owned domains:** Central review of Site corrections, evidence, canonical diff,
-  conflict lifecycle, data-source comparison, approval/rejection/application and
-  version/projection consequences.
-- **Dependencies:** Phases 01–05; existing request/conflict/version actions;
-  Site-submitted records may be seeded until Phase 12 owns the Site UI.
-- **Allowed file areas:** ChangeRequest, SyncConflict and ProjectionConflict
-  resources/pages; `app/Actions/Corrections/**`, `Sync/**`, `Versions/**` only for
-  owned behavior; request/conflict services/models/policies/components; phase
-  factories/seeder/tests; narrowly named correction/conflict migrations.
-- **Forbidden file areas:** shared shell; Site correction screens; catalog forms
-  except approved apply action integration; pricing/import UI; public pages.
-- **Required seed data:** requests in every approved lifecycle state, evidence and
-  missing-evidence cases, duplicate/conflicting proposals, source comparisons,
-  resolvable and blocked conflicts, impacted product versions/sites.
-- **Definition of Done:** reviewers can triage, compare, comment where approved,
-  approve/reject/apply and resolve with auditable outcomes; applying a canonical
-  change increments the version and schedules only affected projections.
-- **Test acceptance:** lifecycle and invalid-transition tests; diff/evidence
-  rendering; permission and concurrency tests; version/rebuild integration;
-  duplicate and blocked conflict behavior.
-- **Visual acceptance:** CA-060…CA-065 match queue density, detail hierarchy,
-  side-by-side diffs, source evidence and resolver states in their references.
+- **Owned screens:** CA-060…CA-065.
+- **Owned domains:** Central review of Site correction requests, diffs, conflict resolution and source comparison.
+- **Dependencies:** Phases 01–05; Site-to-Central request contract from existing v1 behavior.
+- **Change boundary:** Owned Central review screens plus correction/conflict actions, read models, policies, seeds and tests. Site submission UI, projection internals and shared shell are excluded.
+- **Schema/model changes:** None planned. Any unification of legacy ChangeRequest and CorrectionRequest persistence needs a separately approved prerequisite MR and data-migration plan.
+- **Required seed data:** Pending, approved, rejected and applied requests; scalar/media/translation/spec diffs; unresolved/resolved conflicts and differing source values.
+- **Definition of Done:** Central reviewers can inspect evidence, approve/reject/apply allowed corrections and resolve conflicts with audited deterministic outcomes; Site records are not directly edited.
+- **Test acceptance:** status transition, stale/double-review, diff, authorization, canonical update and rebuild-trigger contract tests.
+- **Visual acceptance:** Semantic/manual review for CA-060…CA-065; re-accept CA-001 after dashboard adapter integration.
+
+### Screen Acceptance Matrix
+
+| Screen | Actor | Route | Read model | Primary actions | Seed scenario | Permission test | Functional test | Visual artifact |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| CA-060 Change Requests Queue | Central reviewer | `/admin/central/change-requests` | CentralCorrectionConflictReadModel | Filter Change Requests Queue; open seeded item; execute its allowed status transition | `V2-P06-CA-060-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/change-requests; execute primary action; assert result; reload same context | VR-CA-060-POPULATED (manifest; semantic/manual MVP) |
+| CA-061 Change Request Detail | Central reviewer | `/admin/central/change-requests/{request}` | CentralCorrectionConflictReadModel | Inspect evidence/diff; approve, reject or apply the request | `V2-P06-CA-061-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/change-requests/{request}; execute primary action; assert result; reload same context | VR-CA-061-POPULATED (manifest; semantic/manual MVP) |
+| CA-062 Correction Diff Viewer | Central reviewer | `/admin/central/change-requests/{request}/diff` | CentralCorrectionConflictReadModel | Filter Correction Diff Viewer; inspect raw/manifest record without mutating source data | `V2-P06-CA-062-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/change-requests/{request}/diff; execute primary action; assert result; reload same context | VR-CA-062-POPULATED (manifest; semantic/manual MVP) |
+| CA-063 Conflicts List | Central reviewer | `/admin/central/conflicts` | CentralCorrectionConflictReadModel | Filter conflicts; open CA-064 for an unresolved seeded record | `V2-P06-CA-063-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/conflicts; execute primary action; assert result; reload same context | VR-CA-063-POPULATED (manifest; semantic/manual MVP) |
+| CA-064 Conflict Resolver | Central reviewer | `/admin/central/conflicts/{conflict}` | CentralCorrectionConflictReadModel | Choose the permitted resolution value; confirm conflict resolution | `V2-P06-CA-064-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/conflicts/{conflict}; execute primary action; assert result; reload same context | VR-CA-064-POPULATED (manifest; semantic/manual MVP) |
+| CA-065 Data Source Comparison | Central reviewer | `/admin/central/data-sources/compare` | CentralCorrectionConflictReadModel | Generate/refresh Data Source Comparison; inspect success, warning and failure states | `V2-P06-CA-065-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/data-sources/compare; execute primary action; assert result; reload same context | VR-CA-065-POPULATED (manifest; semantic/manual MVP) |
 
 ## Phase 07 — Central Price Sources
 
-- **Owned screens:** CA-066…CA-074 Price Sources List, Price Source Detail,
-  Create/Edit, Credentials, Sync Logs, Raw Price Offers Viewer, External Product
-  Mapping, Mapping Approval Queue, Price Source Error Report.
-- **Owned domains:** central source configuration/credentials, adapters,
-  scheduling/retry, raw offer normalization, external mapping review, logs,
-  health and errors.
-- **Dependencies:** Phase 01, canonical products from Phase 02, markets from v1,
-  and existing pricing pipeline.
-- **Allowed file areas:** PriceSource/SyncLog/RawOffer/ExternalMapping Filament
-  resources/pages/widgets; `app/Pricing/**`; `app/Actions/Pricing/**`;
-  `app/Services/Pricing/**`; pricing jobs/models/queries/data/contracts; phase
-  factories/seeder/tests; narrowly named price-source migrations.
-- **Forbidden file areas:** shared shell; Site pricing presentation/configuration;
-  catalog editors; import pipeline; public offer UI.
-- **Required seed data:** API/feed/manual sources across markets; healthy/delayed/
-  failing/disabled states; configured/missing/invalid credentials without real
-  secrets; sync logs; valid/malformed/stale raw offers; pending/approved/rejected
-  mappings and errors.
-- **Definition of Done:** safe source and credential management, sync inspection,
-  raw-offer review, manual mapping and approval actions operate with redacted
-  secrets and truthful health/error states.
-- **Test acceptance:** credential encryption/redaction; adapter normalization;
-  job retry/idempotency; mapping transitions; authorization; safe failure and
-  queue/status integration.
-- **Visual acceptance:** CA-066…CA-074 match their list/detail/form/log/queue/report
-  references with seeded health, error and empty states.
+- **Owned screens:** CA-066…CA-074.
+- **Owned domains:** source configuration, credentials, sync health/logs, raw offers, mappings, approvals and errors.
+- **Dependencies:** Phase 01 and stable canonical product contracts from Phase 02.
+- **Change boundary:** Owned price-source screens plus Central pricing adapters/jobs/actions/queries/policies/seeds/tests. Site offer presentation and shared shell are excluded.
+- **Schema/model changes:** None planned; existing price-source and offer models/migrations are reused.
+- **Required seed data:** Manual/CSV/API sources; safe fake credentials; healthy/running/failed syncs; mapped/unmapped/rejected offers; approval queue and representative errors.
+- **Definition of Done:** Operators can configure/test/sync sources and process mappings/errors without exposing secrets; state and freshness are truthful.
+- **Test acceptance:** credential redaction/encryption, adapter contract, retry/idempotency, mapping approval, permissions and queue-state tests.
+- **Visual acceptance:** Semantic/manual review for CA-066…CA-074; re-accept CA-001 after dashboard adapter integration.
 
-## Phase 08 — Central Snapshots, Backup Status, Users and Roles
+### Screen Acceptance Matrix
 
-- **Owned screens:** CA-075…CA-081 Snapshots List, Snapshot Detail, Create
-  Snapshot, Export History, Media Manifest Viewer, Backup Status, Restore
-  Checklist; CA-082…CA-085 Users List, User Create/Edit, Roles & Permissions,
-  Activity Log.
-- **Owned domains:** portable catalog snapshots/exports/manifests/checksums,
-  backup-status reporting, restore readiness, admin users, existing roles and
-  permissions, activity audit.
-- **Dependencies:** Phases 01–07 for representative export content and role-aware
-  navigation; v1 export/backup services and permission matrix.
-- **Allowed file areas:** CatalogSnapshot/MissingMedia resources/pages/widgets;
-  export/backup services and commands; User/role/activity Filament resources;
-  User/policy/permission support only for approved management behavior; relevant
-  models/factories/phase seeder/tests; narrowly named snapshot/user/activity
-  migrations; snapshot download route only.
-- **Forbidden file areas:** shared shell except separate prerequisite MR;
-  canonical module behavior; Site workspace; infrastructure backup automation;
-  public pages; new role types not present in the approved model.
-- **Required seed data:** snapshots/exports in queued/running/ready/failed/expired
-  states, manifests and checksum failures, truthful backup-health examples;
-  accounts for every existing role, invited/active/disabled states, permission
-  examples and activity entries.
-- **Definition of Done:** export/snapshot/manifests/download/check/restore-readiness
-  workflows are complete and accurately distinguish portable export from full
-  backup; authorized admins can manage users and existing role assignments and
-  inspect activity without privilege escalation.
-- **Test acceptance:** generation/download/checksum/manifest/failure tests;
-  authorization and path-safety tests; user lifecycle and role escalation denial;
-  activity recording; seed smoke.
-- **Visual acceptance:** CA-075…CA-085 match references and terminology; status,
-  manifest, permission matrix and audit detail remain usable responsively.
+| Screen | Actor | Route | Read model | Primary actions | Seed scenario | Permission test | Functional test | Visual artifact |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| CA-066 Price Sources List | Price-source operator | `/admin/central/price-sources` | CentralPriceSourceReadModel | Search/filter price sources; open CA-067; start CA-068 | `V2-P07-CA-066-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/price-sources; execute primary action; assert result; reload same context | VR-CA-066-POPULATED (manifest; semantic/manual MVP) |
+| CA-067 Price Source Detail | Price-source operator | `/admin/central/price-sources/{source}` | CentralPriceSourceReadModel | Inspect health/configuration; start sync or open logs | `V2-P07-CA-067-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/price-sources/{source}; execute primary action; assert result; reload same context | VR-CA-067-POPULATED (manifest; semantic/manual MVP) |
+| CA-068 Price Source Create / Edit | Price-source operator | `/admin/central/price-sources/{source?}/edit` | CentralPriceSourceReadModel | Validate and create/update Price Source; reload saved record | `V2-P07-CA-068-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/price-sources/{source?}/edit; execute primary action; assert result; reload same context | VR-CA-068-POPULATED (manifest; semantic/manual MVP) |
+| CA-069 Price Source Credentials | Price-source operator | `/admin/central/price-sources/{source}/credentials` | CentralPriceSourceReadModel | Save redacted/encrypted credentials; test the connection | `V2-P07-CA-069-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/price-sources/{source}/credentials; execute primary action; assert result; reload same context | VR-CA-069-POPULATED (manifest; semantic/manual MVP) |
+| CA-070 Price Sync Logs | Price-source operator | `/admin/central/price-sources/sync-logs` | CentralPriceSourceReadModel | Filter Price Sync Logs; inspect seeded success/failure record and linked context | `V2-P07-CA-070-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/price-sources/sync-logs; execute primary action; assert result; reload same context | VR-CA-070-POPULATED (manifest; semantic/manual MVP) |
+| CA-071 Raw Price Offers Viewer | Price-source operator | `/admin/central/price-sources/raw-offers` | CentralPriceSourceReadModel | Filter Raw Price Offers Viewer; inspect raw/manifest record without mutating source data | `V2-P07-CA-071-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/price-sources/raw-offers; execute primary action; assert result; reload same context | VR-CA-071-POPULATED (manifest; semantic/manual MVP) |
+| CA-072 External Product Mapping | Price-source operator | `/admin/central/price-sources/mappings` | CentralPriceSourceReadModel | Map or remap an external product to its canonical product | `V2-P07-CA-072-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/price-sources/mappings; execute primary action; assert result; reload same context | VR-CA-072-POPULATED (manifest; semantic/manual MVP) |
+| CA-073 Mapping Approval Queue | Price-source operator | `/admin/central/price-sources/mapping-approvals` | CentralPriceSourceReadModel | Filter Mapping Approval Queue; open seeded item; execute its allowed status transition | `V2-P07-CA-073-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/price-sources/mapping-approvals; execute primary action; assert result; reload same context | VR-CA-073-POPULATED (manifest; semantic/manual MVP) |
+| CA-074 Price Source Error Report | Price-source operator | `/admin/central/price-sources/errors` | CentralPriceSourceReadModel | Filter Price Source Error Report; inspect seeded issue and follow its registered remediation link | `V2-P07-CA-074-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/price-sources/errors; execute primary action; assert result; reload same context | VR-CA-074-POPULATED (manifest; semantic/manual MVP) |
 
-## Phase 09 — Site Settings and Category Presentation
+## Phase 08 — Central Snapshots, Export, Backup, Users and Roles
 
-- **Owned screens:** SA-002…SA-012 Site Settings, Domain Settings, Market
-  Settings, Locale Settings, Currency Settings, SEO Defaults, Enabled Categories,
-  Category Visibility, Category Local SEO, Category Local Media, Category Page
-  Preview.
-- **Owned domains:** active-site identity/domain, market/locale/currency, SEO
-  defaults, category eligibility/visibility and local category presentation.
-- **Dependencies:** Phase 01 site switcher; Phase 03 canonical categories/schema/
-  units; Phase 05 media/translations.
-- **Allowed file areas:** Site/Market resources and Site settings/category pages;
-  `app/Actions/Sites/**` for settings/category behavior; Site/Market/Locale/
-  SiteCategory/SiteOverride/MediaAssignment models and policies; category
-  projection preview support; site-specific factories/phase seeder/tests;
-  narrowly named site settings/category migrations.
-- **Forbidden file areas:** shared shell/site switcher; canonical category/schema
-  editors; product, pricing, review, lead, content and theme behavior; public page
-  redesign.
-- **Required seed data:** at least three switchable sites with distinct domains,
-  markets, locales and currencies; enabled/hidden/incomplete categories; local
-  SEO/media overrides; missing content and preview-ready projections.
-- **Definition of Done:** every setting action is active-site scoped, validated and
-  previewable; Site Admin can control only local category presentation and cannot
-  mutate canonical category/schema data.
-- **Test acceptance:** domain/market/locale/currency validation; category enable/
-  visibility/SEO/media actions; cross-site denial; projection preview updates;
-  role matrix and deep-link tests.
-- **Visual acceptance:** SA-002…SA-012 match the corresponding references with the
-  persistent switcher, summaries, forms, tables, previews and responsive states.
+- **Owned screens:** CA-075…CA-085.
+- **Owned domains:** snapshots/exports/manifests/backup evidence plus users, roles, permissions and activity history.
+- **Dependencies:** Phases 01–07 and stable permission model.
+- **Change boundary:** One serial phase with two internal gates in the same MR: Ops CA-075…CA-081 first, then Access CA-082…CA-085. Shared permission configuration changes require a separate prerequisite MR before this screen MR.
+- **Schema/model changes:** Explicit prerequisite only if no durable audit source exists: add `activity_log_entries` migration and `ActivityLogEntry` model for CA-085. No other model/migration change is authorized by this phase.
+- **Required seed data:** Snapshots and manifests in queued/completed/failed states, checksum/missing-media evidence and restore checklist; active/invited/disabled users, scoped roles and activity events.
+- **Definition of Done:** Ops gate truthfully distinguishes export from restore; Access gate safely manages users/roles and shows audited activity; both gates pass together without privilege escalation.
+- **Test acceptance:** export/checksum/download/failure; user lifecycle, role escalation denial, permission matrix and activity filtering; full phase regression after Access gate.
+- **Visual acceptance:** Gate A signs CA-075…CA-081; Gate B signs CA-082…CA-085 and rechecks Gate A; re-accept CA-001 after integration.
 
-## Phase 10 — Site Products, Overrides and Projection Preview
+### Screen Acceptance Matrix
 
-- **Owned screens:** SA-013…SA-021 Site Products List, Product Visibility Manager,
-  Product Local Detail, Local SEO Override, Local Media Override, Local
-  Title/Slug Override, Product Projection Preview, Products Without Projection,
-  Stale Products.
-- **Owned domains:** active-site product eligibility/visibility, local
-  presentation overrides, projection inspection, missing/stale detection.
-- **Dependencies:** Phases 01, 02, 05 and 09; existing projection and override
-  services.
-- **Allowed file areas:** SiteResource product/override/SEO pages and
-  SiteProductProjection/Stale resources; `app/Actions/Sites/**` for owned product
-  behavior; site product/override/projection queries/services/models/policies;
-  screen-specific views; factories/phase seeder/tests; narrowly named site
-  product/override migrations.
-- **Forbidden file areas:** shared shell; canonical product/spec editors; generic
-  projection engine internals except a separately reviewed defect fix; themes,
-  pricing, corrections, public UI.
-- **Required seed data:** visible/hidden/excluded/draft products; local SEO/media/
-  title/slug overrides; canonical changes with preserved overrides; missing,
-  stale, blocked and current projections across multiple sites.
-- **Definition of Done:** Site Admin can manage approved local fields and
-  visibility, inspect the resulting projection and resolve missing/stale work
-  through approved actions; canonical fields remain immutable.
-- **Test acceptance:** visibility and every override journey; slug/locale/media
-  validation; cross-site and canonical-mutation denial; stale/missing detection;
-  projection preview consistency.
-- **Visual acceptance:** SA-013…SA-021 match list/detail/editor/preview/report
-  references, including warning badges, filters and before/after previews.
+| Screen | Actor | Route | Read model | Primary actions | Seed scenario | Permission test | Functional test | Visual artifact |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| CA-075 Snapshots List | Backup/export operator | `/admin/central/snapshots` | SnapshotBackupReadModel | Filter snapshots; open CA-076; start CA-077 | `V2-P08-CA-075-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/snapshots; execute primary action; assert result; reload same context | VR-CA-075-POPULATED (manifest; semantic/manual MVP) |
+| CA-076 Snapshot Detail | Backup/export operator | `/admin/central/snapshots/{snapshot}` | SnapshotBackupReadModel | Inspect snapshot contents/checksums; download a completed artifact | `V2-P08-CA-076-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/snapshots/{snapshot}; execute primary action; assert result; reload same context | VR-CA-076-POPULATED (manifest; semantic/manual MVP) |
+| CA-077 Create Snapshot | Backup/export operator | `/admin/central/snapshots/create` | SnapshotBackupReadModel | Choose export scope; create snapshot; inspect queued/completed state | `V2-P08-CA-077-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/snapshots/create; execute primary action; assert result; reload same context | VR-CA-077-POPULATED (manifest; semantic/manual MVP) |
+| CA-078 Export History | Backup/export operator | `/admin/central/exports` | SnapshotBackupReadModel | Filter Export History; inspect a version/artifact and its diff or download | `V2-P08-CA-078-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/exports; execute primary action; assert result; reload same context | VR-CA-078-POPULATED (manifest; semantic/manual MVP) |
+| CA-079 Media Manifest Viewer | Backup/export operator | `/admin/central/snapshots/{snapshot}/media-manifest` | SnapshotBackupReadModel | Filter Media Manifest Viewer; inspect raw/manifest record without mutating source data | `V2-P08-CA-079-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/snapshots/{snapshot}/media-manifest; execute primary action; assert result; reload same context | VR-CA-079-POPULATED (manifest; semantic/manual MVP) |
+| CA-080 Backup Status | Backup/export operator | `/admin/central/backups/status` | SnapshotBackupReadModel | Refresh and inspect backup/export evidence and failures | `V2-P08-CA-080-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/backups/status; execute primary action; assert result; reload same context | VR-CA-080-POPULATED (manifest; semantic/manual MVP) |
+| CA-081 Restore Checklist | Backup/export operator | `/admin/central/restore/checklist` | SnapshotBackupReadModel | Review every restore prerequisite and record verification evidence | `V2-P08-CA-081-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/restore/checklist; execute primary action; assert result; reload same context | VR-CA-081-POPULATED (manifest; semantic/manual MVP) |
+| CA-082 Users List | Platform administrator | `/admin/central/users` | IdentityPermissionActivityReadModel | Search/filter users; open CA-083 for create/edit | `V2-P08-CA-082-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/users; execute primary action; assert result; reload same context | VR-CA-082-POPULATED (manifest; semantic/manual MVP) |
+| CA-083 User Create / Edit | Platform administrator | `/admin/central/users/{user?}/edit` | IdentityPermissionActivityReadModel | Validate and create/update User; reload saved record | `V2-P08-CA-083-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/users/{user?}/edit; execute primary action; assert result; reload same context | VR-CA-083-POPULATED (manifest; semantic/manual MVP) |
+| CA-084 Roles & Permissions | Platform administrator | `/admin/central/roles` | IdentityPermissionActivityReadModel | Assign/revoke role capabilities; save the permission matrix | `V2-P08-CA-084-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/roles; execute primary action; assert result; reload same context | VR-CA-084-POPULATED (manifest; semantic/manual MVP) |
+| CA-085 Activity Log | Platform administrator | `/admin/central/activity-log` | IdentityPermissionActivityReadModel | Filter by actor/action/object/time; inspect an immutable activity event | `V2-P08-CA-085-POPULATED` | Allowed Central actor succeeds; Site-only/denied actor receives no capability | GET /admin/central/activity-log; execute primary action; assert result; reload same context | VR-CA-085-POPULATED (manifest; semantic/manual MVP) |
 
-## Phase 11 — Site Themes, Layouts, Homepage Blocks and Feature Flags
+## Phase 09 — Site Settings and Categories
 
-- **Owned screens:** SA-022…SA-028 Theme Selection, Theme Compatibility Check,
-  Theme Settings, Homepage Blocks Editor, Layout Templates Preview, Block Config
-  Editor, Feature Flags.
-- **Owned domains:** theme manifests/activation/settings, compatibility, layout
-  templates, homepage blocks/configuration, approved Site features.
-- **Dependencies:** Phases 01, 09 and 10; existing theme/block registry and
-  validators.
-- **Allowed file areas:** Site theme/home-block pages and new screen-specific
-  pages; `app/Domains/Themes/**`; theme/block actions/models/config/views;
-  SiteFeature relation behavior; factories/phase seeder/tests; narrowly named
-  theme/block migrations.
-- **Forbidden file areas:** shared shell; canonical catalog; sync/pricing/review/
-  lead/content behavior; public page redesign beyond preview adapters owned here.
-- **Required seed data:** active/draft themes; compatible/warning/incompatible
-  manifests; multiple templates; valid/invalid blocks; missing referenced items;
-  enabled/disabled/role-restricted feature flags.
-- **Definition of Done:** users can check compatibility before activation, edit
-  approved settings, preview/select layouts, compose/configure/reorder blocks and
-  manage approved flags; invalid combinations are blocked and explained.
-- **Test acceptance:** manifest/config validation, compatibility outcomes,
-  activation, block actions/order, feature permissions, cross-site isolation and
-  preview integration.
-- **Visual acceptance:** SA-022…SA-028 match cards, compatibility results, live
-  previews, block editor and flag states in the references at all target widths.
+- **Owned screens:** SA-002…SA-012.
+- **Owned domains:** Site identity/domain/market/locale/currency/SEO plus category enablement, visibility, local SEO/media and preview.
+- **Dependencies:** Phase 01; Central categories/schema from Phase 03.
+- **Change boundary:** Owned Site settings/category screens and their site-scoped actions, queries, policies, seeds and tests. Site-context infrastructure and shared UI remain Phase 01-owned.
+- **Schema/model changes:** None planned; existing Site, Market, Locale and SiteCategory models/migrations are reused.
+- **Required seed data:** At least two isolated sites with different domains/markets/locales/currencies/category visibility/overrides, plus an unauthorized user and previewable/disabled categories.
+- **Definition of Done:** All mutations bind immutable route `site_id`; settings and category projections/previews update only that site; canonical category data remains unchanged.
+- **Test acceptance:** cross-site reads/writes/tabs/caches/jobs, domain/locale validation, category visibility/SEO/media actions and denied actor tests.
+- **Visual acceptance:** Semantic/manual review for SA-002…SA-012; re-accept SA-001 after dashboard adapter integration.
 
-## Phase 12 — Site Sync and Correction Requests
+### Screen Acceptance Matrix
 
-- **Owned screens:** SA-029…SA-035 Sync Dashboard, Sync Logs, Projection Jobs,
-  Projection Errors, Manual Sync Product, Manual Sync Category, Manual Sync Whole
-  Site; SA-036…SA-038 Create Correction Request, My Correction Requests,
-  Correction Request Detail.
-- **Owned domains:** active-site sync observability and manual rebuild requests;
-  Site creation/tracking of canonical correction proposals.
-- **Dependencies:** Phases 06, 09–11; existing projection/sync/correction services,
-  jobs, logs and actions.
-- **Allowed file areas:** Sync/Projection resources/pages scoped to Site;
-  CorrectionRequest resources/pages; projection/sync/correction actions/jobs/
-  services/queries/models/policies for owned behavior; factories/phase seeder/
-  tests; narrowly named sync/correction migrations.
-- **Forbidden file areas:** shared shell; Central conflict/review UI; projection
-  payload shape outside approved fixes; catalog editors; pricing/public UI.
-- **Required seed data:** sync logs/jobs in queued/running/success/warning/failed
-  states; product/category/site impact estimates; stale/error examples; correction
-  drafts/submitted/reviewing/approved/rejected/needs-info with evidence/comments.
-- **Definition of Done:** Site Admin can understand sync health, inspect failures,
-  request the three approved rebuild scopes with impact confirmation, and create/
-  track correction requests without direct canonical mutation.
-- **Test acceptance:** active-site log/job/error isolation; manual-sync impact,
-  confirmation, dispatch and idempotency; correction lifecycle/evidence; denied
-  canonical edits; integration with Central review.
-- **Visual acceptance:** SA-029…SA-038 match dashboards, charts/tables, error
-  diagnostics, manual-sync checklists and correction detail timelines in the
-  approved references.
+| Screen | Actor | Route | Read model | Primary actions | Seed scenario | Permission test | Functional test | Visual artifact |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| SA-002 Site Settings | Authorized Site operator | `/admin/sites/{site}/settings` | SiteSettingsCategoryReadModel(site_id) | Validate and save Site Settings for the route context; reload values | `V2-P09-SA-002-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/settings; execute primary action; assert result; reload same context | VR-SA-002-POPULATED (manifest; semantic/manual MVP) |
+| SA-003 Domain Settings | Authorized Site operator | `/admin/sites/{site}/settings/domain` | SiteSettingsCategoryReadModel(site_id) | Validate and save Domain Settings for the route context; reload values | `V2-P09-SA-003-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/settings/domain; execute primary action; assert result; reload same context | VR-SA-003-POPULATED (manifest; semantic/manual MVP) |
+| SA-004 Market Settings | Authorized Site operator | `/admin/sites/{site}/settings/market` | SiteSettingsCategoryReadModel(site_id) | Validate and save Market Settings for the route context; reload values | `V2-P09-SA-004-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/settings/market; execute primary action; assert result; reload same context | VR-SA-004-POPULATED (manifest; semantic/manual MVP) |
+| SA-005 Locale Settings | Authorized Site operator | `/admin/sites/{site}/settings/locales` | SiteSettingsCategoryReadModel(site_id) | Validate and save Locale Settings for the route context; reload values | `V2-P09-SA-005-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/settings/locales; execute primary action; assert result; reload same context | VR-SA-005-POPULATED (manifest; semantic/manual MVP) |
+| SA-006 Currency Settings | Authorized Site operator | `/admin/sites/{site}/settings/currency` | SiteSettingsCategoryReadModel(site_id) | Validate and save Currency Settings for the route context; reload values | `V2-P09-SA-006-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/settings/currency; execute primary action; assert result; reload same context | VR-SA-006-POPULATED (manifest; semantic/manual MVP) |
+| SA-007 SEO Defaults | Authorized Site operator | `/admin/sites/{site}/settings/seo` | SiteSettingsCategoryReadModel(site_id) | Edit and save Site SEO defaults; preview resolved metadata | `V2-P09-SA-007-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/settings/seo; execute primary action; assert result; reload same context | VR-SA-007-POPULATED (manifest; semantic/manual MVP) |
+| SA-008 Enabled Categories | Authorized Site operator | `/admin/sites/{site}/categories` | SiteSettingsCategoryReadModel(site_id) | Enable or disable approved categories; save ordering | `V2-P09-SA-008-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/categories; execute primary action; assert result; reload same context | VR-SA-008-POPULATED (manifest; semantic/manual MVP) |
+| SA-009 Category Visibility | Authorized Site operator | `/admin/sites/{site}/categories/visibility` | SiteSettingsCategoryReadModel(site_id) | Toggle local category visibility; save for the route Site | `V2-P09-SA-009-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/categories/visibility; execute primary action; assert result; reload same context | VR-SA-009-POPULATED (manifest; semantic/manual MVP) |
+| SA-010 Category Local SEO | Authorized Site operator | `/admin/sites/{site}/categories/{category}/seo` | SiteSettingsCategoryReadModel(site_id) | Save or reset local category SEO inputs | `V2-P09-SA-010-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/categories/{category}/seo; execute primary action; assert result; reload same context | VR-SA-010-POPULATED (manifest; semantic/manual MVP) |
+| SA-011 Category Local Media | Authorized Site operator | `/admin/sites/{site}/categories/{category}/media` | SiteSettingsCategoryReadModel(site_id) | Assign, replace or clear local category media | `V2-P09-SA-011-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/categories/{category}/media; execute primary action; assert result; reload same context | VR-SA-011-POPULATED (manifest; semantic/manual MVP) |
+| SA-012 Category Page Preview | Authorized Site operator | `/admin/sites/{site}/categories/{category}/preview` | SiteSettingsCategoryReadModel(site_id) | Generate/refresh Category Page Preview; inspect success, warning and failure states | `V2-P09-SA-012-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/categories/{category}/preview; execute primary action; assert result; reload same context | VR-SA-012-POPULATED (manifest; semantic/manual MVP) |
 
-## Phase 13 — Site Price Sources and Local Offers
+## Phase 10 — Site Products and Local Overrides
 
-- **Owned screens:** SA-039…SA-046 Site Price Sources, Offer Provider Settings,
-  External Widget Config, Local Offers List, Local Offer Editor, Products Without
-  Offers, Price Freshness Report, Price Coverage Dashboard.
-- **Owned domains:** active-site source selection/configuration, provider/widget
-  presentation, local offers, freshness and coverage.
-- **Dependencies:** Phases 07, 09, 10 and 12; central normalized offers and market
-  configuration.
-- **Allowed file areas:** Site pricing pages under SiteResource or a Site-workspace
-  resource; site pricing actions/services/queries/data/models/policies/views;
-  approved widget configuration; factories/phase seeder/tests; narrowly named
-  site price/offer migrations.
-- **Forbidden file areas:** shared shell; central credentials/adapters/source
-  ingestion; catalog editors; unrelated sync/public rendering.
-- **Required seed data:** active/paused/failing site sources; provider modes and
-  widget configurations; fresh/stale/expired local offers; products with no
-  offers; merchants/categories with high/low coverage.
-- **Definition of Done:** Site Admin can configure allowed sources/provider
-  presentation, manage approved local offers, and act on freshness/coverage gaps
-  without accessing Central credentials or changing canonical products.
-- **Test acceptance:** source eligibility and active-site scoping; offer
-  validation/history/freshness; widget safety/fallback; coverage/no-offer queries;
-  permission and cross-site tests.
-- **Visual acceptance:** SA-039…SA-046 match the approved settings, offer table/
-  editor, warnings, trend charts and coverage breakdowns.
+- **Owned screens:** SA-013…SA-021.
+- **Owned domains:** Site product eligibility/visibility, local presentation inputs, projection preview, missing/stale diagnostics.
+- **Dependencies:** Phases 01–03 and 09; existing projection engine.
+- **Change boundary:** Owned Site product screens plus local-input/projection request actions, queries, policies, seeds and tests. Canonical product editors and direct projection-record mutation are excluded.
+- **Schema/model changes:** None planned; existing site product/override/projection models are reused.
+- **Required seed data:** Visible/hidden/excluded products; local title/slug/SEO/media overrides; missing/stale/current projections across two isolated sites.
+- **Definition of Done:** Site operators edit only local inputs/policy, preview deterministic output and request rebuilds; projection rows are never directly edited.
+- **Test acceptance:** local override persistence, canonical immutability, rebuild payload `site_id`, execution-time authorization, stale/missing reports and cross-site isolation.
+- **Visual acceptance:** Semantic/manual review for SA-013…SA-021; re-accept SA-001 after dashboard adapter integration.
+
+### Screen Acceptance Matrix
+
+| Screen | Actor | Route | Read model | Primary actions | Seed scenario | Permission test | Functional test | Visual artifact |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| SA-013 Site Products List | Authorized Site operator | `/admin/sites/{site}/products` | SiteProductProjectionReadModel(site_id) | Search/filter Site products; open SA-015 or bulk visibility at SA-014 | `V2-P10-SA-013-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/products; execute primary action; assert result; reload same context | VR-SA-013-POPULATED (manifest; semantic/manual MVP) |
+| SA-014 Product Visibility Manager | Authorized Site operator | `/admin/sites/{site}/products/visibility` | SiteProductProjectionReadModel(site_id) | Select and persist changes in Product Visibility Manager; verify resulting state | `V2-P10-SA-014-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/products/visibility; execute primary action; assert result; reload same context | VR-SA-014-POPULATED (manifest; semantic/manual MVP) |
+| SA-015 Product Local Detail | Authorized Site operator | `/admin/sites/{site}/products/{product}` | SiteProductProjectionReadModel(site_id) | Inspect canonical versus local presentation; open the registered local editor/preview | `V2-P10-SA-015-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/products/{product}; execute primary action; assert result; reload same context | VR-SA-015-POPULATED (manifest; semantic/manual MVP) |
+| SA-016 Product Local SEO Override | Authorized Site operator | `/admin/sites/{site}/products/{product}/seo` | SiteProductProjectionReadModel(site_id) | Save or reset the local product SEO override | `V2-P10-SA-016-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/products/{product}/seo; execute primary action; assert result; reload same context | VR-SA-016-POPULATED (manifest; semantic/manual MVP) |
+| SA-017 Product Local Media Override | Authorized Site operator | `/admin/sites/{site}/products/{product}/media` | SiteProductProjectionReadModel(site_id) | Assign, reorder or reset local product media overrides | `V2-P10-SA-017-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/products/{product}/media; execute primary action; assert result; reload same context | VR-SA-017-POPULATED (manifest; semantic/manual MVP) |
+| SA-018 Product Local Title / Slug Override | Authorized Site operator | `/admin/sites/{site}/products/{product}/title-slug` | SiteProductProjectionReadModel(site_id) | Validate and save/reset local title and slug overrides | `V2-P10-SA-018-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/products/{product}/title-slug; execute primary action; assert result; reload same context | VR-SA-018-POPULATED (manifest; semantic/manual MVP) |
+| SA-019 Product Projection Preview | Authorized Site operator | `/admin/sites/{site}/products/{product}/projection` | SiteProductProjectionReadModel(site_id) | Generate/refresh Product Projection Preview; inspect success, warning and failure states | `V2-P10-SA-019-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/products/{product}/projection; execute primary action; assert result; reload same context | VR-SA-019-POPULATED (manifest; semantic/manual MVP) |
+| SA-020 Products Without Projection | Authorized Site operator | `/admin/sites/{site}/products/without-projection` | SiteProductProjectionReadModel(site_id) | Filter missing projections; open product context and request a scoped rebuild | `V2-P10-SA-020-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/products/without-projection; execute primary action; assert result; reload same context | VR-SA-020-POPULATED (manifest; semantic/manual MVP) |
+| SA-021 Stale Products | Authorized Site operator | `/admin/sites/{site}/products/stale` | SiteProductProjectionReadModel(site_id) | Filter stale products; open product context and request a scoped rebuild | `V2-P10-SA-021-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/products/stale; execute primary action; assert result; reload same context | VR-SA-021-POPULATED (manifest; semantic/manual MVP) |
+
+## Phase 11 — Site Themes, Layouts and Blocks
+
+- **Owned screens:** SA-022…SA-028.
+- **Owned domains:** theme selection/settings/compatibility, layout preview, homepage blocks and feature flags.
+- **Dependencies:** Phases 01, 09–10; stable public theme/block contracts.
+- **Change boundary:** Owned Site theme/layout/block screens and module actions/queries/policies/seeds/tests. Shared admin design system and Public page styling are excluded.
+- **Schema/model changes:** None planned; existing theme, manifest, template and block models/migrations are reused.
+- **Required seed data:** Compatible/incompatible themes, templates, configured/unconfigured blocks and enabled/disabled features for two sites.
+- **Definition of Done:** Theme activation and block/feature configuration validate compatibility, persist per site and produce a working preview without changing canonical data.
+- **Test acceptance:** compatibility, activation rollback, block validation/order, feature gates, immutable site context and cross-site isolation.
+- **Visual acceptance:** Semantic/manual review for SA-022…SA-028; re-accept SA-001 after dashboard adapter integration.
+
+### Screen Acceptance Matrix
+
+| Screen | Actor | Route | Read model | Primary actions | Seed scenario | Permission test | Functional test | Visual artifact |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| SA-022 Theme Selection | Authorized Site operator | `/admin/sites/{site}/themes` | SiteThemeLayoutReadModel(site_id) | Preview a compatible theme; select and activate it with confirmation | `V2-P11-SA-022-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/themes; execute primary action; assert result; reload same context | VR-SA-022-POPULATED (manifest; semantic/manual MVP) |
+| SA-023 Theme Compatibility Check | Authorized Site operator | `/admin/sites/{site}/themes/compatibility` | SiteThemeLayoutReadModel(site_id) | Generate/refresh Theme Compatibility Check; inspect success, warning and failure states | `V2-P11-SA-023-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/themes/compatibility; execute primary action; assert result; reload same context | VR-SA-023-POPULATED (manifest; semantic/manual MVP) |
+| SA-024 Theme Settings | Authorized Site operator | `/admin/sites/{site}/themes/{theme}/settings` | SiteThemeLayoutReadModel(site_id) | Validate and save Theme Settings for the route context; reload values | `V2-P11-SA-024-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/themes/{theme}/settings; execute primary action; assert result; reload same context | VR-SA-024-POPULATED (manifest; semantic/manual MVP) |
+| SA-025 Homepage Blocks Editor | Authorized Site operator | `/admin/sites/{site}/homepage/blocks` | SiteThemeLayoutReadModel(site_id) | Validate and save Homepage Blocks Editor; reload persisted values | `V2-P11-SA-025-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/homepage/blocks; execute primary action; assert result; reload same context | VR-SA-025-POPULATED (manifest; semantic/manual MVP) |
+| SA-026 Layout Templates Preview | Authorized Site operator | `/admin/sites/{site}/layouts/preview` | SiteThemeLayoutReadModel(site_id) | Generate/refresh Layout Templates Preview; inspect success, warning and failure states | `V2-P11-SA-026-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/layouts/preview; execute primary action; assert result; reload same context | VR-SA-026-POPULATED (manifest; semantic/manual MVP) |
+| SA-027 Block Config Editor | Authorized Site operator | `/admin/sites/{site}/homepage/blocks/{block}/edit` | SiteThemeLayoutReadModel(site_id) | Validate and save Block Config Editor; reload persisted values | `V2-P11-SA-027-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/homepage/blocks/{block}/edit; execute primary action; assert result; reload same context | VR-SA-027-POPULATED (manifest; semantic/manual MVP) |
+| SA-028 Feature Flags | Authorized Site operator | `/admin/sites/{site}/features` | SiteThemeLayoutReadModel(site_id) | Enable/disable approved feature flags; save for the route Site | `V2-P11-SA-028-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/features; execute primary action; assert result; reload same context | VR-SA-028-POPULATED (manifest; semantic/manual MVP) |
+
+## Phase 12 — Site Sync and Corrections
+
+- **Owned screens:** SA-029…SA-038.
+- **Owned domains:** projection status/logs/jobs/errors/manual rebuild requests and Site-to-Central correction submission/tracking.
+- **Dependencies:** Phases 01–06 and 09–11.
+- **Change boundary:** Owned Site sync/correction screens plus site-scoped commands/jobs/actions/queries/policies/seeds/tests. Central review UI and projection-record editors are excluded.
+- **Schema/model changes:** None planned; existing projection and correction persistence is reused.
+- **Required seed data:** Current/stale/failed projections; queued/running/failed/completed jobs; product/category/site rebuild previews; correction requests in every allowed status.
+- **Definition of Done:** Manual operations preview scope, capture immutable `site_id`, recheck authorization at execution and expose results; corrections never directly mutate canonical truth.
+- **Test acceptance:** job payload/auth/idempotency, product/category/site scope, logs/errors, correction lifecycle, tab/cache isolation and Central boundary.
+- **Visual acceptance:** Semantic/manual review for SA-029…SA-038; re-accept SA-001 after dashboard adapter integration.
+
+### Screen Acceptance Matrix
+
+| Screen | Actor | Route | Read model | Primary actions | Seed scenario | Permission test | Functional test | Visual artifact |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| SA-029 Sync Dashboard | Authorized Site operator | `/admin/sites/{site}/sync` | SiteSyncCorrectionReadModel(site_id) | Inspect KPIs/alerts; open only stable registry destinations | `V2-P12-SA-029-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/sync; execute primary action; assert result; reload same context | VR-SA-029-POPULATED (manifest; semantic/manual MVP) |
+| SA-030 Sync Logs | Authorized Site operator | `/admin/sites/{site}/sync/logs` | SiteSyncCorrectionReadModel(site_id) | Filter Sync Logs; inspect seeded success/failure record and linked context | `V2-P12-SA-030-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/sync/logs; execute primary action; assert result; reload same context | VR-SA-030-POPULATED (manifest; semantic/manual MVP) |
+| SA-031 Projection Jobs | Authorized Site operator | `/admin/sites/{site}/sync/jobs` | SiteSyncCorrectionReadModel(site_id) | Filter jobs; inspect payload/site/status; retry an eligible failed job | `V2-P12-SA-031-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/sync/jobs; execute primary action; assert result; reload same context | VR-SA-031-POPULATED (manifest; semantic/manual MVP) |
+| SA-032 Projection Errors | Authorized Site operator | `/admin/sites/{site}/sync/errors` | SiteSyncCorrectionReadModel(site_id) | Inspect error and immutable Site payload; retry an eligible scoped rebuild | `V2-P12-SA-032-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/sync/errors; execute primary action; assert result; reload same context | VR-SA-032-POPULATED (manifest; semantic/manual MVP) |
+| SA-033 Manual Sync Product | Authorized Site operator | `/admin/sites/{site}/sync/product` | SiteSyncCorrectionReadModel(site_id) | Select target; preview impact; confirm Manual Sync Product; inspect queued result | `V2-P12-SA-033-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/sync/product; execute primary action; assert result; reload same context | VR-SA-033-POPULATED (manifest; semantic/manual MVP) |
+| SA-034 Manual Sync Category | Authorized Site operator | `/admin/sites/{site}/sync/category` | SiteSyncCorrectionReadModel(site_id) | Select target; preview impact; confirm Manual Sync Category; inspect queued result | `V2-P12-SA-034-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/sync/category; execute primary action; assert result; reload same context | VR-SA-034-POPULATED (manifest; semantic/manual MVP) |
+| SA-035 Manual Sync Whole Site | Authorized Site operator | `/admin/sites/{site}/sync/site` | SiteSyncCorrectionReadModel(site_id) | Select target; preview impact; confirm Manual Sync Whole Site; inspect queued result | `V2-P12-SA-035-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/sync/site; execute primary action; assert result; reload same context | VR-SA-035-POPULATED (manifest; semantic/manual MVP) |
+| SA-036 Create Correction Request | Authorized Site operator | `/admin/sites/{site}/corrections/create` | SiteSyncCorrectionReadModel(site_id) | Select canonical field; add evidence; submit Site-scoped correction | `V2-P12-SA-036-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/corrections/create; execute primary action; assert result; reload same context | VR-SA-036-POPULATED (manifest; semantic/manual MVP) |
+| SA-037 My Correction Requests | Authorized Site operator | `/admin/sites/{site}/corrections` | SiteSyncCorrectionReadModel(site_id) | Filter own correction requests; open SA-038 | `V2-P12-SA-037-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/corrections; execute primary action; assert result; reload same context | VR-SA-037-POPULATED (manifest; semantic/manual MVP) |
+| SA-038 Correction Request Detail | Authorized Site operator | `/admin/sites/{site}/corrections/{request}` | SiteSyncCorrectionReadModel(site_id) | Inspect submitted evidence, status and Central response | `V2-P12-SA-038-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/corrections/{request}; execute primary action; assert result; reload same context | VR-SA-038-POPULATED (manifest; semantic/manual MVP) |
+
+## Phase 13 — Site Pricing and Offers
+
+- **Owned screens:** SA-039…SA-046.
+- **Owned domains:** Site source selection, provider/widget configuration, local offers, missing/freshness/coverage reporting.
+- **Dependencies:** Phases 01, 07, 09–10.
+- **Change boundary:** Owned Site pricing/offer screens plus local pricing actions/queries/policies/seeds/tests. Central ingestion credentials/adapters and shared UI are excluded.
+- **Schema/model changes:** None planned; existing site price-source, market-offer and history persistence is reused.
+- **Required seed data:** Two sites with different enabled sources/providers; valid/invalid widgets; current/stale/missing/local offers and coverage variations.
+- **Definition of Done:** Every setting and offer action is site-scoped, source ownership stays Central, and reports reflect the selected site accurately.
+- **Test acceptance:** site source selection, widget validation, local offer lifecycle, freshness/coverage calculations, cross-site/permission and cache-key tests.
+- **Visual acceptance:** Semantic/manual review for SA-039…SA-046; re-accept SA-001 after dashboard adapter integration.
+
+### Screen Acceptance Matrix
+
+| Screen | Actor | Route | Read model | Primary actions | Seed scenario | Permission test | Functional test | Visual artifact |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| SA-039 Site Price Sources | Authorized Site operator | `/admin/sites/{site}/price-sources` | SitePricingOfferReadModel(site_id) | Enable/disable allowed Central price sources for the route Site | `V2-P13-SA-039-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/price-sources; execute primary action; assert result; reload same context | VR-SA-039-POPULATED (manifest; semantic/manual MVP) |
+| SA-040 Offer Provider Settings | Authorized Site operator | `/admin/sites/{site}/offers/providers` | SitePricingOfferReadModel(site_id) | Validate and save Offer Provider Settings for the route context; reload values | `V2-P13-SA-040-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/offers/providers; execute primary action; assert result; reload same context | VR-SA-040-POPULATED (manifest; semantic/manual MVP) |
+| SA-041 External Widget Config | Authorized Site operator | `/admin/sites/{site}/offers/widget` | SitePricingOfferReadModel(site_id) | Edit and validate External Widget Config; save and refresh preview | `V2-P13-SA-041-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/offers/widget; execute primary action; assert result; reload same context | VR-SA-041-POPULATED (manifest; semantic/manual MVP) |
+| SA-042 Local Offers List | Authorized Site operator | `/admin/sites/{site}/offers` | SitePricingOfferReadModel(site_id) | Search/filter local offers; open SA-043 for create/edit | `V2-P13-SA-042-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/offers; execute primary action; assert result; reload same context | VR-SA-042-POPULATED (manifest; semantic/manual MVP) |
+| SA-043 Local Offer Editor | Authorized Site operator | `/admin/sites/{site}/offers/{offer?}/edit` | SitePricingOfferReadModel(site_id) | Validate and save Local Offer Editor; reload persisted values | `V2-P13-SA-043-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/offers/{offer?}/edit; execute primary action; assert result; reload same context | VR-SA-043-POPULATED (manifest; semantic/manual MVP) |
+| SA-044 Products Without Offers | Authorized Site operator | `/admin/sites/{site}/offers/missing` | SitePricingOfferReadModel(site_id) | Filter products without offers; open the registered provider/product context | `V2-P13-SA-044-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/offers/missing; execute primary action; assert result; reload same context | VR-SA-044-POPULATED (manifest; semantic/manual MVP) |
+| SA-045 Price Freshness Report | Authorized Site operator | `/admin/sites/{site}/offers/freshness` | SitePricingOfferReadModel(site_id) | Filter Price Freshness Report; inspect seeded issue and follow its registered remediation link | `V2-P13-SA-045-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/offers/freshness; execute primary action; assert result; reload same context | VR-SA-045-POPULATED (manifest; semantic/manual MVP) |
+| SA-046 Price Coverage Dashboard | Authorized Site operator | `/admin/sites/{site}/offers/coverage` | SitePricingOfferReadModel(site_id) | Inspect KPIs/alerts; open only stable registry destinations | `V2-P13-SA-046-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/offers/coverage; execute primary action; assert result; reload same context | VR-SA-046-POPULATED (manifest; semantic/manual MVP) |
 
 ## Phase 14 — Site Reviews and Leads
 
-- **Owned screens:** SA-047…SA-050 Reviews List, Review Detail, Review Moderation
-  Queue, Review Settings; SA-051…SA-055 Leads List, Lead Detail, Lead Status Board,
-  Lead Form Settings, Lead Notifications Settings.
-- **Owned domains:** site review moderation/settings and lead intake, assignment,
-  status, form and notification configuration.
-- **Dependencies:** Phases 01, 09 and 10; v1 public forms, actions, policies,
-  notification and rate limits.
-- **Allowed file areas:** Review/Lead Filament resources and new approved pages;
-  `app/Actions/Reviews/**`, `Leads/**`; review/lead models/policies/services/
-  Livewire forms/notifications for owned behavior; site settings for approved
-  form/moderation options; factories/phase seeder/tests; narrowly named review/
-  lead settings migrations.
-- **Forbidden file areas:** shared shell; canonical catalog; content/polls;
-  pricing/sync; unrelated public page layout.
-- **Required seed data:** reviews in pending/approved/rejected/spam/reported states;
-  empty and busy moderation queues; leads in every board state with product/
-  category/general contexts, assignments, spam, form variants and notification
-  outcomes, using synthetic PII.
-- **Definition of Done:** moderators and support operators can complete every
-  approved list/detail/queue/board/settings action within the active site;
-  public intake reflects settings and preserves privacy/consent/rate limits.
-- **Test acceptance:** moderation/status/assignment/settings/notification
-  journeys; site/role isolation; public validation/consent/rate-limit regression;
-  PII-safe logging and export behavior.
-- **Visual acceptance:** SA-047…SA-055 match the references for dense lists,
-  detail sidebars, queues, board columns and settings previews at target widths.
+- **Owned screens:** SA-047…SA-055.
+- **Owned domains:** review moderation/settings and lead list/detail/status/forms/notifications.
+- **Dependencies:** Phases 01, 09–10 and existing Public intake contracts.
+- **Change boundary:** Owned Site review/lead screens plus their site-scoped actions, queries, policies, notifications, seeds and tests. Public form layout and shared UI are excluded.
+- **Schema/model changes:** None planned; existing review and lead persistence is reused.
+- **Required seed data:** Pending/approved/rejected/spam reviews; new/contacted/qualified/closed/spam leads; form and notification settings for two sites; synthetic PII only.
+- **Definition of Done:** Moderators/operators can process only their site's records, settings drive existing intake contracts, and PII is permission-safe.
+- **Test acceptance:** moderation/status transitions, notification deduplication, PII authorization, settings validation and cross-site isolation.
+- **Visual acceptance:** Semantic/manual review for SA-047…SA-055; re-accept SA-001 after dashboard adapter integration.
+
+### Screen Acceptance Matrix
+
+| Screen | Actor | Route | Read model | Primary actions | Seed scenario | Permission test | Functional test | Visual artifact |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| SA-047 Reviews List | Authorized Site operator | `/admin/sites/{site}/reviews` | SiteReviewReadModel(site_id) | Filter reviews; open SA-048 or the SA-049 moderation queue | `V2-P14-SA-047-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/reviews; execute primary action; assert result; reload same context | VR-SA-047-POPULATED (manifest; semantic/manual MVP) |
+| SA-048 Review Detail | Authorized Site operator | `/admin/sites/{site}/reviews/{review}` | SiteReviewReadModel(site_id) | Inspect review context; approve, reject or mark spam | `V2-P14-SA-048-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/reviews/{review}; execute primary action; assert result; reload same context | VR-SA-048-POPULATED (manifest; semantic/manual MVP) |
+| SA-049 Review Moderation Queue | Authorized Site operator | `/admin/sites/{site}/reviews/moderation` | SiteReviewReadModel(site_id) | Filter Review Moderation Queue; open seeded item; execute its allowed status transition | `V2-P14-SA-049-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/reviews/moderation; execute primary action; assert result; reload same context | VR-SA-049-POPULATED (manifest; semantic/manual MVP) |
+| SA-050 Review Settings | Authorized Site operator | `/admin/sites/{site}/reviews/settings` | SiteReviewReadModel(site_id) | Validate and save Review Settings for the route context; reload values | `V2-P14-SA-050-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/reviews/settings; execute primary action; assert result; reload same context | VR-SA-050-POPULATED (manifest; semantic/manual MVP) |
+| SA-051 Leads List | Authorized Site operator | `/admin/sites/{site}/leads` | SiteLeadReadModel(site_id) | Filter leads; open SA-052 or SA-053 status board | `V2-P14-SA-051-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/leads; execute primary action; assert result; reload same context | VR-SA-051-POPULATED (manifest; semantic/manual MVP) |
+| SA-052 Lead Detail | Authorized Site operator | `/admin/sites/{site}/leads/{lead}` | SiteLeadReadModel(site_id) | Inspect lead and consent; change status/assignee or mark spam | `V2-P14-SA-052-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/leads/{lead}; execute primary action; assert result; reload same context | VR-SA-052-POPULATED (manifest; semantic/manual MVP) |
+| SA-053 Lead Status Board | Authorized Site operator | `/admin/sites/{site}/leads/board` | SiteLeadReadModel(site_id) | Move a lead through allowed statuses and persist the transition | `V2-P14-SA-053-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/leads/board; execute primary action; assert result; reload same context | VR-SA-053-POPULATED (manifest; semantic/manual MVP) |
+| SA-054 Lead Form Settings | Authorized Site operator | `/admin/sites/{site}/leads/form-settings` | SiteLeadReadModel(site_id) | Validate and save Lead Form Settings for the route context; reload values | `V2-P14-SA-054-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/leads/form-settings; execute primary action; assert result; reload same context | VR-SA-054-POPULATED (manifest; semantic/manual MVP) |
+| SA-055 Lead Notifications Settings | Authorized Site operator | `/admin/sites/{site}/leads/notifications` | SiteLeadReadModel(site_id) | Validate and save Lead Notifications Settings for the route context; reload values | `V2-P14-SA-055-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/leads/notifications; execute primary action; assert result; reload same context | VR-SA-055-POPULATED (manifest; semantic/manual MVP) |
 
 ## Phase 15 — Site Content and Polls
 
-- **Owned screens:** SA-056…SA-061 Content List, Article Editor, Guide Editor, FAQ
-  Editor, Content Translation Editor, Content Relations; SA-062…SA-064 Polls List,
-  Poll Editor, Poll Results.
-- **Owned domains:** site content lifecycle/types/translations/relations and the
-  approved poll lifecycle/options/responses/results.
-- **Dependencies:** Phases 01, 09–11; v1 content models/actions/queries and public
-  block registry.
-- **Allowed file areas:** ContentItem resources/pages/relation managers and new
-  Poll pages; `app/Actions/Content/**` and narrowly scoped poll actions;
-  content/poll models/enums/policies/queries/services/views/config; factories/
-  phase seeder/tests; narrowly named poll or content migrations required by the
-  approved screens.
-- **Forbidden file areas:** shared shell; canonical catalog; reviews/leads;
-  pricing/sync; general public layout except owned content/poll rendering
-  integration.
-- **Required seed data:** articles/guides/FAQs in draft/scheduled/published/
-  archived states; multiple locales and translation quality states; product/
-  category/brand/content relations including broken/hidden targets; polls in
-  draft/active/closed states with options and deterministic responses.
-- **Definition of Done:** each approved content type has appropriate validation
-  and publication behavior; translations/relations are visible and safe; poll
-  creation, publication, closing and results are validated and site-scoped; no
-  arbitrary unvalidated poll JSON substitutes for the approved workflow.
-- **Test acceptance:** type-specific editors and publication; slug/translation/
-  relation integrity; poll lifecycle, vote/result integrity and permissions;
-  cross-site denial; public content/poll regression.
-- **Visual acceptance:** SA-056…SA-064 match their list/editor/translation/
-  relations/results references, including rich content, previews, charts and
-  responsive behavior.
+- **Owned screens:** SA-056…SA-064.
+- **Owned domains:** site content lifecycle/translations/relations and poll lifecycle/options/results.
+- **Dependencies:** Phases 01, 09–11 and Public content/block contracts.
+- **Change boundary:** One serial phase with two internal gates in the same MR: Content SA-056…SA-061 first, then Polls SA-062…SA-064. Public rendering changes are excluded until Phase 16.
+- **Schema/model changes:** Explicit prerequisite for SA-062…SA-064: add `polls`, `poll_options`, and `poll_responses` migrations plus `Poll`, `PollOption`, and `PollResponse` models. No other model/migration change is authorized.
+- **Required seed data:** Draft/scheduled/published/archived articles, guides and FAQs with translations/relations; draft/active/closed polls with options, zero and populated result sets on two sites.
+- **Definition of Done:** Content gate passes before poll work begins; content and poll actions persist per site, only published projections can be consumed publicly, and both gates pass together.
+- **Test acceptance:** type-specific content validation/publication/relations/translations; poll lifecycle/options/result integrity; permissions and cross-site isolation; full regression after Poll gate.
+- **Visual acceptance:** Gate A signs SA-056…SA-061; Gate B signs SA-062…SA-064 and rechecks Gate A; re-accept SA-001 after integration.
 
-## Phase 16 — Public Local Site Integration and Visual Acceptance
+### Screen Acceptance Matrix
 
-- **Owned screens:** the existing approved Public inventory only:
-  PUB-001 Multi-category Home, PUB-002 Single-category Home, PUB-003 Category,
-  PUB-004 Product Listing, PUB-005 Product Detail, PUB-006 Compare, PUB-022
-  Desktop Facets, PUB-023 Mobile Facet Drawer, PUB-046 Offers Table, PUB-057
-  Repair Lead Form, plus the already named approved Search, Content, Review,
-  Lead, and System states in the discovery inventory.
-- **Owned domains:** host/locale resolution, projection-only public reads, theme
-  rendering, navigation, search/facets/comparison, offers, reviews/leads, content/
-  polls, SEO and responsive behavior.
-- **Dependencies:** all prior phases and their seeded integration data.
-- **Allowed file areas:** `app/Http/Controllers/Public/**` and public requests/
-  queries/data; `app/Domains/PublicSite/**`; public-only theme renderers/services;
-  `resources/views/public/**`, public CSS/JS/components; public routes only;
-  integrated public demo seeders/factories/tests and narrowly scoped projection
-  fixes required by an approved page.
-- **Forbidden file areas:** admin shell/workspaces; Central or Site admin screens;
-  canonical write paths; new public product features or page types; cart,
-  checkout, orders and payments.
-- **Required seed data:** the three approved demo configurations with complete
-  localized categories/products/media/specs/facets/comparison/offers/reviews/
-  leads/content/polls; current/stale/no-offer/no-result/hidden/error states; stable
-  hosts and URLs.
-- **Definition of Done:** every approved public page/state resolves by host and
-  locale from published projections, respects local presentation/visibility,
-  provides its approved interactions and SEO, and remains usable across target
-  widths; no draft Central record is read as public content.
-- **Test acceptance:** end-to-end journeys for each demo; projection-only query
-  boundaries; visibility/locale/host/SEO tests; facets/search/compare/offers;
-  review/lead/poll validation and rate limits; accessibility, performance budget,
-  404/error and smoke tests.
-- **Visual acceptance:** a versioned screenshot set covers every approved PUB page
-  and named state at the applicable target widths; listing desktop/mobile states
-  and offer-table responsiveness receive explicit review and product sign-off.
+| Screen | Actor | Route | Read model | Primary actions | Seed scenario | Permission test | Functional test | Visual artifact |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| SA-056 Content List | Authorized Site operator | `/admin/sites/{site}/content` | SiteContentReadModel(site_id) | Filter content; open SA-057, SA-058 or SA-059 by content type | `V2-P15-SA-056-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/content; execute primary action; assert result; reload same context | VR-SA-056-POPULATED (manifest; semantic/manual MVP) |
+| SA-057 Article Editor | Authorized Site operator | `/admin/sites/{site}/content/articles/{item?}/edit` | SiteContentReadModel(site_id) | Validate and save Article Editor; reload persisted values | `V2-P15-SA-057-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/content/articles/{item?}/edit; execute primary action; assert result; reload same context | VR-SA-057-POPULATED (manifest; semantic/manual MVP) |
+| SA-058 Guide Editor | Authorized Site operator | `/admin/sites/{site}/content/guides/{item?}/edit` | SiteContentReadModel(site_id) | Validate and save Guide Editor; reload persisted values | `V2-P15-SA-058-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/content/guides/{item?}/edit; execute primary action; assert result; reload same context | VR-SA-058-POPULATED (manifest; semantic/manual MVP) |
+| SA-059 FAQ Editor | Authorized Site operator | `/admin/sites/{site}/content/faqs/{item?}/edit` | SiteContentReadModel(site_id) | Validate and save FAQ Editor; reload persisted values | `V2-P15-SA-059-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/content/faqs/{item?}/edit; execute primary action; assert result; reload same context | VR-SA-059-POPULATED (manifest; semantic/manual MVP) |
+| SA-060 Content Translation Editor | Authorized Site operator | `/admin/sites/{site}/content/{item}/translations` | SiteContentReadModel(site_id) | Select locale; edit Content Translation Editor; save and inspect review status | `V2-P15-SA-060-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/content/{item}/translations; execute primary action; assert result; reload same context | VR-SA-060-POPULATED (manifest; semantic/manual MVP) |
+| SA-061 Content Relations | Authorized Site operator | `/admin/sites/{site}/content/{item}/relations` | SiteContentReadModel(site_id) | Add/remove approved product/category/brand relations; save ordering | `V2-P15-SA-061-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/content/{item}/relations; execute primary action; assert result; reload same context | VR-SA-061-POPULATED (manifest; semantic/manual MVP) |
+| SA-062 Polls List | Authorized Site operator | `/admin/sites/{site}/polls` | SitePollReadModel(site_id) | Filter polls; open SA-063 for create/edit | `V2-P15-SA-062-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/polls; execute primary action; assert result; reload same context | VR-SA-062-POPULATED (manifest; semantic/manual MVP) |
+| SA-063 Poll Editor | Authorized Site operator | `/admin/sites/{site}/polls/{poll?}/edit` | SitePollReadModel(site_id) | Validate and save Poll Editor; reload persisted values | `V2-P15-SA-063-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/polls/{poll?}/edit; execute primary action; assert result; reload same context | VR-SA-063-POPULATED (manifest; semantic/manual MVP) |
+| SA-064 Poll Results | Authorized Site operator | `/admin/sites/{site}/polls/{poll}/results` | SitePollReadModel(site_id) | Filter responses; inspect aggregates and option totals | `V2-P15-SA-064-POPULATED` | Allowed actor for route site succeeds; unauthorized site/role and changed-tab context fail closed | GET /admin/sites/{site}/polls/{poll}/results; execute primary action; assert result; reload same context | VR-SA-064-POPULATED (manifest; semantic/manual MVP) |
 
-## Completion of Roadmap v2
+## Phase 16 — Public Local Site Integration
 
-Roadmap v2 is complete only when all 85 Central Admin references, all 64 Site
-Admin references, and the approved Public inventory have a traceable route,
-seeded scenario, working action set, permission evidence, automated acceptance,
-and signed visual evidence inside the single product contract.
+- **Owned screens:** PUB-001…PUB-080.
+- **Owned domains:** host/locale-resolved public projection rendering and the registered public interactions only.
+- **Dependencies:** Phases 01–15; approved definitions and versioned visual artifacts for every owned PUB ID.
+- **Change boundary:** Only registry-approved Public routes/controllers/read models/views/components plus Public seeds/tests. Admin screens, canonical writes, shared Admin UI and unregistered Public routes are excluded.
+- **Schema/model changes:** None planned; public runtime consumes already-produced projections and approved interaction persistence.
+- **Required seed data:** Multi-category and single-category sites with localized published/hidden/stale/missing projections, offers, reviews, leads, content, themes and all approved Public states after their definitions are supplied.
+- **Definition of Done:** Blocked until all PUB-001…PUB-080 rows are defined and their required visual references approved. Then every registered page/state/component/block works from projections; no draft/canonical direct read or standalone public poll page exists.
+- **Test acceptance:** host/locale resolution, published-only queries, SEO, responsive navigation/facets/offers/forms/system states, no cross-site data and end-to-end data-producing phase integration.
+- **Visual acceptance:** Semantic/manual evidence for every defined PUB artifact; no automated-regression claim until images, hashes and capture metadata are versioned.
+
+### Screen Acceptance Matrix
+
+| Screen | Actor | Route | Read model | Primary actions | Seed scenario | Permission test | Functional test | Visual artifact |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| PUB-001 Home Page: Multi-category | Public visitor | `/` | PublishedHomepageProjection(host, locale) | Browse projected categories; search the published catalog | `V2-P16-PUB-001-POPULATED` | Guest sees published host/site data only; hidden/disabled/cross-site data is absent | GET /; execute primary action; assert result; reload same context | VR-PUB-001-POPULATED (manifest; semantic/manual MVP) |
+| PUB-002 Home Page: Single-category | Public visitor | `/` | PublishedHomepageProjection(host, locale) | Browse projected products; start a compatible comparison | `V2-P16-PUB-002-POPULATED` | Guest sees published host/site data only; hidden/disabled/cross-site data is absent | GET /; execute primary action; assert result; reload same context | VR-PUB-002-POPULATED (manifest; semantic/manual MVP) |
+| PUB-003 Category Page | Public visitor | `/categories/{categorySlug}` | PublishedCategoryProjection(host, locale, slug) | Open the projected listing and approved related content | `V2-P16-PUB-003-POPULATED` | Guest sees published host/site data only; hidden/disabled/cross-site data is absent | GET /categories/{categorySlug}; execute primary action; assert result; reload same context | VR-PUB-003-POPULATED (manifest; semantic/manual MVP) |
+| PUB-004 Product Listing Page | Public visitor | `/products` | PublishedSearchDocuments(host, locale, query) | Filter/sort projected products; open detail; add a compatible product to compare | `V2-P16-PUB-004-POPULATED` | Guest sees published host/site data only; hidden/disabled/cross-site data is absent | GET /products; execute primary action; assert result; reload same context | VR-PUB-004-POPULATED (manifest; semantic/manual MVP) |
+| PUB-005 Product Detail Page | Public visitor | `/products/{productSlug}` | PublishedProductProjection + public offers | Open an offer; add to compare; submit an approved review/lead form | `V2-P16-PUB-005-POPULATED` | Guest sees published host/site data only; hidden/disabled/cross-site data is absent | GET /products/{productSlug}; execute primary action; assert result; reload same context | VR-PUB-005-POPULATED (manifest; semantic/manual MVP) |
+| PUB-006 Compare Page | Public visitor | `/compare` | CompatiblePublishedProductProjections | Add/remove compatible projected products; open an offer | `V2-P16-PUB-006-POPULATED` | Guest sees published host/site data only; hidden/disabled/cross-site data is absent | GET /compare; execute primary action; assert result; reload same context | VR-PUB-006-POPULATED (manifest; semantic/manual MVP) |
+| PUB-007 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-008 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-009 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-010 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-011 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-012 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-013 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-014 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-015 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-016 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-017 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-018 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-019 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-020 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-021 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-022 Listing with Desktop Facets | Public visitor | `/products?{facetQuery}` | PublishedSearchDocuments(host, locale, query) | Apply and clear desktop facets; preserve active filters in the URL | `V2-P16-PUB-022-POPULATED` | Guest sees published host/site data only; hidden/disabled/cross-site data is absent | GET /products?{facetQuery}; execute primary action; assert result; reload same context | VR-PUB-022-POPULATED (manifest; semantic/manual MVP) |
+| PUB-023 Listing with Mobile Facet Drawer | Public visitor | `/products?{facetQuery}` | PublishedSearchDocuments(host, locale, query) | Open drawer; select/apply/clear facets; close without losing applied URL state | `V2-P16-PUB-023-POPULATED` | Guest sees published host/site data only; hidden/disabled/cross-site data is absent | GET /products?{facetQuery}; execute primary action; assert result; reload same context | VR-PUB-023-POPULATED (manifest; semantic/manual MVP) |
+| PUB-024 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-025 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-026 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-027 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-028 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-029 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-030 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-031 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-032 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-033 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-034 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-035 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-036 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-037 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-038 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-039 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-040 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-041 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-042 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-043 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-044 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-045 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-046 Offers Table | Public visitor | `embedded in PUB-005` | PublishedProductProjection + public offers | Open a normalized external offer; use the approved lead CTA | `V2-P16-PUB-046-POPULATED` | Guest sees published host/site data only; hidden/disabled/cross-site data is absent | GET embedded in PUB-005; execute primary action; assert result; reload same context | VR-PUB-046-POPULATED (manifest; semantic/manual MVP) |
+| PUB-047 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-048 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-049 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-050 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-051 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-052 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-053 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-054 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-055 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-056 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-057 Repair Lead Form | Public visitor | `/leads/repair` | PublishedSiteLeadFormConfig | Validate consent and fields; submit one site-scoped lead | `V2-P16-PUB-057-POPULATED` | Guest sees published host/site data only; hidden/disabled/cross-site data is absent | GET /leads/repair; execute primary action; assert result; reload same context | VR-PUB-057-POPULATED (manifest; semantic/manual MVP) |
+| PUB-058 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-059 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-060 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-061 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-062 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-063 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-064 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-065 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-066 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-067 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-068 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-069 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-070 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-071 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-072 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-073 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-074 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-075 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-076 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-077 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-078 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-079 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+| PUB-080 BLOCKED — approved definition absent from repository | BLOCKED | **BLOCKED** | BLOCKED — product definition required | BLOCKED — product definition required | `BLOCKED — approved seed scenario required` | BLOCKED — actor/context not defined | BLOCKED — route/action definition required | REQUIRED BEFORE IMPLEMENTATION |
+
+## Phase and MR completion record
+
+Each merged phase records the registry and manifest versions, commit SHA,
+migrations/models explicitly used, seed command/scenarios, actor/site fixtures,
+test commands/results, per-screen visual reviewer and deviations, dashboard
+re-acceptance result when applicable, and any blocked next-phase dependency.
+“Implemented in v1” is not acceptance evidence.

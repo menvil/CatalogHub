@@ -1,244 +1,118 @@
-# Parallel Agent Workflow for Roadmap v2
+# Future Optional Parallel Workflow for CatalogHub v2
 
-## Objective
+| Field | Value |
+| --- | --- |
+| Status | Inactive future option |
+| Current delivery mode | Serial-first |
+| Current concurrency | One agent; one active work package/MR |
+| Activation authority | CatalogHub Product Owner and Engineering Owner |
+| Governing roadmap | `roadmap-v2-screen-driven.md` |
 
-Execute three or four independent screen-driven work packages in parallel
-without splitting CatalogHub into separate products, duplicating domain logic,
-or allowing shared admin infrastructure to drift.
+## Current rule
 
-The unit of assignment is a bounded group of approved screens with its domain,
-seed fixtures, actions, permissions, tests, and visual evidence. Agents are not
-assigned vague horizontal tasks such as "finish the UI" or "refactor models".
+Parallel execution is postponed. No current roadmap phase, estimate, dependency,
+seed contract, acceptance gate or MR may assume that multiple agents are
+available. Work proceeds in roadmap order, with one independently mergeable
+work package/MR active at a time.
 
-## Mandatory sequence
+Admin Shell, Design System and Workspace/Site Switcher stabilize first in Phase
+01. Later screen-driven phases then execute serially. A dependency is resolved
+and merged before the dependent phase starts; it is not worked around on another
+branch.
 
-### Gate 0 — no fan-out
+This document does not authorize fan-out, parallel UI work, concurrent schema
+changes or concurrent edits to shared components.
 
-Phase 01 — Admin Shell, Design System, Workspace and Site Switcher — is completed
-and merged by one owner before any screen-package fan-out.
+## Serial work-package contract
 
-The gate requires:
+Before each current work package starts, its MR description records:
 
-- one working `/admin` shell;
-- Central Admin and Site Admin workspace switching;
-- a functional authorized-site switcher and active-site contract;
-- stable navigation/route/component conventions;
-- baseline permission and cross-site tests;
-- seeded role/site accounts;
-- responsive and visual-test conventions;
-- a green integrated repository gate.
+- roadmap phase and exact registry screen IDs;
+- pinned green base commit;
+- owned domain behavior and explicit schema/model changes;
+- prerequisite MR, if any, already merged;
+- deterministic seed scenario IDs;
+- actors, permissions and immutable Site context cases;
+- primary actions and functional tests;
+- required visual artifacts and current reproducibility status;
+- dashboard re-acceptance requirement;
+- explicit non-goals, including shared UI and broad refactors.
 
-Agents must not independently invent workspace state, navigation, page chrome,
-tokens, breakpoint behavior, or a second Filament panel.
+Only after the current MR is accepted, merged and green may the next work package
+start. Findings outside scope go to the next planning decision; they do not
+expand the active MR.
 
-### Fan-out
+## Shared-change rule in serial mode
 
-After Gate 0, the integration owner publishes a package ledger. Up to four agents
-may work concurrently when their allowed paths and owned screens do not overlap.
+Shared admin layout, design tokens, workspace state and Site-context
+infrastructure belong to Phase 01. A later phase that genuinely needs a shared
+change pauses before implementation and creates one small serial prerequisite
+MR. That MR contains the shared contract change and regression evidence but no
+domain-specific screen implementation. The screen MR starts only after the
+prerequisite merges.
 
-## Work-package contract
+The same rule applies to global permission configuration, common test/visual
+harnesses, dependency manifests and cross-module route conventions. Serial mode
+reduces merge conflict risk, but it does not authorize opportunistic shared
+refactors.
 
-Every assignment contains the following fields before work starts:
+## Conditions required before future parallelization
 
-```text
-Package ID:
-Roadmap phase / slice:
-Owned screen IDs:
-Owned primary actions:
-Owned domains:
-Dependencies and pinned commit:
-Allowed paths:
-Forbidden paths:
-Seed class / fixture namespace:
-Required role and site scenarios:
-Required tests:
-Required screenshot names and widths:
-Out-of-scope findings log:
-```
+Parallel delivery may be proposed only after all of these are demonstrated on
+merged code:
 
-If a requested change falls outside the allowed paths, the agent stops that part,
-records the need, and requests a separate dependency/shared MR. It does not edit
-the shared file "because the change is small."
+1. the Admin Shell is stable across accepted Central and Site screens;
+2. the design system and responsive component APIs are stable and versioned;
+3. immutable Site context, queued-job authorization, cache/query scoping and
+   two-tab isolation are implemented and passing;
+4. route, permission, seed and read-model contracts have explicit module
+   boundaries;
+5. shared hotspots and their single-owner change process are documented;
+6. at least the first Central and Site screen-driven phases have passed
+   functional and semantic/manual visual acceptance;
+7. CI can run package and integrated gates reliably from deterministic seeds.
 
-## Path ownership rules
+Meeting these conditions does not switch modes automatically. Product and
+Engineering must approve a roadmap/contract change that names an integration
+owner and the exact concurrent work packages.
 
-### Package-owned paths
+## Future-only dependency model
 
-An agent may edit only the exact resource/page, action/service, model/migration,
-view, factory/seeder, and test paths listed in its package. A broad directory such
-as `app/Filament/**` or `tests/Feature/**` is not an acceptable ownership rule.
+If parallelization is later activated, every dependency must be classified:
 
-New files use a package-specific namespace or basename so ownership remains
-obvious. Each package gets its own idempotent seeder; agents do not concurrently
-edit `DatabaseSeeder.php`.
+- **HARD:** the depended-on schema, behavior or screen contract must merge before
+  the consumer starts; packages with a HARD dependency never run in parallel.
+- **CONTRACT:** both packages may consume an already approved, versioned
+  interface without editing its owner.
+- **INTEGRATION:** packages are independent to implement but require a named
+  serial integration/re-acceptance gate afterward.
 
-### Shared hot spots
+Future work packages may start concurrently only when no HARD dependency exists
+between them and their exact changed paths do not overlap.
 
-These paths are always shared and therefore forbidden to ordinary parallel
-packages:
+## Non-active future example
 
-- `app/Providers/Filament/AdminPanelProvider.php`;
-- workspace and active-site context support;
-- `resources/css/app.css`;
-- global admin JavaScript;
-- `resources/views/components/admin/**`;
-- Central/Site admin layouts and shared page chrome;
-- `routes/web.php` sections used by more than one package;
-- `config/cataloghub_permissions.php` and the global permission matrix;
-- `database/seeders/DatabaseSeeder.php`;
-- dependency manifests and lockfiles;
-- common test bootstrap and visual-test configuration.
+A future proposal could run independent Central module MRs after the shell and
+module boundaries are stable, then integrate them serially. Public Local Site
+must still wait for every data-producing admin phase and contract it consumes.
+In particular, Public content or poll rendering cannot run concurrently with the
+Site Content/Polls work that defines or produces that data.
 
-### Shared-component MR rule
+This paragraph is an illustration, not a wave plan, schedule or current
+authorization. There are no active Wave 1/2/5 assignments.
 
-Shared components change only through a separate, small MR with one purpose. The
-MR is owned by the shell/integration maintainer, lands before dependent packages,
-and contains:
+## Activation checklist
 
-- the smallest backward-compatible API change;
-- component/unit/browser tests;
-- before/after evidence on at least one Central and one Site screen when visual;
-- migration notes for package owners;
-- no domain-specific screen implementation.
+A future parallel-mode amendment must add:
 
-Dependent packages rebase after that MR. Multiple agents never carry competing
-copies of a shared-component change.
+- named integration owner and concurrency limit;
+- exact work packages, screen IDs and dependency types;
+- non-overlapping owned paths and explicit shared hotspots;
+- route/permission/seed/read-model contract versions;
+- separate small MR rule for shared components;
+- rebase and integration order;
+- per-package and full-suite gates;
+- dashboard and cross-site re-acceptance plan;
+- rollback/forward-fix ownership.
 
-## Recommended parallel waves
-
-The exact wave may change with dependencies, but no wave bypasses Roadmap phase
-gates.
-
-### Wave 0 — single owner
-
-| Package | Screens | Allowed emphasis | Forbidden emphasis |
-| --- | --- | --- | --- |
-| Shell | CA-001, SA-001 | Panel shell, workspaces, switcher, design system, visual harness. | All later domain screens. |
-
-### Wave 1 — four independent packages after Shell
-
-| Package | Screens | Representative allowed paths | Representative forbidden paths |
-| --- | --- | --- | --- |
-| Central Catalog | CA-002…CA-015 | CentralProduct/CentralBrand resources, actions, models, factories, owned tests/views. | Category schema, shell, Site, imports/pricing. |
-| Schema and Units | CA-016…CA-032 | CentralCategory/Facet/Measurement resources, CategorySchema actions, Units/Facets services, owned tests/views. | Product identity, shell, Site, pricing. |
-| Central Pricing | CA-066…CA-074 | Pricing resources/actions/services/jobs/adapters, owned tests/views. | Site pricing, shell, catalog forms. |
-| Site Foundation | SA-002…SA-012 | Site settings/category pages, Site/Market/Locale/local-category behavior, owned tests/views. | Switcher implementation, canonical schema editors, later Site modules. |
-
-These packages may use already merged v1 domain contracts. If one requires an
-unmerged behavior from another, it records a dependency instead of editing the
-other package's files.
-
-### Wave 2 — three or four packages after required Wave 1 merges
-
-| Package | Screens | Depends on |
-| --- | --- | --- |
-| Central Imports | CA-033…CA-043 | Central Catalog + Schema/Units contracts. |
-| Central Media/Translations | CA-044…CA-059 | Central Catalog + Schema/Units. |
-| Site Products | SA-013…SA-021 | Central Catalog + Site Foundation. |
-| Site Themes | SA-022…SA-028 | Site Foundation; Site Products for preview fixtures. |
-
-### Wave 3 — four packages
-
-| Package | Screens | Depends on |
-| --- | --- | --- |
-| Central Corrections/Conflicts | CA-060…CA-065 | Central Catalog, Media/Translations. |
-| Site Sync/Corrections | SA-029…SA-038 | Site Products, Themes, Central correction contract. |
-| Site Pricing | SA-039…SA-046 | Central Pricing, Site Products. |
-| Site Reviews/Leads | SA-047…SA-055 | Site Foundation, Site Products. |
-
-### Wave 4 — integration-heavy packages
-
-| Package | Screens | Depends on |
-| --- | --- | --- |
-| Central Snapshots/Users | CA-075…CA-085 | Stable Central modules and shell permission model. |
-| Site Content/Polls | SA-056…SA-064 | Site Foundation and Themes. |
-| Public Local Site | Approved PUB inventory | All data-producing admin phases required by each public journey. |
-
-Only three packages are recommended in the final wave so one concurrency slot can
-be reserved for integration, conflict resolution, and full-gate verification.
-
-## Branch and MR discipline
-
-1. Every package branches from the pinned green integration commit.
-2. The first commit may add only package-owned seed/test scaffolding when useful;
-   later commits deliver screens vertically, not as disconnected backend/UI
-   layers.
-3. Each MR contains only its owned screens and paths. Unrelated cleanup is logged,
-   not performed.
-4. Each MR lists every changed path and confirms it is allowed.
-5. The MR includes screen-to-route, screen-to-seed, screen-to-action,
-   screen-to-permission, screen-to-test, and screen-to-screenshot traceability.
-6. The package gate runs before review. The full repository gate runs again after
-   merge.
-7. Agents rebase on merged shared/dependency MRs before final acceptance; they do
-   not resolve semantic conflicts by choosing one side wholesale.
-8. A package is merged only when all owned approved screens are complete. Partial
-   backend foundations do not close a phase.
-
-## Seeder coordination
-
-- Each package owns an idempotent seeder such as
-  `Database\Seeders\RoadmapV2\<Package>DemoSeeder`.
-- Stable natural keys and documented fixture IDs are used for cross-package
-  references.
-- Package seeders may depend on an already merged seed contract but must not
-  delete or rewrite another package's fixtures.
-- Only an integration MR edits `DatabaseSeeder.php` to compose completed package
-  seeders in deterministic order.
-- Synthetic data is used for credentials and PII. Failure states must not require
-  external network access.
-
-## Route, permission, and migration coordination
-
-- Route names are reserved in the package ledger before implementation.
-- A package may add only routes for its approved screens; common route-group
-  changes use a shared MR.
-- New permissions are not inferred. Existing permissions are reused unless an
-  approved screen cannot be secured correctly; global matrix changes then use a
-  shared MR.
-- One migration has one owning package. Another package consumes it only after it
-  merges.
-- Cross-package schema changes require a short data-contract note covering
-  ownership, backfill, rollback/forward-fix, factories, and projection impact.
-
-## Visual acceptance coordination
-
-Screenshot artifacts use the approved screen ID and width:
-
-```text
-<package>/CA-002-1440.png
-<package>/SA-013-375.png
-<package>/PUB-005-1280.png
-```
-
-The agent records:
-
-- reference image or approved public inventory item;
-- seeded scenario and role/site context;
-- viewport and browser;
-- functional actions exercised before capture;
-- accepted deviations and reviewer.
-
-A shared visual-harness defect is fixed once in a small shared MR, not worked
-around differently by multiple screen packages.
-
-## Integration owner responsibilities
-
-The integration owner does not silently expand package scope. The owner:
-
-- maintains the package/path/route/seed ledger;
-- merges shared prerequisite MRs;
-- checks cross-workspace ownership and active-site isolation;
-- composes package seeders;
-- runs the complete repository gate;
-- checks that no unapproved screen entered navigation;
-- verifies visual evidence coverage by screen ID;
-- records deferred findings without converting them into opportunistic refactors.
-
-## Completion criteria for a parallel wave
-
-A wave completes only when all merged packages are green together, their seeders
-compose from a fresh database, permissions hold across package boundaries, the
-single admin shell remains consistent, public projection contracts still pass,
-and every owned screen has reviewed visual evidence. Merge count or agent
-utilization is not a completion metric.
+Until that amendment is approved, the serial roadmap is the only execution plan.

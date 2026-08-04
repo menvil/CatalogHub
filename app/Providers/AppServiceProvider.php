@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use App\Contracts\Auth\CentralAdminAccess;
-use App\Contracts\Auth\LegacySiteAdminRouteAccess;
 use App\Contracts\Auth\SiteAdminAccess;
 use App\Events\MarketOfferUpdated;
 use App\Importers\SerializedPhpProductImporter;
@@ -13,6 +12,7 @@ use App\Models\Imports\NormalizedProductDraft;
 use App\Models\User;
 use App\Observers\CentralProductObserver;
 use App\Policies\CentralPanelPolicy;
+use App\Policies\SitePanelPolicy;
 use App\Services\Imports\AttributeMappingService;
 use App\Services\Imports\AttributeNormalizer;
 use App\Services\Imports\DuplicateDetector;
@@ -24,8 +24,6 @@ use App\Services\Imports\Normalizers\MultiEnumNormalizer;
 use App\Services\Imports\Normalizers\NumberNormalizer;
 use App\Services\Imports\Normalizers\UnitNormalizer;
 use App\Services\Security\PublicRequestRateLimiter;
-use App\Support\Auth\TemporaryLegacySiteAdminRouteAccess;
-use App\Support\Auth\TemporarySiteAdminAccess;
 use App\Support\PermissionMatrix;
 use App\Support\Sites\SiteRuntimeContext;
 use App\View\Composers\PublicNavigationComposer;
@@ -47,8 +45,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(CentralAdminAccess::class, CentralPanelPolicy::class);
-        $this->app->bind(LegacySiteAdminRouteAccess::class, TemporaryLegacySiteAdminRouteAccess::class);
-        $this->app->bind(SiteAdminAccess::class, TemporarySiteAdminAccess::class);
+        $this->app->bind(SiteAdminAccess::class, SitePanelPolicy::class);
 
         $this->app->scoped(AttributeMappingService::class);
         $this->app->scoped(SiteRuntimeContext::class, function ($app): SiteRuntimeContext {

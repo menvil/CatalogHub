@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Auth;
 
 use App\Contracts\Auth\CentralAdminAccess;
-use App\Contracts\Auth\LegacySiteAdminRouteAccess;
 use App\Contracts\Auth\SiteAdminAccess;
 use App\Enums\UserRole;
 use App\Http\Middleware\EnsureCentralAdminAccess;
@@ -13,8 +12,7 @@ use App\Http\Middleware\EnsureSiteAdminAccess;
 use App\Models\Site;
 use App\Models\User;
 use App\Policies\CentralPanelPolicy;
-use App\Support\Auth\TemporaryLegacySiteAdminRouteAccess;
-use App\Support\Auth\TemporarySiteAdminAccess;
+use App\Policies\SitePanelPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
@@ -26,8 +24,7 @@ final class ContextAccessMiddlewareTest extends TestCase
     public function test_central_and_site_access_contracts_are_distinct_bindings(): void
     {
         self::assertInstanceOf(CentralPanelPolicy::class, app(CentralAdminAccess::class));
-        self::assertInstanceOf(TemporaryLegacySiteAdminRouteAccess::class, app(LegacySiteAdminRouteAccess::class));
-        self::assertInstanceOf(TemporarySiteAdminAccess::class, app(SiteAdminAccess::class));
+        self::assertInstanceOf(SitePanelPolicy::class, app(SiteAdminAccess::class));
     }
 
     public function test_wrong_context_is_rejected_server_side_before_the_endpoint_runs(): void

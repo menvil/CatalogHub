@@ -20,7 +20,7 @@ final class SiteRouteBoundaryTest extends TestCase
         $this->get('/admin/site')->assertRedirect('/admin/site/login');
     }
 
-    public function test_site_admin_opens_a_shell_bound_to_their_temporary_site_context(): void
+    public function test_site_admin_cannot_select_another_tenant_context(): void
     {
         $site = Site::factory()->create(['name' => 'Boundary fixture site']);
         $otherSite = Site::factory()->create(['name' => 'Other tenant site']);
@@ -28,10 +28,14 @@ final class SiteRouteBoundaryTest extends TestCase
 
         $this->actingAs($user)
             ->get("/admin/site?site_id={$otherSite->id}")
+            ->assertForbidden()
+            ->assertDontSee('Other tenant site');
+
+        $this->actingAs($user)
+            ->get("/admin/site?site_id={$site->id}")
             ->assertOk()
             ->assertSee('Site Admin shell')
             ->assertSee('Boundary fixture site')
-            ->assertDontSee('Other tenant site')
             ->assertSee('data-presentation-context="site-admin"', false);
     }
 

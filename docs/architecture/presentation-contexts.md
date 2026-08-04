@@ -43,8 +43,8 @@ Authentication failures redirect to the login route owned by the selected admin 
 The presentation boundaries reuse the project's permission registry instead of introducing a second permission package:
 
 - `CentralPanelPolicy` requires the registered `central.panel.access` permission. The foundation mapping grants it to Super Admin, Central Admin, Catalog Editor, and Translator; resource/page/action checks remain additive.
-- `TemporarySiteAdminAccess` allows `site_admin`; `RequireSiteContext` then requires the user's persisted `site_id` relation and ignores query-string attempts to select another site. P00-029 owns replacement with final site-scoped permissions and context resolution.
-- `TemporaryLegacySiteAdminRouteAccess` is an explicit route-name allowlist for pre-Phase-0.2 Site-owned resources that still live in the legacy `App\Filament\Resources` tree. It does not grant access to the Central home or Central-only resources, and P00-029 owns its removal.
+- `SitePanelPolicy` requires `site.panel.access` and an active membership for the selected site. A requested unassigned site is rejected instead of falling back to another tenant.
+- The legacy Site Admin allowlist for routes owned by the Central panel was removed in P00-029; Site membership never grants implicit Central access.
 - These adapters are server-side middleware dependencies. UI visibility is not an access decision.
 
 ## Ownership and dependency rules

@@ -80,9 +80,12 @@ final class SiteContextMiddlewareTest extends TestCase
 
         $this->actingAs($siteAdmin)
             ->get("/admin/site?site_id={$otherSite->id}")
-            ->assertOk()
-            ->assertSee('Bound administration site')
+            ->assertForbidden()
             ->assertDontSee($otherSite->name);
+
+        $this->get("/admin/site?site_id={$site->id}")
+            ->assertOk()
+            ->assertSee('Bound administration site');
 
         $central = User::factory()->create(['role' => UserRole::CentralAdmin]);
         $this->actingAs($central)->get('/admin/central')->assertOk();

@@ -10,6 +10,13 @@ final class PublicInputValidationTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(MultiCategorySiteSeeder::class);
+    }
+
     public function test_search_rejects_non_string_terms_before_controller_execution(): void
     {
         $this->get('http://tech-compare.test/en-US/search?q%5B0%5D=invalid')
@@ -30,8 +37,6 @@ final class PublicInputValidationTest extends TestCase
 
     public function test_compare_discards_nested_product_input_during_request_normalization(): void
     {
-        $this->seed(MultiCategorySiteSeeder::class);
-
         $this->get('http://tech-compare.test/en-US/compare?products%5B0%5D%5Bslug%5D=invalid')
             ->assertOk()
             ->assertDontSee('invalid');

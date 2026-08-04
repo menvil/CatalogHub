@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Public;
 
 use App\Domains\PublicSite\LocalizedUrlResolver;
-use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Enums\PublicProductSort;
 use App\Http\Controllers\Controller;
@@ -15,6 +14,7 @@ use App\Services\Facets\SiteFacetConfigResolver;
 use App\Services\Pricing\MerchantFilterOptionsBuilder;
 use App\Services\Pricing\ProductCardPricePresenter;
 use App\Support\Facets\FacetUrlBuilder;
+use App\Support\Sites\SiteRuntimeContext;
 use Illuminate\Contracts\View\View;
 
 final class ProductListingController extends Controller
@@ -23,7 +23,7 @@ final class ProductListingController extends Controller
         ListProductsRequest $request,
         string $locale,
         string $slug,
-        SiteContextResolver $sites,
+        SiteRuntimeContext $context,
         ThemeLayoutResolver $layouts,
         LocalizedUrlResolver $urls,
         PublicProductListingQuery $listingQuery,
@@ -32,7 +32,8 @@ final class ProductListingController extends Controller
         MerchantFilterOptionsBuilder $merchantOptions,
         ProductCardPricePresenter $pricePresenter,
     ): View {
-        $site = $sites->resolve($request->getHost(), $locale);
+        $site = $context->site;
+        $locale = $context->resolvedLocale;
         $listing = $request->listingData();
         $filters = $listing->filters;
         $result = $listingQuery->get(

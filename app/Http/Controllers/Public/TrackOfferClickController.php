@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Public;
 
 use App\Actions\Pricing\RecordOfferClickAction;
-use App\Domains\PublicSite\SiteContextResolver;
 use App\Http\Controllers\Controller;
 use App\Models\MarketOffer;
 use App\Queries\Pricing\ValidMarketOfferQuery;
+use App\Support\Sites\SiteRuntimeContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -15,11 +15,11 @@ final class TrackOfferClickController extends Controller
     public function __invoke(
         Request $request,
         MarketOffer $offer,
-        SiteContextResolver $sites,
+        SiteRuntimeContext $context,
         ValidMarketOfferQuery $validOffers,
         RecordOfferClickAction $recordClick,
     ): RedirectResponse {
-        $site = $sites->resolveHost($request->getHost());
+        $site = $context->site;
         $offer = $validOffers->findForSite($site, $offer);
         $destination = $this->safeDestination($offer->url);
 

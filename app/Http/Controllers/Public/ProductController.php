@@ -3,23 +3,21 @@
 namespace App\Http\Controllers\Public;
 
 use App\Domains\PublicSite\LocalizedUrlResolver;
-use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Http\Controllers\Controller;
 use App\Queries\PublicSite\PublicProductPageQuery;
 use App\Services\Content\RelatedContentResolver;
 use App\Services\Pricing\BestOfferResolver;
 use App\Services\Pricing\PriceFreshnessCalculator;
+use App\Support\Sites\SiteRuntimeContext;
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\Request;
 
 final class ProductController extends Controller
 {
     public function show(
-        Request $request,
         string $locale,
         string $slug,
-        SiteContextResolver $sites,
+        SiteRuntimeContext $context,
         ThemeLayoutResolver $layouts,
         LocalizedUrlResolver $urls,
         RelatedContentResolver $relatedContent,
@@ -27,7 +25,8 @@ final class ProductController extends Controller
         BestOfferResolver $bestOffers,
         PriceFreshnessCalculator $freshness,
     ): View {
-        $site = $sites->resolve($request->getHost(), $locale);
+        $site = $context->site;
+        $locale = $context->resolvedLocale;
         $page = $products->get($site, $locale, $slug);
         $projection = $page->projection;
         $payload = $projection->payload_json ?? [];

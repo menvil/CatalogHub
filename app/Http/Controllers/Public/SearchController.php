@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Public;
 
 use App\Domains\PublicSite\LocalizedUrlResolver;
-use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PublicSite\SearchProductsRequest;
 use App\Models\SiteSearchDocument;
 use App\Queries\PublicSite\PublicProductSearchQuery;
 use App\Services\Pricing\ProductCardPricePresenter;
+use App\Support\Sites\SiteRuntimeContext;
 use Illuminate\Contracts\View\View;
 
 final class SearchController extends Controller
@@ -17,13 +17,14 @@ final class SearchController extends Controller
     public function __invoke(
         SearchProductsRequest $request,
         string $locale,
-        SiteContextResolver $sites,
+        SiteRuntimeContext $context,
         ThemeLayoutResolver $layouts,
         LocalizedUrlResolver $urls,
         ProductCardPricePresenter $pricePresenter,
         PublicProductSearchQuery $search,
     ): View {
-        $site = $sites->resolve($request->getHost(), $locale);
+        $site = $context->site;
+        $locale = $context->resolvedLocale;
         $term = $request->searchData()->term;
         $results = collect();
 

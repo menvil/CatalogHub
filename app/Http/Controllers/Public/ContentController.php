@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Public;
 
 use App\Domains\PublicSite\LocalizedUrlResolver;
-use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Http\Controllers\Controller;
 use App\Models\ContentTranslation;
 use App\Queries\PublicSite\PublishedContentQuery;
+use App\Support\Sites\SiteRuntimeContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -17,12 +17,13 @@ final class ContentController extends Controller
         Request $request,
         string $locale,
         string $slug,
-        SiteContextResolver $sites,
+        SiteRuntimeContext $context,
         ThemeLayoutResolver $layouts,
         LocalizedUrlResolver $urls,
         PublishedContentQuery $content,
     ): View {
-        $site = $sites->resolve($request->getHost(), $locale);
+        $site = $context->site;
+        $locale = $context->resolvedLocale;
         $translation = $content->find($site, $locale, $slug);
 
         abort_unless($translation instanceof ContentTranslation, 404);

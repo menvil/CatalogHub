@@ -62,7 +62,7 @@ class OfferClickTrackingTest extends TestCase
     /** @param array<string, mixed> $attributes */
     private function trackableOffer(array $attributes = []): array
     {
-        $site = Site::factory()->create([
+        $site = Site::factory()->withRuntimeContext()->create([
             'domain' => 'tracking.test',
             'status' => SiteStatus::Active,
         ]);

@@ -8,9 +8,10 @@ use App\Models\Market;
 use App\Models\Site;
 use App\Models\SiteDomain;
 use App\Support\Sites\SiteRuntimeContext;
-use Error;
 use InvalidArgumentException;
 use ReflectionClass;
+use ReflectionNamedType;
+use ReflectionParameter;
 use Tests\TestCase;
 
 final class SiteRuntimeContextTest extends TestCase
@@ -21,6 +22,9 @@ final class SiteRuntimeContextTest extends TestCase
         $reflection = new ReflectionClass($context);
 
         self::assertTrue($reflection->isReadOnly());
+        foreach ($reflection->getProperties() as $property) {
+            self::assertTrue($property->isReadOnly());
+        }
         self::assertSame('de-DE', $context->requestedLocale);
         self::assertSame('de-DE', $context->resolvedLocale);
         self::assertSame('EUR', $context->currencyCode);
@@ -28,13 +32,14 @@ final class SiteRuntimeContextTest extends TestCase
         self::assertNotContains(
             'Illuminate\Http\Request',
             array_map(
-                static fn ($parameter): ?string => $parameter->getType()?->getName(),
+                static function (ReflectionParameter $parameter): ?string {
+                    $type = $parameter->getType();
+
+                    return $type instanceof ReflectionNamedType ? $type->getName() : null;
+                },
                 $reflection->getConstructor()?->getParameters() ?? [],
             ),
         );
-
-        $this->expectException(Error::class);
-        $context->resolvedLocale = 'en-DE';
     }
 
     public function test_missing_required_values_are_rejected(): void

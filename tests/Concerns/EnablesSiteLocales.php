@@ -14,6 +14,7 @@ trait EnablesSiteLocales
         DB::table('site_locales')->insert([
             'site_id' => $site->id,
             'locale_code' => $code,
+            'is_default' => $code === $site->default_locale,
             'is_enabled' => true,
             'created_at' => now(),
             'updated_at' => now(),

@@ -3,25 +3,24 @@
 namespace App\Http\Controllers\Public;
 
 use App\Domains\PublicSite\LocalizedUrlResolver;
-use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Http\Controllers\Controller;
 use App\Queries\PublicSite\PublicCategoryQuery;
+use App\Support\Sites\SiteRuntimeContext;
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\Request;
 
 final class CategoryController extends Controller
 {
     public function show(
-        Request $request,
         string $locale,
         string $slug,
-        SiteContextResolver $sites,
+        SiteRuntimeContext $context,
         ThemeLayoutResolver $layouts,
         LocalizedUrlResolver $urls,
         PublicCategoryQuery $categories,
     ): View {
-        $site = $sites->resolve($request->getHost(), $locale);
+        $site = $context->site;
+        $locale = $context->resolvedLocale;
         $projection = $categories->findActive($site, $locale, $slug);
         $projectionSeo = $projection->seo_json;
         $seo = is_array($projectionSeo) ? $projectionSeo : [];

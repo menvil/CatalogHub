@@ -8,5 +8,5 @@ use App\Models\User;
 
 interface CentralAdminAccess
 {
-    public function allows(User $user): bool;
+    public function allows(User $user, ?string $routeName = null): bool;
 }

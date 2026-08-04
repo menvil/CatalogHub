@@ -123,7 +123,9 @@ class SiteResourceTest extends TestCase
 
     public function test_authorized_site_manager_can_list_sites_and_open_the_wizard(): void
     {
-        $this->actingAs(User::factory()->create(['role' => UserRole::SiteAdmin]))
+        $site = Site::factory()->create();
+
+        $this->actingAs(User::factory()->siteAdmin($site)->create())
             ->get(SiteResource::getUrl())
             ->assertOk()
             ->assertSee('Create site');

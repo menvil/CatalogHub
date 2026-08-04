@@ -19,7 +19,7 @@ final readonly class EnsureCentralAdminAccess
         $user = $request->user();
 
         abort_unless(
-            $user instanceof User && $this->access->allows($user),
+            $user instanceof User && $this->access->allows($user, $request->route()?->getName()),
             403,
         );
 

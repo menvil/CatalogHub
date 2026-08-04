@@ -47,7 +47,7 @@ class User extends Authenticatable implements FilamentUser
     public function canAccessPanel(Panel $panel): bool
     {
         return match ($panel->getId()) {
-            'central' => app(CentralAdminAccess::class)->allows($this),
+            'central' => app(CentralAdminAccess::class)->allows($this, request()->route()?->getName()),
             'site' => app(SiteAdminAccess::class)->allows($this),
             default => false,
         };

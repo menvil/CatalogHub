@@ -158,13 +158,14 @@ final class DemoSiteSeederSupport
         $market = $this->market();
         $theme = $this->theme();
         $categories = $this->categories();
+        $normalizedHost = SiteDomain::normalizeHost($domain);
         $site = Site::query()->updateOrCreate(
             ['code' => $code],
             [
                 'market_id' => $market->id,
                 'theme_id' => $theme->id,
                 'name' => $name,
-                'domain' => $domain,
+                'domain' => $normalizedHost,
                 'mode' => $mode,
                 'default_locale' => 'en-US',
                 'currency_code' => $market->currency_code,
@@ -174,7 +175,10 @@ final class DemoSiteSeederSupport
             ],
         );
 
-        $normalizedHost = SiteDomain::normalizeHost($domain);
+        $site->domains()
+            ->where('host', '!=', $normalizedHost)
+            ->where('is_primary', true)
+            ->update(['is_primary' => false]);
         $site->domains()->updateOrCreate(
             ['host' => $normalizedHost],
             [

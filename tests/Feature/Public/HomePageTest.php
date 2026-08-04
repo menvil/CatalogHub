@@ -30,6 +30,7 @@ class HomePageTest extends TestCase
         $this->get('http://unknown.test/en-US')->assertNotFound();
         $this->get('http://tech-compare.test/de-DE')
             ->assertOk()
-            ->assertSee('Tech Compare Global');
+            ->assertSee('Tech Compare Global')
+            ->assertSee('<a href="https://tech-compare.test/en-US"', false);
     }
 }

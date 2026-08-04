@@ -13,6 +13,7 @@ use Database\Seeders\Demo\MultiCategorySiteSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use LogicException;
 use Tests\TestCase;
 
 final class SiteContextMiddlewareTest extends TestCase
@@ -54,6 +55,17 @@ final class SiteContextMiddlewareTest extends TestCase
         self::assertSame($originalLocale, app()->getLocale());
         self::assertSame($originalTimezone, date_default_timezone_get());
         $this->get('http://unknown-site.test/en-US')->assertNotFound();
+
+        self::assertSame($originalLocale, app()->getLocale());
+        self::assertSame($originalTimezone, date_default_timezone_get());
+        self::assertFalse(app(Request::class)->attributes->has(SiteRuntimeContext::class));
+
+        try {
+            app(SiteRuntimeContext::class);
+            self::fail('A site context leaked after the unknown-host response.');
+        } catch (LogicException $exception) {
+            self::assertSame('Site runtime context is unavailable for this request.', $exception->getMessage());
+        }
     }
 
     public function test_site_admin_uses_the_authenticated_site_while_central_has_no_site_requirement(): void

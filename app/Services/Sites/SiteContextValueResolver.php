@@ -21,12 +21,34 @@ final class SiteContextValueResolver
         ?string $requestedLocale,
     ): SiteRuntimeContext {
         $site->loadMissing(['market', 'locales.locale']);
+        $market = $this->market($site);
+        $resolvedLocale = $this->resolvedLocale($site, $requestedLocale);
+        [$currencyCode, $timezone] = $this->runtimeScalars($site);
+
+        return new SiteRuntimeContext(
+            site: $site,
+            domain: $domain,
+            market: $market,
+            requestedLocale: $requestedLocale,
+            resolvedLocale: $resolvedLocale,
+            currencyCode: $currencyCode,
+            timezone: $timezone,
+        );
+    }
+
+    private function market(Site $site): Market
+    {
         $market = $site->market;
 
         if (! $market instanceof Market) {
             throw $this->invalid($site, 'market is missing');
         }
 
+        return $market;
+    }
+
+    private function resolvedLocale(Site $site, ?string $requestedLocale): string
+    {
         $defaultLocale = $site->locales->first(
             static fn (SiteLocale $locale): bool => $locale->is_default,
         );
@@ -42,9 +64,15 @@ final class SiteContextValueResolver
             ->filter(static fn (SiteLocale $locale): bool => $locale->is_enabled && (bool) $locale->locale?->is_active)
             ->pluck('locale_code')
             ->all();
-        $resolvedLocale = is_string($requestedLocale) && in_array($requestedLocale, $enabledLocales, true)
+
+        return is_string($requestedLocale) && in_array($requestedLocale, $enabledLocales, true)
             ? $requestedLocale
             : $defaultLocale->locale_code;
+    }
+
+    /** @return array{string, string} */
+    private function runtimeScalars(Site $site): array
+    {
         $currencyCode = (string) $site->currency_code;
         $timezone = (string) $site->timezone;
 
@@ -58,15 +86,7 @@ final class SiteContextValueResolver
             throw $this->invalid($site, 'timezone must be a valid IANA identifier');
         }
 
-        return new SiteRuntimeContext(
-            site: $site,
-            domain: $domain,
-            market: $market,
-            requestedLocale: $requestedLocale,
-            resolvedLocale: $resolvedLocale,
-            currencyCode: $currencyCode,
-            timezone: $timezone,
-        );
+        return [$currencyCode, $timezone];
     }
 
     private function invalid(Site $site, string $reason): InvalidSiteRuntimeConfigurationException

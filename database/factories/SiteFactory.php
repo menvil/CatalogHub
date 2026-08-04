@@ -10,6 +10,7 @@ use App\Models\Market;
 use App\Models\Site;
 use App\Models\SiteDomain;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use InvalidArgumentException;
 
 /** @extends Factory<Site> */
 class SiteFactory extends Factory
@@ -58,7 +59,15 @@ class SiteFactory extends Factory
     /** @param list<string> $locales */
     public function withRuntimeContext(array $locales = ['en-US'], ?string $defaultLocale = null): static
     {
-        $defaultLocale ??= $locales[0] ?? 'en-US';
+        if ($locales === []) {
+            throw new InvalidArgumentException('At least one site locale is required.');
+        }
+
+        $defaultLocale ??= $locales[0];
+
+        if (! in_array($defaultLocale, $locales, true)) {
+            throw new InvalidArgumentException('The default site locale must be present in the locale list.');
+        }
 
         return $this
             ->state(fn (): array => ['default_locale' => $defaultLocale])

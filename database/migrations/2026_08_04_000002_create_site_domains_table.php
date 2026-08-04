@@ -22,30 +22,56 @@ return new class extends Migration
             $table->index(['site_id', 'is_primary']);
         });
 
-        DB::table('sites')
+        /** @var array<string, int> $normalizedHosts */
+        $normalizedHosts = [];
+        $sites = DB::table('sites')
             ->whereNotNull('domain')
             ->where('domain', '!=', '')
             ->select(['id', 'domain', 'created_at', 'updated_at'])
             ->orderBy('id')
-            ->each(function (object $site): void {
-                $input = trim((string) $site->domain);
-                $parts = parse_url(str_contains($input, '://') ? $input : '//'.$input);
-                $host = is_array($parts) ? ($parts['host'] ?? null) : null;
+            ->get();
+        $backfill = [];
 
-                if (! is_string($host) || $host === '') {
-                    throw new RuntimeException("Cannot normalize existing site domain [{$input}].");
-                }
+        foreach ($sites as $site) {
+            $host = $this->normalizeHost((string) $site->domain);
 
-                DB::table('site_domains')->insert([
-                    'site_id' => $site->id,
-                    'host' => strtolower(rtrim($host, '.')),
-                    'type' => 'primary',
-                    'is_primary' => true,
-                    'is_active' => true,
-                    'created_at' => $site->created_at,
-                    'updated_at' => $site->updated_at,
-                ]);
-            });
+            if (isset($normalizedHosts[$host])) {
+                throw new RuntimeException(
+                    "Duplicate normalized site domain [{$host}] for sites [{$normalizedHosts[$host]}] and [{$site->id}].",
+                );
+            }
+
+            $normalizedHosts[$host] = $site->id;
+            $backfill[] = [
+                'site_id' => $site->id,
+                'host' => $host,
+                'type' => 'primary',
+                'is_primary' => true,
+                'is_active' => true,
+                'created_at' => $site->created_at,
+                'updated_at' => $site->updated_at,
+            ];
+        }
+
+        if ($backfill !== []) {
+            DB::table('site_domains')->insert($backfill);
+        }
+    }
+
+    private function normalizeHost(string $input): string
+    {
+        $input = trim($input);
+        $parts = parse_url(str_contains($input, '://') ? $input : '//'.$input);
+        $host = is_array($parts) ? ($parts['host'] ?? null) : null;
+        $normalized = is_string($host) ? strtolower(rtrim($host, '.')) : '';
+
+        if ($normalized === ''
+            || ! str_contains($normalized, '.')
+            || filter_var($normalized, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME) === false) {
+            throw new RuntimeException("Cannot normalize existing site domain [{$input}].");
+        }
+
+        return $normalized;
     }
 
     public function down(): void

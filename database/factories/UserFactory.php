@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 /**
  * @extends Factory<User>
@@ -58,18 +59,23 @@ class UserFactory extends Factory
 
     public function siteAdmin(Site $site): static
     {
-        $this->ensureSiteRuntimeConfiguration($site);
-
-        return $this->state(fn (): array => [
-            'site_id' => $site->getKey(),
-            'role' => UserRole::SiteAdmin,
-        ]);
+        return $this
+            ->state(fn (): array => [
+                'site_id' => $site->getKey(),
+                'role' => UserRole::SiteAdmin,
+            ])
+            ->afterCreating(function () use ($site): void {
+                $this->ensureSiteRuntimeConfiguration($site);
+            });
     }
 
     private function ensureSiteRuntimeConfiguration(Site $site): void
     {
-        if (! $site->domains()->where('is_primary', true)->where('is_active', true)->exists()
-            && is_string($site->domain) && $site->domain !== '') {
+        if (! $site->domains()->where('is_primary', true)->where('is_active', true)->exists()) {
+            if (! is_string($site->domain) || trim($site->domain) === '') {
+                throw new InvalidArgumentException('An active primary site domain is required.');
+            }
+
             $site->domains()->create([
                 'host' => SiteDomain::normalizeHost($site->domain),
                 'type' => SiteDomainType::Primary,
@@ -83,6 +89,11 @@ class UserFactory extends Factory
         }
 
         $code = (string) $site->default_locale;
+
+        if (preg_match('/^[a-z]{2,3}(?:-[A-Z]{2})?$/', $code) !== 1) {
+            throw new InvalidArgumentException('A valid default site locale is required.');
+        }
+
         [$language, $region] = array_pad(explode('-', $code, 2), 2, null);
         Locale::query()->firstOrCreate(
             ['code' => $code],
@@ -93,7 +104,6 @@ class UserFactory extends Factory
                 'native_name' => $code,
                 'direction' => 'ltr',
                 'is_active' => true,
-                'is_default' => false,
                 'position' => 0,
             ],
         );

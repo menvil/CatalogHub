@@ -9,6 +9,7 @@ use App\Models\Site;
 use App\Models\SiteDomain;
 use App\Models\SiteLocale;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use InvalidArgumentException;
 use Tests\TestCase;
 
 class SiteTest extends TestCase
@@ -59,5 +60,19 @@ class SiteTest extends TestCase
             Site::query()->administrable()->pluck('id')->all(),
         );
         self::assertTrue(Site::query()->byCode('active-site')->sole()->is($active));
+    }
+
+    public function test_domain_normalization_rejects_relative_or_invalid_hosts(): void
+    {
+        foreach (['relative/path', '/relative', 'bad host'] as $input) {
+            try {
+                SiteDomain::normalizeHost($input);
+                self::fail("Invalid host [{$input}] was accepted.");
+            } catch (InvalidArgumentException $exception) {
+                self::assertSame('A valid site host is required.', $exception->getMessage());
+            }
+        }
+
+        self::assertSame('example.test', SiteDomain::normalizeHost('HTTPS://Example.TEST.:8443/path'));
     }
 }

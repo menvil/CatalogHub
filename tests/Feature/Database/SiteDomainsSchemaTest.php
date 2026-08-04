@@ -9,6 +9,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use RuntimeException;
 use Tests\TestCase;
 
 final class SiteDomainsSchemaTest extends TestCase
@@ -64,5 +65,24 @@ final class SiteDomainsSchemaTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+    }
+
+    public function test_backfill_rejects_equivalent_normalized_hosts_before_inserting_them(): void
+    {
+        $first = Site::factory()->create(['domain' => null]);
+        $second = Site::factory()->create(['domain' => null]);
+        DB::table('sites')->where('id', $first->id)->update(['domain' => 'HTTPS://Duplicate.TEST./path']);
+        DB::table('sites')->where('id', $second->id)->update(['domain' => 'duplicate.test']);
+        Schema::drop('site_domains');
+        $migration = require database_path('migrations/2026_08_04_000002_create_site_domains_table.php');
+
+        try {
+            $migration->up();
+            self::fail('Equivalent normalized hosts were accepted by the migration.');
+        } catch (RuntimeException $exception) {
+            self::assertStringContainsString('Duplicate normalized site domain [duplicate.test]', $exception->getMessage());
+        }
+
+        self::assertSame(0, DB::table('site_domains')->count());
     }
 }

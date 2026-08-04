@@ -31,7 +31,8 @@ class SitesMigrationTest extends TestCase
             fn (array $index): bool => $index['unique'] === true && $index['columns'] === ['domain']
         ));
         $this->assertTrue($indexes->contains(
-            fn (array $index): bool => $index['columns'] === ['status', 'market_id']
+            fn (array $index): bool => $index['unique'] === false
+                && $index['columns'] === ['status', 'market_id']
         ));
     }
 }

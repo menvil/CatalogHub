@@ -11,6 +11,7 @@ use App\Enums\SiteStatus;
 use App\Models\Locale;
 use App\Models\Market;
 use App\Models\Site;
+use App\Models\SiteDomain;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -74,12 +75,13 @@ final class SiteFoundationSeeder extends Seeder
         SiteMode $mode,
         SiteStatus $status,
     ): void {
+        $normalizedHost = SiteDomain::normalizeHost($host);
         $site = Site::query()->updateOrCreate(
             ['code' => $code],
             [
                 'market_id' => $market->id,
                 'name' => $name,
-                'domain' => $host,
+                'domain' => $normalizedHost,
                 'mode' => $mode,
                 'default_locale' => 'de-DE',
                 'currency_code' => 'EUR',
@@ -88,8 +90,12 @@ final class SiteFoundationSeeder extends Seeder
                 'settings_json' => ['foundation_fixture' => true],
             ],
         );
+        $site->domains()
+            ->where('host', '!=', $normalizedHost)
+            ->where('is_primary', true)
+            ->update(['is_primary' => false]);
         $site->domains()->updateOrCreate(
-            ['host' => $host],
+            ['host' => $normalizedHost],
             [
                 'type' => SiteDomainType::Primary,
                 'is_primary' => true,

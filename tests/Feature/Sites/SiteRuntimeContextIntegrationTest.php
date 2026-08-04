@@ -7,6 +7,7 @@ namespace Tests\Feature\Sites;
 use App\Enums\SiteStatus;
 use App\Exceptions\Sites\UnknownSiteException;
 use App\Models\Site;
+use App\Models\SiteDomain;
 use App\Services\Sites\SiteContextValueResolver;
 use App\Services\Sites\SiteResolver;
 use Database\Seeders\SiteFoundationSeeder;
@@ -45,6 +46,11 @@ final class SiteRuntimeContextIntegrationTest extends TestCase
     public function test_archived_fixture_is_unavailable_and_seeding_is_idempotent(): void
     {
         $this->seed(SiteFoundationSeeder::class);
+        $tech = Site::query()->where('code', 'tech-germany')->firstOrFail();
+        SiteDomain::factory()->for($tech)->create([
+            'host' => 'old-tech-germany.test',
+            'is_primary' => true,
+        ]);
         $this->seed(SiteFoundationSeeder::class);
 
         self::assertSame(3, Site::query()->whereIn('code', [
@@ -53,6 +59,8 @@ final class SiteRuntimeContextIntegrationTest extends TestCase
             'archived-germany',
         ])->count());
         self::assertSame(2, Site::query()->where('status', SiteStatus::Active)->count());
+        self::assertSame(1, $tech->domains()->where('is_primary', true)->count());
+        self::assertSame(SiteFoundationSeeder::TECH_HOST, $tech->domains()->where('is_primary', true)->sole()->host);
 
         $this->expectException(UnknownSiteException::class);
 

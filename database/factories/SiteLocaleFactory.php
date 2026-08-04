@@ -31,9 +31,9 @@ final class SiteLocaleFactory extends Factory
         );
 
         return [
-            'site_id' => Site::factory(),
+            'site_id' => Site::factory()->state(['default_locale' => 'en-US']),
             'locale_code' => $locale->code,
-            'is_default' => false,
+            'is_default' => true,
             'is_enabled' => true,
             'position' => 0,
         ];

@@ -3,12 +3,14 @@
 namespace App\Actions\Sites;
 
 use App\Enums\CentralCategoryStatus;
+use App\Enums\SiteDomainType;
 use App\Enums\SiteMode;
 use App\Enums\SiteStatus;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Locale;
 use App\Models\Market;
 use App\Models\Site;
+use App\Models\SiteDomain;
 use App\Models\SiteFeature;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -113,11 +115,23 @@ final class CreateSiteAction
 
         $data['status'] = $status;
 
-        return DB::transaction(function () use ($data): Site {
+        return DB::transaction(function () use ($data, $market): Site {
+            $domain = isset($data['domain']) && is_string($data['domain']) && $data['domain'] !== ''
+                ? SiteDomain::normalizeHost($data['domain'])
+                : null;
             $site = Site::query()->create([
-                'market_id' => $data['market_id'], 'code' => $data['code'], 'name' => $data['name'], 'domain' => $data['domain'] ?? null,
-                'mode' => $data['mode'], 'default_locale' => $data['default_locale'], 'status' => $data['status'], 'settings_json' => $data['settings_json'] ?? [],
+                'market_id' => $data['market_id'], 'code' => $data['code'], 'name' => $data['name'], 'domain' => $domain,
+                'mode' => $data['mode'], 'default_locale' => $data['default_locale'], 'currency_code' => $market->currency_code,
+                'timezone' => $market->timezone, 'status' => $data['status'], 'settings_json' => $data['settings_json'] ?? [],
             ]);
+            if ($domain !== null) {
+                $site->domains()->create([
+                    'host' => $domain,
+                    'type' => SiteDomainType::Primary,
+                    'is_primary' => true,
+                    'is_active' => true,
+                ]);
+            }
             foreach ($data['locales'] as $position => $locale) {
                 $site->locales()->create([
                     'locale_code' => $locale,

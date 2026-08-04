@@ -2,14 +2,24 @@
 
 namespace App\Models;
 
+use Database\Factories\SiteLocaleFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['site_id', 'locale_code', 'is_default', 'is_enabled', 'position'])]
 final class SiteLocale extends Model
 {
+    /** @use HasFactory<SiteLocaleFactory> */
+    use HasFactory;
+
+    protected static function newFactory(): SiteLocaleFactory
+    {
+        return SiteLocaleFactory::new();
+    }
+
     protected function casts(): array
     {
         return [

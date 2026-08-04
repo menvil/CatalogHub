@@ -6,11 +6,13 @@ use App\Enums\SiteMode;
 use App\Enums\SiteStatus;
 use Database\Factories\SiteFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -20,7 +22,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property array<string, mixed>|null $settings_json
  * @property-read Theme|null $theme
  */
-#[Fillable(['market_id', 'theme_id', 'code', 'name', 'domain', 'mode', 'default_locale', 'status', 'settings_json'])]
+#[Fillable(['market_id', 'theme_id', 'code', 'name', 'domain', 'mode', 'default_locale', 'currency_code', 'timezone', 'status', 'settings_json'])]
 final class Site extends Model
 {
     /** @use HasFactory<SiteFactory> */
@@ -58,6 +60,26 @@ final class Site extends Model
     public function locales(): HasMany
     {
         return $this->hasMany(SiteLocale::class);
+    }
+
+    /** @return HasOne<SiteLocale, $this> */
+    public function defaultLocale(): HasOne
+    {
+        return $this->hasOne(SiteLocale::class)->where('is_default', true);
+    }
+
+    /** @return HasMany<SiteDomain, $this> */
+    public function domains(): HasMany
+    {
+        return $this->hasMany(SiteDomain::class);
+    }
+
+    /** @return HasOne<SiteDomain, $this> */
+    public function primaryDomain(): HasOne
+    {
+        return $this->hasOne(SiteDomain::class)
+            ->where('is_primary', true)
+            ->where('is_active', true);
     }
 
     /** @return HasMany<SiteCategory, $this> */
@@ -129,6 +151,27 @@ final class Site extends Model
 
     public function isActive(): bool
     {
-        return $this->status === SiteStatus::Active;
+        return $this->status->isPubliclyAvailable();
+    }
+
+    /** @param Builder<Site> $query */
+    public function scopeActive(Builder $query): void
+    {
+        $query->where('status', SiteStatus::Active);
+    }
+
+    /** @param Builder<Site> $query */
+    public function scopeAdministrable(Builder $query): void
+    {
+        $query->whereIn('status', array_map(
+            static fn (SiteStatus $status): string => $status->value,
+            array_filter(SiteStatus::cases(), static fn (SiteStatus $status): bool => $status->allowsAdministration()),
+        ));
+    }
+
+    /** @param Builder<Site> $query */
+    public function scopeByCode(Builder $query, string $code): void
+    {
+        $query->where('code', $code);
     }
 }

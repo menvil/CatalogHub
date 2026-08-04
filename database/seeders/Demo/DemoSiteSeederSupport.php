@@ -5,6 +5,7 @@ namespace Database\Seeders\Demo;
 use App\Enums\CategorySchemaStatus;
 use App\Enums\CentralCategoryStatus;
 use App\Enums\MarketStatus;
+use App\Enums\SiteDomainType;
 use App\Enums\SiteMode;
 use App\Enums\SiteStatus;
 use App\Enums\ThemeStatus;
@@ -13,6 +14,7 @@ use App\Models\LayoutTemplate;
 use App\Models\Locale;
 use App\Models\Market;
 use App\Models\Site;
+use App\Models\SiteDomain;
 use App\Models\SiteHomeBlock;
 use App\Models\Theme;
 use App\Models\ThemeManifestRecord;
@@ -165,8 +167,20 @@ final class DemoSiteSeederSupport
                 'domain' => $domain,
                 'mode' => $mode,
                 'default_locale' => 'en-US',
+                'currency_code' => $market->currency_code,
+                'timezone' => $market->timezone,
                 'status' => SiteStatus::Active,
                 'settings_json' => ['demo' => true, 'hero_title' => $name],
+            ],
+        );
+
+        $normalizedHost = SiteDomain::normalizeHost($domain);
+        $site->domains()->updateOrCreate(
+            ['host' => $normalizedHost],
+            [
+                'type' => SiteDomainType::Primary,
+                'is_primary' => true,
+                'is_active' => true,
             ],
         );
 

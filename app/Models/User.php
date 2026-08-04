@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Contracts\Auth\CentralAdminAccess;
+use App\Contracts\Auth\SiteAdminAccess;
 use App\Enums\UserRole;
 use App\Support\PermissionMatrix;
 use Database\Factories\UserFactory;
@@ -41,7 +43,11 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return in_array($panel->getId(), ['central', 'site'], true);
+        return match ($panel->getId()) {
+            'central' => app(CentralAdminAccess::class)->allows($this),
+            'site' => app(SiteAdminAccess::class)->allows($this),
+            default => false,
+        };
     }
 
     public function isSuperAdmin(): bool

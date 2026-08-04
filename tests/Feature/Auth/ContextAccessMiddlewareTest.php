@@ -12,7 +12,7 @@ use App\Http\Middleware\EnsureCentralAdminAccess;
 use App\Http\Middleware\EnsureSiteAdminAccess;
 use App\Models\Site;
 use App\Models\User;
-use App\Support\Auth\TemporaryCentralAdminAccess;
+use App\Policies\CentralPanelPolicy;
 use App\Support\Auth\TemporaryLegacySiteAdminRouteAccess;
 use App\Support\Auth\TemporarySiteAdminAccess;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,7 +25,7 @@ final class ContextAccessMiddlewareTest extends TestCase
 
     public function test_central_and_site_access_contracts_are_distinct_bindings(): void
     {
-        self::assertInstanceOf(TemporaryCentralAdminAccess::class, app(CentralAdminAccess::class));
+        self::assertInstanceOf(CentralPanelPolicy::class, app(CentralAdminAccess::class));
         self::assertInstanceOf(TemporaryLegacySiteAdminRouteAccess::class, app(LegacySiteAdminRouteAccess::class));
         self::assertInstanceOf(TemporarySiteAdminAccess::class, app(SiteAdminAccess::class));
     }
@@ -52,7 +52,7 @@ final class ContextAccessMiddlewareTest extends TestCase
             ->assertDontSee('site endpoint');
     }
 
-    public function test_temporary_allowed_roles_open_only_their_context_shell(): void
+    public function test_allowed_roles_open_only_their_context_shell(): void
     {
         $site = Site::factory()->create();
         $siteAdmin = User::factory()->siteAdmin($site)->create();

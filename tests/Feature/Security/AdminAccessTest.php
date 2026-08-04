@@ -67,9 +67,7 @@ class AdminAccessTest extends TestCase
             ->assertOk()
             ->assertSee('Own Site');
         $this->get($legacySitesUrl)
-            ->assertOk()
-            ->assertSee('Own Site')
-            ->assertDontSee('Other Site');
+            ->assertForbidden();
 
         foreach ($this->centralUrls() as $url) {
             $this->get($url)->assertForbidden();

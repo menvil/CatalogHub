@@ -12,6 +12,7 @@ use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Imports\NormalizedProductDraft;
 use App\Models\User;
 use App\Observers\CentralProductObserver;
+use App\Policies\CentralPanelPolicy;
 use App\Services\Imports\AttributeMappingService;
 use App\Services\Imports\AttributeNormalizer;
 use App\Services\Imports\DuplicateDetector;
@@ -23,7 +24,6 @@ use App\Services\Imports\Normalizers\MultiEnumNormalizer;
 use App\Services\Imports\Normalizers\NumberNormalizer;
 use App\Services\Imports\Normalizers\UnitNormalizer;
 use App\Services\Security\PublicRequestRateLimiter;
-use App\Support\Auth\TemporaryCentralAdminAccess;
 use App\Support\Auth\TemporaryLegacySiteAdminRouteAccess;
 use App\Support\Auth\TemporarySiteAdminAccess;
 use App\Support\PermissionMatrix;
@@ -46,7 +46,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind(CentralAdminAccess::class, TemporaryCentralAdminAccess::class);
+        $this->app->bind(CentralAdminAccess::class, CentralPanelPolicy::class);
         $this->app->bind(LegacySiteAdminRouteAccess::class, TemporaryLegacySiteAdminRouteAccess::class);
         $this->app->bind(SiteAdminAccess::class, TemporarySiteAdminAccess::class);
 

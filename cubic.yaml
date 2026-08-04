@@ -1,14 +1,10 @@
-# Cubic.dev — only review release/* and hotfix/* PRs in this repository's
-# GitFlow. Cubic supports ignore filters rather than a true allow-list, so the
-# primary guard is to ignore develop-targeted PRs and common non-release source
-# branch patterns. Enforce "release/* or hotfix/* only" in Cubic/GitHub app
-# settings as the source of truth if arbitrary branch names can target main.
+# Cubic.dev reviews feature/* PRs targeting develop as well as release/* and
+# hotfix/* PRs. Ignore secondary target branches and non-review source branches.
 version: 1
 
 reviews:
   ignore:
     base_branches:
-      - "develop"
       - "feature/*"
       - "bugfix/*"
       - "chore/*"
@@ -22,7 +18,6 @@ reviews:
       - "tmp/*"
       - "draft/*"
     head_branches:
-      - "feature/*"
       - "bugfix/*"
       - "chore/*"
       - "docs/*"

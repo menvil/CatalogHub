@@ -5,6 +5,7 @@ namespace Database\Seeders\Demo;
 use App\Enums\CategorySchemaStatus;
 use App\Enums\CentralCategoryStatus;
 use App\Enums\MarketStatus;
+use App\Enums\SiteDomainType;
 use App\Enums\SiteMode;
 use App\Enums\SiteStatus;
 use App\Enums\ThemeStatus;
@@ -13,6 +14,7 @@ use App\Models\LayoutTemplate;
 use App\Models\Locale;
 use App\Models\Market;
 use App\Models\Site;
+use App\Models\SiteDomain;
 use App\Models\SiteHomeBlock;
 use App\Models\Theme;
 use App\Models\ThemeManifestRecord;
@@ -156,17 +158,33 @@ final class DemoSiteSeederSupport
         $market = $this->market();
         $theme = $this->theme();
         $categories = $this->categories();
+        $normalizedHost = SiteDomain::normalizeHost($domain);
         $site = Site::query()->updateOrCreate(
             ['code' => $code],
             [
                 'market_id' => $market->id,
                 'theme_id' => $theme->id,
                 'name' => $name,
-                'domain' => $domain,
+                'domain' => $normalizedHost,
                 'mode' => $mode,
                 'default_locale' => 'en-US',
+                'currency_code' => $market->currency_code,
+                'timezone' => $market->timezone,
                 'status' => SiteStatus::Active,
                 'settings_json' => ['demo' => true, 'hero_title' => $name],
+            ],
+        );
+
+        $site->domains()
+            ->where('host', '!=', $normalizedHost)
+            ->where('is_primary', true)
+            ->update(['is_primary' => false]);
+        $site->domains()->updateOrCreate(
+            ['host' => $normalizedHost],
+            [
+                'type' => SiteDomainType::Primary,
+                'is_primary' => true,
+                'is_active' => true,
             ],
         );
 

@@ -3,26 +3,25 @@
 namespace App\Http\Controllers\Public;
 
 use App\Domains\PublicSite\LocalizedUrlResolver;
-use App\Domains\PublicSite\SiteContextResolver;
 use App\Domains\Themes\ThemeLayoutResolver;
 use App\Http\Controllers\Controller;
 use App\Models\ContentTranslation;
 use App\Queries\PublicSite\PublishedContentQuery;
+use App\Support\Sites\SiteRuntimeContext;
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\Request;
 
 final class ContentController extends Controller
 {
     public function __invoke(
-        Request $request,
         string $locale,
         string $slug,
-        SiteContextResolver $sites,
+        SiteRuntimeContext $context,
         ThemeLayoutResolver $layouts,
         LocalizedUrlResolver $urls,
         PublishedContentQuery $content,
     ): View {
-        $site = $sites->resolve($request->getHost(), $locale);
+        $site = $context->site;
+        $locale = $context->resolvedLocale;
         $translation = $content->find($site, $locale, $slug);
 
         abort_unless($translation instanceof ContentTranslation, 404);
@@ -37,7 +36,7 @@ final class ContentController extends Controller
                 'meta_description' => $translation->seoDescription(),
                 'og_title' => $translation->openGraphTitle(),
                 'og_description' => $translation->openGraphDescription(),
-                'canonical_url' => $request->url(),
+                'canonical_url' => $urls->article($site, $locale, $slug),
             ],
             'breadcrumbs' => [
                 ['label' => 'Home', 'url' => $urls->home($site, $locale)],

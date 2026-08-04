@@ -42,7 +42,30 @@ class PublicContentPageTest extends TestCase
             ->assertSee('<title>Best Monitors 2026</title>', false)
             ->assertSee('<meta name="description" content="Compare current monitor picks.">', false)
             ->assertSee('<meta property="og:title" content="Monitor guide">', false)
-            ->assertSee('<link rel="canonical" href="http://content.test/en-US/articles/best-monitors">', false);
+            ->assertSee('<link rel="canonical" href="https://content.test/en-US/articles/best-monitors">', false);
+    }
+
+    public function test_article_canonical_uses_the_resolved_locale_after_route_locale_fallback(): void
+    {
+        $site = $this->site('fallback-content.test', ['en-US']);
+        $item = ContentItem::factory()->published()->for($site)->create([
+            'type' => ContentType::Article,
+        ]);
+        ContentTranslation::factory()->published()->for($item)->create([
+            'locale' => 'en-US',
+            'slug' => 'fallback-guide',
+        ]);
+
+        $this->get('http://fallback-content.test/de-DE/articles/fallback-guide')
+            ->assertOk()
+            ->assertSee(
+                '<link rel="canonical" href="https://fallback-content.test/en-US/articles/fallback-guide">',
+                false,
+            )
+            ->assertDontSee(
+                '<link rel="canonical" href="http://fallback-content.test/de-DE/articles/fallback-guide">',
+                false,
+            );
     }
 
     public function test_draft_item_and_draft_translation_are_not_public(): void

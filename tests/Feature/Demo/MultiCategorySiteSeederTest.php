@@ -5,6 +5,7 @@ namespace Tests\Feature\Demo;
 use App\Enums\SiteMode;
 use App\Enums\SiteStatus;
 use App\Models\Site;
+use App\Models\SiteDomain;
 use Database\Seeders\Demo\DemoSiteSeederSupport;
 use Database\Seeders\Demo\MultiCategorySiteSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -33,6 +34,22 @@ class MultiCategorySiteSeederTest extends TestCase
             'is_default' => true,
             'is_enabled' => true,
         ]);
+    }
+
+    public function test_reseeding_reconciles_the_fixture_primary_domain(): void
+    {
+        $this->seed(MultiCategorySiteSeeder::class);
+        $site = Site::query()->where('code', 'tech-compare-global')->firstOrFail();
+        SiteDomain::factory()->for($site)->create([
+            'host' => 'old-tech-primary.test',
+            'is_primary' => true,
+        ]);
+
+        $this->seed(MultiCategorySiteSeeder::class);
+
+        self::assertSame(1, $site->domains()->where('is_primary', true)->count());
+        self::assertSame('tech-compare.test', $site->domains()->where('is_primary', true)->sole()->host);
+        self::assertSame('tech-compare.test', $site->fresh()->domain);
     }
 
     public function test_category_reset_is_rolled_back_when_an_insert_fails(): void

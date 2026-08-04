@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use App\Filament\Site\Pages\Home;
 use App\Http\Middleware\EnsureSiteAdminAccess;
 use App\Http\Middleware\RequireSiteContext;
+use App\Http\Middleware\ResolveSiteRuntimeContext;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -50,6 +51,7 @@ final class SiteAdminPanelProvider extends PanelProvider
                 Authenticate::class,
                 EnsureSiteAdminAccess::class,
                 RequireSiteContext::class,
+                ResolveSiteRuntimeContext::class,
             ]);
     }
 }

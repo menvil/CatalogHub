@@ -27,6 +27,7 @@ use App\Support\Auth\TemporaryCentralAdminAccess;
 use App\Support\Auth\TemporaryLegacySiteAdminRouteAccess;
 use App\Support\Auth\TemporarySiteAdminAccess;
 use App\Support\PermissionMatrix;
+use App\Support\Sites\SiteRuntimeContext;
 use App\View\Composers\PublicNavigationComposer;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -36,6 +37,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use LogicException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -49,6 +51,15 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SiteAdminAccess::class, TemporarySiteAdminAccess::class);
 
         $this->app->scoped(AttributeMappingService::class);
+        $this->app->scoped(SiteRuntimeContext::class, function ($app): SiteRuntimeContext {
+            $context = $app->make(Request::class)->attributes->get(SiteRuntimeContext::class);
+
+            if (! $context instanceof SiteRuntimeContext) {
+                throw new LogicException('Site runtime context is unavailable for this request.');
+            }
+
+            return $context;
+        });
 
         $this->app->singleton(
             ImportService::class,

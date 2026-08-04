@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             MetricMeasurementUnitsSeeder::class,
             ImperialMeasurementUnitsSeeder::class,
             BlockRegistrySeeder::class,
+            SiteFoundationSeeder::class,
             PublicDemoSeeder::class,
         ]);
 

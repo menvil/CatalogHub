@@ -15,7 +15,8 @@ class SitesMigrationTest extends TestCase
         $this->assertTrue(Schema::hasTable('sites'));
         $this->assertTrue(Schema::hasColumns('sites', [
             'id', 'market_id', 'code', 'name', 'domain', 'mode', 'default_locale',
-            'status', 'settings_json', 'deleted_at', 'created_at', 'updated_at',
+            'currency_code', 'timezone', 'status', 'settings_json', 'deleted_at',
+            'created_at', 'updated_at',
         ]));
     }
 
@@ -28,6 +29,10 @@ class SitesMigrationTest extends TestCase
         ));
         $this->assertTrue($indexes->contains(
             fn (array $index): bool => $index['unique'] === true && $index['columns'] === ['domain']
+        ));
+        $this->assertTrue($indexes->contains(
+            fn (array $index): bool => $index['unique'] === false
+                && $index['columns'] === ['status', 'market_id']
         ));
     }
 }

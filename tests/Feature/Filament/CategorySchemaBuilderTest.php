@@ -29,7 +29,7 @@ class CategorySchemaBuilderTest extends TestCase
         $category = CentralCategory::factory()->create();
 
         $this->get(CategorySchemaBuilder::getUrl(['record' => $category]))
-            ->assertRedirect('/admin/login');
+            ->assertRedirect('/admin/central/login');
     }
 
     public function test_allows_central_admin_to_open_category_schema_builder(): void

@@ -2,12 +2,9 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Pages\CentralDashboard;
-use App\Filament\Pages\CreateSiteWizard;
-use App\Filament\Pages\ImportWizard;
-use App\Filament\Pages\SnapshotGenerationPage;
-use App\Filament\Pages\SyncDashboard;
-use App\Filament\Pages\TranslationDashboard;
+use App\Filament\Site\Pages\Home;
+use App\Http\Middleware\EnsureSiteAdminAccess;
+use App\Http\Middleware\RequireSiteContext;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -22,27 +19,21 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
-class AdminPanelProvider extends PanelProvider
+final class SiteAdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
         return $panel
-            ->default()
-            ->id('admin')
-            ->path('admin')
-            ->brandName('CatalogHub')
+            ->id('site')
+            ->path('admin/site')
+            ->viteTheme('resources/css/site-admin.css')
+            ->brandName('CatalogHub Site')
             ->login()
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Blue,
             ])
-            ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->pages([
-                CentralDashboard::class,
-                CreateSiteWizard::class,
-                ImportWizard::class,
-                SnapshotGenerationPage::class,
-                SyncDashboard::class,
-                TranslationDashboard::class,
+                Home::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -57,6 +48,8 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                EnsureSiteAdminAccess::class,
+                RequireSiteContext::class,
             ]);
     }
 }

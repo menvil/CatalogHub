@@ -13,7 +13,7 @@ class CentralAdminShellTest extends TestCase
     public function test_authorized_user_can_view_central_dashboard_placeholder(): void
     {
         $this->actingAs(User::factory()->create())
-            ->get('/admin')
+            ->get('/admin/central/dashboard')
             ->assertOk()
             ->assertSee('CatalogHub')
             ->assertSee('Central Dashboard placeholder');
@@ -21,7 +21,7 @@ class CentralAdminShellTest extends TestCase
 
     public function test_guest_is_redirected_from_central_dashboard(): void
     {
-        $this->get('/admin')
-            ->assertRedirect('/admin/login');
+        $this->get('/admin/central/dashboard')
+            ->assertRedirect('/admin/central/login');
     }
 }

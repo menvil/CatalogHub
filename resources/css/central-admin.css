@@ -1,0 +1,7 @@
+@import '../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../app/Filament/Central/**/*';
+@source '../../app/Filament/Resources/**/*';
+@source '../views/filament/central/**/*';
+@source '../views/layouts/central-admin.blade.php';
+@source '../views/components/admin/**/*';

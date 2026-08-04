@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Contracts\Auth\CentralAdminAccess;
+use App\Contracts\Auth\LegacySiteAdminRouteAccess;
+use App\Contracts\Auth\SiteAdminAccess;
 use App\Events\MarketOfferUpdated;
 use App\Importers\SerializedPhpProductImporter;
 use App\Listeners\RebuildPriceAffectedProjections;
@@ -20,6 +23,9 @@ use App\Services\Imports\Normalizers\MultiEnumNormalizer;
 use App\Services\Imports\Normalizers\NumberNormalizer;
 use App\Services\Imports\Normalizers\UnitNormalizer;
 use App\Services\Security\PublicRequestRateLimiter;
+use App\Support\Auth\TemporaryCentralAdminAccess;
+use App\Support\Auth\TemporaryLegacySiteAdminRouteAccess;
+use App\Support\Auth\TemporarySiteAdminAccess;
 use App\Support\PermissionMatrix;
 use App\View\Composers\PublicNavigationComposer;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -38,6 +44,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(CentralAdminAccess::class, TemporaryCentralAdminAccess::class);
+        $this->app->bind(LegacySiteAdminRouteAccess::class, TemporaryLegacySiteAdminRouteAccess::class);
+        $this->app->bind(SiteAdminAccess::class, TemporarySiteAdminAccess::class);
+
         $this->app->scoped(AttributeMappingService::class);
 
         $this->app->singleton(

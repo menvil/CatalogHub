@@ -38,6 +38,7 @@ class MediaLibraryTest extends TestCase
         MediaAsset::factory()->count(3)->create();
 
         $this->actingAs($admin)
+            ->followingRedirects()
             ->get('/central/media')
             ->assertOk()
             ->assertSee('Media Library')

@@ -7,8 +7,12 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    private const BACKFILL_CHUNK_SIZE = 100;
+
     public function up(): void
     {
+        $backfill = $this->validatedBackfill();
+
         Schema::create('site_domains', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('site_id')->constrained()->cascadeOnDelete();
@@ -22,6 +26,16 @@ return new class extends Migration
             $table->index(['site_id', 'is_primary']);
         });
 
+        DB::transaction(function () use ($backfill): void {
+            foreach (array_chunk($backfill, self::BACKFILL_CHUNK_SIZE) as $chunk) {
+                DB::table('site_domains')->insert($chunk);
+            }
+        });
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function validatedBackfill(): array
+    {
         /** @var array<string, int> $normalizedHosts */
         $normalizedHosts = [];
         $sites = DB::table('sites')
@@ -53,9 +67,7 @@ return new class extends Migration
             ];
         }
 
-        if ($backfill !== []) {
-            DB::table('site_domains')->insert($backfill);
-        }
+        return $backfill;
     }
 
     private function normalizeHost(string $input): string

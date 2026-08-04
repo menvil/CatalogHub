@@ -59,39 +59,60 @@ class UserFactory extends Factory
 
     public function siteAdmin(Site $site): static
     {
+        $runtimeConfiguration = $this->validateSiteRuntimeConfiguration($site);
+
         return $this
             ->state(fn (): array => [
                 'site_id' => $site->getKey(),
                 'role' => UserRole::SiteAdmin,
             ])
-            ->afterCreating(function () use ($site): void {
-                $this->ensureSiteRuntimeConfiguration($site);
+            ->afterCreating(function () use ($site, $runtimeConfiguration): void {
+                $this->writeSiteRuntimeConfiguration($site, $runtimeConfiguration);
             });
     }
 
-    private function ensureSiteRuntimeConfiguration(Site $site): void
+    /** @return array{host: ?string, locale: ?string} */
+    private function validateSiteRuntimeConfiguration(Site $site): array
     {
+        $host = null;
+
         if (! $site->domains()->where('is_primary', true)->where('is_active', true)->exists()) {
             if (! is_string($site->domain) || trim($site->domain) === '') {
                 throw new InvalidArgumentException('An active primary site domain is required.');
             }
 
+            $host = SiteDomain::normalizeHost($site->domain);
+        }
+
+        $locale = null;
+
+        if (! $site->locales()->where('is_default', true)->exists()) {
+            $locale = (string) $site->default_locale;
+
+            if (preg_match('/^[a-z]{2,3}(?:-[A-Z]{2})?$/', $locale) !== 1) {
+                throw new InvalidArgumentException('A valid default site locale is required.');
+            }
+        }
+
+        return ['host' => $host, 'locale' => $locale];
+    }
+
+    /** @param array{host: ?string, locale: ?string} $configuration */
+    private function writeSiteRuntimeConfiguration(Site $site, array $configuration): void
+    {
+        if ($configuration['host'] !== null) {
             $site->domains()->create([
-                'host' => SiteDomain::normalizeHost($site->domain),
+                'host' => $configuration['host'],
                 'type' => SiteDomainType::Primary,
                 'is_primary' => true,
                 'is_active' => true,
             ]);
         }
 
-        if ($site->locales()->where('is_default', true)->exists()) {
+        $code = $configuration['locale'];
+
+        if ($code === null) {
             return;
-        }
-
-        $code = (string) $site->default_locale;
-
-        if (preg_match('/^[a-z]{2,3}(?:-[A-Z]{2})?$/', $code) !== 1) {
-            throw new InvalidArgumentException('A valid default site locale is required.');
         }
 
         [$language, $region] = array_pad(explode('-', $code, 2), 2, null);

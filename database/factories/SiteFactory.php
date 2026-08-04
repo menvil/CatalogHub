@@ -63,6 +63,10 @@ class SiteFactory extends Factory
             throw new InvalidArgumentException('At least one site locale is required.');
         }
 
+        if (count($locales) !== count(array_unique($locales, SORT_STRING))) {
+            throw new InvalidArgumentException('Site locale codes must be unique.');
+        }
+
         $defaultLocale ??= $locales[0];
 
         if (! in_array($defaultLocale, $locales, true)) {

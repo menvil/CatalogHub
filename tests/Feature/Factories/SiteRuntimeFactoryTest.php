@@ -40,6 +40,13 @@ final class SiteRuntimeFactoryTest extends TestCase
         Site::factory()->withRuntimeContext(['en-US'], 'de-DE');
     }
 
+    public function test_site_runtime_state_rejects_duplicate_locale_codes(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        Site::factory()->withRuntimeContext(['en-US', 'en-US']);
+    }
+
     public function test_site_admin_state_only_creates_runtime_rows_after_the_user_is_persisted(): void
     {
         $site = Site::factory()->create();
@@ -62,19 +69,33 @@ final class SiteRuntimeFactoryTest extends TestCase
     {
         $site = Site::factory()->create(['domain' => null]);
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('An active primary site domain is required.');
+        try {
+            User::factory()->siteAdmin($site)->create();
+            self::fail('A site admin was created without a usable primary domain.');
+        } catch (InvalidArgumentException $exception) {
+            self::assertSame('An active primary site domain is required.', $exception->getMessage());
+        }
 
-        User::factory()->siteAdmin($site)->create();
+        self::assertSame(0, User::query()->count());
+        self::assertSame(0, $site->domains()->count());
+        self::assertSame(0, $site->locales()->count());
     }
 
     public function test_site_admin_state_rejects_an_invalid_default_locale_code(): void
     {
         $site = Site::factory()->create(['default_locale' => '']);
+        $domainCount = $site->domains()->count();
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('A valid default site locale is required.');
+        try {
+            User::factory()->siteAdmin($site)->create();
+            self::fail('A site admin was created with an invalid default locale.');
+        } catch (InvalidArgumentException $exception) {
+            self::assertSame('A valid default site locale is required.', $exception->getMessage());
+        }
 
-        User::factory()->siteAdmin($site)->create();
+        self::assertSame(0, User::query()->count());
+        self::assertSame($domainCount, $site->domains()->count());
+        self::assertSame(0, $site->locales()->count());
+        self::assertDatabaseMissing('locales', ['code' => '']);
     }
 }

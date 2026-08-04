@@ -3,6 +3,8 @@
 Audit date: 2026-07-16  
 Source of truth: `config/cataloghub_permissions.php`, resource guards, policies, and protected custom routes.
 
+Permission names are declared once in `App\Enums\Permission`. Names use lowercase dot-separated namespaces; foundation presentation checks use `central.*` and `site.*`. New authorization code must use enum cases instead of raw strings.
+
 ## Role Matrix
 
 | Area | Super Admin | Central Admin | Catalog Editor | Site Admin | Translator | Moderator | Public guest |
@@ -46,4 +48,3 @@ Every persisted `User` role is an internal staff role and may authenticate to th
 - A future viewer role requires an explicit enum/config/matrix task and read-only policy tests.
 - User/role management UI and organization-level tenancy are outside Phase 21.
 - Infrastructure access to databases, queues, storage, logs, and deployment secrets requires a separate operational IAM review.
-

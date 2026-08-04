@@ -42,6 +42,9 @@ final class RouteInventoryTest extends TestCase
 
     public function test_current_home_and_login_entry_points_keep_their_http_outcomes(): void
     {
+        $this->withoutVite();
+        config()->set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+
         $this->get('/')->assertOk();
         $this->get('/admin')->assertRedirect('/admin/login');
         $this->get('/admin/login')->assertOk();

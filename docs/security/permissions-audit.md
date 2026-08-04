@@ -5,6 +5,8 @@ Source of truth: `config/cataloghub_permissions.php`, resource guards, policies,
 
 Permission names are declared once in `App\Enums\Permission`. Names use lowercase dot-separated namespaces; foundation presentation checks use `central.*` and `site.*`. New authorization code must use enum cases instead of raw strings.
 
+The repository's authorization mechanism is config-backed rather than database-backed. `FoundationRolesSeeder` therefore validates the six `UserRole` definitions and their mappings during a seed instead of creating a parallel roles table; repeated runs are intentionally side-effect free.
+
 ## Role Matrix
 
 | Area | Super Admin | Central Admin | Catalog Editor | Site Admin | Translator | Moderator | Public guest |

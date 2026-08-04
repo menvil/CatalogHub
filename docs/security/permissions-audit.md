@@ -7,6 +7,8 @@ Permission names are declared once in `App\Enums\Permission`. Names use lowercas
 
 The repository's authorization mechanism is config-backed rather than database-backed. `FoundationRolesSeeder` therefore validates the six `UserRole` definitions and their mappings during a seed instead of creating a parallel roles table; repeated runs are intentionally side-effect free.
 
+Administrative role, membership, and user-status actions write their audit row in the same database transaction, so an audit failure rolls back the mutation. Authentication event recording is best-effort and reports storage failures without turning an audit outage into a login outage. Snapshot fields are whitelisted per action; credentials and tokens are never accepted by the recorder.
+
 ## Role Matrix
 
 | Area | Super Admin | Central Admin | Catalog Editor | Site Admin | Translator | Moderator | Public guest |

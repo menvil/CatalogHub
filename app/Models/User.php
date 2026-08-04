@@ -93,6 +93,11 @@ class User extends Authenticatable implements FilamentUser
         return $this->userRole() === UserRole::Moderator;
     }
 
+    public function roleEnum(): UserRole
+    {
+        return $this->userRole();
+    }
+
     public function hasCatalogHubPermission(string $permission): bool
     {
         return app(PermissionMatrix::class)->allows($this->userRole(), $permission);

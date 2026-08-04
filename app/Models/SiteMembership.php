@@ -41,4 +41,11 @@ final class SiteMembership extends Model
     {
         return $this->belongsTo(Site::class);
     }
+
+    public function roleEnum(): SiteMembershipRole
+    {
+        $role = $this->getAttribute('role');
+
+        return $role instanceof SiteMembershipRole ? $role : SiteMembershipRole::from((string) $role);
+    }
 }

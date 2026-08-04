@@ -6,6 +6,7 @@ use App\Contracts\Auth\CentralAdminAccess;
 use App\Contracts\Auth\SiteAdminAccess;
 use App\Events\MarketOfferUpdated;
 use App\Importers\SerializedPhpProductImporter;
+use App\Listeners\AuditAuthenticationEvent;
 use App\Listeners\RebuildPriceAffectedProjections;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Imports\NormalizedProductDraft;
@@ -27,6 +28,8 @@ use App\Services\Security\PublicRequestRateLimiter;
 use App\Support\PermissionMatrix;
 use App\Support\Sites\SiteRuntimeContext;
 use App\View\Composers\PublicNavigationComposer;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
@@ -104,6 +107,8 @@ class AppServiceProvider extends ServiceProvider
 
         CentralProduct::observe(CentralProductObserver::class);
         Event::listen(MarketOfferUpdated::class, RebuildPriceAffectedProjections::class);
+        Event::listen(Login::class, [AuditAuthenticationEvent::class, 'handle']);
+        Event::listen(Logout::class, [AuditAuthenticationEvent::class, 'handle']);
 
         View::composer('public.partials.header', PublicNavigationComposer::class);
     }

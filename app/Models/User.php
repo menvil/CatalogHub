@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -94,6 +96,20 @@ class User extends Authenticatable implements FilamentUser
     public function site(): BelongsTo
     {
         return $this->belongsTo(Site::class);
+    }
+
+    /** @return HasMany<SiteMembership, $this> */
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(SiteMembership::class);
+    }
+
+    /** @return BelongsToMany<Site, $this> */
+    public function memberSites(): BelongsToMany
+    {
+        return $this->belongsToMany(Site::class, 'site_user_memberships')
+            ->withPivot(['role', 'is_active'])
+            ->withTimestamps();
     }
 
     private function userRole(): UserRole

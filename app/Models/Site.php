@@ -118,6 +118,20 @@ final class Site extends Model
         return $this->hasMany(User::class);
     }
 
+    /** @return HasMany<SiteMembership, $this> */
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(SiteMembership::class);
+    }
+
+    /** @return BelongsToMany<User, $this> */
+    public function members(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'site_user_memberships')
+            ->withPivot(['role', 'is_active'])
+            ->withTimestamps();
+    }
+
     /** @return HasMany<Lead, $this> */
     public function leads(): HasMany
     {

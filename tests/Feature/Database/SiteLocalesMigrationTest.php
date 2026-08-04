@@ -31,6 +31,24 @@ class SiteLocalesMigrationTest extends TestCase
         ));
     }
 
+    public function test_duplicate_locale_is_rejected_for_the_same_site(): void
+    {
+        $site = Site::factory()->create();
+        Locale::factory()->create(['code' => 'de-DE']);
+        $attributes = [
+            'site_id' => $site->id,
+            'locale_code' => 'de-DE',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+
+        DB::table('site_locales')->insert($attributes);
+
+        $this->expectException(QueryException::class);
+
+        DB::table('site_locales')->insert($attributes);
+    }
+
     public function test_locale_code_references_the_locale_catalog(): void
     {
         $foreignKeys = collect(Schema::getForeignKeys('site_locales'));

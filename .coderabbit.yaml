@@ -1,19 +1,17 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
-# CodeRabbit — opt in only for internal release/* and hotfix/* PRs.
-# Automatic reviews are disabled by default. CodeRabbit starts only when this
-# repository's label workflow applies the release/hotfix label to an internal PR
-# whose source branch starts with release/ or hotfix/.
+# CodeRabbit reviews every non-draft pull request targeting the default branch
+# or develop. Release/hotfix labels remain owned by the separate PR automation
+# workflow and are not review prerequisites.
 
 language: en-US
 
 reviews:
   profile: assertive
   auto_review:
-    enabled: false
-    labels:
-      - "release"
-      - "hotfix"
+    enabled: true
     drafts: false
+    base_branches:
+      - "develop"
   request_changes_workflow: false
   high_level_summary: true
   poem: false

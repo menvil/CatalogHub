@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['site_id', 'name', 'email', 'password', 'role'])]
+#[Fillable(['site_id', 'name', 'email', 'password', 'role', 'disabled_at'])]
 #[Hidden(['password', 'remember_token'])]
 /**
  * @property UserRole $role
@@ -38,6 +38,7 @@ class User extends Authenticatable implements FilamentUser
     {
         return [
             'email_verified_at' => 'datetime',
+            'disabled_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
         ];
@@ -55,6 +56,11 @@ class User extends Authenticatable implements FilamentUser
     public function isSuperAdmin(): bool
     {
         return $this->userRole() === UserRole::SuperAdmin;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->disabled_at === null;
     }
 
     public function isCentralAdmin(): bool

@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Site\Pages\Home;
 use App\Http\Middleware\EnsureSiteAdminAccess;
+use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\RequireSiteContext;
 use App\Http\Middleware\ResolveSiteRuntimeContext;
 use Filament\Http\Middleware\Authenticate;
@@ -40,6 +41,7 @@ final class SiteAdminPanelProvider extends PanelProvider
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
+                EnsureUserIsActive::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 PreventRequestForgery::class,

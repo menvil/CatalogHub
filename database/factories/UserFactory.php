@@ -58,6 +58,11 @@ class UserFactory extends Factory
         ]);
     }
 
+    public function disabled(): static
+    {
+        return $this->state(fn (): array => ['disabled_at' => now()]);
+    }
+
     public function siteAdmin(Site $site): static
     {
         $runtimeConfiguration = $this->validateSiteRuntimeConfiguration($site);

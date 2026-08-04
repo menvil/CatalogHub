@@ -54,7 +54,7 @@ final class AuthorizationService
 
     private function allows(User $user, Permission $permission, ?Site $site): bool
     {
-        if (! $user->hasCatalogHubPermission($permission->value)) {
+        if (! $user->isActive() || ! $user->hasCatalogHubPermission($permission->value)) {
             return false;
         }
 

@@ -23,13 +23,14 @@ final class SitePanelPolicy implements SiteAdminAccess
             return $this->authorization->allowsPanel($user, Permission::SitePanelAccess, $site);
         }
 
-        return $user->hasCatalogHubPermission(Permission::SitePanelAccess->value)
+        return $user->isActive()
+            && $user->hasCatalogHubPermission(Permission::SitePanelAccess->value)
             && $this->memberships($user)->exists();
     }
 
     public function resolveSite(User $user, ?int $requestedSiteId = null): ?Site
     {
-        if (! $user->hasCatalogHubPermission(Permission::SitePanelAccess->value)) {
+        if (! $user->isActive() || ! $user->hasCatalogHubPermission(Permission::SitePanelAccess->value)) {
             return null;
         }
 

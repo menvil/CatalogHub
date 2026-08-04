@@ -20,8 +20,13 @@ class ProductMediaManagerTest extends TestCase
         $product = CentralProduct::factory()->create();
 
         $this->actingAs($admin)
-            ->followingRedirects()
-            ->get("/central/products/{$product->id}/media")
+            ->get("/central/products/{$product->id}/media?product=999999&preview_role=hero")
+            ->assertRedirect(route('central.products.media', [
+                'product' => $product,
+                'preview_role' => 'hero',
+            ]));
+
+        $this->get(route('central.products.media', $product))
             ->assertOk()
             ->assertSee('Product Media')
             ->assertSee($product->name);

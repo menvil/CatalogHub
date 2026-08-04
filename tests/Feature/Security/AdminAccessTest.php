@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Security;
 
+use App\Filament\Central\Pages\Home as CentralHome;
 use App\Filament\Pages\TranslationDashboard;
 use App\Filament\Resources\CatalogSnapshotResource;
 use App\Filament\Resources\CentralBrandResource;
@@ -85,6 +86,7 @@ class AdminAccessTest extends TestCase
     private function centralUrls(): array
     {
         return [
+            CentralHome::getUrl(panel: 'central'),
             CentralProductResource::getUrl('index', panel: 'central'),
             CentralCategoryResource::getUrl('index', panel: 'central'),
             CentralBrandResource::getUrl('index', panel: 'central'),

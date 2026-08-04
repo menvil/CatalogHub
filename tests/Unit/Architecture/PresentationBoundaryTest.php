@@ -31,10 +31,7 @@ final class PresentationBoundaryTest extends TestCase
 
                 self::assertStringStartsWith($expectedNamespace, $namespace, $file->getPathname());
 
-                preg_match_all('/^use\s+([^;]+);/m', $source, $imports);
-
-                foreach ($imports[1] as $import) {
-                    $dependency = preg_replace('/\s+as\s+.+$/i', '', trim($import)) ?? trim($import);
+                foreach ($this->importedDependencies($source) as $dependency) {
                     $reason = $this->forbiddenReason($namespace, $dependency);
 
                     if ($reason !== null) {
@@ -45,6 +42,28 @@ final class PresentationBoundaryTest extends TestCase
         }
 
         self::assertSame([], $violations, implode("\n", $violations));
+    }
+
+    public function test_multi_import_declaration_detects_a_later_forbidden_dependency(): void
+    {
+        $source = <<<'PHP'
+<?php
+
+namespace App\Filament\Central\Pages;
+
+use App\Services\SharedReadModel, App\Filament\Site\Pages\Home as SiteHome;
+PHP;
+
+        $dependencies = $this->importedDependencies($source);
+
+        self::assertSame([
+            'App\Services\SharedReadModel',
+            'App\Filament\Site\Pages\Home',
+        ], $dependencies);
+        self::assertNotNull($this->forbiddenReason(
+            'App\Filament\Central\Pages\Example',
+            $dependencies[1],
+        ));
     }
 
     #[DataProvider('representativeDependencies')]
@@ -109,6 +128,25 @@ final class PresentationBoundaryTest extends TestCase
         }
 
         return null;
+    }
+
+    /** @return list<string> */
+    private function importedDependencies(string $source): array
+    {
+        preg_match_all('/^use\s+([^;]+);/m', $source, $imports);
+        $dependencies = [];
+
+        foreach ($imports[1] as $import) {
+            foreach (preg_split('/\s*,\s*/', trim($import)) ?: [] as $dependency) {
+                $dependency = preg_replace('/\s+as\s+.+$/i', '', trim($dependency)) ?? trim($dependency);
+
+                if ($dependency !== '') {
+                    $dependencies[] = $dependency;
+                }
+            }
+        }
+
+        return $dependencies;
     }
 
     /** @return list<SplFileInfo> */

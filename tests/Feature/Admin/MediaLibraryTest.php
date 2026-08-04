@@ -38,8 +38,13 @@ class MediaLibraryTest extends TestCase
         MediaAsset::factory()->count(3)->create();
 
         $this->actingAs($admin)
-            ->followingRedirects()
-            ->get('/central/media')
+            ->get('/central/media?status=active&search=monitor')
+            ->assertRedirect(route('central.media.index', [
+                'status' => 'active',
+                'search' => 'monitor',
+            ]));
+
+        $this->get(route('central.media.index'))
             ->assertOk()
             ->assertSee('Media Library')
             ->assertSee('assets');

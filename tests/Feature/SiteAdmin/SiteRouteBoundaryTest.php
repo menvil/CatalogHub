@@ -23,13 +23,15 @@ final class SiteRouteBoundaryTest extends TestCase
     public function test_site_admin_opens_a_shell_bound_to_their_temporary_site_context(): void
     {
         $site = Site::factory()->create(['name' => 'Boundary fixture site']);
+        $otherSite = Site::factory()->create(['name' => 'Other tenant site']);
         $user = User::factory()->siteAdmin($site)->create();
 
         $this->actingAs($user)
-            ->get('/admin/site?site_id=999999')
+            ->get("/admin/site?site_id={$otherSite->id}")
             ->assertOk()
             ->assertSee('Site Admin shell')
             ->assertSee('Boundary fixture site')
+            ->assertDontSee('Other tenant site')
             ->assertSee('data-presentation-context="site-admin"', false);
     }
 

@@ -78,10 +78,13 @@ Route::middleware(['auth', EnsureCentralAdminAccess::class])
 Route::middleware(['auth', EnsureCentralAdminAccess::class, 'can:media.manage'])
     ->prefix('central')
     ->group(function (): void {
-        Route::get('/media', fn () => redirect()->route('central.media.index'))
+        Route::get('/media', fn () => redirect()->route(
+            'central.media.index',
+            request()->query(),
+        ))
             ->name('legacy.central.media.index');
         Route::get('/products/{product}/media', fn (string $product) => redirect()->route(
             'central.products.media',
-            ['product' => $product],
+            [...request()->query(), 'product' => $product],
         ))->name('legacy.central.products.media');
     });

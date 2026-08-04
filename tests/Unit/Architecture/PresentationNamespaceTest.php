@@ -8,6 +8,16 @@ use Tests\TestCase;
 
 final class PresentationNamespaceTest extends TestCase
 {
+    private const APPROVED_FILAMENT_DIRECTORIES = [
+        'Central',
+        'Concerns',
+        'Pages',
+        'Resources',
+        'Site',
+        'Support',
+        'Widgets',
+    ];
+
     public function test_presentation_context_roots_are_explicit_and_documented(): void
     {
         foreach ([
@@ -24,17 +34,22 @@ final class PresentationNamespaceTest extends TestCase
         }
     }
 
-    public function test_only_approved_context_directories_are_introduced_below_filament(): void
+    public function test_filament_directory_inventory_matches_the_explicit_allowlist(): void
     {
         $directories = glob(app_path('Filament/*'), GLOB_ONLYDIR);
 
         self::assertIsArray($directories);
-        $contextDirectories = array_values(array_filter(
-            array_map('basename', $directories),
-            static fn (string $directory): bool => in_array($directory, ['Central', 'Site'], true),
-        ));
-        sort($contextDirectories);
+        $actualDirectories = array_map('basename', $directories);
+        sort($actualDirectories);
 
-        self::assertSame(['Central', 'Site'], $contextDirectories);
+        self::assertSame(self::APPROVED_FILAMENT_DIRECTORIES, $actualDirectories);
+    }
+
+    public function test_an_unapproved_filament_directory_is_rejected_by_the_allowlist(): void
+    {
+        $actualDirectories = [...self::APPROVED_FILAMENT_DIRECTORIES, 'UnapprovedContext'];
+        sort($actualDirectories);
+
+        self::assertNotSame(self::APPROVED_FILAMENT_DIRECTORIES, $actualDirectories);
     }
 }

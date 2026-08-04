@@ -47,7 +47,7 @@ class AdminNavigationSmokeTest extends TestCase
     public function test_guest_is_redirected_to_admin_login(): void
     {
         $this->get(CentralDashboard::getUrl())
-            ->assertRedirect('/admin/login');
+            ->assertRedirect('/admin/central/login');
     }
 
     public function test_site_scoped_admin_cannot_open_central_snapshot_history(): void

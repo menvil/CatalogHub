@@ -16,7 +16,7 @@ class CentralDashboard extends Page
 
     public static function getRoutePath(Panel $panel): string
     {
-        return '/';
+        return '/dashboard';
     }
 
     public static function getRelativeRouteName(Panel $panel): string

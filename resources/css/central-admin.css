@@ -1,0 +1,17 @@
+@import 'tailwindcss' source(none);
+@import '../../public/css/filament/filament/app.css';
+
+@source '../../app/Filament/Central/**/*';
+@source '../../app/Filament/Pages/**/*';
+@source '../../app/Filament/Resources/**/*';
+@source '../../app/Filament/Widgets/**/*';
+@source '../views/central-admin/**/*';
+@source '../views/dev/admin-visual-smoke.blade.php';
+@source '../views/filament/central/**/*';
+@source '../views/filament/infolists/**/*';
+@source '../views/filament/pages/**/*';
+@source '../views/filament/resources/**/*';
+@source '../views/filament/site/stale-price-warning.blade.php';
+@source '../views/filament/widgets/**/*';
+@source '../views/layouts/central-admin.blade.php';
+@source '../views/components/admin/**/*';

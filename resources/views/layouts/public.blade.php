@@ -8,7 +8,7 @@
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="min-h-screen bg-white font-sans text-gray-900 antialiased">
+    <body class="min-h-screen bg-white font-sans text-gray-900 antialiased" data-presentation-context="public-site">
         <main class="mx-auto flex min-h-screen max-w-5xl items-center px-6 py-12">
             @yield('content')
         </main>

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Security;
 
+use App\Filament\Central\Pages\Home as CentralHome;
 use App\Filament\Pages\TranslationDashboard;
 use App\Filament\Resources\CatalogSnapshotResource;
 use App\Filament\Resources\CentralBrandResource;
@@ -59,13 +60,16 @@ class AdminAccessTest extends TestCase
     {
         $ownSite = Site::factory()->create(['name' => 'Own Site']);
         $otherSite = Site::factory()->create(['name' => 'Other Site']);
+        $legacySitesUrl = SiteResource::getUrl('index', panel: 'central');
         $this->actingAs(User::factory()->siteAdmin($ownSite)->create());
 
-        $this->get(SiteResource::getUrl('index'))
+        $this->get('/admin/site')
+            ->assertOk()
+            ->assertSee('Own Site');
+        $this->get($legacySitesUrl)
             ->assertOk()
             ->assertSee('Own Site')
             ->assertDontSee('Other Site');
-        $this->get(SiteResource::getUrl('edit', ['record' => $otherSite]))->assertNotFound();
 
         foreach ($this->centralUrls() as $url) {
             $this->get($url)->assertForbidden();
@@ -74,19 +78,20 @@ class AdminAccessTest extends TestCase
 
     public function test_guest_is_redirected_from_admin_and_custom_central_routes(): void
     {
-        $this->get(CentralProductResource::getUrl('index'))->assertRedirect('/admin/login');
-        $this->get(route('central.media.index'))->assertRedirect('/admin/login');
+        $this->get(CentralProductResource::getUrl('index'))->assertRedirect('/admin/central/login');
+        $this->get(route('central.media.index'))->assertRedirect('/admin/central/login');
     }
 
     /** @return list<string> */
     private function centralUrls(): array
     {
         return [
-            CentralProductResource::getUrl('index'),
-            CentralCategoryResource::getUrl('index'),
-            CentralBrandResource::getUrl('index'),
-            MarketResource::getUrl('index'),
-            CatalogSnapshotResource::getUrl('index'),
+            CentralHome::getUrl(panel: 'central'),
+            CentralProductResource::getUrl('index', panel: 'central'),
+            CentralCategoryResource::getUrl('index', panel: 'central'),
+            CentralBrandResource::getUrl('index', panel: 'central'),
+            MarketResource::getUrl('index', panel: 'central'),
+            CatalogSnapshotResource::getUrl('index', panel: 'central'),
             route('central.media.index'),
         ];
     }

@@ -15,7 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(AddSecurityHeaders::class);
         $middleware->redirectGuestsTo(
-            fn (Request $request): string => route('filament.admin.auth.login'),
+            fn (Request $request): string => $request->is('admin/site/*') || $request->is('admin/site')
+                ? route('filament.site.auth.login')
+                : route('filament.central.auth.login'),
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {

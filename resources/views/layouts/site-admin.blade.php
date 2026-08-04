@@ -25,10 +25,10 @@
 
         <title>{{ $title ?? $documentTitle }} - {{ config('app.name', 'CatalogHub') }}</title>
 
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @vite(['resources/css/site-admin.css', 'resources/js/app.js'])
     </head>
     <body class="min-h-screen overflow-x-hidden bg-admin-background font-sans text-admin-text antialiased">
-        <div class="min-h-screen lg:flex" data-admin-layout="site">
+        <div class="min-h-screen lg:flex" data-admin-layout="site" data-presentation-context="site-admin">
             <x-admin.sidebar
                 context="site"
                 :items="$siteAdminNavigation"

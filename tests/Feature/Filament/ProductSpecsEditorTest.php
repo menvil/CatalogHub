@@ -35,7 +35,7 @@ class ProductSpecsEditorTest extends TestCase
         $product = CentralProduct::factory()->create();
 
         $this->get(ProductSpecsEditor::getUrl(['record' => $product]))
-            ->assertRedirect('/admin/login');
+            ->assertRedirect('/admin/central/login');
     }
 
     public function test_allows_central_admin_to_open_product_specs_editor(): void

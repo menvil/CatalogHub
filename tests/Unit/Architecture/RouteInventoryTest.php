@@ -35,7 +35,8 @@ final class RouteInventoryTest extends TestCase
         $ids = $panels->keys();
         $prefixes = $panels->map(static fn ($panel): string => $panel->getPath());
 
-        self::assertSame(['admin'], $ids->values()->all());
+        self::assertSame(['central', 'site'], $ids->values()->all());
+        self::assertSame(['admin/central', 'admin/site'], $prefixes->values()->all());
         self::assertSame($ids->count(), $ids->unique()->count(), 'Duplicate Filament panel IDs detected.');
         self::assertSame($prefixes->count(), $prefixes->unique()->count(), 'Duplicate Filament panel prefixes detected.');
     }
@@ -46,7 +47,10 @@ final class RouteInventoryTest extends TestCase
         config()->set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
 
         $this->get('/')->assertOk();
-        $this->get('/admin')->assertRedirect('/admin/login');
-        $this->get('/admin/login')->assertOk();
+        $this->get('/admin')->assertRedirect('/admin/central');
+        $this->get('/admin/central')->assertRedirect('/admin/central/login');
+        $this->get('/admin/central/login')->assertOk();
+        $this->get('/admin/site')->assertRedirect('/admin/site/login');
+        $this->get('/admin/site/login')->assertOk();
     }
 }

@@ -13,8 +13,8 @@ class AdminPanelTest extends TestCase
 
     public function test_guest_is_redirected_to_admin_login(): void
     {
-        $this->get('/admin')
-            ->assertRedirect('/admin/login');
+        $this->get('/admin/central')
+            ->assertRedirect('/admin/central/login');
     }
 
     public function test_authenticated_user_can_access_admin_dashboard(): void
@@ -22,7 +22,7 @@ class AdminPanelTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->get('/admin')
+            ->get('/admin/central')
             ->assertOk();
     }
 
@@ -41,8 +41,8 @@ class AdminPanelTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->post('/admin/logout')
-            ->assertRedirect('/admin/login');
+            ->post('/admin/central/logout')
+            ->assertRedirect('/admin/central/login');
 
         $this->assertGuest();
     }

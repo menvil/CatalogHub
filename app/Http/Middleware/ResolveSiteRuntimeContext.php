@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Domains\PublicSite\LocalizedUrlResolver;
 use App\Exceptions\Sites\InvalidSiteRuntimeConfigurationException;
 use App\Models\Site;
 use App\Models\SiteDomain;
 use App\Services\Sites\SiteContextValueResolver;
 use App\Services\Sites\SiteResolver;
+use App\Support\PublicSite\PublicErrorContext;
 use App\Support\Sites\SiteRuntimeContext;
 use App\Support\Themes\PublicThemeContext;
 use Closure;
@@ -22,6 +24,7 @@ final readonly class ResolveSiteRuntimeContext
         private Application $app,
         private SiteResolver $sites,
         private SiteContextValueResolver $values,
+        private LocalizedUrlResolver $urls,
     ) {}
 
     public function handle(Request $request, Closure $next): Response
@@ -36,6 +39,10 @@ final readonly class ResolveSiteRuntimeContext
             is_string($requestedLocale) ? $requestedLocale : null,
         );
         $request->attributes->set(SiteRuntimeContext::class, $context);
+        $request->attributes->set(PublicErrorContext::class, new PublicErrorContext(
+            siteName: $site->name,
+            homeUrl: $this->urls->home($site, $context->resolvedLocale),
+        ));
 
         $previousLocale = $this->app->getLocale();
         $previousTimezone = date_default_timezone_get();

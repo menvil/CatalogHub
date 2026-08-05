@@ -48,4 +48,24 @@ Route::middleware(ResolveSiteRuntimeContext::class)->group(function (): void {
         ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
         ->middleware('throttle:public-search')
         ->name('public.search');
+
+    if (app()->environment('testing')) {
+        Route::get('/{locale}/__foundation-error/{status}', static function (string $locale, int $status): never {
+            if ($status === 500) {
+                throw new RuntimeException('database-password=secret');
+            }
+
+            abort($status, 'internal-maintenance-detail');
+        })
+            ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
+            ->whereNumber('status')
+            ->name('public.foundation-error');
+    }
+
+    Route::get('/{locale}/{missing}', static function (): never {
+        abort(404);
+    })
+        ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
+        ->where('missing', '.+')
+        ->name('public.not-found');
 });

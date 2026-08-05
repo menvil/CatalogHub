@@ -1,7 +1,7 @@
 import { bootResponsiveAdminNavigation } from './responsive-navigation';
 
 export function bootSiteAdminNavigation() {
-    bootResponsiveAdminNavigation({
+    const initializedShells = bootResponsiveAdminNavigation({
         shellSelector: '[data-site-shell]',
         sidebarSelector: '[data-site-sidebar]',
         openSelector: '[data-site-sidebar-open]',
@@ -17,7 +17,7 @@ export function bootSiteAdminNavigation() {
         bodyLockClass: 'site-sidebar-scroll-locked',
     });
 
-    document.querySelectorAll('[data-site-shell]').forEach((shell) => {
+    initializedShells.forEach((shell) => {
         shell.dataset.siteShellReady = 'true';
         shell.dispatchEvent(new CustomEvent('site-admin-shell:ready', { bubbles: true }));
     });

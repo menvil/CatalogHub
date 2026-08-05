@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\View\Components\SiteAdmin;
 
-use App\Enums\SiteStatus;
 use App\Support\Sites\SiteRuntimeContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
@@ -15,12 +14,9 @@ final class SiteContextHeader extends Component
 
     public function statusVariant(): string
     {
-        return match ($this->context->site->status) {
-            SiteStatus::Active => 'success',
-            SiteStatus::Suspended => 'warning',
-            SiteStatus::Archived => 'danger',
-            SiteStatus::Draft => 'neutral',
-        };
+        $color = $this->context->site->status->color();
+
+        return $color === 'gray' ? 'neutral' : $color;
     }
 
     public function render(): View

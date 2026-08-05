@@ -1,0 +1,89 @@
+body.central-sidebar-scroll-locked,
+body.site-sidebar-scroll-locked {
+    overflow: hidden;
+}
+
+:is(.central-shell-sidebar, .site-shell-sidebar) {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    z-index: 50;
+    width: min(var(--width-foundation-sidebar), calc(100vw - var(--spacing-foundation-page)));
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform 150ms ease-out, width 150ms ease-out, visibility 0s linear 150ms;
+}
+
+.central-shell-sidebar[data-central-sidebar-mobile-open='true'],
+.site-shell-sidebar[data-site-sidebar-mobile-open='true'] {
+    transform: translateX(0);
+    visibility: visible;
+    transition-delay: 0s;
+}
+
+:is(.central-shell-sidebar-backdrop, .site-shell-sidebar-backdrop) {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: none;
+    background: color-mix(in srgb, var(--color-foundation-text) 45%, transparent);
+}
+
+:is(.central-sidebar-collapsed-mark, .central-sidebar-desktop-controls, .site-sidebar-collapsed-mark, .site-sidebar-desktop-controls) {
+    display: none;
+}
+
+@media (max-width: 63.999rem) {
+    [data-central-shell][data-central-sidebar-mobile-open='true'] .central-shell-sidebar-backdrop,
+    [data-site-shell][data-site-sidebar-mobile-open='true'] .site-shell-sidebar-backdrop {
+        display: block;
+    }
+}
+
+@media (min-width: 64rem) {
+    :is(.central-shell-sidebar, .site-shell-sidebar) {
+        position: sticky;
+        inset-block-start: 0;
+        z-index: 20;
+        min-height: 100vh;
+        width: var(--width-foundation-sidebar);
+        transform: none;
+        visibility: visible;
+        border-inline-end-width: 1px;
+    }
+
+    :is(
+        .central-shell-sidebar-backdrop,
+        .central-sidebar-mobile-close,
+        .central-sidebar-mobile-open,
+        .site-shell-sidebar-backdrop,
+        .site-sidebar-mobile-close,
+        .site-sidebar-mobile-open
+    ) {
+        display: none;
+    }
+
+    :is(.central-sidebar-desktop-controls, .site-sidebar-desktop-controls) {
+        display: block;
+    }
+
+    [data-central-shell][data-central-sidebar-collapsed='true'] .central-shell-sidebar,
+    [data-site-shell][data-site-sidebar-collapsed='true'] .site-shell-sidebar {
+        width: var(--width-foundation-sidebar-collapsed);
+    }
+
+    [data-central-shell][data-central-sidebar-collapsed='true'] .central-sidebar-label,
+    [data-site-shell][data-site-sidebar-collapsed='true'] .site-sidebar-label {
+        display: none;
+    }
+
+    [data-central-shell][data-central-sidebar-collapsed='true'] .central-sidebar-collapsed-mark,
+    [data-site-shell][data-site-sidebar-collapsed='true'] .site-sidebar-collapsed-mark {
+        display: inline-flex;
+    }
+
+    [data-central-shell][data-central-sidebar-collapsed='true'] [data-central-sidebar-collapse-icon],
+    [data-site-shell][data-site-sidebar-collapsed='true'] [data-site-sidebar-collapse-icon] {
+        transform: rotate(180deg);
+    }
+}

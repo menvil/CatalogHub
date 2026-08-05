@@ -39,7 +39,7 @@ final class SiteSelector extends Component
             ->where('user_id', $this->user->getKey())
             ->where('is_active', true)
             ->whereIn('site_id', Site::query()->administrable()->select('id'))
-            ->with(['site.primaryDomain'])
+            ->with('site')
             ->orderBy('site_id')
             ->get()
             ->map(static fn (SiteMembership $membership): Site => $membership->site)

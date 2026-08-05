@@ -94,7 +94,12 @@ final class SiteAdminShellVisualTest extends TestCase
             $this->assertIsResource($browser, 'Unable to start Google Chrome.');
             $this->assertSame(0, proc_close($browser), (string) file_get_contents($browserLog));
             $renderedDom = (string) file_get_contents($dom);
-            $this->assertStringContainsString('data-browser-acceptance="passed"', $renderedDom, "Acceptance failed for [{$state}].");
+            $failureDetails = $this->acceptanceFailureDetails($renderedDom);
+            $this->assertStringContainsString(
+                'data-browser-acceptance="passed"',
+                $renderedDom,
+                "Acceptance failed for [{$state}]: {$failureDetails}",
+            );
             $this->assertStringNotContainsString('data-browser-acceptance="failed"', $renderedDom);
             $this->assertStringContainsString('data-site-sidebar-collapsed="false"', $renderedDom);
             $this->assertStringContainsString('data-site-sidebar-mobile-open="false"', $renderedDom);
@@ -243,6 +248,17 @@ final class SiteAdminShellVisualTest extends TestCase
     private function referencePath(string $state): string
     {
         return dirname(__DIR__, 2)."/tests/Visual/baselines/site-admin-shell-{$state}.png";
+    }
+
+    private function acceptanceFailureDetails(string $dom): string
+    {
+        if (preg_match('/data-browser-acceptance-failures="([^"]*)"/', $dom, $matches) !== 1) {
+            return 'failure details were not recorded';
+        }
+
+        $details = html_entity_decode($matches[1], ENT_QUOTES | ENT_HTML5);
+
+        return $details !== '' ? $details : 'no failure details were recorded';
     }
 
     private function nullDevice(): string

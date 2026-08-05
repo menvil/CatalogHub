@@ -8,6 +8,7 @@ use App\Models\Site;
 use App\Models\User;
 use App\Navigation\SiteAdminNavigationRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use ReflectionMethod;
 use Tests\TestCase;
 
 final class SiteAdminNavigationRegistryTest extends TestCase
@@ -56,5 +57,13 @@ final class SiteAdminNavigationRegistryTest extends TestCase
         $user = User::factory()->create();
 
         $this->assertSame([], app(SiteAdminNavigationRegistry::class)->visibleItemsFor($user, $site));
+    }
+
+    public function test_index_destinations_keep_their_section_active_on_child_routes(): void
+    {
+        $method = new ReflectionMethod(SiteAdminNavigationRegistry::class, 'activeRoutePattern');
+
+        $this->assertSame('site.products.*', $method->invoke(null, 'site.products.index'));
+        $this->assertSame('filament.site.pages.home', $method->invoke(null, 'filament.site.pages.home'));
     }
 }

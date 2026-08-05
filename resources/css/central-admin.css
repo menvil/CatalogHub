@@ -1,6 +1,7 @@
 @import 'tailwindcss' source(none);
 @import '../../public/css/filament/filament/app.css';
 @import './foundation.css';
+@import './admin-navigation.css';
 
 @source '../../app/Filament/Central/**/*';
 @source '../../app/Filament/Pages/**/*';
@@ -19,82 +20,3 @@
 @source '../views/components/admin/**/*';
 @source '../views/components/central/**/*';
 @source '../views/components/ui/**/*';
-
-body.central-sidebar-scroll-locked {
-    overflow: hidden;
-}
-
-.central-shell-sidebar {
-    position: fixed;
-    inset-block: 0;
-    inset-inline-start: 0;
-    z-index: 50;
-    width: min(var(--width-foundation-sidebar), calc(100vw - var(--spacing-foundation-page)));
-    transform: translateX(-100%);
-    visibility: hidden;
-    transition: transform 150ms ease-out, width 150ms ease-out, visibility 0s linear 150ms;
-}
-
-.central-shell-sidebar[data-central-sidebar-mobile-open='true'] {
-    transform: translateX(0);
-    visibility: visible;
-    transition-delay: 0s;
-}
-
-.central-shell-sidebar-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 40;
-    display: none;
-    background: color-mix(in srgb, var(--color-foundation-text) 45%, transparent);
-}
-
-.central-sidebar-collapsed-mark,
-.central-sidebar-desktop-controls {
-    display: none;
-}
-
-@media (max-width: 63.999rem) {
-    .central-shell-sidebar-backdrop:has(+ .central-shell-sidebar[data-central-sidebar-mobile-open='true']) {
-        display: block;
-    }
-}
-
-@media (min-width: 64rem) {
-    .central-shell-sidebar {
-        position: sticky;
-        inset-block-start: 0;
-        z-index: 20;
-        min-height: 100vh;
-        width: var(--width-foundation-sidebar);
-        transform: none;
-        visibility: visible;
-        border-inline-end-width: 1px;
-    }
-
-    .central-shell-sidebar-backdrop,
-    .central-sidebar-mobile-close,
-    .central-sidebar-mobile-open {
-        display: none;
-    }
-
-    .central-sidebar-desktop-controls {
-        display: block;
-    }
-
-    [data-central-shell][data-central-sidebar-collapsed='true'] .central-shell-sidebar {
-        width: var(--width-foundation-sidebar-collapsed);
-    }
-
-    [data-central-shell][data-central-sidebar-collapsed='true'] .central-sidebar-label {
-        display: none;
-    }
-
-    [data-central-shell][data-central-sidebar-collapsed='true'] .central-sidebar-collapsed-mark {
-        display: inline-flex;
-    }
-
-    [data-central-shell][data-central-sidebar-collapsed='true'] [data-central-sidebar-collapse-icon] {
-        transform: rotate(180deg);
-    }
-}

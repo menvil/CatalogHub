@@ -76,7 +76,7 @@ final readonly class SiteAdminNavigationRegistry
                     ->key('site-'.$item['id'])
                     ->icon(self::iconComponent($item['icon']))
                     ->url($item['url'])
-                    ->isActiveWhen(static fn (): bool => request()->routeIs($item['route'])),
+                    ->isActiveWhen(static fn (): bool => request()->routeIs(self::activeRoutePattern($item['route']))),
             );
         }
 
@@ -105,6 +105,13 @@ final readonly class SiteAdminNavigationRegistry
             'state' => $state,
             'url' => null,
         ];
+    }
+
+    private static function activeRoutePattern(string $route): string
+    {
+        return str_ends_with($route, '.index')
+            ? substr($route, 0, -strlen('.index')).'.*'
+            : $route;
     }
 
     private static function iconComponent(string $icon): string

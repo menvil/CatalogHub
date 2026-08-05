@@ -1,4 +1,6 @@
 export function bootResponsiveAdminNavigation(config) {
+    const initializedShells = [];
+
     document.querySelectorAll(config.shellSelector).forEach((shell) => {
         const sidebar = shell.querySelector(config.sidebarSelector);
         const openButton = shell.querySelector(config.openSelector);
@@ -124,5 +126,9 @@ export function bootResponsiveAdminNavigation(config) {
         if (previewState === 'mobile') {
             openMobile();
         }
+
+        initializedShells.push(shell);
     });
+
+    return initializedShells;
 }

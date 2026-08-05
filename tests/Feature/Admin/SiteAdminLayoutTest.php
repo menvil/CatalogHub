@@ -45,6 +45,9 @@ class SiteAdminLayoutTest extends TestCase
 
         $this->assertStringContainsString('Dashboard', $html);
 
+        $visibleText = preg_replace('/\s+/', ' ', strip_tags($html));
+        $this->assertIsString($visibleText);
+
         foreach ([
             'Site Settings',
             'Categories',
@@ -58,7 +61,7 @@ class SiteAdminLayoutTest extends TestCase
             'Content',
             'Polls',
         ] as $label) {
-            $this->assertStringNotContainsString('>'.$label.'<', $html);
+            $this->assertStringNotContainsString($label, $visibleText);
         }
 
         $this->assertStringNotContainsString('href="#"', $html);

@@ -37,7 +37,10 @@ final class SiteSelectorTest extends TestCase
         $this->assertStringContainsString('Current portal', $html);
         $this->assertStringContainsString('Assigned portal', $html);
         $this->assertStringContainsString('aria-current="true"', $html);
+        $this->assertStringContainsString('data-site-selector-current', $html);
+        $this->assertSame(1, substr_count($html, 'data-site-selector-link'));
         $this->assertStringContainsString('site_id='.$assigned->getKey(), $html);
+        $this->assertStringNotContainsString('site_id='.$current->getKey(), $html);
         $this->assertStringNotContainsString('Unassigned portal', $html);
         $this->assertStringNotContainsString('Archived portal', $html);
         $this->assertStringNotContainsString('site_id='.$unassigned->getKey(), $html);

@@ -14,14 +14,23 @@
             <ul class="mt-2 space-y-1" aria-label="Authorized sites">
                 @foreach ($sites as $site)
                     <li>
-                        <a
-                            href="{{ route('filament.site.pages.home', ['site_id' => $site->getKey()], absolute: false) }}"
-                            class="block rounded-admin-input px-3 py-2 text-sm text-admin-muted hover:bg-admin-surface-muted hover:text-admin-text"
-                            @if ($site->is($currentSite)) aria-current="true" @endif
-                            data-site-selector-link
-                        >
-                            {{ $site->name }}
-                        </a>
+                        @if ($site->is($currentSite))
+                            <span
+                                class="block rounded-admin-input bg-admin-primary-soft px-3 py-2 text-sm font-medium text-admin-primary"
+                                aria-current="true"
+                                data-site-selector-current
+                            >
+                                {{ $site->name }}
+                            </span>
+                        @else
+                            <a
+                                href="{{ route('filament.site.pages.home', ['site_id' => $site->getKey()], absolute: false) }}"
+                                class="block rounded-admin-input px-3 py-2 text-sm text-admin-muted hover:bg-admin-surface-muted hover:text-admin-text"
+                                data-site-selector-link
+                            >
+                                {{ $site->name }}
+                            </a>
+                        @endif
                     </li>
                 @endforeach
             </ul>

@@ -78,7 +78,7 @@ final class SiteAdminShellFixture
             'id' => 'dashboard',
             'label' => 'Dashboard',
             'icon' => 'home',
-            'url' => '/admin/site?site_id='.$site->getKey(),
+            'url' => route('filament.site.pages.home', ['site_id' => $site->getKey()], absolute: false),
         ]];
     }
 

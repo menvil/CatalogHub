@@ -11,3 +11,7 @@
 body.admin-filter-drawer-open {
     overflow: hidden;
 }
+
+body.admin-modal-open {
+    overflow: hidden;
+}

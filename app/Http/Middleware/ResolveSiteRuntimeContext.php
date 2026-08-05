@@ -10,6 +10,7 @@ use App\Models\SiteDomain;
 use App\Services\Sites\SiteContextValueResolver;
 use App\Services\Sites\SiteResolver;
 use App\Support\Sites\SiteRuntimeContext;
+use App\Support\Themes\PublicThemeContext;
 use Closure;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
@@ -26,6 +27,7 @@ final readonly class ResolveSiteRuntimeContext
     public function handle(Request $request, Closure $next): Response
     {
         $this->app->forgetInstance(SiteRuntimeContext::class);
+        $this->app->forgetInstance(PublicThemeContext::class);
         [$site, $domain] = $this->resolveSiteAndDomain($request);
         $requestedLocale = $request->route('locale');
         $context = $this->values->resolve(
@@ -46,6 +48,7 @@ final readonly class ResolveSiteRuntimeContext
             $this->app->setLocale($previousLocale);
             date_default_timezone_set($previousTimezone);
             $this->app->forgetInstance(SiteRuntimeContext::class);
+            $this->app->forgetInstance(PublicThemeContext::class);
             $request->attributes->remove(SiteRuntimeContext::class);
         }
     }

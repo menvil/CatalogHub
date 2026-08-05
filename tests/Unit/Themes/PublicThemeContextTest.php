@@ -10,6 +10,7 @@ use App\Support\Themes\PublicThemeContext;
 use Error;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 
 final class PublicThemeContextTest extends TestCase
 {
@@ -55,6 +56,6 @@ final class PublicThemeContextTest extends TestCase
 
         $this->expectException(Error::class);
 
-        $context->config['header_variant'] = 'unsafe';
+        (new ReflectionProperty($context, 'config'))->setValue($context, ['header_variant' => 'unsafe']);
     }
 }

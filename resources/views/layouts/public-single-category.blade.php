@@ -16,7 +16,7 @@
         <div class="flex min-h-screen flex-col">
             <header class="bg-foundation-text text-foundation-surface" data-public-header>
                 <div class="mx-auto flex min-h-16 w-full max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-                    <span class="text-foundation-title font-semibold">{{ $site->name ?? config('app.name', 'CatalogHub') }}</span>
+                    <a href="{{ $publicNavigation['home'] ?? '/' }}" class="text-foundation-title font-semibold">{{ $site->name ?? config('app.name', 'CatalogHub') }}</a>
                     <span class="text-foundation-label text-foundation-surface">Focused catalogue</span>
                 </div>
             </header>

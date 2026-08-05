@@ -16,8 +16,12 @@
         <div class="flex min-h-screen flex-col">
             <header class="border-b border-foundation-border bg-foundation-surface" data-public-header>
                 <div class="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-                    <span class="text-foundation-title font-semibold">{{ $site->name ?? config('app.name', 'CatalogHub') }}</span>
-                    <span class="text-foundation-label text-foundation-text-muted" data-public-search-slot>Search integration point</span>
+                    <a href="{{ $publicNavigation['home'] ?? '/' }}" class="text-foundation-title font-semibold">{{ $site->name ?? config('app.name', 'CatalogHub') }}</a>
+                    @if (filled($publicNavigation['search'] ?? null))
+                        <a href="{{ $publicNavigation['search'] }}" class="text-foundation-label text-foundation-text-muted" data-public-search-slot>Search</a>
+                    @else
+                        <span class="text-foundation-label text-foundation-text-muted" aria-disabled="true" data-public-search-slot>Search unavailable</span>
+                    @endif
                 </div>
                 <nav class="border-t border-foundation-border" aria-label="Category navigation" data-public-category-slot>
                     <div class="mx-auto w-full max-w-7xl px-4 py-3 text-foundation-label text-foundation-text-muted sm:px-6">

@@ -49,7 +49,7 @@ final class CentralNavigationRegistry
 
     public function filamentNavigation(?User $user): NavigationBuilder
     {
-        $builder = NavigationBuilder::make();
+        $builder = new NavigationBuilder;
 
         if (! $user instanceof User) {
             return $builder;

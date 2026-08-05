@@ -58,7 +58,7 @@ final class CentralNavigationRegistryTest extends TestCase
         ], array_column($registry->visibleItemsFor($translator), 'id'));
 
         foreach ($registry->visibleItemsFor($central) as $item) {
-            $this->assertNotNull($item['url']);
+            $this->assertStringStartsWith('/', $item['url']);
         }
     }
 }

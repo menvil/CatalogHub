@@ -29,6 +29,7 @@
             <p class="text-xs font-semibold uppercase tracking-wide text-admin-muted">CatalogHub</p>
             <p class="mt-1 truncate text-lg font-semibold text-admin-text">{{ $contextLabel }}</p>
         </div>
+        <span class="central-sidebar-collapsed-mark text-sm font-semibold text-admin-text" aria-hidden="true">CH</span>
 
         <button
             type="button"
@@ -52,6 +53,7 @@
             @if ($url)
                 <a
                     href="{{ $url }}"
+                    aria-label="{{ $label }}"
                     @if ($isActive) aria-current="page" @endif
                     @class([
                         'whitespace-nowrap rounded-admin-input px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary',

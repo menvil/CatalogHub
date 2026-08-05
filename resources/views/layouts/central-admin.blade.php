@@ -1,6 +1,7 @@
 @php
-    $centralAdminNavigation = auth()->user() instanceof \App\Models\User
-        ? app(\App\Navigation\CentralNavigationRegistry::class)->visibleItemsFor(auth()->user())
+    $centralUser ??= auth()->user();
+    $centralAdminNavigation = $centralUser instanceof \App\Models\User
+        ? app(\App\Navigation\CentralNavigationRegistry::class)->visibleItemsFor($centralUser)
         : [];
     $documentTitle = trim($__env->yieldContent('pageTitle', $pageTitle ?? $title ?? 'Central Admin'));
 @endphp
@@ -13,6 +14,7 @@
 
         <title>{{ $title ?? $documentTitle }} - {{ config('app.name', 'CatalogHub') }}</title>
 
+        @stack('head')
         @vite(['resources/css/central-admin.css', 'resources/js/app.js'])
         @livewireStyles
     </head>
@@ -24,6 +26,7 @@
             data-admin-layout="central"
             data-central-shell
             data-central-sidebar-collapsed="false"
+            @if (isset($centralShellPreviewState)) data-central-preview-state="{{ $centralShellPreviewState }}" @endif
             data-presentation-context="central-admin"
         >
             <x-admin.sidebar
@@ -34,7 +37,7 @@
             />
 
             <div class="min-w-0 flex-1">
-                @include('central.components.header')
+                @include('central.components.header', ['centralUser' => $centralUser])
 
                 <main id="central-main-content" class="px-admin-page py-admin-section" tabindex="-1">
                     <div class="mx-auto max-w-7xl space-y-admin-section">
@@ -62,5 +65,6 @@
         </div>
 
         @livewireScripts
+        @stack('scripts')
     </body>
 </html>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CentralAdmin\DesignSystem\CentralShellPreviewController;
 use App\Http\Controllers\CentralAdmin\DesignSystem\ComponentGalleryController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,4 +21,7 @@ if (app()->environment(['local', 'testing'])) {
 
     Route::get('/dev/component-gallery', ComponentGalleryController::class)
         ->name('dev.component-gallery.capture');
+
+    Route::get('/dev/central-shell', CentralShellPreviewController::class)
+        ->name('dev.central-shell.capture');
 }

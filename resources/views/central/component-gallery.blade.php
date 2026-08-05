@@ -1,4 +1,4 @@
-@extends('layouts.central-admin', ['activeNav' => 'component-gallery'])
+@extends('layouts.central-admin', ['activeNav' => 'component-gallery', 'centralUser' => $centralUser])
 
 @section('pageTitle', 'Foundation Component Gallery')
 

@@ -59,7 +59,8 @@ export function bootCentralNavigation() {
             focusTarget.focus({ preventScroll: true });
         };
 
-        setCollapsed(storedPreference());
+        const previewState = shell.dataset.centralPreviewState;
+        setCollapsed(previewState ? previewState === 'collapsed' : storedPreference());
 
         openButton.addEventListener('click', openMobile);
         closeButton?.addEventListener('click', () => closeMobile());
@@ -103,5 +104,9 @@ export function bootCentralNavigation() {
                 closeMobile({ restoreFocus: false });
             }
         });
+
+        if (previewState === 'mobile') {
+            openMobile();
+        }
     });
 }

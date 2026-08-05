@@ -1,5 +1,5 @@
 @php
-    $centralUser = auth()->user();
+    $centralUser ??= auth()->user();
 @endphp
 
 <header

@@ -6,6 +6,7 @@ use App\Domains\PublicSite\HomepageBlockRenderer;
 use App\Domains\PublicSite\LocalizedUrlResolver;
 use App\Http\Controllers\Controller;
 use App\Services\PublicSite\PublicLocaleNavigation;
+use App\Support\Seo\SeoMetadata;
 use App\Support\Sites\SiteRuntimeContext;
 use App\Support\Themes\PublicThemeContext;
 use Illuminate\Contracts\View\View;
@@ -38,6 +39,7 @@ final class HomeController extends Controller
                 'search' => $urls->search($site, $locale),
             ],
             'publicLocaleOptions' => $locales->forHome($site, $locale),
+            'seoMetadata' => SeoMetadata::forHome($context),
         ]);
     }
 }

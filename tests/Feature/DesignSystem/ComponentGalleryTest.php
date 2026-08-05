@@ -1,0 +1,54 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature\DesignSystem;
+
+use App\Enums\UserRole;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+final class ComponentGalleryTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_gallery_requires_central_access(): void
+    {
+        $this->get('/admin/central/component-gallery')
+            ->assertRedirect(route('filament.central.auth.login'));
+
+        $siteAdmin = User::factory()->create(['role' => UserRole::SiteAdmin]);
+
+        $this->actingAs($siteAdmin)
+            ->get('/admin/central/component-gallery')
+            ->assertForbidden();
+    }
+
+    public function test_central_admin_opens_the_deterministic_foundation_gallery(): void
+    {
+        $centralAdmin = User::factory()->create(['role' => UserRole::CentralAdmin]);
+
+        $this->actingAs($centralAdmin)
+            ->get('/admin/central/component-gallery')
+            ->assertOk()
+            ->assertSee('Foundation Component Gallery')
+            ->assertSee('data-gallery-fixture="foundation-v1"', false)
+            ->assertSee('Color and status tokens')
+            ->assertSee('Typography')
+            ->assertSee('Spacing and geometry')
+            ->assertSee('Heroicons')
+            ->assertSee('Responsive density')
+            ->assertSee('/build/assets/central-admin-', false)
+            ->assertDontSee('data-presentation-context="site-admin"', false)
+            ->assertDontSee('data-presentation-context="public-site"', false);
+    }
+
+    public function test_local_capture_route_renders_the_same_deterministic_fixture_without_publishing_access(): void
+    {
+        $this->get('/dev/component-gallery')
+            ->assertOk()
+            ->assertSee('data-gallery-fixture="foundation-v1"', false)
+            ->assertSee('data-presentation-context="central-admin"', false);
+    }
+}

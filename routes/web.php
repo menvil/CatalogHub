@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CentralAdmin\DesignSystem\ComponentGalleryController;
 use Illuminate\Support\Facades\Route;
 
 require __DIR__.'/health.php';
@@ -16,4 +17,7 @@ if (app()->environment(['local', 'testing'])) {
     Route::get('/dev/admin-visual-smoke', function () {
         return view('dev.admin-visual-smoke');
     })->name('dev.admin-visual-smoke');
+
+    Route::get('/dev/component-gallery', ComponentGalleryController::class)
+        ->name('dev.component-gallery.capture');
 }

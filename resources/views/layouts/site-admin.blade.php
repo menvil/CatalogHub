@@ -5,6 +5,7 @@
     $siteAdminNavigation ??= $siteAdminUser instanceof \App\Models\User && $siteAdminCurrentSite instanceof \App\Models\Site
         ? app(\App\Navigation\SiteAdminNavigationRegistry::class)->visibleItemsFor($siteAdminUser, $siteAdminCurrentSite)
         : [];
+    $siteSidebarInitiallyOpen = ($siteAdminShellPreviewState ?? null) === 'mobile';
     $documentTitle = trim($__env->yieldContent('pageTitle', $pageTitle ?? $title ?? 'Site Admin'));
 @endphp
 
@@ -20,7 +21,10 @@
         @vite(['resources/css/site-admin.css', 'resources/js/app.js'])
         @livewireStyles
     </head>
-    <body class="min-h-screen overflow-x-hidden bg-admin-background font-sans text-admin-text antialiased">
+    <body @class([
+        'min-h-screen overflow-x-hidden bg-admin-background font-sans text-admin-text antialiased',
+        'site-sidebar-scroll-locked' => $siteSidebarInitiallyOpen,
+    ])>
         <a href="#site-main-content" class="sr-only focus:not-sr-only">Skip to main content</a>
 
         <div
@@ -28,6 +32,7 @@
             data-admin-layout="site"
             data-site-shell
             data-site-sidebar-collapsed="false"
+            data-site-sidebar-mobile-open="{{ $siteSidebarInitiallyOpen ? 'true' : 'false' }}"
             data-site-sidebar-persist="{{ ($acceptance ?? false) ? 'false' : 'true' }}"
             @if (isset($siteAdminShellPreviewState)) data-site-preview-state="{{ $siteAdminShellPreviewState }}" @endif
             data-presentation-context="site-admin"
@@ -36,11 +41,15 @@
                 :items="$siteAdminNavigation"
                 :active-nav="$activeNav ?? null"
                 :current-site="$siteAdminCurrentSite"
+                :mobile-open="$siteSidebarInitiallyOpen"
                 data-site-sidebar
             />
 
             <div class="min-w-0 flex-1">
-                @include('site-admin.components.header', ['siteAdminUser' => $siteAdminUser])
+                @include('site-admin.components.header', [
+                    'siteAdminUser' => $siteAdminUser,
+                    'siteSidebarInitiallyOpen' => $siteSidebarInitiallyOpen,
+                ])
 
                 <main id="site-main-content" class="px-admin-page py-admin-section" tabindex="-1">
                     <div class="mx-auto max-w-7xl space-y-admin-section">

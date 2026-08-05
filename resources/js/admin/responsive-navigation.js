@@ -38,6 +38,7 @@ export function bootResponsiveAdminNavigation(config) {
 
         const closeMobile = ({ restoreFocus = true } = {}) => {
             sidebar.dataset[config.mobileOpenDataset] = 'false';
+            shell.dataset[config.mobileOpenDataset] = 'false';
             openButton.setAttribute('aria-expanded', 'false');
             document.body.classList.remove(config.bodyLockClass);
 
@@ -51,6 +52,7 @@ export function bootResponsiveAdminNavigation(config) {
         const openMobile = () => {
             mobileTrigger = openButton;
             sidebar.dataset[config.mobileOpenDataset] = 'true';
+            shell.dataset[config.mobileOpenDataset] = 'true';
             openButton.setAttribute('aria-expanded', 'true');
             document.body.classList.add(config.bodyLockClass);
 

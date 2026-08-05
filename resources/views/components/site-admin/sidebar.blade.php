@@ -2,6 +2,7 @@
     'items' => [],
     'activeNav' => null,
     'currentSite' => null,
+    'mobileOpen' => false,
 ])
 
 <button
@@ -15,7 +16,7 @@
     id="site-navigation"
     {{ $attributes->class('site-shell-sidebar flex flex-col border-admin-border bg-admin-surface text-admin-text shadow-admin-card') }}
     aria-label="Site Admin navigation"
-    data-site-sidebar-mobile-open="false"
+    data-site-sidebar-mobile-open="{{ $mobileOpen ? 'true' : 'false' }}"
     data-site-sidebar-preference="local"
 >
     <div class="flex min-h-16 items-center justify-between gap-2 border-b border-admin-border px-admin-card py-3">

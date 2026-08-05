@@ -1,3 +1,7 @@
+@php
+    $siteSidebarInitiallyOpen ??= false;
+@endphp
+
 <header
     class="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-admin-border bg-admin-surface px-admin-page py-3 text-admin-text"
     data-site-header
@@ -8,7 +12,7 @@
             class="site-sidebar-mobile-open rounded-admin-input p-2 text-admin-muted hover:bg-admin-surface-muted hover:text-admin-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary"
             aria-label="Open navigation"
             aria-controls="site-navigation"
-            aria-expanded="false"
+            aria-expanded="{{ $siteSidebarInitiallyOpen ? 'true' : 'false' }}"
             data-site-sidebar-open
         >
             <x-ui.icon name="bars-3" size="md" />

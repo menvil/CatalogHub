@@ -45,7 +45,7 @@ body.site-sidebar-scroll-locked {
 }
 
 @media (max-width: 63.999rem) {
-    [data-site-shell]:has(.site-shell-sidebar[data-site-sidebar-mobile-open='true']) .site-shell-sidebar-backdrop {
+    [data-site-shell][data-site-sidebar-mobile-open='true'] .site-shell-sidebar-backdrop {
         display: block;
     }
 }

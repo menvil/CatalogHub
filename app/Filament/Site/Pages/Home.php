@@ -10,6 +10,8 @@ use Filament\Panel;
 
 final class Home extends Page
 {
+    protected static string $layout = 'layouts.site-admin';
+
     protected static ?string $navigationLabel = 'Home';
 
     protected static ?string $title = 'Site Admin';
@@ -25,6 +27,17 @@ final class Home extends Page
         abort_unless($site instanceof Site, 403);
 
         $this->siteName = $site->name;
+    }
+
+    /** @return array<string, mixed> */
+    protected function getLayoutData(): array
+    {
+        return [
+            'activeNav' => 'dashboard',
+            'pageTitle' => 'Site Admin',
+            'siteLabel' => $this->siteName,
+            'title' => 'Site Admin',
+        ];
     }
 
     public static function getRoutePath(Panel $panel): string

@@ -4,6 +4,8 @@
 
 @source '../../app/Filament/Site/**/*';
 @source '../views/filament/site/**/*';
+@source '../views/site-admin/**/*';
 @source '../views/layouts/site-admin.blade.php';
 @source '../views/components/admin/**/*';
+@source '../views/components/site-admin/**/*';
 @source '../views/components/ui/**/*';

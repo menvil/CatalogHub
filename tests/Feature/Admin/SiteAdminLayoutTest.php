@@ -24,12 +24,18 @@ class SiteAdminLayoutTest extends TestCase
         BLADE);
 
         $this->assertStringContainsString('data-admin-layout="site"', $html);
+        $this->assertStringContainsString('data-site-shell', $html);
+        $this->assertStringContainsString('<header', $html);
+        $this->assertStringContainsString('<main id="site-main-content"', $html);
+        $this->assertStringContainsString('aria-label="Site Admin navigation"', $html);
         $this->assertStringContainsString('Site Admin', $html);
         $this->assertStringContainsString('Search site workspace', $html);
         $this->assertStringContainsString('Sofia catalog', $html);
         $this->assertStringContainsString('BG market', $html);
         $this->assertStringContainsString('Locale: bg', $html);
         $this->assertStringContainsString('Site admin slot content', $html);
+        $this->assertStringNotContainsString('data-central-shell', $html);
+        $this->assertStringNotContainsString('Central Admin navigation', $html);
 
         foreach ([
             'Dashboard',

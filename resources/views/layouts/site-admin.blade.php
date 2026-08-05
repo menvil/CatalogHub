@@ -1,19 +1,20 @@
 @php
-    $siteAdminNavigation = [
-        ['key' => 'dashboard', 'label' => 'Dashboard'],
-        ['key' => 'site-settings', 'label' => 'Site Settings'],
-        ['key' => 'categories', 'label' => 'Categories'],
-        ['key' => 'products', 'label' => 'Products'],
-        ['key' => 'theme', 'label' => 'Theme'],
-        ['key' => 'blocks', 'label' => 'Blocks'],
-        ['key' => 'sync', 'label' => 'Sync'],
-        ['key' => 'prices', 'label' => 'Prices'],
-        ['key' => 'reviews', 'label' => 'Reviews'],
-        ['key' => 'leads', 'label' => 'Leads'],
-        ['key' => 'content', 'label' => 'Content'],
-        ['key' => 'polls', 'label' => 'Polls'],
-        ['key' => 'settings', 'label' => 'Settings'],
+    $siteAdminNavigation ??= [
+        ['id' => 'dashboard', 'label' => 'Dashboard', 'icon' => 'home', 'url' => null],
+        ['id' => 'site-settings', 'label' => 'Site Settings', 'icon' => 'cog-6-tooth', 'url' => null],
+        ['id' => 'categories', 'label' => 'Categories', 'icon' => 'squares-2x2', 'url' => null],
+        ['id' => 'products', 'label' => 'Products', 'icon' => 'archive-box', 'url' => null],
+        ['id' => 'theme', 'label' => 'Theme', 'icon' => 'pencil-square', 'url' => null],
+        ['id' => 'blocks', 'label' => 'Blocks', 'icon' => 'squares-2x2', 'url' => null],
+        ['id' => 'sync', 'label' => 'Sync', 'icon' => 'arrow-up-tray', 'url' => null],
+        ['id' => 'prices', 'label' => 'Prices', 'icon' => 'currency-dollar', 'url' => null],
+        ['id' => 'reviews', 'label' => 'Reviews', 'icon' => 'inbox-stack', 'url' => null],
+        ['id' => 'leads', 'label' => 'Leads', 'icon' => 'users', 'url' => null],
+        ['id' => 'content', 'label' => 'Content', 'icon' => 'language', 'url' => null],
+        ['id' => 'polls', 'label' => 'Polls', 'icon' => 'information-circle', 'url' => null],
+        ['id' => 'settings', 'label' => 'Settings', 'icon' => 'cog-6-tooth', 'url' => null],
     ];
+    $siteAdminUser ??= auth()->user();
     $documentTitle = trim($__env->yieldContent('pageTitle', $pageTitle ?? $title ?? 'Site Admin'));
 @endphp
 
@@ -25,26 +26,29 @@
 
         <title>{{ $title ?? $documentTitle }} - {{ config('app.name', 'CatalogHub') }}</title>
 
+        @stack('head')
         @vite(['resources/css/site-admin.css', 'resources/js/app.js'])
+        @livewireStyles
     </head>
     <body class="min-h-screen overflow-x-hidden bg-admin-background font-sans text-admin-text antialiased">
-        <div class="min-h-screen lg:flex" data-admin-layout="site" data-presentation-context="site-admin">
-            <x-admin.sidebar
-                context="site"
+        <a href="#site-main-content" class="sr-only focus:not-sr-only">Skip to main content</a>
+
+        <div
+            class="min-h-screen lg:flex"
+            data-admin-layout="site"
+            data-site-shell
+            data-presentation-context="site-admin"
+        >
+            <x-site-admin.sidebar
                 :items="$siteAdminNavigation"
                 :active-nav="$activeNav ?? null"
+                data-site-sidebar
             />
 
             <div class="min-w-0 flex-1">
-                <x-admin.topbar context-label="Site Admin" search-placeholder="Search site workspace">
-                    <x-slot:title>
-                        <h1 class="text-xl font-semibold text-admin-text">
-                            @yield('pageTitle', $pageTitle ?? 'Site Admin')
-                        </h1>
-                    </x-slot:title>
-                </x-admin.topbar>
+                @include('site-admin.components.header', ['siteAdminUser' => $siteAdminUser])
 
-                <main class="px-admin-page py-admin-section">
+                <main id="site-main-content" class="px-admin-page py-admin-section" tabindex="-1">
                     <div class="mx-auto max-w-7xl space-y-admin-section">
                         <x-admin.site-context-switcher
                             :site-label="$siteLabel ?? 'Demo portal'"
@@ -53,11 +57,9 @@
                         />
 
                         <div class="flex flex-col gap-admin-field md:flex-row md:items-start md:justify-between">
-                            <div class="min-w-0">
-                                <nav class="text-sm text-admin-muted" aria-label="Breadcrumbs">
-                                    @yield('breadcrumbs')
-                                </nav>
-                            </div>
+                            <nav class="min-w-0 text-sm text-admin-muted" aria-label="Breadcrumbs">
+                                @yield('breadcrumbs')
+                            </nav>
 
                             <div class="flex flex-wrap items-center gap-admin-field">
                                 @yield('pageActions')
@@ -72,5 +74,8 @@
                 </main>
             </div>
         </div>
+
+        @livewireScripts
+        @stack('scripts')
     </body>
 </html>

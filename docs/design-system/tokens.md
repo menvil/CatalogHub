@@ -6,6 +6,7 @@ CatalogHub uses semantic tokens in new foundation code. Raw palette values are i
 
 - Raw palette: `--palette-*`, defined only in `resources/css/tokens/palette.css`.
 - Semantic colors: `--color-foundation-*`.
+- Type families: `--font-foundation-*`; public layouts opt in explicitly so Filament keeps its defaults.
 - Type roles: `--text-foundation-*` and their line-height pairs.
 - Geometry: `--spacing-foundation-*`, `--radius-foundation-*`, `--shadow-foundation-*`, `--width-foundation-*`, and `--height-foundation-*`.
 - Responsive boundaries: `--breakpoint-foundation-*`.

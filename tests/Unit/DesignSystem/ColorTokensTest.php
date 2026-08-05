@@ -30,10 +30,27 @@ final class ColorTokensTest extends TestCase
         }
     }
 
+    public function test_alpha_palette_values_are_not_treated_as_opaque_colors(): void
+    {
+        $palette = $this->palette(<<<'CSS'
+            @theme {
+                --palette-opaque-short: #abc;
+                --palette-alpha-short: #abcd;
+                --palette-opaque-long: #aabbcc;
+                --palette-alpha-long: #aabbccdd;
+            }
+            CSS);
+
+        $this->assertSame([
+            '--palette-opaque-short' => '#abc',
+            '--palette-opaque-long' => '#aabbcc',
+        ], $palette);
+    }
+
     /** @return array<string, string> */
     private function palette(string $css): array
     {
-        preg_match_all('/(--palette-[\w-]+):\s*(#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{4}|[0-9a-f]{3}))\b/i', $css, $matches, PREG_SET_ORDER);
+        preg_match_all('/(--palette-[\w-]+):\s*(#(?:[0-9a-f]{6}|[0-9a-f]{3}))\b/i', $css, $matches, PREG_SET_ORDER);
 
         return array_column($matches, 2, 1);
     }

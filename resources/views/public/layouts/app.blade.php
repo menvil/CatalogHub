@@ -10,7 +10,7 @@
         @stack('head')
         @vite(['resources/css/public.css', 'resources/js/app.js'])
     </head>
-    <body class="min-h-screen bg-slate-50 font-sans text-slate-950 antialiased" data-presentation-context="public-site">
+    <body class="min-h-screen bg-slate-50 font-foundation-sans text-slate-950 antialiased" data-presentation-context="public-site">
         <div class="flex min-h-screen flex-col">
             @include('public.partials.header')
 

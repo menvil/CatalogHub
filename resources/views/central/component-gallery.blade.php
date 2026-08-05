@@ -51,7 +51,7 @@
                     <p class="text-foundation-title font-medium text-foundation-text">Title</p>
                     <p class="text-foundation-body text-foundation-text">Body copy remains readable across administrative contexts.</p>
                     <p class="text-foundation-label font-medium text-foundation-text-muted">Label and metadata</p>
-                    <code class="font-mono text-foundation-code text-foundation-accent">foundation.token.reference</code>
+                    <code class="font-foundation-mono text-foundation-code text-foundation-accent">foundation.token.reference</code>
                 </div>
             </div>
 

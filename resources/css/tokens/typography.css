@@ -1,7 +1,7 @@
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-foundation-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
-    --font-mono: ui-monospace, 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    --font-foundation-mono: ui-monospace, 'SFMono-Regular', consolas, 'Liberation Mono', monospace;
 
     --text-foundation-display: 2.25rem;
     --text-foundation-display--line-height: 2.5rem;

@@ -32,10 +32,11 @@ final class TokenContractTest extends TestCase
 
         $this->assertIsString($palette);
         $this->assertIsString($semantic);
-        preg_match_all('/#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{4}|[0-9a-f]{3})\b/i', $palette, $matches);
+        preg_match_all('/#(?:[0-9a-f]{6}|[0-9a-f]{3})\b/i', $palette, $matches);
 
         $this->assertNotEmpty($matches[0]);
         $this->assertSameSize($matches[0], array_unique(array_map('strtolower', $matches[0])));
+        $this->assertDoesNotMatchRegularExpression('/#(?:[0-9a-f]{8}|[0-9a-f]{4})\b/i', $palette);
         $this->assertDoesNotMatchRegularExpression('/#[0-9a-f]{3,8}\b/i', $semantic);
     }
 
@@ -63,6 +64,8 @@ final class TokenContractTest extends TestCase
                 '--color-foundation-text',
                 '--color-foundation-text-muted',
                 '--color-foundation-accent',
+                '--color-foundation-accent-strong',
+                '--color-foundation-accent-surface',
                 '--color-foundation-focus',
                 '--color-foundation-success',
                 '--color-foundation-success-surface',
@@ -72,17 +75,26 @@ final class TokenContractTest extends TestCase
                 '--color-foundation-danger-surface',
                 '--color-foundation-info',
                 '--color-foundation-info-surface',
+                '--color-foundation-outdated',
+                '--color-foundation-outdated-surface',
             ]],
             'typography' => ['resources/css/tokens/typography.css', [
-                '--font-sans',
-                '--font-mono',
+                '--font-foundation-sans',
+                '--font-foundation-mono',
                 '--text-foundation-display',
+                '--text-foundation-display--line-height',
                 '--text-foundation-heading',
+                '--text-foundation-heading--line-height',
                 '--text-foundation-title',
+                '--text-foundation-title--line-height',
                 '--text-foundation-body',
+                '--text-foundation-body--line-height',
                 '--text-foundation-label',
+                '--text-foundation-label--line-height',
                 '--text-foundation-caption',
+                '--text-foundation-caption--line-height',
                 '--text-foundation-code',
+                '--text-foundation-code--line-height',
             ]],
             'geometry' => ['resources/css/tokens/geometry.css', [
                 '--spacing-foundation-page',

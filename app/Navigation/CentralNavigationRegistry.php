@@ -6,9 +6,11 @@ namespace App\Navigation;
 
 use App\Enums\Permission;
 use App\Models\User;
+use App\Support\DesignSystem\FoundationDesignSystem;
 use Filament\Navigation\NavigationBuilder;
 use Filament\Navigation\NavigationItem;
 use Illuminate\Support\Facades\Route;
+use LogicException;
 
 final class CentralNavigationRegistry
 {
@@ -19,7 +21,7 @@ final class CentralNavigationRegistry
     {
         return [
             $this->item('dashboard', 'Dashboard', 'home', 'filament.central.pages.home', Permission::CentralPageAccess, 'available'),
-            $this->item('catalog', 'Catalog', 'squares-2x2', 'filament.central.resources.central-products.index', Permission::CentralView, 'available'),
+            $this->item('catalog', 'Catalog', 'squares-2x2', 'filament.central.resources.central-products.index', Permission::CatalogProductsManage, 'available'),
             $this->item('imports', 'Imports', 'arrow-up-tray', 'filament.central.resources.import-batches.index', Permission::ImportsManage, 'available'),
             $this->item('media', 'Media', 'photo', 'central.media.index', Permission::MediaManage, 'available'),
             $this->item('translations', 'Translations', 'language', 'central.translations.dashboard', Permission::TranslationsManage, 'available'),
@@ -59,9 +61,9 @@ final class CentralNavigationRegistry
             $builder->item(
                 NavigationItem::make($item['label'])
                     ->key('central-'.$item['id'])
-                    ->icon('heroicon-o-'.$item['icon'])
+                    ->icon(self::iconComponent($item['icon']))
                     ->url($item['url'])
-                    ->isActiveWhen(static fn (): bool => request()->routeIs($item['route'])),
+                    ->isActiveWhen(static fn (): bool => request()->routeIs(self::activeRoutePattern($item['route']))),
             );
         }
 
@@ -88,5 +90,18 @@ final class CentralNavigationRegistry
             'state' => $state,
             'url' => null,
         ];
+    }
+
+    private static function activeRoutePattern(string $route): string
+    {
+        return str_ends_with($route, '.index')
+            ? substr($route, 0, -strlen('.index')).'.*'
+            : $route;
+    }
+
+    private static function iconComponent(string $icon): string
+    {
+        return FoundationDesignSystem::HEROICON_COMPONENTS[$icon]
+            ?? throw new LogicException("Unknown Central navigation icon [{$icon}].");
     }
 }

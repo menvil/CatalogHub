@@ -1,4 +1,4 @@
-@extends('layouts.central-admin', ['activeNav' => 'Products', 'pageTitle' => 'Product Media'])
+@extends('layouts.central-admin', ['activeNav' => 'catalog', 'pageTitle' => 'Product Media'])
 
 @section('breadcrumbs')
     <span>Products</span>

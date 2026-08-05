@@ -2,10 +2,6 @@
 
 @section('pageTitle', 'Foundation Component Gallery')
 
-@section('breadcrumbs')
-    <span>Platform Foundation / Design system</span>
-@endsection
-
 @section('content')
     <div class="space-y-foundation-section" data-gallery-fixture="{{ $fixtureVersion }}">
         <x-admin.page-header

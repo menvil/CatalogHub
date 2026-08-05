@@ -49,23 +49,40 @@
                     const collapse = document.querySelector('[data-central-sidebar-collapse]');
                     const failures = [];
                     const verify = (condition, message) => condition || failures.push(message);
+                    const previewState = shell?.dataset.centralPreviewState ?? 'default';
 
-                    collapse?.click();
-                    verify(shell?.dataset.centralSidebarCollapsed === 'true', 'desktop collapse state');
-                    verify(collapse?.getAttribute('aria-pressed') === 'true', 'desktop collapse semantics');
-                    collapse?.click();
+                    if (previewState === 'mobile') {
+                        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+                        document.body.classList.add('overflow-hidden');
+                        open?.click();
+                        verify(sidebar?.dataset.centralSidebarMobileOpen === 'true', 'mobile drawer opens');
+                        verify(document.body.classList.contains('central-sidebar-mobile-open'), 'sidebar scroll lock');
 
-                    document.body.classList.add('overflow-hidden');
-                    open?.click();
-                    verify(sidebar?.dataset.centralSidebarMobileOpen === 'true', 'mobile drawer opens');
-                    verify(document.body.classList.contains('central-sidebar-mobile-open'), 'sidebar scroll lock');
+                        const visibleFocusable = Array.from(sidebar?.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])') ?? [])
+                            .filter((element) => element.getClientRects().length > 0);
+                        const first = visibleFocusable.at(0);
+                        const last = visibleFocusable.at(-1);
+                        last?.focus();
+                        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+                        verify(document.activeElement === first, 'mobile focus trap wraps forward');
 
-                    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-                    verify(sidebar?.dataset.centralSidebarMobileOpen === 'false', 'Escape closes drawer');
-                    verify(document.activeElement === open, 'focus returns to trigger');
-                    verify(document.body.classList.contains('overflow-hidden'), 'other overlay scroll lock remains');
-                    document.body.classList.remove('overflow-hidden');
-                    verify(window.__centralAcceptanceErrors.length === 0, 'no browser runtime errors');
+                        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+                        verify(sidebar?.dataset.centralSidebarMobileOpen === 'false', 'Escape closes drawer');
+                        verify(document.activeElement === open, 'focus returns to trigger');
+                        verify(document.body.classList.contains('overflow-hidden'), 'other overlay scroll lock remains');
+                        document.body.classList.remove('overflow-hidden');
+                    } else {
+                        collapse?.click();
+                        verify(shell?.dataset.centralSidebarCollapsed === 'true', 'desktop collapse state');
+                        verify(collapse?.getAttribute('aria-pressed') === 'true', 'desktop collapse semantics');
+                        collapse?.click();
+                        verify(shell?.dataset.centralSidebarCollapsed === 'false', 'desktop expand state');
+                    }
+
+                    verify(
+                        window.__centralAcceptanceErrors.length === 0,
+                        'unexpected runtime error: ' + window.__centralAcceptanceErrors.join(' | '),
+                    );
 
                     fixture.dataset.browserAcceptance = failures.length === 0 ? 'passed' : 'failed';
                     fixture.dataset.browserAcceptanceFailures = failures.join(', ');

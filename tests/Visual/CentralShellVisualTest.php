@@ -59,38 +59,48 @@ final class CentralShellVisualTest extends TestCase
     public function test_navigation_interactions_pass_in_a_real_browser_without_runtime_errors(): void
     {
         $this->withServer(function (int $port, string $log): void {
-            $dom = tempnam(sys_get_temp_dir(), 'cataloghub-central-shell-dom-');
-            $this->assertIsString($dom);
-            $browserLog = tempnam(sys_get_temp_dir(), 'cataloghub-central-shell-browser-');
-            $this->assertIsString($browserLog);
-
-            try {
-                $descriptors = [
-                    0 => ['file', $this->nullDevice(), 'r'],
-                    1 => ['file', $dom, 'w'],
-                    2 => ['file', $browserLog, 'a'],
-                ];
-                $browser = proc_open([
-                    $this->requiredChromeBinary(),
-                    '--headless=new',
-                    '--disable-gpu',
-                    '--force-device-scale-factor=1',
-                    '--window-size=360,800',
-                    '--virtual-time-budget=2500',
-                    '--dump-dom',
-                    "http://127.0.0.1:{$port}/dev/central-shell?state=default&acceptance=1",
-                ], $descriptors, $pipes, dirname(__DIR__, 2));
-
-                $this->assertIsResource($browser, 'Unable to start Google Chrome.');
-                $this->assertSame(0, proc_close($browser), (string) file_get_contents($browserLog));
-                $renderedDom = (string) file_get_contents($dom);
-                $this->assertStringContainsString('data-browser-acceptance="passed"', $renderedDom);
-                $this->assertStringNotContainsString('data-browser-acceptance="failed"', $renderedDom);
-            } finally {
-                @unlink($dom);
-                @unlink($browserLog);
+            foreach (['default', 'mobile'] as $state) {
+                $this->assertInteractionState($port, $log, $state, self::STATES[$state]);
             }
         });
+    }
+
+    /** @param array{width: int, height: int, query: string} $configuration */
+    private function assertInteractionState(int $port, string $log, string $state, array $configuration): void
+    {
+        $dom = tempnam(sys_get_temp_dir(), 'cataloghub-central-shell-dom-');
+        $this->assertIsString($dom);
+        $browserLog = tempnam(sys_get_temp_dir(), 'cataloghub-central-shell-browser-');
+        $this->assertIsString($browserLog);
+
+        try {
+            $descriptors = [
+                0 => ['file', $this->nullDevice(), 'r'],
+                1 => ['file', $dom, 'w'],
+                2 => ['file', $browserLog, 'a'],
+            ];
+            $browser = proc_open([
+                $this->requiredChromeBinary(),
+                '--headless=new',
+                '--disable-gpu',
+                '--force-device-scale-factor=1',
+                "--window-size={$configuration['width']},{$configuration['height']}",
+                '--virtual-time-budget=2500',
+                '--dump-dom',
+                "http://127.0.0.1:{$port}/dev/central-shell?state={$configuration['query']}&acceptance=1",
+            ], $descriptors, $pipes, dirname(__DIR__, 2));
+
+            $this->assertIsResource($browser, 'Unable to start Google Chrome.');
+            $this->assertSame(0, proc_close($browser), (string) file_get_contents($browserLog));
+            $renderedDom = (string) file_get_contents($dom);
+            $this->assertStringContainsString('data-browser-acceptance="passed"', $renderedDom, "Acceptance failed for [{$state}].");
+            $this->assertStringNotContainsString('data-browser-acceptance="failed"', $renderedDom);
+            $this->assertStringContainsString('data-central-sidebar-collapsed="false"', $renderedDom);
+            $this->assertStringContainsString('data-central-sidebar-mobile-open="false"', $renderedDom);
+        } finally {
+            @unlink($dom);
+            @unlink($browserLog);
+        }
     }
 
     /** @param array{width: int, height: int, query: string} $configuration */

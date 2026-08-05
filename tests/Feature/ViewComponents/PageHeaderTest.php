@@ -65,8 +65,12 @@ final class PageHeaderTest extends TestCase
     public static function invalidScreenIdProvider(): array
     {
         return [
+            'empty' => [''],
             'missing separator' => ['CA001'],
             'lowercase prefix' => ['ca-001'],
+            'empty segment' => ['CA--2'],
+            'trailing separator' => ['CA-001-'],
+            'repeated separator' => ['CA-1--2'],
         ];
     }
 }

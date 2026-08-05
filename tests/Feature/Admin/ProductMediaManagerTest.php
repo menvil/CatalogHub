@@ -29,7 +29,8 @@ class ProductMediaManagerTest extends TestCase
         $this->get(route('central.products.media', $product))
             ->assertOk()
             ->assertSee('Product Media')
-            ->assertSee($product->name);
+            ->assertSee($product->name)
+            ->assertSee('aria-current="page"', false);
     }
 
     public function test_assigns_media_asset_to_product_with_role(): void

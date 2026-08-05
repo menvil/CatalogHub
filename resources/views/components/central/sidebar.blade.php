@@ -54,7 +54,7 @@
                         'whitespace-nowrap rounded-admin-input px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary',
                         'bg-admin-primary-soft text-admin-primary' => $isActive,
                         'text-admin-muted hover:bg-admin-surface-muted hover:text-admin-text' => ! $isActive,
-                    ])"
+                    ])
                 >
                     <span class="flex items-center gap-2">
                         @if ($icon)
@@ -71,7 +71,7 @@
                         'whitespace-nowrap rounded-admin-input px-3 py-2 text-sm font-medium',
                         'bg-admin-primary-soft text-admin-primary' => $isActive,
                         'text-admin-muted' => ! $isActive,
-                    ])"
+                    ])
                 >
                     <span class="flex items-center gap-2">
                         @if ($icon)

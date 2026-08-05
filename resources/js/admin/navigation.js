@@ -7,6 +7,7 @@ export function bootCentralNavigation() {
         const closeButton = shell.querySelector('[data-central-sidebar-close]');
         const backdrop = shell.querySelector('[data-central-sidebar-backdrop]');
         const collapseButton = shell.querySelector('[data-central-sidebar-collapse]');
+        const shouldPersist = shell.dataset.centralSidebarPersist !== 'false';
 
         if (! sidebar || ! openButton || ! collapseButton) {
             return;
@@ -68,7 +69,10 @@ export function bootCentralNavigation() {
         collapseButton.addEventListener('click', () => {
             const collapsed = shell.dataset.centralSidebarCollapsed !== 'true';
             setCollapsed(collapsed);
-            persistPreference(collapsed);
+
+            if (shouldPersist) {
+                persistPreference(collapsed);
+            }
         });
 
         document.addEventListener('keydown', (event) => {
@@ -86,7 +90,8 @@ export function bootCentralNavigation() {
                 return;
             }
 
-            const focusable = Array.from(sidebar.querySelectorAll(focusableSelector));
+            const focusable = Array.from(sidebar.querySelectorAll(focusableSelector))
+                .filter((element) => element.getClientRects().length > 0);
             const first = focusable.at(0);
             const last = focusable.at(-1);
 

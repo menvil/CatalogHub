@@ -32,12 +32,13 @@ body.central-sidebar-mobile-open {
     width: min(var(--width-foundation-sidebar), calc(100vw - var(--spacing-foundation-page)));
     transform: translateX(-100%);
     visibility: hidden;
-    transition: transform 150ms ease-out, width 150ms ease-out;
+    transition: transform 150ms ease-out, width 150ms ease-out, visibility 0s linear 150ms;
 }
 
 .central-shell-sidebar[data-central-sidebar-mobile-open='true'] {
     transform: translateX(0);
     visibility: visible;
+    transition-delay: 0s;
 }
 
 .central-shell-sidebar-backdrop {

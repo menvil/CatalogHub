@@ -111,6 +111,30 @@ final class ComponentGalleryVisualTest extends TestCase
         }
     }
 
+    public function test_visual_comparison_still_detects_meaningful_region_changes(): void
+    {
+        $reference = tempnam(sys_get_temp_dir(), 'cataloghub-visual-reference-');
+        $capture = tempnam(sys_get_temp_dir(), 'cataloghub-visual-capture-');
+        $this->assertIsString($reference);
+        $this->assertIsString($capture);
+        $referenceImage = imagecreatetruecolor(100, 100);
+        $captureImage = imagecreatetruecolor(100, 100);
+        $this->assertInstanceOf(GdImage::class, $referenceImage);
+        $this->assertInstanceOf(GdImage::class, $captureImage);
+        imagefill($referenceImage, 0, 0, imagecolorallocate($referenceImage, 255, 255, 255));
+        imagefill($captureImage, 0, 0, imagecolorallocate($captureImage, 255, 255, 255));
+        imagefilledrectangle($captureImage, 0, 0, 49, 49, imagecolorallocate($captureImage, 15, 23, 42));
+        imagepng($referenceImage, $reference);
+        imagepng($captureImage, $capture);
+
+        try {
+            $this->assertGreaterThan(0.03, $this->meanChannelDifference($reference, $capture));
+        } finally {
+            @unlink($reference);
+            @unlink($capture);
+        }
+    }
+
     private function captureGallery(
         string $root,
         string $capture,
@@ -258,13 +282,19 @@ final class ComponentGalleryVisualTest extends TestCase
         $this->assertInstanceOf(GdImage::class, $captureImage);
         $this->assertSame(imagesx($referenceImage), imagesx($captureImage));
         $this->assertSame(imagesy($referenceImage), imagesy($captureImage));
+        $comparisonWidth = max(1, intdiv(imagesx($referenceImage), 4));
+        $comparisonHeight = max(1, intdiv(imagesy($referenceImage), 4));
+        $referenceSample = imagescale($referenceImage, $comparisonWidth, $comparisonHeight, IMG_BILINEAR_FIXED);
+        $captureSample = imagescale($captureImage, $comparisonWidth, $comparisonHeight, IMG_BILINEAR_FIXED);
+        $this->assertInstanceOf(GdImage::class, $referenceSample);
+        $this->assertInstanceOf(GdImage::class, $captureSample);
         $difference = 0;
         $samples = 0;
 
-        for ($y = 0; $y < imagesy($referenceImage); $y += 2) {
-            for ($x = 0; $x < imagesx($referenceImage); $x += 2) {
-                $referenceColor = imagecolorat($referenceImage, $x, $y);
-                $captureColor = imagecolorat($captureImage, $x, $y);
+        for ($y = 0; $y < $comparisonHeight; $y++) {
+            for ($x = 0; $x < $comparisonWidth; $x++) {
+                $referenceColor = imagecolorat($referenceSample, $x, $y);
+                $captureColor = imagecolorat($captureSample, $x, $y);
 
                 foreach ([16, 8, 0] as $shift) {
                     $difference += abs((($referenceColor >> $shift) & 0xFF) - (($captureColor >> $shift) & 0xFF)) / 255;

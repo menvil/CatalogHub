@@ -27,6 +27,9 @@
             class="min-h-screen lg:flex"
             data-admin-layout="site"
             data-site-shell
+            data-site-sidebar-collapsed="false"
+            data-site-sidebar-persist="{{ ($acceptance ?? false) ? 'false' : 'true' }}"
+            @if (isset($siteAdminShellPreviewState)) data-site-preview-state="{{ $siteAdminShellPreviewState }}" @endif
             data-presentation-context="site-admin"
         >
             <x-site-admin.sidebar

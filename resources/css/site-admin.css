@@ -9,3 +9,82 @@
 @source '../views/components/admin/**/*';
 @source '../views/components/site-admin/**/*';
 @source '../views/components/ui/**/*';
+
+body.site-sidebar-scroll-locked {
+    overflow: hidden;
+}
+
+.site-shell-sidebar {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    z-index: 50;
+    width: min(var(--width-foundation-sidebar), calc(100vw - var(--spacing-foundation-page)));
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform 150ms ease-out, width 150ms ease-out, visibility 0s linear 150ms;
+}
+
+.site-shell-sidebar[data-site-sidebar-mobile-open='true'] {
+    transform: translateX(0);
+    visibility: visible;
+    transition-delay: 0s;
+}
+
+.site-shell-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: none;
+    background: color-mix(in srgb, var(--color-foundation-text) 45%, transparent);
+}
+
+.site-sidebar-collapsed-mark,
+.site-sidebar-desktop-controls {
+    display: none;
+}
+
+@media (max-width: 63.999rem) {
+    .site-shell-sidebar-backdrop:has(+ .site-shell-sidebar[data-site-sidebar-mobile-open='true']) {
+        display: block;
+    }
+}
+
+@media (min-width: 64rem) {
+    .site-shell-sidebar {
+        position: sticky;
+        inset-block-start: 0;
+        z-index: 20;
+        min-height: 100vh;
+        width: var(--width-foundation-sidebar);
+        transform: none;
+        visibility: visible;
+        border-inline-end-width: 1px;
+    }
+
+    .site-shell-sidebar-backdrop,
+    .site-sidebar-mobile-close,
+    .site-sidebar-mobile-open {
+        display: none;
+    }
+
+    .site-sidebar-desktop-controls {
+        display: block;
+    }
+
+    [data-site-shell][data-site-sidebar-collapsed='true'] .site-shell-sidebar {
+        width: var(--width-foundation-sidebar-collapsed);
+    }
+
+    [data-site-shell][data-site-sidebar-collapsed='true'] .site-sidebar-label {
+        display: none;
+    }
+
+    [data-site-shell][data-site-sidebar-collapsed='true'] .site-sidebar-collapsed-mark {
+        display: inline-flex;
+    }
+
+    [data-site-shell][data-site-sidebar-collapsed='true'] [data-site-sidebar-collapse-icon] {
+        transform: rotate(180deg);
+    }
+}

@@ -3,17 +3,38 @@
     'activeNav' => null,
 ])
 
+<button
+    type="button"
+    class="site-shell-sidebar-backdrop"
+    aria-label="Close navigation"
+    data-site-sidebar-backdrop
+></button>
+
 <aside
     id="site-navigation"
-    {{ $attributes->class('flex w-full flex-col border-b border-admin-border bg-admin-surface text-admin-text shadow-admin-card lg:min-h-screen lg:w-72 lg:border-b-0 lg:border-r') }}
+    {{ $attributes->class('site-shell-sidebar flex flex-col border-admin-border bg-admin-surface text-admin-text shadow-admin-card') }}
     aria-label="Site Admin navigation"
+    data-site-sidebar-mobile-open="false"
+    data-site-sidebar-preference="local"
 >
-    <div class="border-b border-admin-border px-admin-card py-4">
-        <p class="text-xs font-semibold uppercase tracking-wide text-admin-muted">CatalogHub</p>
-        <p class="mt-1 text-lg font-semibold text-admin-text">Site Admin</p>
+    <div class="flex min-h-16 items-center justify-between gap-2 border-b border-admin-border px-admin-card py-3">
+        <div class="site-sidebar-label min-w-0">
+            <p class="text-xs font-semibold uppercase tracking-wide text-admin-muted">CatalogHub</p>
+            <p class="mt-1 truncate text-lg font-semibold text-admin-text">Site Admin</p>
+        </div>
+        <span class="site-sidebar-collapsed-mark text-sm font-semibold text-admin-text" aria-hidden="true">CH</span>
+
+        <button
+            type="button"
+            class="site-sidebar-mobile-close rounded-admin-input p-2 text-admin-muted hover:bg-admin-surface-muted hover:text-admin-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary"
+            aria-label="Close navigation"
+            data-site-sidebar-close
+        >
+            <x-ui.icon name="x-mark" size="sm" />
+        </button>
     </div>
 
-    <nav class="flex gap-1 overflow-x-auto p-3 lg:flex-col lg:overflow-visible" aria-label="Site Admin sections">
+    <nav class="flex flex-1 flex-col gap-1 overflow-y-auto p-3" aria-label="Site Admin sections">
         @foreach ($items as $item)
             @php
                 $label = $item['label'] ?? '';
@@ -25,6 +46,7 @@
             @if ($url)
                 <a
                     href="{{ $url }}"
+                    aria-label="{{ $label }}"
                     @if ($isActive) aria-current="page" @endif
                     @class([
                         'whitespace-nowrap rounded-admin-input px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary',
@@ -36,7 +58,7 @@
                         @if ($icon)
                             <x-ui.icon :name="$icon" size="sm" />
                         @endif
-                        <span>{{ $label }}</span>
+                        <span class="site-sidebar-label">{{ $label }}</span>
                     </span>
                 </a>
             @else
@@ -53,10 +75,23 @@
                         @if ($icon)
                             <x-ui.icon :name="$icon" size="sm" />
                         @endif
-                        <span>{{ $label }}</span>
+                        <span class="site-sidebar-label">{{ $label }}</span>
                     </span>
                 </span>
             @endif
         @endforeach
     </nav>
+
+    <div class="site-sidebar-desktop-controls border-t border-admin-border p-3">
+        <button
+            type="button"
+            class="flex w-full items-center gap-2 rounded-admin-input px-3 py-2 text-sm font-medium text-admin-muted hover:bg-admin-surface-muted hover:text-admin-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary"
+            aria-label="Collapse navigation"
+            aria-pressed="false"
+            data-site-sidebar-collapse
+        >
+            <x-ui.icon name="chevron-double-left" size="sm" data-site-sidebar-collapse-icon />
+            <span class="site-sidebar-label">Collapse navigation</span>
+        </button>
+    </div>
 </aside>

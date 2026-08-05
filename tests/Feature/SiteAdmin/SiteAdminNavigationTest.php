@@ -30,6 +30,7 @@ final class SiteAdminNavigationTest extends TestCase
             ->assertSee('data-site-sidebar-preference="local"', false)
             ->assertSee('data-site-sidebar-mobile-open="false"', false)
             ->assertSee('data-site-selector-link', false)
+            ->assertSee('data-site-sidebar-current', false)
             ->assertSee('aria-current="page"', false)
             ->assertDontSee('data-central-sidebar-open', false);
     }

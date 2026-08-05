@@ -1,6 +1,7 @@
 @props([
     'items' => [],
     'activeNav' => null,
+    'currentSite' => null,
 ])
 
 <button
@@ -21,6 +22,11 @@
         <div class="site-sidebar-label min-w-0">
             <p class="text-xs font-semibold uppercase tracking-wide text-admin-muted">CatalogHub</p>
             <p class="mt-1 truncate text-lg font-semibold text-admin-text">Site Admin</p>
+            @if ($currentSite instanceof \App\Models\Site)
+                <p class="mt-1 truncate text-xs font-medium text-admin-muted" data-site-sidebar-current>
+                    {{ $currentSite->name }}
+                </p>
+            @endif
         </div>
         <span class="site-sidebar-collapsed-mark text-sm font-semibold text-admin-text" aria-hidden="true">CH</span>
 

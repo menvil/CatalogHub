@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CentralAdmin\DesignSystem\CentralShellPreviewController;
 use App\Http\Controllers\CentralAdmin\DesignSystem\ComponentGalleryController;
+use App\Http\Controllers\SiteAdmin\DesignSystem\SiteAdminShellPreviewController;
 use Illuminate\Support\Facades\Route;
 
 require __DIR__.'/health.php';
@@ -24,4 +25,7 @@ if (app()->environment(['local', 'testing'])) {
 
     Route::get('/dev/central-shell', CentralShellPreviewController::class)
         ->name('dev.central-shell.capture');
+
+    Route::get('/dev/site-admin-shell', SiteAdminShellPreviewController::class)
+        ->name('dev.site-admin-shell.capture');
 }

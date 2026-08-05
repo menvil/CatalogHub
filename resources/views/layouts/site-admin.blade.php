@@ -35,6 +35,7 @@
             <x-site-admin.sidebar
                 :items="$siteAdminNavigation"
                 :active-nav="$activeNav ?? null"
+                :current-site="$siteAdminCurrentSite"
                 data-site-sidebar
             />
 

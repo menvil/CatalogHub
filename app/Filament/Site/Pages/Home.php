@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Site\Pages;
 
 use App\Models\Site;
+use App\Support\Sites\SiteRuntimeContext;
 use Filament\Pages\Page;
 use Filament\Panel;
 
@@ -33,11 +34,13 @@ final class Home extends Page
     protected function getLayoutData(): array
     {
         $site = request()->attributes->get('site_context');
+        $runtimeContext = request()->attributes->get(SiteRuntimeContext::class);
 
         return [
             'activeNav' => 'dashboard',
             'pageTitle' => 'Site Admin',
             'siteAdminCurrentSite' => $site,
+            'siteAdminRuntimeContext' => $runtimeContext,
             'siteLabel' => $this->siteName,
             'title' => 'Site Admin',
         ];

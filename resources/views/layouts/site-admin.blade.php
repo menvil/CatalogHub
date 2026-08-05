@@ -16,6 +16,7 @@
     ];
     $siteAdminUser ??= auth()->user();
     $siteAdminCurrentSite ??= request()->attributes->get('site_context');
+    $siteAdminRuntimeContext ??= request()->attributes->get(\App\Support\Sites\SiteRuntimeContext::class);
     $documentTitle = trim($__env->yieldContent('pageTitle', $pageTitle ?? $title ?? 'Site Admin'));
 @endphp
 
@@ -59,11 +60,15 @@
                             />
                         @endif
 
-                        <x-admin.site-context-switcher
-                            :site-label="$siteLabel ?? 'Demo portal'"
-                            :market-label="$marketLabel ?? 'Default market'"
-                            :locale-label="$localeLabel ?? 'en'"
-                        />
+                        @if ($siteAdminRuntimeContext instanceof \App\Support\Sites\SiteRuntimeContext)
+                            <x-site-admin.site-context-header :context="$siteAdminRuntimeContext" />
+                        @else
+                            <x-admin.site-context-switcher
+                                :site-label="$siteLabel ?? 'Demo portal'"
+                                :market-label="$marketLabel ?? 'Default market'"
+                                :locale-label="$localeLabel ?? 'en'"
+                            />
+                        @endif
 
                         <div class="flex flex-col gap-admin-field md:flex-row md:items-start md:justify-between">
                             <nav class="min-w-0 text-sm text-admin-muted" aria-label="Breadcrumbs">

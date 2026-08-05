@@ -58,4 +58,30 @@ final class PublicThemeContextTest extends TestCase
 
         (new ReflectionProperty($context, 'config'))->setValue($context, ['header_variant' => 'unsafe']);
     }
+
+    public function test_runtime_config_rejects_nested_values_when_constructed_directly(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Public theme config must be a keyed scalar map.');
+
+        new PublicThemeContext(
+            PublicThemeId::MultiCategory,
+            PublicLayoutType::MultiCategory,
+            ['header_variant' => ['nested']],
+            [],
+        );
+    }
+
+    public function test_runtime_features_reject_non_string_values_when_constructed_directly(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Public theme features must be a list of non-empty strings.');
+
+        new PublicThemeContext(
+            PublicThemeId::MultiCategory,
+            PublicLayoutType::MultiCategory,
+            [],
+            ['categories', 42],
+        );
+    }
 }

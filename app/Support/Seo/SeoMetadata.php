@@ -25,9 +25,6 @@ final readonly class SeoMetadata
             throw new InvalidArgumentException('SEO title and canonical URL are required.');
         }
 
-        if (count($this->alternates) !== count(array_unique(array_keys($this->alternates), SORT_STRING))) {
-            throw new InvalidArgumentException('SEO alternate locale identifiers must be unique.');
-        }
     }
 
     public static function forHome(SiteRuntimeContext $context): self
@@ -51,19 +48,34 @@ final readonly class SeoMetadata
         }
 
         $baseUrl = $scheme.'://'.$domain->host;
-        $alternates = $site->locales
+        $enabledLocales = $site->locales
             ->filter(static fn (SiteLocale $locale): bool => $locale->is_enabled
                 && ($locale->locale === null || $locale->locale->is_active))
             ->sortBy([['position', 'asc'], ['id', 'asc']])
+            ->values();
+        $localeCodes = $enabledLocales->pluck('locale_code')->all();
+
+        foreach ($localeCodes as $localeCode) {
+            if (! is_string($localeCode) || preg_match('/\A[a-z]{2}(?:-[A-Z]{2})?\z/D', $localeCode) !== 1) {
+                throw new InvalidArgumentException("Public SEO locale [{$localeCode}] cannot be used in localized routes.");
+            }
+        }
+
+        if (count($localeCodes) !== count(array_unique($localeCodes, SORT_STRING))) {
+            throw new InvalidArgumentException('Public SEO alternate locale identifiers must be unique.');
+        }
+
+        $alternates = $enabledLocales
             ->mapWithKeys(static fn (SiteLocale $locale): array => [
                 $locale->locale_code => $baseUrl.route('public.home', ['locale' => $locale->locale_code], false),
             ])
             ->all();
 
+        $title = data_get($site->settings_json, 'seo.meta_title');
         $description = data_get($site->settings_json, 'seo.meta_description');
 
         return new self(
-            title: $site->name,
+            title: is_string($title) && trim($title) !== '' ? $title : $site->name,
             description: is_string($description) && trim($description) !== '' ? $description : null,
             canonical: $baseUrl.route('public.home', ['locale' => $context->resolvedLocale], false),
             alternates: $alternates,

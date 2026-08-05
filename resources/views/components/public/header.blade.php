@@ -32,7 +32,7 @@
             @if (filled($navigation['search'] ?? null))
                 <a href="{{ $navigation['search'] }}" class="text-foundation-label" data-public-search-slot>Search</a>
             @else
-                <span class="text-foundation-label opacity-75" aria-disabled="true" data-public-search-slot>Search unavailable</span>
+                <span class="text-foundation-label opacity-75" data-public-search-slot>Search unavailable</span>
             @endif
 
             <x-public.locale-selector :options="$localeOptions" />

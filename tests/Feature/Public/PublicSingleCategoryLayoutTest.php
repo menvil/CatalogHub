@@ -15,6 +15,8 @@ final class PublicSingleCategoryLayoutTest extends TestCase
 {
     public function test_single_category_layout_has_a_distinct_focused_structure(): void
     {
+        $this->withoutVite();
+
         $site = new Site;
         $site->forceFill(['name' => 'Monitors Germany']);
         $theme = new PublicThemeContext(

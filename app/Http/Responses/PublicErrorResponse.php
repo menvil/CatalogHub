@@ -17,8 +17,7 @@ final class PublicErrorResponse
         $status = $response->getStatusCode();
         $routeName = $request->route()?->getName();
         $context = $request->attributes->get(PublicErrorContext::class);
-        $isPublic = $context instanceof PublicErrorContext
-            || (is_string($routeName) && str_starts_with($routeName, 'public.'));
+        $isPublic = is_string($routeName) && str_starts_with($routeName, 'public.');
 
         if (! $isPublic || $request->expectsJson() || ! in_array($status, [404, 500, 503], true)) {
             return $response;

@@ -4,8 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Public;
 
+use App\Http\Responses\PublicErrorResponse;
 use App\Models\Site;
+use App\Support\PublicSite\PublicErrorContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Route;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tests\TestCase;
 
 final class PublicErrorPagesTest extends TestCase
@@ -53,5 +58,43 @@ final class PublicErrorPagesTest extends TestCase
             ->assertSee('data-public-error="503"', false)
             ->assertSee('System Error Site')
             ->assertDontSee('internal-maintenance-detail');
+    }
+
+    public function test_site_admin_error_with_runtime_context_keeps_the_admin_error_response(): void
+    {
+        $request = Request::create('/admin/site/foundation-error');
+        $route = new Route('GET', '/admin/site/foundation-error', static fn (): null => null);
+        $route->name('filament.site.foundation-error');
+        $request->setRouteResolver(static fn (): Route => $route);
+        $request->attributes->set(PublicErrorContext::class, new PublicErrorContext('Site Admin', '/admin/site'));
+        $response = response('Admin not found', 404);
+
+        $rendered = app(PublicErrorResponse::class)->render(
+            $response,
+            new NotFoundHttpException,
+            $request,
+        );
+
+        $this->assertSame('Admin not found', $rendered->getContent());
+        $this->assertStringNotContainsString('data-public-error=', $rendered->getContent());
+    }
+
+    public function test_invalid_request_identifiers_are_not_reflected_by_public_500_page(): void
+    {
+        Site::factory()->active()->withRuntimeContext(['en-US'])->create([
+            'domain' => 'request-id-errors.test',
+        ]);
+
+        foreach (['bad request id!', str_repeat('x', 129)] as $invalidRequestId) {
+            $response = $this->withHeader('X-Request-ID', $invalidRequestId)
+                ->get('http://request-id-errors.test/en-US/__foundation-error/500')
+                ->assertStatus(500)
+                ->assertDontSee($invalidRequestId);
+
+            $this->assertMatchesRegularExpression(
+                '/Request ID:\s*<code>[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}<\/code>/i',
+                $response->getContent(),
+            );
+        }
     }
 }

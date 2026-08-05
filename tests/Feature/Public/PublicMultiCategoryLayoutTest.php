@@ -15,6 +15,8 @@ final class PublicMultiCategoryLayoutTest extends TestCase
 {
     public function test_multi_category_layout_has_catalog_landmarks_without_admin_dependencies(): void
     {
+        $this->withoutVite();
+
         $site = new Site;
         $site->forceFill(['name' => 'Tech Germany']);
         $theme = new PublicThemeContext(

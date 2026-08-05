@@ -1,7 +1,7 @@
 @props(['metadata'])
 
 <title>{{ $metadata->title }}</title>
-@if ($metadata->description !== null)
+@if (filled($metadata->description))
     <meta name="description" content="{{ $metadata->description }}">
 @endif
 <link rel="canonical" href="{{ $metadata->canonical }}">

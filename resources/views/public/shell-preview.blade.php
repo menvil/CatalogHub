@@ -38,25 +38,30 @@
 
     @push('scripts')
         <script>
-            const fixture = document.querySelector('[data-public-shell-fixture]');
-            const failures = [];
-            const verify = (condition, message) => condition || failures.push(message);
-            const expectedLayout = fixture.dataset.publicPreviewState.startsWith('single-') ? 'single-category' : 'multi-category';
+            document.addEventListener('DOMContentLoaded', () => window.setTimeout(() => {
+                const fixture = document.querySelector('[data-public-shell-fixture]');
+                const failures = [];
+                const verify = (condition, message) => condition || failures.push(message);
+                const expectedLayout = fixture.dataset.publicPreviewState.startsWith('single-') ? 'single-category' : 'multi-category';
 
-            verify(document.body.dataset.publicLayout === expectedLayout, 'resolved layout marker');
-            verify(document.querySelector('[data-public-header]') !== null, 'semantic public header');
-            verify(document.querySelector('main#main-content') !== null, 'semantic public main');
-            verify(document.querySelector('[data-public-footer]') !== null, 'semantic public footer');
-            verify(document.querySelector('[data-public-locale-selector]') !== null, 'enabled locale selector');
-            verify(document.querySelector('[data-central-shell], [data-site-shell]') === null, 'admin shell isolation');
-            verify(
-                Array.from(document.querySelectorAll('link[rel="stylesheet"]')).every((link) => !/central-admin|site-admin/.test(link.href)),
-                'admin asset isolation',
-            );
-            verify(window.__publicShellAcceptanceErrors.length === 0, 'unexpected runtime errors');
+                verify(document.body.dataset.publicLayout === expectedLayout, 'resolved layout marker');
+                verify(document.querySelector('[data-public-header]') !== null, 'semantic public header');
+                verify(document.querySelector('main#main-content') !== null, 'semantic public main');
+                verify(document.querySelector('[data-public-footer]') !== null, 'semantic public footer');
+                verify(document.querySelector('[data-public-locale-selector]') !== null, 'enabled locale selector');
+                verify(document.querySelector('[data-central-shell], [data-site-shell]') === null, 'admin shell isolation');
+                verify(
+                    Array.from(document.querySelectorAll('link[rel="stylesheet"]')).every((link) => !/central-admin|site-admin/.test(link.href)),
+                    'admin asset isolation',
+                );
+                verify(
+                    window.__publicShellAcceptanceErrors.length === 0,
+                    'unexpected runtime error: ' + window.__publicShellAcceptanceErrors.join(' | '),
+                );
 
-            fixture.dataset.browserAcceptance = failures.length === 0 ? 'passed' : 'failed';
-            fixture.dataset.browserAcceptanceFailures = failures.join(', ');
+                fixture.dataset.browserAcceptance = failures.length === 0 ? 'passed' : 'failed';
+                fixture.dataset.browserAcceptanceFailures = failures.join(', ');
+            }, 100));
         </script>
     @endpush
 @endif

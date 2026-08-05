@@ -30,6 +30,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );
+        // The responder is global by framework design; PublicErrorResponse keeps
+        // admin/API responses untouched by requiring a public.* route name.
         $exceptions->respond(
             fn (Response $response, Throwable $exception, Request $request): Response => app(PublicErrorResponse::class)
                 ->render($response, $exception, $request),

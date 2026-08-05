@@ -20,6 +20,12 @@ final readonly class PublicLocaleNavigation
             throw new LogicException('Site locales must be loaded before public locale navigation is built.');
         }
 
+        if ($site->locales->contains(
+            static fn (SiteLocale $locale): bool => ! $locale->relationLoaded('locale'),
+        )) {
+            throw new LogicException('Site locale catalog relations must be loaded before public locale navigation is built.');
+        }
+
         return $site->locales
             ->filter(static fn (SiteLocale $locale): bool => $locale->is_enabled
                 && ($locale->locale === null || $locale->locale->is_active))

@@ -53,6 +53,18 @@ final class PublicThemeResolverTest extends TestCase
         app(PublicThemeResolverContract::class)->resolve($this->contextFor(SiteFoundationSeeder::TECH_HOST));
     }
 
+    public function test_registered_theme_accepts_an_empty_scalar_config_map(): void
+    {
+        $this->seed(SiteFoundationSeeder::class);
+        config()->set('public-themes.themes.'.PublicThemeId::MultiCategory->value.'.config', []);
+
+        $theme = app(PublicThemeResolverContract::class)->resolve(
+            $this->contextFor(SiteFoundationSeeder::TECH_HOST),
+        );
+
+        self::assertSame([], $theme->config);
+    }
+
     public function test_archived_site_is_rejected_before_theme_resolution(): void
     {
         $this->seed(SiteFoundationSeeder::class);

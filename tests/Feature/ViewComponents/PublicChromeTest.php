@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Feature\ViewComponents;
 
+use App\Enums\PublicLayoutType;
+use App\Enums\PublicThemeId;
 use App\Models\Site;
 use App\Services\PublicSite\PublicLocaleNavigation;
+use App\Support\Themes\PublicThemeContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Blade;
+use LogicException;
 use Tests\TestCase;
 
 final class PublicChromeTest extends TestCase
@@ -32,6 +36,7 @@ final class PublicChromeTest extends TestCase
         $this->assertCount(1, $options);
         $this->assertStringContainsString('A deliberately long public catalogue identity', $html);
         $this->assertStringContainsString('de-DE', $html);
+        $this->assertStringContainsString('lang="de-DE"', $html);
         $this->assertStringNotContainsString('en-DE', $html);
         $this->assertStringNotContainsString('href="#"', $html);
         $this->assertStringContainsString('Search unavailable', $html);
@@ -39,6 +44,8 @@ final class PublicChromeTest extends TestCase
 
     public function test_both_public_layouts_reuse_shared_chrome_with_multiple_locales(): void
     {
+        $this->withoutVite();
+
         $site = Site::factory()->active()->withRuntimeContext(['de-DE', 'en-DE'])->create([
             'domain' => 'public-chrome.test',
         ]);
@@ -54,11 +61,31 @@ final class PublicChromeTest extends TestCase
         $this->assertStringContainsString('href="https://public-chrome.test/de-DE"', $html);
         $this->assertStringContainsString('href="https://public-chrome.test/en-DE"', $html);
 
-        foreach (['public-multi-category', 'public-single-category'] as $layout) {
-            $source = file_get_contents(resource_path("views/layouts/{$layout}.blade.php"));
-            $this->assertIsString($source);
-            $this->assertStringContainsString('<x-public.header', $source);
-            $this->assertStringContainsString('<x-public.footer', $source);
+        foreach ([
+            'public-multi-category' => [PublicThemeId::MultiCategory, PublicLayoutType::MultiCategory],
+            'public-single-category' => [PublicThemeId::SingleCategory, PublicLayoutType::SingleCategory],
+        ] as $layout => [$identifier, $layoutType]) {
+            $theme = new PublicThemeContext($identifier, $layoutType, [], []);
+            $rendered = view("layouts.{$layout}", [
+                'site' => $site,
+                'locale' => 'de-DE',
+                'theme' => $theme,
+                'publicLocaleOptions' => $options,
+            ])->render();
+            $this->assertStringContainsString('data-public-header', $rendered);
+            $this->assertStringContainsString('data-public-footer', $rendered);
         }
+    }
+
+    public function test_locale_navigation_rejects_partially_loaded_locale_relations(): void
+    {
+        $site = Site::factory()->active()->withRuntimeContext(['de-DE', 'en-DE'])->create();
+        $site->unsetRelation('locales');
+        $site->load('locales');
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Site locale catalog relations must be loaded');
+
+        app(PublicLocaleNavigation::class)->forHome($site, 'de-DE');
     }
 }

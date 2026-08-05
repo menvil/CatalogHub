@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="space-y-10" data-public-multi-shell-content>
-        @if (isset($blocks) && is_iterable($blocks))
+        @if (isset($blocks) && $blocks->isNotEmpty())
             <div data-homepage-blocks class="space-y-10" aria-label="Homepage content">
                 @foreach ($blocks as $block)
                     @include($block['view'], [

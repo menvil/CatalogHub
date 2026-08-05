@@ -23,16 +23,11 @@ final class HomeController extends Controller
     ): View {
         $site = $context->site;
         $locale = $context->resolvedLocale;
-        $seo = data_get($site->settings_json, 'seo', []);
-        $seo = is_array($seo) ? $seo : [];
-        $seo['meta_title'] ??= $site->name;
-        $seo['canonical_url'] ??= $urls->home($site, $locale);
 
         return view($theme->shellView(), [
             'site' => $site,
             'locale' => $locale,
             'blocks' => $blocks->render($site, $locale),
-            'seo' => $seo,
             'theme' => $theme,
             'publicNavigation' => [
                 'home' => $urls->home($site, $locale),

@@ -11,28 +11,61 @@ use InvalidArgumentException;
 final readonly class PublicThemeContext
 {
     /**
-     * @param  array<string, bool|int|float|string|null>  $config
-     * @param  list<string>  $features
+     * @var array<string, bool|int|float|string|null>
+     */
+    public array $config;
+
+    /** @var list<string> */
+    public array $features;
+
+    /**
+     * @param  array<array-key, mixed>  $config
+     * @param  array<array-key, mixed>  $features
      */
     public function __construct(
         public PublicThemeId $identifier,
         public PublicLayoutType $layout,
-        public array $config,
-        public array $features,
+        array $config,
+        array $features,
     ) {
         if ($identifier->layout() !== $layout) {
             throw new InvalidArgumentException('The public theme identifier and layout must match.');
         }
 
-        if (array_values(array_unique($features)) !== $features) {
+        if ($config !== [] && array_is_list($config)) {
+            throw new InvalidArgumentException('Public theme config must be a keyed scalar map.');
+        }
+
+        $validatedConfig = [];
+
+        foreach ($config as $key => $value) {
+            if (! is_string($key) || (! is_scalar($value) && $value !== null)) {
+                throw new InvalidArgumentException('Public theme config must be a keyed scalar map.');
+            }
+
+            $validatedConfig[$key] = $value;
+        }
+
+        if (! array_is_list($features)) {
+            throw new InvalidArgumentException('Public theme features must be a list of non-empty strings.');
+        }
+
+        $validatedFeatures = [];
+
+        foreach ($features as $feature) {
+            if (! is_string($feature) || trim($feature) === '') {
+                throw new InvalidArgumentException('Public theme features must be a list of non-empty strings.');
+            }
+
+            $validatedFeatures[] = $feature;
+        }
+
+        if (array_values(array_unique($validatedFeatures)) !== $validatedFeatures) {
             throw new InvalidArgumentException('Public theme features must be a unique ordered list.');
         }
 
-        foreach ($features as $feature) {
-            if (trim($feature) === '') {
-                throw new InvalidArgumentException('Public theme features must be non-empty strings.');
-            }
-        }
+        $this->config = $validatedConfig;
+        $this->features = $validatedFeatures;
     }
 
     public function supports(string $feature): bool

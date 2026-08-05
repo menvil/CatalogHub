@@ -64,7 +64,7 @@ final readonly class PublicThemeResolver implements PublicThemeResolverContract
     /** @return array<string, bool|int|float|string|null> */
     private function scalarConfig(mixed $config): array
     {
-        if (! is_array($config) || array_is_list($config)) {
+        if (! is_array($config) || ($config !== [] && array_is_list($config))) {
             throw new InvalidArgumentException('Public theme config must be a keyed scalar map.');
         }
 

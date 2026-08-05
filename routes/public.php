@@ -62,10 +62,9 @@ Route::middleware(ResolveSiteRuntimeContext::class)->group(function (): void {
             ->name('public.foundation-error');
     }
 
-    Route::get('/{locale}/{missing}', static function (): never {
+    Route::fallback(static function (): never {
         abort(404);
     })
-        ->where('locale', '[a-z]{2}(?:-[A-Z]{2})?')
-        ->where('missing', '.+')
+        ->where('fallbackPlaceholder', '[a-z]{2}(?:-[A-Z]{2})?/.+')
         ->name('public.not-found');
 });

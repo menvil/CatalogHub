@@ -31,6 +31,7 @@ final readonly class ResolveSiteRuntimeContext
     {
         $this->app->forgetInstance(SiteRuntimeContext::class);
         $this->app->forgetInstance(PublicThemeContext::class);
+        $request->attributes->remove(PublicErrorContext::class);
         [$site, $domain] = $this->resolveSiteAndDomain($request);
         $requestedLocale = $request->route('locale');
         $context = $this->values->resolve(
@@ -39,10 +40,14 @@ final readonly class ResolveSiteRuntimeContext
             is_string($requestedLocale) ? $requestedLocale : null,
         );
         $request->attributes->set(SiteRuntimeContext::class, $context);
-        $request->attributes->set(PublicErrorContext::class, new PublicErrorContext(
-            siteName: $site->name,
-            homeUrl: $this->urls->home($site, $context->resolvedLocale),
-        ));
+        $routeName = $request->route()?->getName();
+
+        if (is_string($routeName) && str_starts_with($routeName, 'public.')) {
+            $request->attributes->set(PublicErrorContext::class, new PublicErrorContext(
+                siteName: $site->name,
+                homeUrl: $this->urls->home($site, $context->resolvedLocale),
+            ));
+        }
 
         $previousLocale = $this->app->getLocale();
         $previousTimezone = date_default_timezone_get();
@@ -57,6 +62,7 @@ final readonly class ResolveSiteRuntimeContext
             $this->app->forgetInstance(SiteRuntimeContext::class);
             $this->app->forgetInstance(PublicThemeContext::class);
             $request->attributes->remove(SiteRuntimeContext::class);
+            $request->attributes->remove(PublicErrorContext::class);
         }
     }
 

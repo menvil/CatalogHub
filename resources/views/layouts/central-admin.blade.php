@@ -25,17 +25,30 @@
         <title>{{ $title ?? $documentTitle }} - {{ config('app.name', 'CatalogHub') }}</title>
 
         @vite(['resources/css/central-admin.css', 'resources/js/app.js'])
+        @livewireStyles
     </head>
     <body class="min-h-screen overflow-x-hidden bg-admin-background font-sans text-admin-text antialiased">
-        <div class="min-h-screen lg:flex" data-admin-layout="central" data-presentation-context="central-admin">
+        <a href="#central-main-content" class="sr-only focus:not-sr-only">Skip to main content</a>
+
+        <div
+            class="min-h-screen lg:flex"
+            data-admin-layout="central"
+            data-central-shell
+            data-presentation-context="central-admin"
+        >
             <x-admin.sidebar
                 context="central"
                 :items="$centralAdminNavigation"
                 :active-nav="$activeNav ?? null"
+                data-central-sidebar
             />
 
             <div class="min-w-0 flex-1">
-                <x-admin.topbar context-label="Central Admin" search-placeholder="Search canonical catalog">
+                <x-admin.topbar
+                    context-label="Central Admin"
+                    search-placeholder="Search canonical catalog"
+                    data-central-header
+                >
                     <x-slot:title>
                         <h1 class="text-xl font-semibold text-admin-text">
                             @yield('pageTitle', $pageTitle ?? 'Central Admin')
@@ -43,7 +56,7 @@
                     </x-slot:title>
                 </x-admin.topbar>
 
-                <main class="px-admin-page py-admin-section">
+                <main id="central-main-content" class="px-admin-page py-admin-section" tabindex="-1">
                     <div class="mx-auto max-w-7xl space-y-admin-section">
                         <div class="flex flex-col gap-admin-field md:flex-row md:items-start md:justify-between">
                             <div class="min-w-0">
@@ -65,5 +78,7 @@
                 </main>
             </div>
         </div>
+
+        @livewireScripts
     </body>
 </html>

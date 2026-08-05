@@ -34,8 +34,8 @@ final class AdminComponentGalleryFixture
 
     /** @var list<array{key: string, label: string, removeUrl: string}> */
     public const FILTERS = [
-        ['key' => 'status', 'label' => 'Status: Active', 'removeUrl' => '/dev/component-gallery?mode=components&section=tables'],
-        ['key' => 'market', 'label' => 'Market: Germany', 'removeUrl' => '/dev/component-gallery?mode=components&section=tables&status=active'],
+        ['key' => 'status', 'label' => 'Status: Active', 'removeUrl' => '?mode=components&section=tables'],
+        ['key' => 'market', 'label' => 'Market: Germany', 'removeUrl' => '?mode=components&section=tables&status=active'],
     ];
 
     public static function timestamp(): CarbonImmutable

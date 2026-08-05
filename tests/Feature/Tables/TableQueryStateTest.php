@@ -40,4 +40,19 @@ final class TableQueryStateTest extends TestCase
         ], $state->forPage(4));
         self::assertSame('asc', $state->directionFor('status'));
     }
+
+    public function test_reserved_query_keys_cannot_be_registered_as_filters(): void
+    {
+        $state = TableQueryState::from(
+            ['q' => 'Acme', 'sort' => 'name', 'direction' => 'desc', 'page' => '3', 'status' => 'active'],
+            ['name'],
+            'name',
+            ['q', 'sort', 'direction', 'page', 'status'],
+        );
+
+        self::assertSame(['status' => 'active'], $state->filters);
+        self::assertSame([
+            'q' => 'Acme', 'sort' => 'name', 'direction' => 'desc', 'page' => 2, 'status' => 'active',
+        ], $state->forPage(2));
+    }
 }

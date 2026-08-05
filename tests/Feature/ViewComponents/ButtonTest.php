@@ -52,4 +52,14 @@ final class ButtonTest extends TestCase
         $this->assertStringContainsString('&lt;script&gt;', $html);
         $this->assertStringNotContainsString('<script>', $html);
     }
+
+    public function test_loading_link_keeps_its_busy_affordance_without_becoming_interactive(): void
+    {
+        $html = Blade::render('<x-ui.button href="/admin/central" loading>Opening</x-ui.button>');
+
+        $this->assertStringContainsString('data-ui-disabled-link', $html);
+        $this->assertStringContainsString('aria-busy="true"', $html);
+        $this->assertStringContainsString('animate-spin', $html);
+        $this->assertStringNotContainsString('<a', $html);
+    }
 }

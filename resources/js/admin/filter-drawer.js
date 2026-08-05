@@ -4,11 +4,21 @@ export function bootAdminFilterDrawers() {
     }
 
     window.__catalogHubAdminFilterDrawersBooted = true;
+    const openButtonByDrawer = new WeakMap();
+    const openDrawers = () => Array.from(document.querySelectorAll('[data-admin-filter-drawer][data-admin-filter-open="true"]'));
+    const syncBody = () => document.body.classList.toggle('admin-filter-drawer-open', openDrawers().length > 0);
 
-    const close = (drawer) => {
+    const close = (drawer, restoreFocus = true) => {
         drawer.classList.add('hidden');
         drawer.dataset.adminFilterOpen = 'false';
-        document.body.classList.remove('admin-filter-drawer-open');
+        const openButton = openButtonByDrawer.get(drawer);
+        openButtonByDrawer.delete(drawer);
+        openButton?.setAttribute('aria-expanded', 'false');
+        syncBody();
+
+        if (restoreFocus) {
+            openButton?.focus({ preventScroll: true });
+        }
     };
 
     document.addEventListener('click', (event) => {
@@ -23,10 +33,15 @@ export function bootAdminFilterDrawers() {
             const drawer = document.getElementById(openButton.dataset.adminFilterOpen);
 
             if (drawer) {
+                openDrawers().filter((candidate) => candidate !== drawer).forEach((candidate) => close(candidate, false));
+                openButtonByDrawer.set(drawer, openButton);
                 drawer.classList.remove('hidden');
                 drawer.dataset.adminFilterOpen = 'true';
-                document.body.classList.add('admin-filter-drawer-open');
-                drawer.querySelector('input, select, button')?.focus();
+                openButton.setAttribute('aria-expanded', 'true');
+                syncBody();
+                Array.from(drawer.querySelectorAll('input, select, button'))
+                    .find((control) => ! control.disabled && control.getClientRects().length > 0)
+                    ?.focus({ preventScroll: true });
             }
         }
 
@@ -44,10 +59,16 @@ export function bootAdminFilterDrawers() {
             return;
         }
 
-        const drawer = document.querySelector('[data-admin-filter-drawer][data-admin-filter-open="true"]');
+        const drawer = openDrawers().at(-1);
 
         if (drawer) {
             close(drawer);
+        }
+    });
+
+    window.addEventListener('resize', () => {
+        if (window.matchMedia('(min-width: 48rem)').matches) {
+            openDrawers().forEach((drawer) => close(drawer, false));
         }
     });
 }

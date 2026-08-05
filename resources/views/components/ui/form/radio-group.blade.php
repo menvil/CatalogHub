@@ -1,5 +1,5 @@
 @props(['id', 'name', 'label', 'options' => [], 'selected' => null, 'help' => null, 'error' => null, 'disabled' => false])
-<fieldset {{ $attributes->class('space-y-2') }} @if ($error) aria-invalid="true" @endif @if ($help || $error) aria-describedby="{{ collect([$help ? $id.'-help' : null, $error ? $id.'-error' : null])->filter()->implode(' ') }}" @endif>
+<fieldset {{ $attributes->class('space-y-2') }} @if (filled($error)) aria-invalid="true" @endif @if (filled($help) || filled($error)) aria-describedby="{{ collect([filled($help) ? $id.'-help' : null, filled($error) ? $id.'-error' : null])->filter()->implode(' ') }}" @endif>
     <legend class="text-sm font-medium text-admin-text">{{ $label }}</legend>
     @foreach ($options as $value => $optionLabel)
         <label class="flex items-center gap-2 text-sm text-admin-text" for="{{ $id }}-{{ $loop->index }}">

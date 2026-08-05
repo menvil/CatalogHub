@@ -45,12 +45,5 @@ final class LayoutPrimitivesTest extends TestCase
         $this->assertStringContainsString('aria-selected="true"', $html);
         $this->assertStringContainsString('aria-controls="details-panel"', $html);
         $this->assertStringContainsString('data-admin-tabs', $html);
-
-        $script = file_get_contents(resource_path('js/admin/tabs.js'));
-        $this->assertIsString($script);
-        foreach (['ArrowLeft', 'ArrowRight', 'Home', 'End'] as $key) {
-            $this->assertStringContainsString($key, $script);
-        }
-        $this->assertStringContainsString('event.target instanceof Element', $script);
     }
 }

@@ -16,14 +16,7 @@
                 $label = $item['label'] ?? $key;
                 $isActive = $active === $key;
                 $rawUrl = (string) ($item['url'] ?? '#');
-                $scheme = parse_url($rawUrl, PHP_URL_SCHEME);
-                $url = match (true) {
-                    $rawUrl === '#',
-                    \Illuminate\Support\Str::startsWith($rawUrl, '#'),
-                    \Illuminate\Support\Str::startsWith($rawUrl, '/') && ! \Illuminate\Support\Str::startsWith($rawUrl, '//'),
-                    in_array($scheme, ['http', 'https'], true) => $rawUrl,
-                    default => '#',
-                };
+                $url = \App\Support\Presentation\SafePresentationUrl::allows($rawUrl, allowFragment: true) ? $rawUrl : '#';
             @endphp
 
             <a

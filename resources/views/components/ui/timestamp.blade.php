@@ -1,6 +1,10 @@
 @props(['value', 'timezone', 'relativeHint' => null, 'empty' => 'Not available'])
 
 @php
+    if (! is_string($timezone)) {
+        throw new \InvalidArgumentException('Invalid timestamp timezone.');
+    }
+
     try {
         $targetTimezone = new \DateTimeZone($timezone);
     } catch (\Exception) {

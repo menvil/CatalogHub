@@ -25,13 +25,11 @@ final class ModalComponentsTest extends TestCase
         $this->assertStringContainsString('Delete', $html);
     }
 
-    public function test_modal_script_traps_focus_restores_trigger_and_guards_duplicate_confirmation(): void
+    public function test_confirmation_dialog_forwards_wrapper_attributes(): void
     {
-        $script = file_get_contents(resource_path('js/admin/modal.js'));
-        $this->assertIsString($script);
+        $html = Blade::render('<x-ui.confirmation-dialog id="delete-modal" title="Delete" message="Confirm" class="custom-dialog" data-owner="brands" />');
 
-        foreach (['data-admin-modal-open-target', 'previousFocusByModal', "event.key === 'Tab'", 'aria-busy'] as $contract) {
-            $this->assertStringContainsString($contract, $script);
-        }
+        $this->assertStringContainsString('custom-dialog', $html);
+        $this->assertStringContainsString('data-owner="brands"', $html);
     }
 }

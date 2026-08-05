@@ -12,6 +12,6 @@
 @endphp
 
 <aside {{ $attributes->class("rounded-admin-card border px-admin-card py-admin-field text-sm text-admin-text {$tones[$tone]}") }} role="{{ $tone === 'danger' ? 'alert' : 'status' }}" data-ui-alert="{{ $tone }}">
-    @if ($title)<p class="font-semibold">{{ $title }}</p>@endif
+    @if ($title)<h3 class="font-semibold">{{ $title }}</h3>@endif
     <p>{{ $message }}</p>
 </aside>

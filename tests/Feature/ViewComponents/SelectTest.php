@@ -35,4 +35,14 @@ final class SelectTest extends TestCase
         $this->assertMatchesRegularExpression('/value="de-DE"[^>]*selected/', $html);
         $this->assertStringContainsString('disabled', $html);
     }
+
+    public function test_select_merges_caller_and_field_descriptions_without_duplicate_attributes(): void
+    {
+        $html = Blade::render(
+            '<x-ui.form.select id="market" name="market" label="Market" :options="[]" help="Choose one" error="Invalid" aria-describedby="market-guidance" />'
+        );
+
+        $this->assertSame(1, substr_count($html, 'aria-describedby='));
+        $this->assertStringContainsString('aria-describedby="market-guidance market-help market-error"', $html);
+    }
 }

@@ -19,4 +19,5 @@
     :open="$open"
     :contained="$contained"
     :data-destructive-confirmation="$destructive ? 'true' : null"
+    {{ $attributes }}
 >{{ $slot }}</x-admin.confirmation-modal>

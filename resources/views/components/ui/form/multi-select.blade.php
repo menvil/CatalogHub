@@ -4,11 +4,11 @@
 ])
 @php
     $selectedValues = array_map('strval', is_array($selected) ? $selected : []);
-    $describedBy = collect([$help ? "{$id}-help" : null, $error ? "{$id}-error" : null])->filter()->implode(' ');
+    $describedBy = collect([filled($help) ? "{$id}-help" : null, filled($error) ? "{$id}-error" : null])->filter()->implode(' ');
 @endphp
 <x-ui.form.field :id="$id" :label="$label" :required="$required" :help="$help" :error="$error">
     <select id="{{ $id }}" name="{{ str_ends_with($name, '[]') ? $name : $name.'[]' }}" multiple size="{{ $size }}" @required($required) @disabled($disabled)
-        @if ($error) aria-invalid="true" @endif @if ($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
+        @if (filled($error)) aria-invalid="true" @endif @if ($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
         {{ $attributes->class('block w-full rounded-admin-input border border-admin-border bg-admin-surface px-3 py-2 text-sm text-admin-text focus:border-admin-primary focus:outline-none focus:ring-2 focus:ring-admin-primary/20 disabled:opacity-60') }}>
         @foreach ($options as $value => $option)
             @if (is_array($option))

@@ -27,15 +27,21 @@ final class FeedbackComponentsTest extends TestCase
         $this->assertStringContainsString('data-ui-feedback-dismiss', $html);
     }
 
-    public function test_retry_is_explicit_and_feedback_script_only_retries_on_action(): void
+    public function test_retry_is_an_explicit_user_action(): void
     {
-        $html = Blade::render('<x-ui.retry-block message="Could not load brands." retry-label="Try again" />');
-        $script = file_get_contents(resource_path('js/admin/feedback.js'));
+        $html = Blade::render('<x-ui.retry-block id="brand-retry" class="retry-shell" message="Could not load brands." retry-label="Try again" />');
 
         $this->assertStringContainsString('Could not load brands.', $html);
         $this->assertStringContainsString('data-ui-retry', $html);
-        $this->assertStringContainsString('data-ui-feedback-dismiss', $script);
-        $this->assertStringNotContainsString('setInterval', $script);
-        $this->assertStringNotContainsString('setTimeout', $script);
+        $this->assertStringContainsString('type="button"', $html);
+        $this->assertStringContainsString('id="brand-retry"', $html);
+        $this->assertStringContainsString('class="retry-shell"', $html);
+    }
+
+    public function test_alert_title_uses_heading_semantics(): void
+    {
+        $html = Blade::render('<x-ui.alert title="Review needed" message="Check localized labels." />');
+
+        $this->assertStringContainsString('<h3 class="font-semibold">Review needed</h3>', $html);
     }
 }

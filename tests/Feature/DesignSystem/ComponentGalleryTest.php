@@ -57,11 +57,18 @@ final class ComponentGalleryTest extends TestCase
 
     public function test_component_mode_renders_deterministic_forms_tables_feedback_and_acceptance_fixtures(): void
     {
-        foreach (['forms', 'tables', 'feedback'] as $section) {
+        $markers = [
+            'forms' => 'data-gallery-forms-fixture',
+            'tables' => 'data-gallery-tables-fixture',
+            'feedback' => 'data-gallery-feedback-fixture',
+        ];
+
+        foreach ($markers as $section => $marker) {
             $this->get('/dev/component-gallery?mode=components&section='.$section)
                 ->assertOk()
                 ->assertSee('data-admin-components-fixture="admin-components-v1"', false)
                 ->assertSee('data-admin-components-section="'.$section.'"', false)
+                ->assertSee($marker, false)
                 ->assertSee('Admin component gallery');
         }
 
@@ -73,10 +80,41 @@ final class ComponentGalleryTest extends TestCase
             ->assertSee('data-browser-acceptance="pending"', false);
     }
 
+    public function test_table_fixture_forms_preserve_gallery_query_context(): void
+    {
+        $response = $this->get('/dev/component-gallery?mode=components&section=tables&q=Acme')
+            ->assertOk()
+            ->assertSee('data-gallery-tables-fixture', false);
+
+        $response->assertSeeInOrder([
+            'data-admin-table-toolbar',
+            'name="mode" value="components"',
+            'name="section" value="tables"',
+        ], false);
+        $response->assertSeeInOrder([
+            'data-admin-filter-drawer',
+            'name="mode" value="components"',
+            'name="section" value="tables"',
+        ], false);
+        $response->assertSee('href="?mode=components&amp;section=tables"', false);
+    }
+
     public function test_component_gallery_rejects_unknown_fixture_sections(): void
     {
         $this->get('/dev/component-gallery?mode=components&section=unknown')
             ->assertSessionHasErrors('section');
+    }
+
+    public function test_acceptance_script_only_runs_for_the_complete_acceptance_fixture(): void
+    {
+        $this->get('/dev/component-gallery?mode=components&acceptance=1')
+            ->assertOk()
+            ->assertSee('data-gallery-forms-fixture', false)
+            ->assertDontSee('data-browser-acceptance=', false);
+
+        $this->get('/dev/component-gallery?mode=components&section=acceptance&acceptance=1')
+            ->assertOk()
+            ->assertSee('data-browser-acceptance="pending"', false);
     }
 
     public function test_icon_contract_is_single_source_and_unknown_icons_fail_loudly(): void

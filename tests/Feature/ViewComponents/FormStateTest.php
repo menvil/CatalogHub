@@ -32,15 +32,6 @@ final class FormStateTest extends TestCase
 
         $this->assertStringContainsString('data-admin-form-leave-warning="false"', $html);
         $this->assertStringContainsString('data-admin-form-state', $html);
-    }
-
-    public function test_form_state_script_defines_all_required_transitions(): void
-    {
-        $script = file_get_contents(resource_path('js/admin/form-state.js'));
-
-        $this->assertIsString($script);
-        foreach (['beforeunload', 'admin:form-saved', 'admin:form-invalid', 'data-admin-form-submitting'] as $contract) {
-            $this->assertStringContainsString($contract, $script);
-        }
+        $this->assertStringContainsString('method="GET"', $html);
     }
 }

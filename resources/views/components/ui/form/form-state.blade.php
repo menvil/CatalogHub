@@ -19,6 +19,7 @@
     data-admin-form-state
     data-admin-form-dirty="false"
     data-admin-form-submitting="false"
+    data-admin-form-changed-while-submitting="false"
     data-admin-form-leave-warning="{{ $leaveWarning ? 'true' : 'false' }}"
 >
     @if ($nativeMethod === 'POST')

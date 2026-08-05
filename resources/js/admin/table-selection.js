@@ -46,13 +46,21 @@ export function bootAdminTableSelection() {
         }
     });
 
-    document.addEventListener('admin:table-state-changed', () => {
-        document.querySelectorAll('table').forEach((table) => {
-            table.querySelectorAll('[data-admin-row-select], [data-admin-select-visible]').forEach((checkbox) => {
-                checkbox.checked = false;
-            });
-            sync(table);
+    document.addEventListener('admin:table-state-changed', (event) => {
+        if (! (event.target instanceof Element)) {
+            return;
+        }
+
+        const table = event.target.matches('table') ? event.target : event.target.closest('table');
+
+        if (! table) {
+            return;
+        }
+
+        table.querySelectorAll('[data-admin-row-select], [data-admin-select-visible]').forEach((checkbox) => {
+            checkbox.checked = false;
         });
+        sync(table);
     });
 
     document.querySelectorAll('table').forEach(sync);

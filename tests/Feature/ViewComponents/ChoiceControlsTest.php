@@ -18,9 +18,10 @@ final class ChoiceControlsTest extends TestCase
 
         $this->assertSame(2, substr_count($html, 'type="checkbox"'));
         $this->assertStringContainsString('role="switch"', $html);
-        $this->assertStringContainsString('checked', $html);
+        $this->assertMatchesRegularExpression('/<input[^>]*id="active"[^>]*\schecked(?:\s|>)/', $html);
         $this->assertStringContainsString('disabled', $html);
         $this->assertStringContainsString('aria-invalid="true"', $html);
+        $this->assertStringContainsString('data-ui-toggle-indicator', $html);
     }
 
     public function test_radio_group_exposes_group_label_and_one_selection(): void

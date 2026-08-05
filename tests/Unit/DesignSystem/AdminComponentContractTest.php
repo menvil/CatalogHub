@@ -25,8 +25,6 @@ final class AdminComponentContractTest extends TestCase
     {
         yield 'button' => ['ui/button', '<x-ui.button'];
         yield 'action group' => ['ui/action-group', '<x-ui.action-group'];
-        yield 'field' => ['ui/form/field', '<x-ui.form.input'];
-        yield 'label' => ['ui/form/label', '<x-ui.form.input'];
         yield 'input' => ['ui/form/input', '<x-ui.form.input'];
         yield 'textarea' => ['ui/form/textarea', '<x-ui.form.textarea'];
         yield 'slug' => ['ui/form/slug-input', '<x-ui.form.slug-input'];
@@ -58,5 +56,17 @@ final class AdminComponentContractTest extends TestCase
         yield 'alert' => ['ui/alert', '<x-ui.alert'];
         yield 'toast' => ['ui/toast', '<x-ui.toast'];
         yield 'retry' => ['ui/retry-block', '<x-ui.retry-block'];
+    }
+
+    public function test_field_and_label_are_covered_through_the_rendered_input_composition_pipeline(): void
+    {
+        $root = dirname(__DIR__, 3);
+        $gallery = (string) file_get_contents($root.'/resources/views/central/partials/admin-component-gallery.blade.php');
+        $input = (string) file_get_contents($root.'/resources/views/components/ui/form/input.blade.php');
+        $field = (string) file_get_contents($root.'/resources/views/components/ui/form/field.blade.php');
+
+        self::assertStringContainsString('<x-ui.form.input', $gallery);
+        self::assertStringContainsString('<x-ui.form.field', $input);
+        self::assertStringContainsString('<x-ui.form.label', $field);
     }
 }

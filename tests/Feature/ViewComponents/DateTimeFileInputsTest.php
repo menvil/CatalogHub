@@ -26,6 +26,8 @@ final class DateTimeFileInputsTest extends TestCase
         $this->assertStringContainsString('type="file"', $html);
         $this->assertStringContainsString('accept="image/png,image/jpeg"', $html);
         $this->assertStringContainsString('multiple', $html);
+        $this->assertStringContainsString('disabled', $html);
+        $this->assertStringContainsString('name="asset[]"', $html);
         $this->assertStringContainsString('PNG or JPEG, up to 5 MB', $html);
         $this->assertStringNotContainsString('data-upload', $html);
         $this->assertStringNotContainsString('data-preview', $html);

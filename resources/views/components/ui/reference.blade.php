@@ -3,11 +3,7 @@
 @php
     $label = trim((string) $label);
     $rawUrl = is_string($url) ? trim($url) : null;
-    $scheme = $rawUrl === null ? null : parse_url($rawUrl, PHP_URL_SCHEME);
-    $safeUrl = $rawUrl !== null && (
-        (str_starts_with($rawUrl, '/') && ! str_starts_with($rawUrl, '//'))
-        || in_array($scheme, ['http', 'https'], true)
-    );
+    $safeUrl = $rawUrl !== null && \App\Support\Presentation\SafePresentationUrl::allows($rawUrl);
     throw_if($rawUrl !== null && ! $safeUrl, \InvalidArgumentException::class, 'References require a safe URL.');
 @endphp
 

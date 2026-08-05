@@ -6,6 +6,7 @@ namespace Tests\Feature\ViewComponents;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\View\ViewException;
 use Tests\TestCase;
 
 final class DataDisplayTest extends TestCase
@@ -45,5 +46,21 @@ final class DataDisplayTest extends TestCase
 
         $this->assertStringContainsString('Not available', $html);
         $this->assertStringNotContainsString('<time', $html);
+    }
+
+    public function test_timestamp_rejects_non_string_timezones(): void
+    {
+        $this->expectException(ViewException::class);
+        $this->expectExceptionMessage('Invalid timestamp timezone.');
+
+        Blade::render('<x-ui.timestamp :value="null" :timezone="[]" />');
+    }
+
+    public function test_reference_rejects_browser_normalized_backslash_urls(): void
+    {
+        $this->expectException(ViewException::class);
+        $this->expectExceptionMessage('References require a safe URL.');
+
+        Blade::render('<x-ui.reference label="Unsafe" kind="Site" :url="$url" />', ['url' => '/\\evil.example/path']);
     }
 }

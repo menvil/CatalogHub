@@ -11,8 +11,8 @@ use InvalidArgumentException;
 final class DataTable extends Component
 {
     /**
-     * @param  list<array{key?: string, label?: string, align?: string}>  $columns
-     * @param  list<array<string, mixed>>  $rows
+     * @param  list<mixed>  $columns
+     * @param  list<mixed>  $rows
      */
     public function __construct(
         public readonly string $caption,
@@ -23,6 +23,10 @@ final class DataTable extends Component
         public readonly bool $selectable = false,
         public readonly ?string $tableId = null,
     ) {
+        if (trim($this->caption) === '') {
+            throw new InvalidArgumentException('Data table captions cannot be empty.');
+        }
+
         $this->validateColumns();
         $this->validateRows();
     }
@@ -41,6 +45,10 @@ final class DataTable extends Component
         $keys = [];
 
         foreach ($this->columns as $column) {
+            if (! is_array($column)) {
+                throw new InvalidArgumentException('Data table columns must be arrays.');
+            }
+
             $key = trim((string) ($column['key'] ?? ''));
             $label = trim((string) ($column['label'] ?? ''));
             $align = (string) ($column['align'] ?? 'start');
@@ -66,6 +74,10 @@ final class DataTable extends Component
         $identifiers = [];
 
         foreach ($this->rows as $row) {
+            if (! is_array($row)) {
+                throw new InvalidArgumentException('Data table rows must be arrays.');
+            }
+
             $identifier = $row[$this->rowKey] ?? null;
 
             if (! is_string($identifier) && ! is_int($identifier)) {

@@ -22,13 +22,7 @@
 
     $isDisabled = (bool) $disabled || (bool) $loading;
     $rawHref = is_string($href) ? trim($href) : null;
-    $scheme = $rawHref === null ? null : parse_url($rawHref, PHP_URL_SCHEME);
-    $safeHref = $rawHref !== null && (
-        $rawHref === '#'
-        || (str_starts_with($rawHref, '/') && ! str_starts_with($rawHref, '//'))
-        || str_starts_with($rawHref, '#')
-        || in_array($scheme, ['http', 'https'], true)
-    ) ? $rawHref : null;
+    $safeHref = $rawHref !== null && \App\Support\Presentation\SafePresentationUrl::allows($rawHref, allowFragment: true) ? $rawHref : null;
     $classes = 'inline-flex min-h-10 items-center justify-center gap-2 rounded-admin-input border px-3 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary disabled:cursor-not-allowed disabled:opacity-60 '.$variants[$variant];
 @endphp
 
@@ -46,10 +40,15 @@
     <span
         {{ $attributes->class([$classes, 'cursor-not-allowed opacity-60']) }}
         aria-disabled="true"
+        @if ($loading) aria-busy="true" @endif
         data-ui-button="{{ $variant }}"
         data-ui-disabled-link
     >
-        @if ($icon)<x-ui.icon :name="$icon" decorative class="h-4 w-4" />@endif
+        @if ($loading)
+            <span class="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" aria-hidden="true"></span>
+        @elseif ($icon)
+            <x-ui.icon :name="$icon" decorative class="h-4 w-4" />
+        @endif
         <span>{{ $label ?? $slot }}</span>
     </span>
 @else

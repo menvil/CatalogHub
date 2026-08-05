@@ -19,6 +19,7 @@ export function bootAdminTabs() {
 
         if (! target) return;
         event.preventDefault();
+        tabs.forEach((candidate) => candidate.setAttribute('tabindex', candidate === target ? '0' : '-1'));
         target.focus();
     });
 }

@@ -7,6 +7,7 @@ namespace Tests\Feature\ViewComponents;
 use App\View\Components\Admin\DataTable;
 use Illuminate\Support\Facades\Blade;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 final class DataTableTest extends TestCase
@@ -55,5 +56,38 @@ final class DataTableTest extends TestCase
             columns: [['key' => 'name', 'label' => 'Brand']],
             rows: [['id' => 'same', 'name' => 'One'], ['id' => 'same', 'name' => 'Two']],
         );
+    }
+
+    /**
+     * @param  list<mixed>  $columns
+     * @param  list<mixed>  $rows
+     */
+    #[DataProvider('invalidTableProvider')]
+    public function test_table_rejects_invalid_column_and_row_boundaries(array $columns, array $rows, string $message): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage($message);
+
+        new DataTable(caption: 'Brands', columns: $columns, rows: $rows);
+    }
+
+    /** @return iterable<string, array{list<mixed>, list<mixed>, string}> */
+    public static function invalidTableProvider(): iterable
+    {
+        yield 'empty columns' => [[], [], 'columns cannot be empty'];
+        yield 'non-array column' => [['invalid'], [], 'columns must be arrays'];
+        yield 'duplicate columns' => [[['key' => 'name', 'label' => 'Name'], ['key' => 'name', 'label' => 'Again']], [], 'column keys must be unique'];
+        yield 'invalid alignment' => [[['key' => 'name', 'label' => 'Name', 'align' => 'sideways']], [], 'Unsupported data table alignment'];
+        yield 'non-array row' => [[['key' => 'name', 'label' => 'Name']], ['invalid'], 'rows must be arrays'];
+        yield 'empty row ID' => [[['key' => 'name', 'label' => 'Name']], [['id' => '', 'name' => 'Acme']], 'non-empty [id] identifier'];
+        yield 'non-scalar row ID' => [[['key' => 'name', 'label' => 'Name']], [['id' => [], 'name' => 'Acme']], 'scalar [id] identifier'];
+    }
+
+    public function test_table_rejects_an_empty_accessible_caption(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('captions cannot be empty');
+
+        new DataTable(caption: '  ', columns: [['key' => 'name', 'label' => 'Name']], rows: []);
     }
 }

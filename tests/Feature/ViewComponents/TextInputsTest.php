@@ -19,6 +19,9 @@ final class TextInputsTest extends TestCase
         $this->assertStringContainsString('value="Acme"', $html);
         $this->assertStringContainsString('maxlength="80"', $html);
         $this->assertStringContainsString('aria-invalid="true"', $html);
+        $this->assertStringContainsString('aria-describedby="brand-name-error"', $html);
+        $this->assertStringContainsString('id="brand-name-error"', $html);
+        $this->assertStringContainsString('Required', $html);
         $this->assertStringContainsString('readonly', $html);
         $this->assertStringContainsString('&lt;unsafe&gt;', $html);
         $this->assertStringNotContainsString('<unsafe>', $html);
@@ -32,5 +35,13 @@ final class TextInputsTest extends TestCase
         $this->assertStringContainsString('value="existing-slug"', $html);
         $this->assertStringContainsString('disabled', $html);
         $this->assertStringNotContainsString('data-auto-slug', $html);
+    }
+
+    public function test_slug_prefix_is_included_in_the_accessible_description(): void
+    {
+        $html = Blade::render('<x-ui.form.slug-input id="brand-slug" name="slug" label="Slug" prefix="catalog.test/brands/" value="acme" help="Stable URL" />');
+
+        $this->assertStringContainsString('id="brand-slug-prefix"', $html);
+        $this->assertStringContainsString('aria-describedby="brand-slug-prefix brand-slug-help"', $html);
     }
 }

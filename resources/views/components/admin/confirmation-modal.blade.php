@@ -28,6 +28,7 @@
         ],
     ];
 
+    throw_if($id !== null && trim((string) $id) === '', \InvalidArgumentException::class, 'Confirmation modal IDs cannot be empty.');
     $classes = $variantClasses[$variant] ?? $variantClasses['default'];
     $modalBaseId = $id ?: 'admin-confirmation-modal-'.\Illuminate\Support\Str::random(8);
     $modalTitleId = $modalBaseId.'-title';

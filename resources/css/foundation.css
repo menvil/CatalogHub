@@ -8,8 +8,10 @@
     min-width: var(--width-foundation-table);
 }
 
-body.admin-filter-drawer-open {
-    overflow: hidden;
+@media (width < 48rem) {
+    body.admin-filter-drawer-open {
+        overflow: hidden;
+    }
 }
 
 body.admin-modal-open {

@@ -21,18 +21,28 @@ final class TableFiltersTest extends TestCase
         BLADE, compact('active'));
 
         $this->assertStringContainsString('data-admin-filter-bar', $html);
+        $this->assertStringContainsString('aria-expanded="false"', $html);
         $this->assertStringContainsString('method="GET"', $html);
         $this->assertStringContainsString('Status: Active', $html);
         $this->assertStringContainsString('href="/brands?q=acme"', $html);
         $this->assertStringContainsString('data-admin-clear-all-filters', $html);
+        $this->assertStringContainsString('aria-label="Remove filter:', $html);
     }
 
-    public function test_filter_drawer_script_has_open_close_and_escape_contracts(): void
+    public function test_filter_and_toolbar_fallback_ids_are_unique_per_render(): void
     {
-        $script = file_get_contents(resource_path('js/admin/filter-drawer.js'));
-        $this->assertIsString($script);
-        foreach (['data-admin-filter-open', 'data-admin-filter-close', 'Escape'] as $contract) {
-            $this->assertStringContainsString($contract, $script);
-        }
+        $html = Blade::render(<<<'BLADE'
+            <x-admin.filter-bar action="/brands">One</x-admin.filter-bar>
+            <x-admin.filter-bar action="/brands">Two</x-admin.filter-bar>
+            <x-admin.table-toolbar action="/brands" />
+            <x-admin.table-toolbar action="/brands" />
+        BLADE);
+
+        preg_match_all('/data-admin-filter-open="([^"]+)"/', $html, $drawerIds);
+        preg_match_all('/data-ui-form-field="([^"]+)"/', $html, $searchIds);
+
+        $this->assertCount(2, array_unique($drawerIds[1]));
+        $this->assertCount(2, array_unique($searchIds[1]));
+        $this->assertSame(2, substr_count($html, 'role="search"'));
     }
 }

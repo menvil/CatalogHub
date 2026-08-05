@@ -42,6 +42,10 @@ final readonly class TableQueryState
         $filters = [];
 
         foreach ($filterKeys as $filterKey) {
+            if (in_array($filterKey, ['q', 'sort', 'direction', 'page'], true)) {
+                continue;
+            }
+
             $value = $query[$filterKey] ?? null;
 
             if (is_scalar($value) && trim((string) $value) !== '') {

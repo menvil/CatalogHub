@@ -4,6 +4,7 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../views/public/**/*.blade.php';
+@source '../views/layouts/public-*.blade.php';
 
 [data-presentation-context='public-site'] :focus-visible {
     outline: var(--width-foundation-focus-ring) solid var(--color-foundation-focus);

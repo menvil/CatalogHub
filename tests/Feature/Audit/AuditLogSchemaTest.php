@@ -5,7 +5,9 @@ namespace Tests\Feature\Audit;
 use App\Models\AuditLogEntry;
 use App\Models\Site;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use LogicException;
 use Tests\TestCase;
@@ -75,5 +77,43 @@ class AuditLogSchemaTest extends TestCase
 
         $this->expectException(LogicException::class);
         $entry->delete();
+    }
+
+    public function test_audit_entries_cannot_be_bulk_updated(): void
+    {
+        $entry = AuditLogEntry::factory()->create();
+
+        $this->expectException(QueryException::class);
+
+        DB::table('audit_log_entries')
+            ->where('id', $entry->getKey())
+            ->update(['action' => 'security.audit.rewritten']);
+    }
+
+    public function test_audit_entries_cannot_be_deleted_with_direct_sql(): void
+    {
+        $entry = AuditLogEntry::factory()->create();
+
+        $this->expectException(QueryException::class);
+
+        DB::delete('DELETE FROM audit_log_entries WHERE id = ?', [$entry->getKey()]);
+    }
+
+    public function test_actor_attribution_prevents_user_deletion(): void
+    {
+        $entry = AuditLogEntry::factory()->for(Site::factory())->create();
+
+        $this->expectException(QueryException::class);
+
+        $entry->actor->delete();
+    }
+
+    public function test_site_attribution_prevents_site_deletion(): void
+    {
+        $entry = AuditLogEntry::factory()->for(Site::factory())->create();
+
+        $this->expectException(QueryException::class);
+
+        $entry->site->forceDelete();
     }
 }

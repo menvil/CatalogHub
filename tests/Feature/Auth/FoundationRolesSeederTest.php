@@ -12,9 +12,13 @@ class FoundationRolesSeederTest extends TestCase
     public function test_six_foundation_roles_have_only_registered_permissions(): void
     {
         $definitions = config('cataloghub_permissions.roles');
+        $roles = UserRole::cases();
+
+        $this->assertCount(6, $roles);
+        $this->assertCount(6, $definitions);
 
         $this->assertSame(
-            array_map(static fn (UserRole $role): string => $role->value, UserRole::cases()),
+            array_map(static fn (UserRole $role): string => $role->value, $roles),
             array_keys($definitions),
         );
 

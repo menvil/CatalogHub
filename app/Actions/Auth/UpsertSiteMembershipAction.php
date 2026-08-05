@@ -34,16 +34,23 @@ final readonly class UpsertSiteMembershipAction
             $membership = SiteMembership::query()
                 ->whereBelongsTo($member)
                 ->whereBelongsTo($site)
+                ->lockForUpdate()
                 ->first();
             $before = $membership instanceof SiteMembership ? [
                 'role' => $membership->roleEnum()->value,
                 'is_active' => $membership->is_active,
             ] : null;
 
-            $membership = SiteMembership::query()->updateOrCreate(
-                ['user_id' => $member->getKey(), 'site_id' => $site->getKey()],
-                ['role' => $role, 'is_active' => $isActive],
-            );
+            if ($membership instanceof SiteMembership) {
+                $membership->update(['role' => $role, 'is_active' => $isActive]);
+            } else {
+                $membership = SiteMembership::query()->create([
+                    'user_id' => $member->getKey(),
+                    'site_id' => $site->getKey(),
+                    'role' => $role,
+                    'is_active' => $isActive,
+                ]);
+            }
             $this->audit->record(
                 AuditAction::MembershipChanged,
                 AuditContext::Site,

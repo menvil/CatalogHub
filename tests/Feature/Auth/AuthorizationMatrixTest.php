@@ -5,9 +5,11 @@ namespace Tests\Feature\Auth;
 use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Models\Site;
+use App\Models\User;
 use App\Services\Auth\AuthorizationService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\AuthFixtures;
 use Tests\TestCase;
@@ -91,6 +93,19 @@ class AuthorizationMatrixTest extends TestCase
         }
     }
 
+    public function test_auth_fixture_rejects_roles_without_a_site_membership_mapping(): void
+    {
+        $site = $this->authorizationSite('Unsupported membership role site');
+        $before = User::query()->count();
+
+        try {
+            $this->userForRole(UserRole::CatalogEditor, $site);
+            self::fail('Catalog Editor was mapped to a Site membership role.');
+        } catch (InvalidArgumentException) {
+            self::assertSame($before, User::query()->count());
+        }
+    }
+
     public function test_authorization_document_matches_the_foundation_contract(): void
     {
         $path = base_path('docs/architecture/authorization.md');
@@ -121,6 +136,7 @@ class AuthorizationMatrixTest extends TestCase
     public static function siteRoleProvider(): array
     {
         return [
+            'super admin' => [UserRole::SuperAdmin],
             'site admin' => [UserRole::SiteAdmin],
             'translator' => [UserRole::Translator],
             'moderator' => [UserRole::Moderator],

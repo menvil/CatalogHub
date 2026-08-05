@@ -7,6 +7,7 @@ use App\Enums\UserRole;
 use App\Models\Site;
 use App\Models\SiteMembership;
 use App\Models\User;
+use InvalidArgumentException;
 
 trait AuthFixtures
 {
@@ -21,15 +22,19 @@ trait AuthFixtures
             return User::factory()->siteAdmin($membershipSite)->create();
         }
 
+        $membershipRole = $membershipSite instanceof Site ? match ($role) {
+            UserRole::SuperAdmin => SiteMembershipRole::SiteAdmin,
+            UserRole::Translator => SiteMembershipRole::Translator,
+            UserRole::Moderator => SiteMembershipRole::Moderator,
+            UserRole::CentralAdmin, UserRole::CatalogEditor => throw new InvalidArgumentException(
+                "Role [{$role->value}] cannot be assigned as a site membership role.",
+            ),
+        } : null;
         $user = User::factory()->create(['role' => $role]);
 
         if ($membershipSite instanceof Site) {
             SiteMembership::factory()->for($user)->for($membershipSite)->create([
-                'role' => match ($role) {
-                    UserRole::Translator => SiteMembershipRole::Translator,
-                    UserRole::Moderator => SiteMembershipRole::Moderator,
-                    default => SiteMembershipRole::SiteAdmin,
-                },
+                'role' => $membershipRole,
             ]);
         }
 

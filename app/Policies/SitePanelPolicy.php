@@ -6,7 +6,6 @@ namespace App\Policies;
 
 use App\Contracts\Auth\SiteAdminAccess;
 use App\Enums\Permission;
-use App\Enums\SiteStatus;
 use App\Models\Site;
 use App\Models\SiteMembership;
 use App\Models\User;
@@ -52,10 +51,6 @@ final class SitePanelPolicy implements SiteAdminAccess
             ->with('site')
             ->where('is_active', true)
             ->when($siteId !== null, fn (Builder $query) => $query->where('site_id', $siteId))
-            ->whereHas('site', fn (Builder $query) => $query->whereIn('status', [
-                SiteStatus::Draft,
-                SiteStatus::Active,
-                SiteStatus::Suspended,
-            ]));
+            ->whereIn('site_id', Site::query()->administrable()->select('id'));
     }
 }

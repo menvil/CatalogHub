@@ -49,6 +49,7 @@ return [
             Permission::CentralPanelAccess->value,
             Permission::CentralPageAccess->value,
             Permission::CentralMutationExecute->value,
+            Permission::CentralView->value,
             Permission::SitePanelAccess->value,
             Permission::SitePageAccess->value,
             Permission::SiteMutationExecute->value,

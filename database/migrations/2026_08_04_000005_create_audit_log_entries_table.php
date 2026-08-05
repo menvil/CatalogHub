@@ -10,9 +10,9 @@ return new class extends Migration
     {
         Schema::create('audit_log_entries', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('actor_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('actor_id')->nullable()->constrained('users')->restrictOnDelete();
             $table->string('context', 24);
-            $table->foreignId('site_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('site_id')->nullable()->constrained()->restrictOnDelete();
             $table->string('action', 100);
             $table->string('subject_type')->nullable();
             $table->string('subject_id', 64)->nullable();

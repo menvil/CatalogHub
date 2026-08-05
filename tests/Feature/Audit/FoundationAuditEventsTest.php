@@ -73,7 +73,11 @@ class FoundationAuditEventsTest extends TestCase
             false,
         );
 
-        $entries = AuditLogEntry::query()->where('action', AuditAction::MembershipChanged)->get();
+        $entries = AuditLogEntry::query()
+            ->where('action', AuditAction::MembershipChanged)
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
         $this->assertCount(2, $entries);
         $this->assertNull($entries->first()->before_json);
         $this->assertSame(false, $entries->last()->after_json['is_active']);

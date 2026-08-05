@@ -37,6 +37,8 @@
 
                 <main id="central-main-content" class="px-admin-page py-admin-section" tabindex="-1">
                     <div class="mx-auto max-w-7xl space-y-admin-section">
+                        <x-admin.flash-messages />
+
                         <div class="flex flex-col gap-admin-field md:flex-row md:items-start md:justify-between">
                             <div class="min-w-0">
                                 <nav class="text-sm text-admin-muted" aria-label="Breadcrumbs">

@@ -13,6 +13,8 @@
         ]"
     />
 
+    <x-site-admin.sync-status />
+
     <x-admin.empty-state
         title="Site Admin shell is ready"
         description="No site metrics are available in the foundation shell. Available sections can be opened from the navigation."

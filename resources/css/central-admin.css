@@ -20,6 +20,10 @@
 @source '../views/components/central/**/*';
 @source '../views/components/ui/**/*';
 
+body.central-sidebar-mobile-open {
+    overflow: hidden;
+}
+
 .central-shell-sidebar {
     position: fixed;
     inset-block: 0;

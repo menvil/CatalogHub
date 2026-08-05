@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\ViewComponents;
 
+use App\View\Components\Admin\PageHeader;
 use Illuminate\Support\Facades\Blade;
+use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 final class PageHeaderTest extends TestCase
@@ -48,5 +51,22 @@ final class PageHeaderTest extends TestCase
         $this->assertStringContainsString('&lt;unsafe&gt;', $html);
         $this->assertStringNotContainsString('<unsafe>', $html);
         $this->assertStringContainsString('aria-current="page"', $html);
+    }
+
+    #[DataProvider('invalidScreenIdProvider')]
+    public function test_page_header_rejects_malformed_screen_ids(string $screenId): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        new PageHeader(screenId: $screenId, title: 'Invalid contract');
+    }
+
+    /** @return array<string, array{string}> */
+    public static function invalidScreenIdProvider(): array
+    {
+        return [
+            'missing separator' => ['CA001'],
+            'lowercase prefix' => ['ca-001'],
+        ];
     }
 }

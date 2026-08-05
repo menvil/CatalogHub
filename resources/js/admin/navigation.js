@@ -40,7 +40,7 @@ export function bootCentralNavigation() {
         const closeMobile = ({ restoreFocus = true } = {}) => {
             sidebar.dataset.centralSidebarMobileOpen = 'false';
             openButton.setAttribute('aria-expanded', 'false');
-            document.body.classList.remove('overflow-hidden');
+            document.body.classList.remove('central-sidebar-mobile-open');
 
             if (restoreFocus && mobileTrigger) {
                 mobileTrigger.focus({ preventScroll: true });
@@ -53,7 +53,7 @@ export function bootCentralNavigation() {
             mobileTrigger = openButton;
             sidebar.dataset.centralSidebarMobileOpen = 'true';
             openButton.setAttribute('aria-expanded', 'true');
-            document.body.classList.add('overflow-hidden');
+            document.body.classList.add('central-sidebar-mobile-open');
 
             const focusTarget = sidebar.querySelector(focusableSelector) ?? sidebar;
             focusTarget.focus({ preventScroll: true });

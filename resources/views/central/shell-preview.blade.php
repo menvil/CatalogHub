@@ -55,13 +55,16 @@
                     verify(collapse?.getAttribute('aria-pressed') === 'true', 'desktop collapse semantics');
                     collapse?.click();
 
+                    document.body.classList.add('overflow-hidden');
                     open?.click();
                     verify(sidebar?.dataset.centralSidebarMobileOpen === 'true', 'mobile drawer opens');
-                    verify(document.body.classList.contains('overflow-hidden'), 'background scroll lock');
+                    verify(document.body.classList.contains('central-sidebar-mobile-open'), 'sidebar scroll lock');
 
                     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
                     verify(sidebar?.dataset.centralSidebarMobileOpen === 'false', 'Escape closes drawer');
                     verify(document.activeElement === open, 'focus returns to trigger');
+                    verify(document.body.classList.contains('overflow-hidden'), 'other overlay scroll lock remains');
+                    document.body.classList.remove('overflow-hidden');
                     verify(window.__centralAcceptanceErrors.length === 0, 'no browser runtime errors');
 
                     fixture.dataset.browserAcceptance = failures.length === 0 ? 'passed' : 'failed';

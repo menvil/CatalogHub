@@ -39,7 +39,7 @@
                 <x-ui.form.date-time id="gallery-publish-at" name="publish_at" label="Publish at" value="2026-08-05T13:15" timezone="Europe/Sofia" />
                 <x-ui.form.file-input id="gallery-file" name="file" label="Reference file" accept="image/png,image/jpeg" hint="PNG or JPEG; selection only, no upload occurs." />
                 <x-ui.form.input id="gallery-disabled" name="disabled" label="Disabled field" value="Read only state" disabled />
-                <div class="lg:col-span-2"><x-ui.button type="submit">Submit fixture</x-ui.button></div>
+                <button type="submit" hidden>Submit fixture</button>
             </x-ui.form.form-state>
         </x-admin.card>
 

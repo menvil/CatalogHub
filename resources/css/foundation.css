@@ -4,11 +4,6 @@
 @import './tokens/geometry.css';
 @import './tokens/responsive.css';
 
-:focus-visible {
-    outline: var(--width-foundation-focus-ring) solid var(--color-foundation-focus);
-    outline-offset: var(--spacing-foundation-focus-offset);
-}
-
 .min-w-foundation-table {
     min-width: var(--width-foundation-table);
 }

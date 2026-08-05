@@ -8,6 +8,16 @@ final class FoundationDesignSystem
 {
     public const FIXTURE_VERSION = 'foundation-v1';
 
+    /** @var array<string, string> */
+    public const HEROICON_COMPONENTS = [
+        'check-circle' => 'heroicon-o-check-circle',
+        'exclamation-triangle' => 'heroicon-o-exclamation-triangle',
+        'x-circle' => 'heroicon-o-x-circle',
+        'information-circle' => 'heroicon-o-information-circle',
+        'eye' => 'heroicon-o-eye',
+        'pencil-square' => 'heroicon-o-pencil-square',
+    ];
+
     /** @var array<string, array{width: int, height: int, density: string, behavior: string}> */
     public const VIEWPORTS = [
         'mobile' => ['width' => 360, 'height' => 800, 'density' => 'comfortable', 'behavior' => 'Stack controls and collapse navigation'],

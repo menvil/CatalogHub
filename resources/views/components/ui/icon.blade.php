@@ -5,20 +5,13 @@
 ])
 
 @php
-    $approvedIcons = [
-        'check-circle' => 'heroicon-o-check-circle',
-        'exclamation-triangle' => 'heroicon-o-exclamation-triangle',
-        'x-circle' => 'heroicon-o-x-circle',
-        'information-circle' => 'heroicon-o-information-circle',
-        'eye' => 'heroicon-o-eye',
-        'pencil-square' => 'heroicon-o-pencil-square',
-    ];
     $sizes = [
         'sm' => 'h-4 w-4',
         'md' => 'h-5 w-5',
         'lg' => 'h-6 w-6',
     ];
-    $component = $approvedIcons[$name] ?? $approvedIcons['information-circle'];
+    $component = \App\Support\DesignSystem\FoundationDesignSystem::HEROICON_COMPONENTS[$name]
+        ?? throw new \InvalidArgumentException("Unknown foundation icon [{$name}].");
     $sizeClass = $sizes[$size] ?? $sizes['md'];
 @endphp
 

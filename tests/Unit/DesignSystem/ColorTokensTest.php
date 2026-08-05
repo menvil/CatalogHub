@@ -8,11 +8,21 @@ use PHPUnit\Framework\TestCase;
 
 final class ColorTokensTest extends TestCase
 {
+    private const float MINIMUM_NORMAL_TEXT_CONTRAST = 4.5;
+
     public function test_text_and_status_pairs_meet_normal_text_contrast(): void
     {
         $root = dirname(__DIR__, 3);
-        $palette = $this->palette((string) file_get_contents($root.'/resources/css/tokens/palette.css'));
-        $semantic = $this->semanticColors((string) file_get_contents($root.'/resources/css/tokens/colors.css'));
+        $palettePath = $root.'/resources/css/tokens/palette.css';
+        $semanticPath = $root.'/resources/css/tokens/colors.css';
+        $this->assertFileExists($palettePath);
+        $this->assertFileExists($semanticPath);
+        $paletteSource = file_get_contents($palettePath);
+        $semanticSource = file_get_contents($semanticPath);
+        $this->assertIsString($paletteSource);
+        $this->assertIsString($semanticSource);
+        $palette = $this->palette($paletteSource);
+        $semantic = $this->semanticColors($semanticSource);
         $pairs = [
             ['--color-foundation-text', '--color-foundation-surface'],
             ['--color-foundation-text-muted', '--color-foundation-surface'],
@@ -26,7 +36,7 @@ final class ColorTokensTest extends TestCase
         foreach ($pairs as [$foreground, $background]) {
             $ratio = $this->contrastRatio($palette[$semantic[$foreground]], $palette[$semantic[$background]]);
 
-            $this->assertGreaterThanOrEqual(4.5, $ratio, "Contrast pair [{$foreground}] / [{$background}] is {$ratio}:1.");
+            $this->assertGreaterThanOrEqual(self::MINIMUM_NORMAL_TEXT_CONTRAST, $ratio, "Contrast pair [{$foreground}] / [{$background}] is {$ratio}:1.");
         }
     }
 

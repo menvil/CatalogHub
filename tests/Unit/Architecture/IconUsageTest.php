@@ -13,12 +13,15 @@ final class IconUsageTest extends TestCase
         $root = dirname(__DIR__, 3);
         $icon = file_get_contents($root.'/resources/views/components/ui/icon.blade.php');
         $gallery = file_get_contents($root.'/resources/views/central/component-gallery.blade.php');
+        $contract = file_get_contents($root.'/app/Support/DesignSystem/FoundationDesignSystem.php');
 
         $this->assertIsString($icon);
         $this->assertIsString($gallery);
-        $this->assertStringContainsString('heroicon-o-', $icon);
+        $this->assertIsString($contract);
+        $this->assertStringContainsString('HEROICON_COMPONENTS', $icon);
+        $this->assertStringContainsString('heroicon-o-', $contract);
         $this->assertStringContainsString('<x-ui.icon', $gallery);
         $this->assertStringNotContainsString('<svg', $gallery);
-        $this->assertDoesNotMatchRegularExpression('/[\x{1F300}-\x{1FAFF}]/u', $icon.$gallery);
+        $this->assertDoesNotMatchRegularExpression('/([\x{2600}-\x{27BF}]|[\x{1F1E6}-\x{1F1FF}]|[\x{1F300}-\x{1FAFF}])/u', $icon.$gallery.$contract);
     }
 }

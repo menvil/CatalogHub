@@ -6,7 +6,10 @@ namespace Tests\Feature\DesignSystem;
 
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Support\DesignSystem\FoundationDesignSystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\View\ViewException;
 use Tests\TestCase;
 
 final class ComponentGalleryTest extends TestCase
@@ -50,5 +53,17 @@ final class ComponentGalleryTest extends TestCase
             ->assertOk()
             ->assertSee('data-gallery-fixture="foundation-v1"', false)
             ->assertSee('data-presentation-context="central-admin"', false);
+    }
+
+    public function test_icon_contract_is_single_source_and_unknown_icons_fail_loudly(): void
+    {
+        foreach (FoundationDesignSystem::ICONS as $icon) {
+            $this->assertArrayHasKey($icon['icon'], FoundationDesignSystem::HEROICON_COMPONENTS);
+        }
+
+        $this->expectException(ViewException::class);
+        $this->expectExceptionMessage('Unknown foundation icon [misspelled-icon].');
+
+        Blade::render('<x-ui.icon name="misspelled-icon" label="Incorrect semantic" />');
     }
 }

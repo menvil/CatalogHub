@@ -10,9 +10,16 @@ class AdminUiTokensTest extends TestCase
     {
         $colors = file_get_contents(resource_path('css/tokens/colors.css'));
         $geometry = file_get_contents(resource_path('css/tokens/geometry.css'));
+        $foundation = file_get_contents(resource_path('css/foundation.css'));
+        $entryPoint = file_get_contents(resource_path('css/app.css'));
 
         $this->assertIsString($colors);
         $this->assertIsString($geometry);
+        $this->assertIsString($foundation);
+        $this->assertIsString($entryPoint);
+        $this->assertStringContainsString("@import './tokens/colors.css';", $foundation);
+        $this->assertStringContainsString("@import './tokens/geometry.css';", $foundation);
+        $this->assertStringContainsString("@import './foundation.css';", $entryPoint);
         $css = $colors.$geometry;
 
         foreach ([

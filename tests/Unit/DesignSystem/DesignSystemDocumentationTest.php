@@ -15,7 +15,7 @@ final class DesignSystemDocumentationTest extends TestCase
 
         $this->assertIsString($index);
 
-        foreach (['visual-primitives-audit.md', 'tokens.md', 'icons.md', 'responsive.md'] as $document) {
+        foreach (['visual-primitives-audit.md', 'tokens.md', 'icons.md', 'responsive.md', 'admin-ui-tokens.md'] as $document) {
             $this->assertFileExists($root.'/docs/design-system/'.$document);
             $this->assertStringContainsString($document, $index);
         }
@@ -39,7 +39,7 @@ final class DesignSystemDocumentationTest extends TestCase
 
             $this->assertIsString($source);
             $this->assertDoesNotMatchRegularExpression('/#[0-9a-f]{3,8}\b/i', $source, "Raw color found in [{$file}].");
-            $this->assertDoesNotMatchRegularExpression('/(?:m|p|gap|w|h|min-w|max-w)-\[[^\]]+\]/', $source, "Arbitrary geometry found in [{$file}].");
+            $this->assertDoesNotMatchRegularExpression('/(?:[mp][trblxy]?|gap(?:-[xy])?|[wh]|min-[wh]|max-[wh]|inset|top|right|bottom|left)-\[[^\]]+\]/', $source, "Arbitrary geometry found in [{$file}].");
         }
     }
 }

@@ -5,6 +5,7 @@
 @source '../../storage/framework/views/*.php';
 @source '../views/public/**/*.blade.php';
 
-[data-presentation-context='public-site'] {
-    --cataloghub-presentation-context-asset: public-site;
+[data-presentation-context='public-site'] :focus-visible {
+    outline: var(--width-foundation-focus-ring) solid var(--color-foundation-focus);
+    outline-offset: var(--spacing-foundation-focus-offset);
 }

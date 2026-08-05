@@ -26,6 +26,10 @@ final class FoundationDesignSystem
         'archive-box' => 'heroicon-o-archive-box',
         'users' => 'heroicon-o-users',
         'cog-6-tooth' => 'heroicon-o-cog-6-tooth',
+        'magnifying-glass' => 'heroicon-o-magnifying-glass',
+        'bell' => 'heroicon-o-bell',
+        'user-circle' => 'heroicon-o-user-circle',
+        'arrow-left-start-on-rectangle' => 'heroicon-o-arrow-left-start-on-rectangle',
     ];
 
     /** @var array<string, array{width: int, height: int, density: string, behavior: string}> */

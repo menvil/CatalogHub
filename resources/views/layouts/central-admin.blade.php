@@ -33,17 +33,7 @@
             />
 
             <div class="min-w-0 flex-1">
-                <x-admin.topbar
-                    context-label="Central Admin"
-                    search-placeholder="Search canonical catalog"
-                    data-central-header
-                >
-                    <x-slot:title>
-                        <h1 class="text-xl font-semibold text-admin-text">
-                            @yield('pageTitle', $pageTitle ?? 'Central Admin')
-                        </h1>
-                    </x-slot:title>
-                </x-admin.topbar>
+                @include('central.components.header')
 
                 <main id="central-main-content" class="px-admin-page py-admin-section" tabindex="-1">
                     <div class="mx-auto max-w-7xl space-y-admin-section">

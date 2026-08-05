@@ -3,6 +3,12 @@
 Audit date: 2026-07-16  
 Source of truth: `config/cataloghub_permissions.php`, resource guards, policies, and protected custom routes.
 
+Permission names are declared once in `App\Enums\Permission`. Names use lowercase dot-separated namespaces; foundation presentation checks use `central.*` and `site.*`. New authorization code must use enum cases instead of raw strings.
+
+The repository's authorization mechanism is config-backed rather than database-backed. `FoundationRolesSeeder` therefore validates the six `UserRole` definitions and their mappings during a seed instead of creating a parallel roles table; repeated runs are intentionally side-effect free.
+
+Administrative role, membership, and user-status actions write their audit row in the same database transaction, so an audit failure rolls back the mutation. Authentication event recording is best-effort and reports storage failures without turning an audit outage into a login outage. Snapshot fields are whitelisted per action; credentials and tokens are never accepted by the recorder.
+
 ## Role Matrix
 
 | Area | Super Admin | Central Admin | Catalog Editor | Site Admin | Translator | Moderator | Public guest |
@@ -20,14 +26,14 @@ Source of truth: `config/cataloghub_permissions.php`, resource guards, policies,
 | Snapshots/backups | Manage | Manage | No | No | No | No | No |
 | Users/roles | Outside current admin scope | Outside current admin scope | No | No | No | No | No |
 
-Every persisted `User` role is an internal staff role and may authenticate to the shared Filament panel shell. Resource/page permissions determine available data and actions. The application has no visitor account or viewer role; public guests cannot authenticate to admin routes.
+Every persisted `User` role is an internal staff role, but panel admission is explicit: Central and Site use separate permission checks, and Site additionally requires an active membership. Resource/page permissions determine available data and actions after panel admission. The application has no visitor account or viewer role; public guests cannot authenticate to admin routes.
 
 ## Findings and Fixes
 
 - Central product, category, brand, and market resources previously relied on Filament defaults without explicit permission guards. They now require their mapped catalog/central permissions.
 - Custom Central Media routes previously required authentication only. All routes in that group now require `media.manage` through named gates.
 - Named gates are registered from the permission matrix, avoiding one-off route gates that drift from role configuration.
-- Site Admin listing/edit access is now constrained to `users.site_id`; resolving another site returns not found.
+- Site panel access is constrained by active `site_user_memberships`; selecting another site returns forbidden.
 - Snapshot history/download/generation already require `backups.manage` and download policy authorization.
 - Translation routes already require `translations.manage`; reviews, leads, content, and major operational resources already apply permission and site scoping.
 
@@ -42,8 +48,7 @@ Every persisted `User` role is an internal staff role and may authenticate to th
 
 ## Remaining Risks
 
-- The single-panel navigation model is not a separate Site Admin panel; resource guards remain security boundaries, not menu visibility alone.
+- Some pre-foundation business policies still retain `users.site_id` compatibility while their resources await separately scoped migration; panel and foundation action authorization already use memberships.
 - A future viewer role requires an explicit enum/config/matrix task and read-only policy tests.
 - User/role management UI and organization-level tenancy are outside Phase 21.
 - Infrastructure access to databases, queues, storage, logs, and deployment secrets requires a separate operational IAM review.
-

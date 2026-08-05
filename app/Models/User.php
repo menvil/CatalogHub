@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Contracts\Auth\CentralAdminAccess;
+use App\Contracts\Auth\SiteAdminAccess;
 use App\Enums\UserRole;
 use App\Support\PermissionMatrix;
 use Database\Factories\UserFactory;
@@ -12,10 +14,12 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['site_id', 'name', 'email', 'password', 'role'])]
+#[Fillable(['site_id', 'name', 'email', 'password', 'role', 'disabled_at'])]
 #[Hidden(['password', 'remember_token'])]
 /**
  * @property UserRole $role
@@ -34,6 +38,7 @@ class User extends Authenticatable implements FilamentUser
     {
         return [
             'email_verified_at' => 'datetime',
+            'disabled_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
         ];
@@ -41,12 +46,21 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return in_array($panel->getId(), ['central', 'site'], true);
+        return match ($panel->getId()) {
+            'central' => app(CentralAdminAccess::class)->allows($this, request()->route()?->getName()),
+            'site' => app(SiteAdminAccess::class)->allows($this),
+            default => false,
+        };
     }
 
     public function isSuperAdmin(): bool
     {
         return $this->userRole() === UserRole::SuperAdmin;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->disabled_at === null;
     }
 
     public function isCentralAdmin(): bool
@@ -79,6 +93,11 @@ class User extends Authenticatable implements FilamentUser
         return $this->userRole() === UserRole::Moderator;
     }
 
+    public function roleEnum(): UserRole
+    {
+        return $this->userRole();
+    }
+
     public function hasCatalogHubPermission(string $permission): bool
     {
         return app(PermissionMatrix::class)->allows($this->userRole(), $permission);
@@ -88,6 +107,20 @@ class User extends Authenticatable implements FilamentUser
     public function site(): BelongsTo
     {
         return $this->belongsTo(Site::class);
+    }
+
+    /** @return HasMany<SiteMembership, $this> */
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(SiteMembership::class);
+    }
+
+    /** @return BelongsToMany<Site, $this> */
+    public function memberSites(): BelongsToMany
+    {
+        return $this->belongsToMany(Site::class, 'site_user_memberships')
+            ->withPivot(['role', 'is_active'])
+            ->withTimestamps();
     }
 
     private function userRole(): UserRole

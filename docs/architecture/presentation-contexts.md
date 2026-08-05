@@ -38,13 +38,13 @@ flowchart TD
 
 Authentication failures redirect to the login route owned by the selected admin panel. Authenticated users in the wrong context receive HTTP 403 before the page executes. Public requests never enter either admin access adapter.
 
-## Temporary access contract
+## Access contracts
 
-Phase 0.2 deliberately reuses existing roles instead of introducing a permission package:
+The presentation boundaries reuse the project's permission registry instead of introducing a second permission package:
 
-- `TemporaryCentralAdminAccess` allows existing non-`site_admin` roles. P00-027 owns its replacement with the final Central permission model.
-- `TemporarySiteAdminAccess` allows `site_admin`; `RequireSiteContext` then requires the user's persisted `site_id` relation and ignores query-string attempts to select another site. P00-029 owns replacement with final site-scoped permissions and context resolution.
-- `TemporaryLegacySiteAdminRouteAccess` is an explicit route-name allowlist for pre-Phase-0.2 Site-owned resources that still live in the legacy `App\Filament\Resources` tree. It does not grant access to the Central home or Central-only resources, and P00-029 owns its removal.
+- `CentralPanelPolicy` requires the registered `central.panel.access` permission. The foundation mapping grants it to Super Admin, Central Admin, Catalog Editor, and Translator; resource/page/action checks remain additive. P00-027 removed the role-name temporary adapter.
+- `SitePanelPolicy` requires `site.panel.access` and an active membership for the selected site. A requested unassigned site is rejected instead of falling back to another tenant.
+- P00-029 removed the role-name legacy adapter. Existing Site-owned resources that have not yet moved out of the Central Filament registration use `SiteOwnedCentralRouteAccess`: an explicit route-to-permission map plus active-membership check. It never admits Site users to Central Home or unrelated Central resources.
 - These adapters are server-side middleware dependencies. UI visibility is not an access decision.
 
 ## Ownership and dependency rules

@@ -10,6 +10,7 @@ use App\Filament\Pages\SnapshotGenerationPage;
 use App\Filament\Pages\SyncDashboard;
 use App\Filament\Pages\TranslationDashboard;
 use App\Http\Middleware\EnsureCentralAdminAccess;
+use App\Http\Middleware\EnsureUserIsActive;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -52,6 +53,7 @@ final class CentralAdminPanelProvider extends PanelProvider
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
+                EnsureUserIsActive::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 PreventRequestForgery::class,

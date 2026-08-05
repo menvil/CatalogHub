@@ -48,6 +48,7 @@ class PermissionMatrixTest extends TestCase
         $user = new User(['role' => UserRole::Translator]);
 
         $this->assertTrue($user->hasCatalogHubPermission('translations.manage'));
+        $this->assertTrue($user->hasCatalogHubPermission('central.view'));
         $this->assertFalse($user->hasCatalogHubPermission('catalog.products.manage'));
         $this->assertFalse($user->hasCatalogHubPermission('site.content.manage'));
     }

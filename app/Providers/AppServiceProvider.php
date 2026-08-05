@@ -3,15 +3,17 @@
 namespace App\Providers;
 
 use App\Contracts\Auth\CentralAdminAccess;
-use App\Contracts\Auth\LegacySiteAdminRouteAccess;
 use App\Contracts\Auth\SiteAdminAccess;
 use App\Events\MarketOfferUpdated;
 use App\Importers\SerializedPhpProductImporter;
+use App\Listeners\AuditAuthenticationEvent;
 use App\Listeners\RebuildPriceAffectedProjections;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Imports\NormalizedProductDraft;
 use App\Models\User;
 use App\Observers\CentralProductObserver;
+use App\Policies\CentralPanelPolicy;
+use App\Policies\SitePanelPolicy;
 use App\Services\Imports\AttributeMappingService;
 use App\Services\Imports\AttributeNormalizer;
 use App\Services\Imports\DuplicateDetector;
@@ -23,12 +25,11 @@ use App\Services\Imports\Normalizers\MultiEnumNormalizer;
 use App\Services\Imports\Normalizers\NumberNormalizer;
 use App\Services\Imports\Normalizers\UnitNormalizer;
 use App\Services\Security\PublicRequestRateLimiter;
-use App\Support\Auth\TemporaryCentralAdminAccess;
-use App\Support\Auth\TemporaryLegacySiteAdminRouteAccess;
-use App\Support\Auth\TemporarySiteAdminAccess;
 use App\Support\PermissionMatrix;
 use App\Support\Sites\SiteRuntimeContext;
 use App\View\Composers\PublicNavigationComposer;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
@@ -46,9 +47,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind(CentralAdminAccess::class, TemporaryCentralAdminAccess::class);
-        $this->app->bind(LegacySiteAdminRouteAccess::class, TemporaryLegacySiteAdminRouteAccess::class);
-        $this->app->bind(SiteAdminAccess::class, TemporarySiteAdminAccess::class);
+        $this->app->bind(CentralAdminAccess::class, CentralPanelPolicy::class);
+        $this->app->bind(SiteAdminAccess::class, SitePanelPolicy::class);
 
         $this->app->scoped(AttributeMappingService::class);
         $this->app->scoped(SiteRuntimeContext::class, function ($app): SiteRuntimeContext {
@@ -107,6 +107,8 @@ class AppServiceProvider extends ServiceProvider
 
         CentralProduct::observe(CentralProductObserver::class);
         Event::listen(MarketOfferUpdated::class, RebuildPriceAffectedProjections::class);
+        Event::listen(Login::class, [AuditAuthenticationEvent::class, 'handle']);
+        Event::listen(Logout::class, [AuditAuthenticationEvent::class, 'handle']);
 
         View::composer('public.partials.header', PublicNavigationComposer::class);
     }

@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\SiteDomainType;
+use App\Enums\SiteMembershipRole;
 use App\Enums\UserRole;
 use App\Models\Locale;
 use App\Models\Site;
@@ -57,6 +58,11 @@ class UserFactory extends Factory
         ]);
     }
 
+    public function disabled(): static
+    {
+        return $this->state(fn (): array => ['disabled_at' => now()]);
+    }
+
     public function siteAdmin(Site $site): static
     {
         $runtimeConfiguration = $this->validateSiteRuntimeConfiguration($site);
@@ -66,8 +72,13 @@ class UserFactory extends Factory
                 'site_id' => $site->getKey(),
                 'role' => UserRole::SiteAdmin,
             ])
-            ->afterCreating(function () use ($site, $runtimeConfiguration): void {
+            ->afterCreating(function (User $user) use ($site, $runtimeConfiguration): void {
                 $this->writeSiteRuntimeConfiguration($site, $runtimeConfiguration);
+                $user->memberships()->create([
+                    'site_id' => $site->getKey(),
+                    'role' => SiteMembershipRole::SiteAdmin,
+                    'is_active' => true,
+                ]);
             });
     }
 

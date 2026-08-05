@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            FoundationRolesSeeder::class,
             MeasurementDimensionsSeeder::class,
             MetricMeasurementUnitsSeeder::class,
             ImperialMeasurementUnitsSeeder::class,

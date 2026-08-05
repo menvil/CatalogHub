@@ -56,6 +56,7 @@
                         document.body.classList.add('overflow-hidden');
                         open?.click();
                         verify(sidebar?.dataset.centralSidebarMobileOpen === 'true', 'mobile drawer opens');
+                        verify(open?.getAttribute('aria-expanded') === 'true', 'mobile trigger exposes expanded state');
                         verify(document.body.classList.contains('central-sidebar-scroll-locked'), 'sidebar scroll lock');
 
                         const visibleFocusable = Array.from(sidebar?.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])') ?? [])
@@ -68,6 +69,7 @@
 
                         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
                         verify(sidebar?.dataset.centralSidebarMobileOpen === 'false', 'Escape closes drawer');
+                        verify(open?.getAttribute('aria-expanded') === 'false', 'mobile trigger exposes collapsed state');
                         verify(!document.body.classList.contains('central-sidebar-scroll-locked'), 'sidebar scroll lock releases');
                         verify(document.activeElement === open, 'focus returns to trigger');
                         verify(document.body.classList.contains('overflow-hidden'), 'other overlay scroll lock remains');

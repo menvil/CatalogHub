@@ -1,6 +1,8 @@
 # Admin UI Tokens
 
-Phase 2 admin screens use Tailwind v4 theme tokens defined in `resources/css/app.css`.
+> Phase 0.5 compatibility note: these established `admin-*` names are aliases backed by the semantic foundation described in [tokens.md](tokens.md). Existing components may keep them; new foundation code uses `foundation-*` tokens.
+
+Established admin screens use Tailwind v4 compatibility tokens defined in `resources/css/tokens/colors.css` and `resources/css/tokens/geometry.css` through `resources/css/foundation.css`.
 
 ## Colors
 

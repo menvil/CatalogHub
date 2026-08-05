@@ -3,7 +3,11 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <x-public.seo-meta :metadata="$seoMetadata" />
+        @isset($seoMetadata)
+            <x-public.seo-meta :metadata="$seoMetadata" />
+        @else
+            <title>{{ trim($__env->yieldContent('title', $site->name ?? config('app.name', 'CatalogHub'))) }}</title>
+        @endisset
         @stack('head')
         @vite(['resources/css/public.css', 'resources/js/app.js'])
     </head>
@@ -24,7 +28,7 @@
                 </nav>
             </div>
 
-            <main id="main-content" class="mx-auto grid w-full max-w-7xl flex-1 gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
+            <main id="main-content" class="public-multi-shell-grid mx-auto w-full max-w-7xl flex-1 gap-6 px-4 py-8 sm:px-6">
                 <aside class="hidden rounded-foundation-card border border-foundation-border bg-foundation-surface p-foundation-card text-foundation-label text-foundation-text-muted lg:block" aria-label="Catalog navigation slot">
                     Catalog navigation slot
                 </aside>

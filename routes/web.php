@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CentralAdmin\DesignSystem\CentralShellPreviewController;
 use App\Http\Controllers\CentralAdmin\DesignSystem\ComponentGalleryController;
+use App\Http\Controllers\Public\DesignSystem\PublicShellPreviewController;
 use App\Http\Controllers\SiteAdmin\DesignSystem\SiteAdminShellPreviewController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,4 +29,7 @@ if (app()->environment(['local', 'testing'])) {
 
     Route::get('/dev/site-admin-shell', SiteAdminShellPreviewController::class)
         ->name('dev.site-admin-shell.capture');
+
+    Route::get('/dev/public-shell', PublicShellPreviewController::class)
+        ->name('public.dev-shell.capture');
 }

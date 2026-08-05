@@ -3,7 +3,11 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <x-public.seo-meta :metadata="$seoMetadata" />
+        @isset($seoMetadata)
+            <x-public.seo-meta :metadata="$seoMetadata" />
+        @else
+            <title>{{ trim($__env->yieldContent('title', $site->name ?? config('app.name', 'CatalogHub'))) }}</title>
+        @endisset
         @stack('head')
         @vite(['resources/css/public.css', 'resources/js/app.js'])
     </head>

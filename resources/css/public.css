@@ -11,3 +11,18 @@
     outline: var(--width-foundation-focus-ring) solid var(--color-foundation-focus);
     outline-offset: var(--spacing-foundation-focus-offset);
 }
+
+.public-multi-shell-grid {
+    display: grid;
+}
+
+body:has([data-public-preview-state$='-mobile']) {
+    width: 360px;
+    max-width: 100%;
+}
+
+@media (min-width: 64rem) {
+    .public-multi-shell-grid {
+        grid-template-columns: var(--width-foundation-sidebar) minmax(0, 1fr);
+    }
+}

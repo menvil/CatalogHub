@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CentralAdmin\Backup\SnapshotDownloadController;
+use App\Http\Controllers\CentralAdmin\DesignSystem\ComponentGalleryController;
 use App\Http\Controllers\CentralAdmin\Media\MediaAssetDetailController;
 use App\Http\Controllers\CentralAdmin\Media\MediaLibraryController;
 use App\Http\Controllers\CentralAdmin\Media\MediaUploadController;
@@ -15,6 +16,11 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', EnsureCentralAdminAccess::class])
     ->prefix('admin/central')
     ->group(function (): void {
+        if (app()->environment(['local', 'testing'])) {
+            Route::get('/component-gallery', ComponentGalleryController::class)
+                ->name('central.component-gallery');
+        }
+
         Route::middleware('can:translations.manage')->group(function (): void {
             Route::get('/translations/dashboard', TranslationDashboardController::class)
                 ->name('central.translations.dashboard');

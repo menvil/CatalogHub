@@ -1,0 +1,25 @@
+:root {
+    --palette-foundation-white: #ffffff;
+    --palette-foundation-canvas: #f6f8fb;
+    --palette-foundation-surface-muted: #eef3f8;
+    --palette-foundation-border: #cfd8e3;
+    --palette-foundation-text: #142033;
+    --palette-foundation-text-muted: #5f6e82;
+    --palette-foundation-blue: #1d4ed8;
+    --palette-foundation-blue-strong: #1e40af;
+    --palette-foundation-blue-soft: #dbeafe;
+    --palette-foundation-green: #047857;
+    --palette-foundation-green-soft: #d1fae5;
+    --palette-foundation-amber: #b45309;
+    --palette-foundation-amber-soft: #fef3c7;
+    --palette-foundation-red: #b91c1c;
+    --palette-foundation-red-soft: #fee2e2;
+    --palette-foundation-sky: #0369a1;
+    --palette-foundation-sky-soft: #e0f2fe;
+    --palette-foundation-purple: #7e22ce;
+    --palette-foundation-purple-soft: #f3e8ff;
+    --palette-foundation-shadow-card-low: rgb(20 32 51 / 0.06);
+    --palette-foundation-shadow-card-high: rgb(20 32 51 / 0.08);
+    --palette-foundation-shadow-floating: rgb(20 32 51 / 0.35);
+    --palette-foundation-shadow-modal: rgb(20 32 51 / 0.45);
+}

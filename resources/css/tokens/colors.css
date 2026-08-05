@@ -1,0 +1,42 @@
+@theme {
+    --color-foundation-canvas: var(--palette-foundation-canvas);
+    --color-foundation-surface: var(--palette-foundation-white);
+    --color-foundation-surface-muted: var(--palette-foundation-surface-muted);
+    --color-foundation-border: var(--palette-foundation-border);
+    --color-foundation-text: var(--palette-foundation-text);
+    --color-foundation-text-muted: var(--palette-foundation-text-muted);
+    --color-foundation-accent: var(--palette-foundation-blue);
+    --color-foundation-accent-strong: var(--palette-foundation-blue-strong);
+    --color-foundation-accent-surface: var(--palette-foundation-blue-soft);
+    --color-foundation-focus: var(--palette-foundation-blue);
+    --color-foundation-success: var(--palette-foundation-green);
+    --color-foundation-success-surface: var(--palette-foundation-green-soft);
+    --color-foundation-warning: var(--palette-foundation-amber);
+    --color-foundation-warning-surface: var(--palette-foundation-amber-soft);
+    --color-foundation-danger: var(--palette-foundation-red);
+    --color-foundation-danger-surface: var(--palette-foundation-red-soft);
+    --color-foundation-info: var(--palette-foundation-sky);
+    --color-foundation-info-surface: var(--palette-foundation-sky-soft);
+    --color-foundation-outdated: var(--palette-foundation-purple);
+    --color-foundation-outdated-surface: var(--palette-foundation-purple-soft);
+
+    /* Compatibility aliases for the established admin component vocabulary. */
+    --color-admin-background: var(--color-foundation-canvas);
+    --color-admin-surface: var(--color-foundation-surface);
+    --color-admin-surface-muted: var(--color-foundation-surface-muted);
+    --color-admin-border: var(--color-foundation-border);
+    --color-admin-text: var(--color-foundation-text);
+    --color-admin-muted: var(--color-foundation-text-muted);
+    --color-admin-primary: var(--color-foundation-accent);
+    --color-admin-primary-soft: var(--color-foundation-accent-surface);
+    --color-admin-success: var(--color-foundation-success);
+    --color-admin-success-soft: var(--color-foundation-success-surface);
+    --color-admin-warning: var(--color-foundation-warning);
+    --color-admin-warning-soft: var(--color-foundation-warning-surface);
+    --color-admin-danger: var(--color-foundation-danger);
+    --color-admin-danger-soft: var(--color-foundation-danger-surface);
+    --color-admin-info: var(--color-foundation-info);
+    --color-admin-info-soft: var(--color-foundation-info-surface);
+    --color-admin-outdated: var(--color-foundation-outdated);
+    --color-admin-outdated-soft: var(--color-foundation-outdated-surface);
+}

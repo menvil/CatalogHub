@@ -14,12 +14,7 @@
         data-public-theme="{{ $theme->identifier->value }}"
     >
         <div class="flex min-h-screen flex-col">
-            <header class="bg-foundation-text text-foundation-surface" data-public-header>
-                <div class="mx-auto flex min-h-16 w-full max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-                    <a href="{{ $publicNavigation['home'] ?? '/' }}" class="text-foundation-title font-semibold">{{ $site->name ?? config('app.name', 'CatalogHub') }}</a>
-                    <span class="text-foundation-label text-foundation-surface">Focused catalogue</span>
-                </div>
-            </header>
+            <x-public.header :site="$site" :navigation="$publicNavigation ?? []" :locale-options="$publicLocaleOptions ?? []" variant="single" />
 
             <main id="main-content" class="w-full flex-1">
                 <section class="border-b border-foundation-border bg-foundation-accent-surface" data-public-focused-hero>
@@ -40,11 +35,7 @@
                 </section>
             </main>
 
-            <footer class="bg-foundation-text text-foundation-surface" data-public-footer>
-                <div class="mx-auto max-w-5xl px-4 py-6 text-foundation-label sm:px-6">
-                    &copy; {{ now()->year }} {{ $site->name ?? config('app.name', 'CatalogHub') }}
-                </div>
-            </footer>
+            <x-public.footer :site="$site" variant="single" />
         </div>
         @stack('scripts')
     </body>

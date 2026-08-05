@@ -1,0 +1,64 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature\ViewComponents;
+
+use App\Models\Site;
+use App\Services\PublicSite\PublicLocaleNavigation;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Blade;
+use Tests\TestCase;
+
+final class PublicChromeTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_locale_navigation_contains_only_enabled_locales_and_uses_canonical_site_urls(): void
+    {
+        $site = Site::factory()->active()->withRuntimeContext(['de-DE', 'en-DE'])->create([
+            'domain' => 'public-chrome.test',
+            'name' => 'A deliberately long public catalogue identity',
+        ]);
+        $site->locales()->where('locale_code', 'en-DE')->update(['is_enabled' => false]);
+        $site->load('locales.locale');
+
+        $options = app(PublicLocaleNavigation::class)->forHome($site, 'de-DE');
+        $html = Blade::render(
+            '<x-public.header :site="$site" :locale-options="$options" :navigation="[]" />',
+            compact('site', 'options'),
+        );
+
+        $this->assertCount(1, $options);
+        $this->assertStringContainsString('A deliberately long public catalogue identity', $html);
+        $this->assertStringContainsString('de-DE', $html);
+        $this->assertStringNotContainsString('en-DE', $html);
+        $this->assertStringNotContainsString('href="#"', $html);
+        $this->assertStringContainsString('Search unavailable', $html);
+    }
+
+    public function test_both_public_layouts_reuse_shared_chrome_with_multiple_locales(): void
+    {
+        $site = Site::factory()->active()->withRuntimeContext(['de-DE', 'en-DE'])->create([
+            'domain' => 'public-chrome.test',
+        ]);
+        $site->load('locales.locale');
+
+        $options = app(PublicLocaleNavigation::class)->forHome($site, 'de-DE');
+        $html = Blade::render(
+            '<x-public.locale-selector :options="$options" />',
+            compact('options'),
+        );
+
+        $this->assertCount(2, $options);
+        $this->assertStringContainsString('href="https://public-chrome.test/de-DE"', $html);
+        $this->assertStringContainsString('href="https://public-chrome.test/en-DE"', $html);
+
+        foreach (['public-multi-category', 'public-single-category'] as $layout) {
+            $source = file_get_contents(resource_path("views/layouts/{$layout}.blade.php"));
+            $this->assertIsString($source);
+            $this->assertStringContainsString('<x-public.header', $source);
+            $this->assertStringContainsString('<x-public.footer', $source);
+        }
+    }
+}

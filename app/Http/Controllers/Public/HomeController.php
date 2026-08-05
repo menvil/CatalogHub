@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Public;
 use App\Domains\PublicSite\HomepageBlockRenderer;
 use App\Domains\PublicSite\LocalizedUrlResolver;
 use App\Http\Controllers\Controller;
+use App\Services\PublicSite\PublicLocaleNavigation;
 use App\Support\Sites\SiteRuntimeContext;
 use App\Support\Themes\PublicThemeContext;
 use Illuminate\Contracts\View\View;
@@ -17,6 +18,7 @@ final class HomeController extends Controller
         PublicThemeContext $theme,
         HomepageBlockRenderer $blocks,
         LocalizedUrlResolver $urls,
+        PublicLocaleNavigation $locales,
     ): View {
         $site = $context->site;
         $locale = $context->resolvedLocale;
@@ -35,6 +37,7 @@ final class HomeController extends Controller
                 'home' => $urls->home($site, $locale),
                 'search' => $urls->search($site, $locale),
             ],
+            'publicLocaleOptions' => $locales->forHome($site, $locale),
         ]);
     }
 }

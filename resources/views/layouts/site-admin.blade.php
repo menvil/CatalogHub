@@ -1,22 +1,10 @@
 @php
-    $siteAdminNavigation ??= [
-        ['id' => 'dashboard', 'label' => 'Dashboard', 'icon' => 'home', 'url' => null],
-        ['id' => 'site-settings', 'label' => 'Site Settings', 'icon' => 'cog-6-tooth', 'url' => null],
-        ['id' => 'categories', 'label' => 'Categories', 'icon' => 'squares-2x2', 'url' => null],
-        ['id' => 'products', 'label' => 'Products', 'icon' => 'archive-box', 'url' => null],
-        ['id' => 'theme', 'label' => 'Theme', 'icon' => 'pencil-square', 'url' => null],
-        ['id' => 'blocks', 'label' => 'Blocks', 'icon' => 'squares-2x2', 'url' => null],
-        ['id' => 'sync', 'label' => 'Sync', 'icon' => 'arrow-up-tray', 'url' => null],
-        ['id' => 'prices', 'label' => 'Prices', 'icon' => 'currency-dollar', 'url' => null],
-        ['id' => 'reviews', 'label' => 'Reviews', 'icon' => 'inbox-stack', 'url' => null],
-        ['id' => 'leads', 'label' => 'Leads', 'icon' => 'users', 'url' => null],
-        ['id' => 'content', 'label' => 'Content', 'icon' => 'language', 'url' => null],
-        ['id' => 'polls', 'label' => 'Polls', 'icon' => 'information-circle', 'url' => null],
-        ['id' => 'settings', 'label' => 'Settings', 'icon' => 'cog-6-tooth', 'url' => null],
-    ];
     $siteAdminUser ??= auth()->user();
     $siteAdminCurrentSite ??= request()->attributes->get('site_context');
     $siteAdminRuntimeContext ??= request()->attributes->get(\App\Support\Sites\SiteRuntimeContext::class);
+    $siteAdminNavigation ??= $siteAdminUser instanceof \App\Models\User && $siteAdminCurrentSite instanceof \App\Models\Site
+        ? app(\App\Navigation\SiteAdminNavigationRegistry::class)->visibleItemsFor($siteAdminUser, $siteAdminCurrentSite)
+        : [];
     $documentTitle = trim($__env->yieldContent('pageTitle', $pageTitle ?? $title ?? 'Site Admin'));
 @endphp
 

@@ -16,6 +16,16 @@ final class FoundationDesignSystem
         'information-circle' => 'heroicon-o-information-circle',
         'eye' => 'heroicon-o-eye',
         'pencil-square' => 'heroicon-o-pencil-square',
+        'home' => 'heroicon-o-home',
+        'squares-2x2' => 'heroicon-o-squares-2x2',
+        'arrow-up-tray' => 'heroicon-o-arrow-up-tray',
+        'photo' => 'heroicon-o-photo',
+        'language' => 'heroicon-o-language',
+        'inbox-stack' => 'heroicon-o-inbox-stack',
+        'currency-dollar' => 'heroicon-o-currency-dollar',
+        'archive-box' => 'heroicon-o-archive-box',
+        'users' => 'heroicon-o-users',
+        'cog-6-tooth' => 'heroicon-o-cog-6-tooth',
     ];
 
     /** @var array<string, array{width: int, height: int, density: string, behavior: string}> */

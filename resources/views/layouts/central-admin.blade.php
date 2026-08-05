@@ -1,18 +1,7 @@
 @php
-    $centralAdminNavigation = [
-        ['key' => 'dashboard', 'label' => 'Dashboard'],
-        ['key' => 'products', 'label' => 'Products'],
-        ['key' => 'categories', 'label' => 'Categories'],
-        ['key' => 'brands', 'label' => 'Brands'],
-        ['key' => 'imports', 'label' => 'Imports'],
-        ['key' => 'media', 'label' => 'Media'],
-        ['key' => 'translations', 'label' => 'Translations'],
-        ['key' => 'price-sources', 'label' => 'Price Sources'],
-        ['key' => 'sites', 'label' => 'Sites'],
-        ['key' => 'sync', 'label' => 'Sync'],
-        ['key' => 'backups', 'label' => 'Backups'],
-        ['key' => 'settings', 'label' => 'Settings'],
-    ];
+    $centralAdminNavigation = auth()->user() instanceof \App\Models\User
+        ? app(\App\Navigation\CentralNavigationRegistry::class)->visibleItemsFor(auth()->user())
+        : [];
     $documentTitle = trim($__env->yieldContent('pageTitle', $pageTitle ?? $title ?? 'Central Admin'));
 @endphp
 

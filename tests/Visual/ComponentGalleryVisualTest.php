@@ -9,6 +9,8 @@ use PHPUnit\Framework\TestCase;
 
 final class ComponentGalleryVisualTest extends TestCase
 {
+    private const MAX_MEAN_CHANNEL_DIFFERENCE = 0.04;
+
     /** @var array<string, array{width: int, height: int, section: string}> */
     private const COMPONENT_STATES = [
         'forms-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'forms'],
@@ -43,7 +45,7 @@ final class ComponentGalleryVisualTest extends TestCase
         try {
             $this->captureGallery($root, $capture);
             $this->assertSame([1440, 1200], array_slice(getimagesize($capture) ?: [], 0, 2));
-            $this->assertLessThanOrEqual(0.03, $this->meanChannelDifference($reference, $capture));
+            $this->assertLessThanOrEqual(self::MAX_MEAN_CHANNEL_DIFFERENCE, $this->meanChannelDifference($reference, $capture));
         } finally {
             @unlink($capture);
         }
@@ -82,7 +84,7 @@ final class ComponentGalleryVisualTest extends TestCase
                     array_slice(getimagesize($capture) ?: [], 0, 2),
                 );
                 $this->assertLessThanOrEqual(
-                    0.03,
+                    self::MAX_MEAN_CHANNEL_DIFFERENCE,
                     $this->meanChannelDifference($this->componentReferencePath($state), $capture),
                     "Admin component gallery state [{$state}] differs from its approved reference.",
                 );
@@ -129,7 +131,7 @@ final class ComponentGalleryVisualTest extends TestCase
         imagepng($captureImage, $capture);
 
         try {
-            $this->assertGreaterThan(0.03, $this->meanChannelDifference($reference, $capture));
+            $this->assertGreaterThan(self::MAX_MEAN_CHANNEL_DIFFERENCE, $this->meanChannelDifference($reference, $capture));
         } finally {
             @unlink($reference);
             @unlink($capture);

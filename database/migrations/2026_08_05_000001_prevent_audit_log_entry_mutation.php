@@ -87,7 +87,7 @@ return new class extends Migration
     private function createPostgresTriggers(): void
     {
         DB::unprepared(<<<'SQL'
-            CREATE FUNCTION cataloghub_prevent_audit_log_entry_mutation()
+            CREATE OR REPLACE FUNCTION cataloghub_prevent_audit_log_entry_mutation()
             RETURNS trigger
             LANGUAGE plpgsql
             AS $$

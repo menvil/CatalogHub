@@ -69,8 +69,23 @@ try {
         connection.close()
     }
 } finally {
-    browser.kill('SIGTERM')
-    await rm(profile, { recursive: true, force: true })
+    await stopBrowser(browser)
+    await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
+}
+
+async function stopBrowser(process) {
+    if (process.exitCode !== null || process.signalCode !== null) {
+        return
+    }
+
+    const exited = new Promise(resolve => process.once('exit', resolve))
+    process.kill('SIGTERM')
+    await Promise.race([exited, new Promise(resolve => setTimeout(resolve, 5_000))])
+
+    if (process.exitCode === null && process.signalCode === null) {
+        process.kill('SIGKILL')
+        await exited
+    }
 }
 
 async function debuggingEndpoint(process) {

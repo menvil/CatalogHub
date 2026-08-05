@@ -58,16 +58,6 @@
                             />
                         @endif
 
-                        <div class="flex flex-col gap-admin-field md:flex-row md:items-start md:justify-between">
-                            <nav class="min-w-0 text-sm text-admin-muted" aria-label="Breadcrumbs">
-                                @yield('breadcrumbs')
-                            </nav>
-
-                            <div class="flex flex-wrap items-center gap-admin-field">
-                                @yield('pageActions')
-                            </div>
-                        </div>
-
                         <section aria-label="Site Admin content">
                             {{ $slot ?? '' }}
                             @yield('content')

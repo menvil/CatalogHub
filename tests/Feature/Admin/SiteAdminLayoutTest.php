@@ -64,7 +64,7 @@ class SiteAdminLayoutTest extends TestCase
         $this->assertStringNotContainsString('href="#"', $html);
     }
 
-    public function test_site_admin_layout_renders_active_nav_breadcrumbs_and_page_actions(): void
+    public function test_site_admin_layout_renders_the_active_navigation_item(): void
     {
         $html = Blade::render(<<<'BLADE'
             @extends('layouts.site-admin', [
@@ -78,15 +78,6 @@ class SiteAdminLayoutTest extends TestCase
                 ]],
             ])
 
-            @section('breadcrumbs')
-                <span>Site</span>
-                <span>Dashboard</span>
-            @endsection
-
-            @section('pageActions')
-                <button type="button">Preview placeholder</button>
-            @endsection
-
             @section('content')
                 <p>Dashboard shell content</p>
             @endsection
@@ -94,7 +85,5 @@ class SiteAdminLayoutTest extends TestCase
 
         $this->assertStringContainsString('aria-current="page"', $html);
         $this->assertStringContainsString('Dashboard shell content', $html);
-        $this->assertStringContainsString('Preview placeholder', $html);
-        $this->assertStringContainsString('aria-label="Breadcrumbs"', $html);
     }
 }

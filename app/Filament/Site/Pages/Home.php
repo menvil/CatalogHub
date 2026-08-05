@@ -21,12 +21,15 @@ final class Home extends Page
 
     public string $siteName = '';
 
+    public int $siteId;
+
     public function mount(): void
     {
         $site = request()->attributes->get('site_context');
 
         abort_unless($site instanceof Site, 403);
 
+        $this->siteId = (int) $site->getKey();
         $this->siteName = $site->name;
     }
 

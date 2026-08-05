@@ -20,7 +20,7 @@
 @source '../views/components/central/**/*';
 @source '../views/components/ui/**/*';
 
-body.central-sidebar-mobile-open {
+body.central-sidebar-scroll-locked {
     overflow: hidden;
 }
 

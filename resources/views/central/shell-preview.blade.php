@@ -56,7 +56,7 @@
                         document.body.classList.add('overflow-hidden');
                         open?.click();
                         verify(sidebar?.dataset.centralSidebarMobileOpen === 'true', 'mobile drawer opens');
-                        verify(document.body.classList.contains('central-sidebar-mobile-open'), 'sidebar scroll lock');
+                        verify(document.body.classList.contains('central-sidebar-scroll-locked'), 'sidebar scroll lock');
 
                         const visibleFocusable = Array.from(sidebar?.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])') ?? [])
                             .filter((element) => element.getClientRects().length > 0);
@@ -68,6 +68,7 @@
 
                         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
                         verify(sidebar?.dataset.centralSidebarMobileOpen === 'false', 'Escape closes drawer');
+                        verify(!document.body.classList.contains('central-sidebar-scroll-locked'), 'sidebar scroll lock releases');
                         verify(document.activeElement === open, 'focus returns to trigger');
                         verify(document.body.classList.contains('overflow-hidden'), 'other overlay scroll lock remains');
                         document.body.classList.remove('overflow-hidden');

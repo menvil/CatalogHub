@@ -22,7 +22,7 @@ The protected production route is `/admin/central`. The `/dev/central-shell` fix
 | Mobile | 360 × 800 | Modal drawer, backdrop, background scroll lock |
 | Long header | 1280 × 900 | Heading wraps without overlapping actions or content |
 
-Desktop collapse preference is stored under `cataloghub.central.sidebar.collapsed`. Mobile drawer state is request-local and is never persisted. Its `central-sidebar-mobile-open` body class owns scroll locking without clearing locks held by other overlays. Escape closes the drawer, focus returns to its trigger, and keyboard focus remains inside while open.
+Desktop collapse preference is stored under `cataloghub.central.sidebar.collapsed`. Mobile drawer state is request-local and is never persisted. Its `central-sidebar-scroll-locked` body class owns scroll locking without clearing locks held by other overlays. Escape closes the drawer, focus returns to its trigger, and keyboard focus remains inside while open.
 
 ## Acceptance and reference policy
 

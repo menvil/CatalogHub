@@ -41,7 +41,7 @@ export function bootCentralNavigation() {
         const closeMobile = ({ restoreFocus = true } = {}) => {
             sidebar.dataset.centralSidebarMobileOpen = 'false';
             openButton.setAttribute('aria-expanded', 'false');
-            document.body.classList.remove('central-sidebar-mobile-open');
+            document.body.classList.remove('central-sidebar-scroll-locked');
 
             if (restoreFocus && mobileTrigger) {
                 mobileTrigger.focus({ preventScroll: true });
@@ -54,7 +54,7 @@ export function bootCentralNavigation() {
             mobileTrigger = openButton;
             sidebar.dataset.centralSidebarMobileOpen = 'true';
             openButton.setAttribute('aria-expanded', 'true');
-            document.body.classList.add('central-sidebar-mobile-open');
+            document.body.classList.add('central-sidebar-scroll-locked');
 
             const focusTarget = sidebar.querySelector(focusableSelector) ?? sidebar;
             focusTarget.focus({ preventScroll: true });

@@ -14,3 +14,5 @@ Use `x-ui.icon` rather than inline SVG. Supported foundation sizes are `sm` (16p
 | edit | `pencil-square` | Modify an existing record. |
 
 Status meaning must not rely on color alone: pair the icon or status surface with visible text. Decorative icons use `aria-hidden`; standalone meaningful icons require a label. Emoji are not interface icons.
+
+Central shell navigation icons are resolved through the same `FoundationDesignSystem::HEROICON_COMPONENTS` allowlist. The navigation registry stores semantic icon names rather than inline SVG or library-specific markup.

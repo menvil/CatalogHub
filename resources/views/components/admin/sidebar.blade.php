@@ -24,8 +24,9 @@
         @foreach ($items as $item)
             @php
                 $label = $item['label'] ?? '';
-                $isActive = $activeNav === $label || $activeNav === ($item['key'] ?? null);
+                $isActive = $activeNav === $label || $activeNav === ($item['id'] ?? $item['key'] ?? null);
                 $url = $item['url'] ?? null;
+                $icon = $item['icon'] ?? null;
             @endphp
 
             @if ($url)
@@ -38,7 +39,12 @@
                         'text-admin-muted hover:bg-admin-surface-muted hover:text-admin-text' => ! $isActive,
                     ])"
                 >
-                    {{ $label }}
+                    <span class="flex items-center gap-2">
+                        @if ($icon)
+                            <x-ui.icon :name="$icon" size="sm" />
+                        @endif
+                        <span>{{ $label }}</span>
+                    </span>
                 </a>
             @else
                 <span
@@ -50,7 +56,12 @@
                         'text-admin-muted' => ! $isActive,
                     ])"
                 >
-                    {{ $label }}
+                    <span class="flex items-center gap-2">
+                        @if ($icon)
+                            <x-ui.icon :name="$icon" size="sm" />
+                        @endif
+                        <span>{{ $label }}</span>
+                    </span>
                 </span>
             @endif
         @endforeach

@@ -57,7 +57,7 @@ final class LayoutIsolationTest extends TestCase
             ->get('/admin/central')
             ->assertOk()
             ->assertSee('/build/assets/central-admin-', false)
-            ->assertSee('CatalogHub Central')
+            ->assertSee('Central Admin')
             ->assertSee('Central Admin shell');
 
         $this->actingAs($siteAdmin)

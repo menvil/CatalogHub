@@ -1,18 +1,8 @@
 @php
-    $centralAdminNavigation = [
-        ['key' => 'dashboard', 'label' => 'Dashboard'],
-        ['key' => 'products', 'label' => 'Products'],
-        ['key' => 'categories', 'label' => 'Categories'],
-        ['key' => 'brands', 'label' => 'Brands'],
-        ['key' => 'imports', 'label' => 'Imports'],
-        ['key' => 'media', 'label' => 'Media'],
-        ['key' => 'translations', 'label' => 'Translations'],
-        ['key' => 'price-sources', 'label' => 'Price Sources'],
-        ['key' => 'sites', 'label' => 'Sites'],
-        ['key' => 'sync', 'label' => 'Sync'],
-        ['key' => 'backups', 'label' => 'Backups'],
-        ['key' => 'settings', 'label' => 'Settings'],
-    ];
+    $centralUser ??= auth()->user();
+    $centralAdminNavigation = $centralUser instanceof \App\Models\User
+        ? app(\App\Navigation\CentralNavigationRegistry::class)->visibleItemsFor($centralUser)
+        : [];
     $documentTitle = trim($__env->yieldContent('pageTitle', $pageTitle ?? $title ?? 'Central Admin'));
 @endphp
 
@@ -24,27 +14,35 @@
 
         <title>{{ $title ?? $documentTitle }} - {{ config('app.name', 'CatalogHub') }}</title>
 
+        @stack('head')
         @vite(['resources/css/central-admin.css', 'resources/js/app.js'])
+        @livewireStyles
     </head>
     <body class="min-h-screen overflow-x-hidden bg-admin-background font-sans text-admin-text antialiased">
-        <div class="min-h-screen lg:flex" data-admin-layout="central" data-presentation-context="central-admin">
-            <x-admin.sidebar
-                context="central"
+        <a href="#central-main-content" class="sr-only focus:not-sr-only">Skip to main content</a>
+
+        <div
+            class="min-h-screen lg:flex"
+            data-admin-layout="central"
+            data-central-shell
+            data-central-sidebar-collapsed="false"
+            data-central-sidebar-persist="{{ ($acceptance ?? false) ? 'false' : 'true' }}"
+            @if (isset($centralShellPreviewState)) data-central-preview-state="{{ $centralShellPreviewState }}" @endif
+            data-presentation-context="central-admin"
+        >
+            <x-central.sidebar
                 :items="$centralAdminNavigation"
                 :active-nav="$activeNav ?? null"
+                data-central-sidebar
             />
 
             <div class="min-w-0 flex-1">
-                <x-admin.topbar context-label="Central Admin" search-placeholder="Search canonical catalog">
-                    <x-slot:title>
-                        <h1 class="text-xl font-semibold text-admin-text">
-                            @yield('pageTitle', $pageTitle ?? 'Central Admin')
-                        </h1>
-                    </x-slot:title>
-                </x-admin.topbar>
+                @include('central.components.header', ['centralUser' => $centralUser])
 
-                <main class="px-admin-page py-admin-section">
+                <main id="central-main-content" class="px-admin-page py-admin-section" tabindex="-1">
                     <div class="mx-auto max-w-7xl space-y-admin-section">
+                        <x-admin.flash-messages />
+
                         <div class="flex flex-col gap-admin-field md:flex-row md:items-start md:justify-between">
                             <div class="min-w-0">
                                 <nav class="text-sm text-admin-muted" aria-label="Breadcrumbs">
@@ -65,5 +63,8 @@
                 </main>
             </div>
         </div>
+
+        @livewireScripts
+        @stack('scripts')
     </body>
 </html>

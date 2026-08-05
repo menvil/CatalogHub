@@ -11,6 +11,7 @@ use App\Filament\Pages\SyncDashboard;
 use App\Filament\Pages\TranslationDashboard;
 use App\Http\Middleware\EnsureCentralAdminAccess;
 use App\Http\Middleware\EnsureUserIsActive;
+use App\Navigation\CentralNavigationRegistry;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -36,6 +37,8 @@ final class CentralAdminPanelProvider extends PanelProvider
             ->viteTheme('resources/css/central-admin.css')
             ->brandName('CatalogHub Central')
             ->login()
+            ->sidebarCollapsibleOnDesktop()
+            ->navigation(fn (CentralNavigationRegistry $registry) => $registry->filamentNavigation(auth()->user()))
             ->colors([
                 'primary' => Color::Amber,
             ])

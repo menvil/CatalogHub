@@ -1,20 +1,20 @@
-@extends('layouts.central-admin', ['activeNav' => 'component-gallery'])
+@extends('layouts.central-admin', ['activeNav' => 'component-gallery', 'centralUser' => $centralUser])
 
 @section('pageTitle', 'Foundation Component Gallery')
 
-@section('breadcrumbs')
-    <span>Platform Foundation / Design system</span>
-@endsection
-
 @section('content')
     <div class="space-y-foundation-section" data-gallery-fixture="{{ $fixtureVersion }}">
-        <header class="rounded-foundation-card border border-foundation-border bg-foundation-surface p-foundation-card shadow-foundation-card">
-            <p class="text-foundation-caption font-semibold uppercase tracking-wide text-foundation-accent">CatalogHub design system</p>
-            <h2 class="mt-foundation-compact text-foundation-heading font-semibold text-foundation-text">Foundation Component Gallery</h2>
-            <p class="mt-foundation-compact max-w-3xl text-foundation-label text-foundation-text-muted">
-                Deterministic reference for semantic tokens and shared presentation primitives. It contains no catalog or tenant data.
-            </p>
-        </header>
+        <x-admin.page-header
+            screen-id="CA-DS-001"
+            title="Foundation Component Gallery"
+            description="Deterministic reference for semantic tokens and shared presentation primitives. It contains no catalog or tenant data."
+            status="Foundation"
+            :breadcrumbs="[
+                ['label' => 'Dashboard', 'url' => route('filament.central.pages.home', absolute: false)],
+                ['label' => 'Design system'],
+            ]"
+            class="rounded-foundation-card border border-foundation-border bg-foundation-surface p-foundation-card shadow-foundation-card"
+        />
 
         <section class="rounded-foundation-card border border-foundation-border bg-foundation-surface p-foundation-card shadow-foundation-card">
             <h3 class="text-foundation-title font-semibold text-foundation-text">Color and status tokens</h3>

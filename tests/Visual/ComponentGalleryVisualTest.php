@@ -9,6 +9,16 @@ use PHPUnit\Framework\TestCase;
 
 final class ComponentGalleryVisualTest extends TestCase
 {
+    /** @var array<string, array{width: int, height: int, section: string}> */
+    private const COMPONENT_STATES = [
+        'forms-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'forms'],
+        'forms-mobile' => ['width' => 360, 'height' => 900, 'section' => 'forms'],
+        'tables-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'tables'],
+        'tables-mobile' => ['width' => 360, 'height' => 900, 'section' => 'tables'],
+        'feedback-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'feedback'],
+        'feedback-mobile' => ['width' => 360, 'height' => 900, 'section' => 'feedback'],
+    ];
+
     public function test_approved_gallery_reference_checksum_is_unchanged(): void
     {
         $root = dirname(__DIR__, 2);
@@ -39,8 +49,76 @@ final class ComponentGalleryVisualTest extends TestCase
         }
     }
 
-    private function captureGallery(string $root, string $capture): void
+    public function test_approved_admin_component_reference_checksums_are_unchanged(): void
     {
+        foreach (array_keys(self::COMPONENT_STATES) as $state) {
+            $reference = $this->componentReferencePath($state);
+
+            $this->assertFileExists($reference);
+            $this->assertFileExists($reference.'.sha256');
+            $this->assertSame(trim((string) file_get_contents($reference.'.sha256')), hash_file('sha256', $reference));
+        }
+    }
+
+    public function test_current_admin_component_gallery_matches_all_approved_references(): void
+    {
+        foreach (self::COMPONENT_STATES as $state => $configuration) {
+            $temporaryPath = tempnam(sys_get_temp_dir(), 'cataloghub-admin-components-');
+            $this->assertIsString($temporaryPath);
+            @unlink($temporaryPath);
+            $capture = $temporaryPath.'.png';
+
+            try {
+                $this->captureGallery(
+                    dirname(__DIR__, 2),
+                    $capture,
+                    $configuration['width'],
+                    $configuration['height'],
+                    '?mode=components&section='.$configuration['section'],
+                );
+                $this->assertSame(
+                    [$configuration['width'], $configuration['height']],
+                    array_slice(getimagesize($capture) ?: [], 0, 2),
+                );
+                $this->assertLessThanOrEqual(
+                    0.03,
+                    $this->meanChannelDifference($this->componentReferencePath($state), $capture),
+                    "Admin component gallery state [{$state}] differs from its approved reference.",
+                );
+            } finally {
+                @unlink($capture);
+            }
+        }
+    }
+
+    public function test_admin_component_interactions_pass_in_a_real_browser(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $dom = tempnam(sys_get_temp_dir(), 'cataloghub-admin-components-dom-');
+        $this->assertIsString($dom);
+        $capture = tempnam(sys_get_temp_dir(), 'cataloghub-admin-components-dummy-');
+        $this->assertIsString($capture);
+        @unlink($capture);
+
+        try {
+            $this->captureGallery($root, $capture.'.png', 1280, 1000, '?mode=components&section=acceptance&acceptance=1', $dom);
+            $renderedDom = (string) file_get_contents($dom);
+            $this->assertStringContainsString('data-browser-acceptance="passed"', $renderedDom);
+            $this->assertStringNotContainsString('data-browser-acceptance="failed"', $renderedDom);
+        } finally {
+            @unlink($dom);
+            @unlink($capture.'.png');
+        }
+    }
+
+    private function captureGallery(
+        string $root,
+        string $capture,
+        int $width = 1440,
+        int $height = 1200,
+        string $query = '',
+        ?string $dom = null,
+    ): void {
         $chrome = $this->chromeBinary();
         $this->assertNotNull($chrome, 'Google Chrome is required for the deterministic visual regression capture.');
         $log = tempnam(sys_get_temp_dir(), 'cataloghub-gallery-server-');
@@ -69,17 +147,24 @@ final class ComponentGalleryVisualTest extends TestCase
         try {
             $port = $this->waitForServerPort($server, $log);
             $this->waitForGallery($port, $log);
-            $browser = proc_open([
+            $browserArguments = [
                 $chrome,
                 '--headless=new',
                 '--disable-gpu',
                 '--hide-scrollbars',
                 '--force-device-scale-factor=1',
-                '--window-size=1440,1200',
+                "--window-size={$width},{$height}",
                 '--virtual-time-budget=2000',
                 "--screenshot={$capture}",
-                "http://127.0.0.1:{$port}/dev/component-gallery",
-            ], $descriptors, $browserPipes, $root);
+            ];
+
+            if ($dom !== null) {
+                $browserArguments[] = '--dump-dom';
+                $descriptors[1] = ['file', $dom, 'w'];
+            }
+
+            $browserArguments[] = "http://127.0.0.1:{$port}/dev/component-gallery{$query}";
+            $browser = proc_open($browserArguments, $descriptors, $browserPipes, $root);
 
             $this->assertIsResource($browser, 'Unable to start Google Chrome.');
             $this->assertSame(0, proc_close($browser), (string) file_get_contents($log));
@@ -89,6 +174,11 @@ final class ComponentGalleryVisualTest extends TestCase
             proc_close($server);
             @unlink($log);
         }
+    }
+
+    private function componentReferencePath(string $state): string
+    {
+        return dirname(__DIR__, 2).'/tests/Visual/baselines/admin-components-'.$state.'.png';
     }
 
     private function chromeBinary(): ?string

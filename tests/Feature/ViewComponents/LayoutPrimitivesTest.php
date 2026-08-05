@@ -51,5 +51,6 @@ final class LayoutPrimitivesTest extends TestCase
         foreach (['ArrowLeft', 'ArrowRight', 'Home', 'End'] as $key) {
             $this->assertStringContainsString($key, $script);
         }
+        $this->assertStringContainsString('event.target instanceof Element', $script);
     }
 }

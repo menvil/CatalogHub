@@ -3,6 +3,8 @@ export function bootAdminTabs() {
     window.__catalogHubAdminTabsBooted = true;
 
     document.addEventListener('keydown', (event) => {
+        if (! (event.target instanceof Element)) return;
+
         const tab = event.target.closest('[data-admin-tabs] [role="tab"]');
         if (! tab) return;
 

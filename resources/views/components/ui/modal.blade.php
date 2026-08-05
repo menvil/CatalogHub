@@ -1,4 +1,4 @@
-@props(['id', 'title', 'open' => false])
+@props(['id', 'title', 'open' => false, 'contained' => false])
 
 @php
     throw_if(trim((string) $id) === '', \InvalidArgumentException::class, 'Modal IDs cannot be empty.');
@@ -7,9 +7,10 @@
 
 <div
     id="{{ $id }}"
-    {{ $attributes->class(['fixed inset-0 z-50 flex items-center justify-center p-admin-page', 'hidden' => ! $open]) }}
+    {{ $attributes->class(['inset-0 z-50 flex items-center justify-center p-admin-page', 'absolute' => $contained, 'fixed' => ! $contained, 'hidden' => ! $open]) }}
     data-admin-modal="{{ $id }}"
     data-admin-modal-open="{{ $open ? 'true' : 'false' }}"
+    data-admin-modal-contained="{{ $contained ? 'true' : 'false' }}"
 >
     <button type="button" class="absolute inset-0 bg-admin-text/35" data-admin-modal-close aria-label="Close {{ $title }}"></button>
     <section class="relative w-full max-w-lg rounded-admin-modal border border-admin-border bg-admin-surface shadow-admin-modal" role="dialog" aria-modal="true" aria-labelledby="{{ $titleId }}">

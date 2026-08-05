@@ -18,7 +18,10 @@ export function bootAdminModals() {
     const focusableElements = (modal) => Array.from(modal.querySelectorAll(focusableSelector));
 
     const syncBody = () => {
-        document.body.classList.toggle('admin-modal-open', openModals().length > 0);
+        document.body.classList.toggle(
+            'admin-modal-open',
+            openModals().some((modal) => modal.dataset.adminModalContained !== 'true'),
+        );
     };
 
     const openModal = (modal, trigger = document.activeElement) => {
@@ -40,6 +43,10 @@ export function bootAdminModals() {
     };
 
     document.addEventListener('click', (event) => {
+        if (! (event.target instanceof Element)) {
+            return;
+        }
+
         const openButton = event.target.closest('[data-admin-modal-open-target]');
         const closeButton = event.target.closest('[data-admin-modal-close]');
         const confirmButton = event.target.closest('[data-admin-modal-confirm]');

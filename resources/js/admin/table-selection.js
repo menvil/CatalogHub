@@ -25,6 +25,10 @@ export function bootAdminTableSelection() {
     };
 
     document.addEventListener('change', (event) => {
+        if (! (event.target instanceof Element)) {
+            return;
+        }
+
         const table = event.target.closest('table');
 
         if (! table) {

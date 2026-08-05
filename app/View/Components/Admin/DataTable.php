@@ -11,7 +11,7 @@ use InvalidArgumentException;
 final class DataTable extends Component
 {
     /**
-     * @param  list<array{key: string, label: string, align?: string}>  $columns
+     * @param  list<array{key?: string, label?: string, align?: string}>  $columns
      * @param  list<array<string, mixed>>  $rows
      */
     public function __construct(

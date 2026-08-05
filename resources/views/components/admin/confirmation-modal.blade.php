@@ -44,6 +44,7 @@
     ]) }}
     data-admin-modal="{{ $modalBaseId }}"
     data-admin-modal-open="{{ $open ? 'true' : 'false' }}"
+    data-admin-modal-contained="{{ $contained ? 'true' : 'false' }}"
 >
     <button
         type="button"

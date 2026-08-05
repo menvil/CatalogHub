@@ -64,7 +64,7 @@ final class LayoutIsolationTest extends TestCase
             ->get('/admin/site')
             ->assertOk()
             ->assertSee('/build/assets/site-admin-', false)
-            ->assertSee('CatalogHub Site')
+            ->assertSee('data-site-header', false)
             ->assertSee('Site Admin shell');
 
         auth()->logout();

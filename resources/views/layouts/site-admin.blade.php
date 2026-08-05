@@ -1,19 +1,11 @@
 @php
-    $siteAdminNavigation = [
-        ['key' => 'dashboard', 'label' => 'Dashboard'],
-        ['key' => 'site-settings', 'label' => 'Site Settings'],
-        ['key' => 'categories', 'label' => 'Categories'],
-        ['key' => 'products', 'label' => 'Products'],
-        ['key' => 'theme', 'label' => 'Theme'],
-        ['key' => 'blocks', 'label' => 'Blocks'],
-        ['key' => 'sync', 'label' => 'Sync'],
-        ['key' => 'prices', 'label' => 'Prices'],
-        ['key' => 'reviews', 'label' => 'Reviews'],
-        ['key' => 'leads', 'label' => 'Leads'],
-        ['key' => 'content', 'label' => 'Content'],
-        ['key' => 'polls', 'label' => 'Polls'],
-        ['key' => 'settings', 'label' => 'Settings'],
-    ];
+    $siteAdminUser ??= auth()->user();
+    $siteAdminCurrentSite ??= request()->attributes->get('site_context');
+    $siteAdminRuntimeContext ??= request()->attributes->get(\App\Support\Sites\SiteRuntimeContext::class);
+    $siteAdminNavigation ??= $siteAdminUser instanceof \App\Models\User && $siteAdminCurrentSite instanceof \App\Models\Site
+        ? app(\App\Navigation\SiteAdminNavigationRegistry::class)->visibleItemsFor($siteAdminUser, $siteAdminCurrentSite)
+        : [];
+    $siteSidebarInitiallyOpen = ($siteAdminShellPreviewState ?? null) === 'mobile';
     $documentTitle = trim($__env->yieldContent('pageTitle', $pageTitle ?? $title ?? 'Site Admin'));
 @endphp
 
@@ -25,44 +17,59 @@
 
         <title>{{ $title ?? $documentTitle }} - {{ config('app.name', 'CatalogHub') }}</title>
 
+        @stack('head')
         @vite(['resources/css/site-admin.css', 'resources/js/app.js'])
+        @livewireStyles
     </head>
-    <body class="min-h-screen overflow-x-hidden bg-admin-background font-sans text-admin-text antialiased">
-        <div class="min-h-screen lg:flex" data-admin-layout="site" data-presentation-context="site-admin">
-            <x-admin.sidebar
-                context="site"
+    <body @class([
+        'min-h-screen overflow-x-hidden bg-admin-background font-sans text-admin-text antialiased',
+        'site-sidebar-scroll-locked' => $siteSidebarInitiallyOpen,
+    ])>
+        <a href="#site-main-content" class="sr-only focus:not-sr-only">Skip to main content</a>
+
+        <div
+            class="min-h-screen lg:flex"
+            data-admin-layout="site"
+            data-site-shell
+            data-site-sidebar-collapsed="false"
+            data-site-sidebar-mobile-open="{{ $siteSidebarInitiallyOpen ? 'true' : 'false' }}"
+            data-site-sidebar-persist="{{ ($acceptance ?? false) ? 'false' : 'true' }}"
+            @if (isset($siteAdminShellPreviewState)) data-site-preview-state="{{ $siteAdminShellPreviewState }}" @endif
+            data-presentation-context="site-admin"
+        >
+            <x-site-admin.sidebar
                 :items="$siteAdminNavigation"
                 :active-nav="$activeNav ?? null"
+                :current-site="$siteAdminCurrentSite"
+                :mobile-open="$siteSidebarInitiallyOpen"
+                data-site-sidebar
             />
 
             <div class="min-w-0 flex-1">
-                <x-admin.topbar context-label="Site Admin" search-placeholder="Search site workspace">
-                    <x-slot:title>
-                        <h1 class="text-xl font-semibold text-admin-text">
-                            @yield('pageTitle', $pageTitle ?? 'Site Admin')
-                        </h1>
-                    </x-slot:title>
-                </x-admin.topbar>
+                @include('site-admin.components.header', [
+                    'siteAdminUser' => $siteAdminUser,
+                    'siteSidebarInitiallyOpen' => $siteSidebarInitiallyOpen,
+                ])
 
-                <main class="px-admin-page py-admin-section">
+                <main id="site-main-content" class="px-admin-page py-admin-section" tabindex="-1">
                     <div class="mx-auto max-w-7xl space-y-admin-section">
-                        <x-admin.site-context-switcher
-                            :site-label="$siteLabel ?? 'Demo portal'"
-                            :market-label="$marketLabel ?? 'Default market'"
-                            :locale-label="$localeLabel ?? 'en'"
-                        />
+                        @if ($siteAdminCurrentSite instanceof \App\Models\Site && $siteAdminUser instanceof \App\Models\User)
+                            <x-site-admin.site-selector
+                                :current-site="$siteAdminCurrentSite"
+                                :user="$siteAdminUser"
+                                :sites="$siteAdminAuthorizedSites ?? null"
+                            />
+                        @endif
 
-                        <div class="flex flex-col gap-admin-field md:flex-row md:items-start md:justify-between">
-                            <div class="min-w-0">
-                                <nav class="text-sm text-admin-muted" aria-label="Breadcrumbs">
-                                    @yield('breadcrumbs')
-                                </nav>
-                            </div>
-
-                            <div class="flex flex-wrap items-center gap-admin-field">
-                                @yield('pageActions')
-                            </div>
-                        </div>
+                        @if ($siteAdminRuntimeContext instanceof \App\Support\Sites\SiteRuntimeContext)
+                            <x-site-admin.site-context-header :context="$siteAdminRuntimeContext" />
+                        @else
+                            <x-admin.site-context-switcher
+                                :site-label="$siteLabel ?? 'Demo portal'"
+                                :market-label="$marketLabel ?? 'Default market'"
+                                :locale-label="$localeLabel ?? 'en'"
+                            />
+                        @endif
 
                         <section aria-label="Site Admin content">
                             {{ $slot ?? '' }}
@@ -72,5 +79,8 @@
                 </main>
             </div>
         </div>
+
+        @livewireScripts
+        @stack('scripts')
     </body>
 </html>

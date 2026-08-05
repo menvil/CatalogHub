@@ -11,11 +11,17 @@ class SiteAdminLayoutTest extends TestCase
     {
         $html = Blade::render(<<<'BLADE'
             @extends('layouts.site-admin', [
-                'activeNav' => 'Dashboard',
+                'activeNav' => 'dashboard',
                 'pageTitle' => 'Portal operations',
                 'siteLabel' => 'Sofia catalog',
                 'marketLabel' => 'BG market',
                 'localeLabel' => 'bg',
+                'siteAdminNavigation' => [[
+                    'id' => 'dashboard',
+                    'label' => 'Dashboard',
+                    'icon' => 'home',
+                    'url' => '/admin/site?site_id=1',
+                ]],
             ])
 
             @section('content')
@@ -24,15 +30,25 @@ class SiteAdminLayoutTest extends TestCase
         BLADE);
 
         $this->assertStringContainsString('data-admin-layout="site"', $html);
+        $this->assertStringContainsString('data-site-shell', $html);
+        $this->assertStringContainsString('<header', $html);
+        $this->assertStringContainsString('<main id="site-main-content"', $html);
+        $this->assertStringContainsString('aria-label="Site Admin navigation"', $html);
         $this->assertStringContainsString('Site Admin', $html);
         $this->assertStringContainsString('Search site workspace', $html);
         $this->assertStringContainsString('Sofia catalog', $html);
         $this->assertStringContainsString('BG market', $html);
         $this->assertStringContainsString('Locale: bg', $html);
         $this->assertStringContainsString('Site admin slot content', $html);
+        $this->assertStringNotContainsString('data-central-shell', $html);
+        $this->assertStringNotContainsString('Central Admin navigation', $html);
+
+        $this->assertStringContainsString('Dashboard', $html);
+
+        $visibleText = preg_replace('/\s+/', ' ', strip_tags($html));
+        $this->assertIsString($visibleText);
 
         foreach ([
-            'Dashboard',
             'Site Settings',
             'Categories',
             'Products',
@@ -45,35 +61,32 @@ class SiteAdminLayoutTest extends TestCase
             'Content',
             'Polls',
         ] as $label) {
-            $this->assertStringContainsString($label, $html);
+            $this->assertStringNotContainsString($label, $visibleText);
         }
 
-        $this->assertMatchesRegularExpression('/>\s*Settings\s*<\/span>/', $html);
         $this->assertStringNotContainsString('href="#"', $html);
     }
 
-    public function test_site_admin_layout_renders_active_nav_breadcrumbs_and_page_actions(): void
+    public function test_site_admin_layout_renders_the_active_navigation_item(): void
     {
         $html = Blade::render(<<<'BLADE'
-            @extends('layouts.site-admin', ['activeNav' => 'Theme', 'pageTitle' => 'Theme'])
-
-            @section('breadcrumbs')
-                <span>Site</span>
-                <span>Theme</span>
-            @endsection
-
-            @section('pageActions')
-                <button type="button">Preview placeholder</button>
-            @endsection
+            @extends('layouts.site-admin', [
+                'activeNav' => 'dashboard',
+                'pageTitle' => 'Dashboard',
+                'siteAdminNavigation' => [[
+                    'id' => 'dashboard',
+                    'label' => 'Dashboard',
+                    'icon' => 'home',
+                    'url' => '/admin/site?site_id=1',
+                ]],
+            ])
 
             @section('content')
-                <p>Theme shell content</p>
+                <p>Dashboard shell content</p>
             @endsection
         BLADE);
 
         $this->assertStringContainsString('aria-current="page"', $html);
-        $this->assertStringContainsString('Theme shell content', $html);
-        $this->assertStringContainsString('Preview placeholder', $html);
-        $this->assertStringContainsString('aria-label="Breadcrumbs"', $html);
+        $this->assertStringContainsString('Dashboard shell content', $html);
     }
 }

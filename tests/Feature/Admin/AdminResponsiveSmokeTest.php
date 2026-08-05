@@ -39,8 +39,9 @@ class AdminResponsiveSmokeTest extends TestCase
 
         $this->assertStringContainsString('overflow-x-hidden', $html);
         $this->assertStringContainsString('lg:flex', $html);
-        $this->assertStringContainsString('lg:w-72', $html);
-        $this->assertStringContainsString('overflow-x-auto', $html);
+        $this->assertStringContainsString('data-site-sidebar-mobile-open="false"', $html);
+        $this->assertStringContainsString('data-site-sidebar-collapse', $html);
+        $this->assertStringContainsString('aria-controls="site-navigation"', $html);
         $this->assertStringContainsString('min-w-0 flex-1', $html);
         $this->assertStringContainsString('max-w-7xl', $html);
         $this->assertStringContainsString('Responsive site content', $html);

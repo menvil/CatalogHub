@@ -7,6 +7,9 @@ use App\Http\Middleware\EnsureSiteAdminAccess;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\RequireSiteContext;
 use App\Http\Middleware\ResolveSiteRuntimeContext;
+use App\Models\Site;
+use App\Models\User;
+use App\Navigation\SiteAdminNavigationRegistry;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -31,6 +34,12 @@ final class SiteAdminPanelProvider extends PanelProvider
             ->viteTheme('resources/css/site-admin.css')
             ->brandName('CatalogHub Site')
             ->login()
+            ->navigation(fn (SiteAdminNavigationRegistry $registry) => $registry->filamentNavigation(
+                auth()->user() instanceof User ? auth()->user() : null,
+                request()->attributes->get('site_context') instanceof Site
+                    ? request()->attributes->get('site_context')
+                    : null,
+            ))
             ->colors([
                 'primary' => Color::Blue,
             ])

@@ -43,8 +43,22 @@ final class DesignSystemDocumentationTest extends TestCase
             $this->assertDoesNotMatchRegularExpression('/#[0-9a-f]{3,8}\b/i', $source, "Raw color found in [{$file}].");
             $this->assertDoesNotMatchRegularExpression('/\b(?:rgb|rgba|hsl|hsla)\s*\(/i', $source, "Raw color function found in [{$file}].");
             $this->assertDoesNotMatchRegularExpression("/(?:{$colorUtilities})-(?:{$rawColorNames})(?:-|\\b)/", $source, "Raw color utility found in [{$file}].");
-            $this->assertDoesNotMatchRegularExpression("/\\b(?:color|background(?:-color)?|border(?:-(?:top|right|bottom|left))?(?:-color)?|outline(?:-color)?|text-decoration(?:-color)?|fill|stroke)\\s*:\\s*[^;{}]*\\b(?:{$rawColorNames})\\b/i", $source, "Raw named color found in [{$file}].");
+            $this->assertDoesNotMatchRegularExpression($this->rawNamedColorPattern($rawColorNames), $source, "Raw named color found in [{$file}].");
             $this->assertDoesNotMatchRegularExpression('/[a-z][a-z0-9:-]*-\[[^\]]+\]/i', $source, "Arbitrary utility value found in [{$file}].");
         }
+    }
+
+    public function test_raw_named_color_guard_allows_token_references_but_rejects_literals(): void
+    {
+        $pattern = $this->rawNamedColorPattern('blue|red');
+
+        $this->assertDoesNotMatchRegularExpression($pattern, 'background: var(--palette-foundation-blue); border: 1px solid var(--palette-foundation-red);');
+        $this->assertMatchesRegularExpression($pattern, 'background: blue;');
+        $this->assertMatchesRegularExpression($pattern, 'border: 1px solid red;');
+    }
+
+    private function rawNamedColorPattern(string $rawColorNames): string
+    {
+        return "/\\b(?:color|background(?:-color)?|border(?:-(?:top|right|bottom|left))?(?:-color)?|outline(?:-color)?|text-decoration(?:-color)?|fill|stroke)\\s*:\\s*[^;{}]*(?<![-\\w])(?:{$rawColorNames})\\b/i";
     }
 }

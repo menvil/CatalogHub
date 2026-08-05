@@ -15,11 +15,7 @@ final class TokenIntegrationTest extends TestCase
     public function test_each_presentation_bundle_contains_the_shared_semantic_foundation(string $entryPoint): void
     {
         $root = dirname(__DIR__, 3);
-        $manifestPath = $root.'/public/build/manifest.json';
-
-        $this->assertFileExists($manifestPath, 'Run the production frontend build before integration tests.');
-
-        $manifest = json_decode((string) file_get_contents($manifestPath), true, flags: JSON_THROW_ON_ERROR);
+        $manifest = $this->manifest($root);
         $this->assertArrayHasKey($entryPoint, $manifest);
 
         $compiledPath = $root.'/public/build/'.$manifest[$entryPoint]['file'];
@@ -38,7 +34,7 @@ final class TokenIntegrationTest extends TestCase
         $typography = file_get_contents($root.'/resources/css/tokens/typography.css');
         $publicLayout = file_get_contents($root.'/resources/views/public/layouts/app.blade.php');
         $legacyPublicLayout = file_get_contents($root.'/resources/views/layouts/public.blade.php');
-        $manifest = json_decode((string) file_get_contents($root.'/public/build/manifest.json'), true, flags: JSON_THROW_ON_ERROR);
+        $manifest = $this->manifest($root);
 
         $this->assertIsString($typography);
         $this->assertIsString($publicLayout);
@@ -64,5 +60,16 @@ final class TokenIntegrationTest extends TestCase
             'Site Admin' => ['resources/css/site-admin.css'],
             'Public Site' => ['resources/css/public.css'],
         ];
+    }
+
+    /** @return array<string, array{file: string}> */
+    private function manifest(string $root): array
+    {
+        $manifestPath = $root.'/public/build/manifest.json';
+        $this->assertFileExists($manifestPath, 'Run the production frontend build before integration tests.');
+        $contents = file_get_contents($manifestPath);
+        $this->assertIsString($contents);
+
+        return json_decode($contents, true, flags: JSON_THROW_ON_ERROR);
     }
 }

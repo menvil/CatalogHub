@@ -39,7 +39,9 @@ final class DesignSystemDocumentationTest extends TestCase
 
             $this->assertIsString($source);
             $this->assertDoesNotMatchRegularExpression('/#[0-9a-f]{3,8}\b/i', $source, "Raw color found in [{$file}].");
-            $this->assertDoesNotMatchRegularExpression('/(?:[mp][trblxy]?|gap(?:-[xy])?|[wh]|min-[wh]|max-[wh]|inset|top|right|bottom|left)-\[[^\]]+\]/', $source, "Arbitrary geometry found in [{$file}].");
+            $this->assertDoesNotMatchRegularExpression('/\b(?:rgb|rgba|hsl|hsla)\s*\(/i', $source, "Raw color function found in [{$file}].");
+            $this->assertDoesNotMatchRegularExpression('/(?:bg|text|border|ring|outline|fill|stroke)-(?:white|black|red|orange|amber|yellow|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)(?:-|\b)/', $source, "Raw color utility found in [{$file}].");
+            $this->assertDoesNotMatchRegularExpression('/[a-z][a-z0-9:-]*-\[[^\]]+\]/i', $source, "Arbitrary utility value found in [{$file}].");
         }
     }
 }

@@ -26,7 +26,9 @@ final class ColorTokensTest extends TestCase
         $pairs = [
             ['--color-foundation-text', '--color-foundation-surface'],
             ['--color-foundation-text-muted', '--color-foundation-surface'],
+            ['--color-foundation-text-muted', '--color-foundation-surface-muted'],
             ['--color-foundation-accent', '--color-foundation-surface'],
+            ['--color-foundation-accent', '--color-foundation-accent-surface'],
             ['--color-foundation-success', '--color-foundation-success-surface'],
             ['--color-foundation-warning', '--color-foundation-warning-surface'],
             ['--color-foundation-danger', '--color-foundation-danger-surface'],

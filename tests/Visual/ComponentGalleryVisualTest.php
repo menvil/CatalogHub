@@ -67,7 +67,10 @@ final class ComponentGalleryVisualTest extends TestCase
             $environment,
         );
 
-        $this->assertIsResource($server, 'Unable to start the deterministic gallery server.');
+        if (! is_resource($server)) {
+            @unlink($log);
+            $this->fail('Unable to start the deterministic gallery server.');
+        }
 
         try {
             $this->waitForServer($port, $log);

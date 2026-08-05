@@ -24,7 +24,7 @@ Page-specific colors, raw hex values, and arbitrary geometry are forbidden in ne
 | focus | Keyboard focus indication. |
 | success / warning / danger / info / outdated | Status text or icon with a matching `*-surface` token. |
 
-Measured foreground/background contrast for primary text and status pairs is at least 4.5:1: text/surface 16.35, muted/surface 4.76, accent/surface 5.17, success 4.84, warning 4.51, danger 5.30, and info 5.17.
+Measured foreground/background contrast for primary text and status pairs is at least 4.5:1: text/surface 16.35, muted/surface 5.20, muted/muted-surface 4.66, accent/surface 6.70, accent/accent-surface 5.49, success 4.84, warning 4.51, danger 5.30, and info 5.17.
 
 ## Typography and geometry
 

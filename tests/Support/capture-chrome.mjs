@@ -32,6 +32,7 @@ try {
         const { sessionId } = await connection.send('Target.attachToTarget', { targetId, flatten: true })
 
         await connection.send('Page.enable', {}, sessionId)
+        await connection.send('Page.setLifecycleEventsEnabled', { enabled: true }, sessionId)
         await connection.send('Emulation.setDeviceMetricsOverride', {
             width,
             height,
@@ -42,8 +43,10 @@ try {
         }, sessionId)
 
         const loaded = connection.event('Page.loadEventFired', sessionId)
+        const networkIdle = connection.event('Page.lifecycleEvent', sessionId, params => params.name === 'networkIdle')
         await connection.send('Page.navigate', { url }, sessionId)
         await loaded
+        await networkIdle
         await connection.send('Runtime.evaluate', {
             expression: 'document.fonts.ready.then(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))',
             awaitPromise: true,
@@ -132,7 +135,11 @@ async function connect(endpoint) {
             return
         }
 
-        const index = listeners.findIndex(listener => listener.method === message.method && listener.sessionId === message.sessionId)
+        const index = listeners.findIndex(listener => (
+            listener.method === message.method
+            && listener.sessionId === message.sessionId
+            && listener.predicate(message.params ?? {})
+        ))
 
         if (index !== -1) {
             listeners.splice(index, 1)[0].resolve(message.params ?? {})
@@ -146,8 +153,8 @@ async function connect(endpoint) {
 
             return new Promise((resolve, reject) => pending.set(id, { resolve, reject }))
         },
-        event(method, sessionId) {
-            return new Promise(resolve => listeners.push({ method, sessionId, resolve }))
+        event(method, sessionId, predicate = () => true) {
+            return new Promise(resolve => listeners.push({ method, sessionId, predicate, resolve }))
         },
         close() {
             socket.close()

@@ -1,0 +1,37 @@
+@theme {
+    --spacing-foundation-page: 1.5rem;
+    --spacing-foundation-card: 1rem;
+    --spacing-foundation-section: 1.25rem;
+    --spacing-foundation-field: 0.75rem;
+    --spacing-foundation-compact: 0.5rem;
+
+    --radius-foundation-card: 0.5rem;
+    --radius-foundation-control: 0.375rem;
+    --radius-foundation-pill: 9999px;
+    --radius-foundation-modal: 0.75rem;
+
+    --shadow-foundation-card: 0 1px 2px 0 rgb(20 32 51 / 0.06), 0 1px 3px 0 rgb(20 32 51 / 0.08);
+    --shadow-foundation-floating: 0 12px 24px -16px rgb(20 32 51 / 0.35);
+    --shadow-foundation-modal: 0 24px 60px -28px rgb(20 32 51 / 0.45);
+
+    --width-foundation-sidebar: 18rem;
+    --height-foundation-header: 4rem;
+    --width-foundation-modal: 40rem;
+    --width-foundation-table: 42rem;
+    --width-foundation-content: 80rem;
+    --width-foundation-focus-ring: 0.1875rem;
+    --spacing-foundation-focus-offset: 0.125rem;
+
+    /* Compatibility aliases for the established admin component vocabulary. */
+    --spacing-admin-page: var(--spacing-foundation-page);
+    --spacing-admin-card: var(--spacing-foundation-card);
+    --spacing-admin-section: var(--spacing-foundation-section);
+    --spacing-admin-field: var(--spacing-foundation-field);
+    --radius-admin-card: var(--radius-foundation-card);
+    --radius-admin-input: var(--radius-foundation-control);
+    --radius-admin-badge: var(--radius-foundation-pill);
+    --radius-admin-modal: var(--radius-foundation-modal);
+    --shadow-admin-card: var(--shadow-foundation-card);
+    --shadow-admin-floating: var(--shadow-foundation-floating);
+    --shadow-admin-modal: var(--shadow-foundation-modal);
+}

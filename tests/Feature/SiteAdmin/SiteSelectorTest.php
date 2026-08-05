@@ -62,14 +62,20 @@ final class SiteSelectorTest extends TestCase
     {
         $first = Site::factory()->active()->withRuntimeContext()->create(['name' => 'First portal']);
         $second = Site::factory()->active()->withRuntimeContext()->create(['name' => 'Second portal']);
+        $unauthorized = Site::factory()->active()->withRuntimeContext()->create(['name' => 'Unauthorized portal']);
         $user = User::factory()->siteAdmin($first)->create();
         SiteMembership::factory()->for($user)->for($second)->create();
 
         $this->actingAs($user)
             ->get(route('filament.site.pages.home', ['site_id' => $second->getKey()]))
             ->assertOk()
-            ->assertSee('Second portal')
-            ->assertDontSee('Current site: First portal');
+            ->assertSee('data-site-sidebar-current', false)
+            ->assertSee('data-site-id="'.$second->getKey().'"', false)
+            ->assertDontSee('data-site-id="'.$first->getKey().'"', false);
+
+        $this->get(route('filament.site.pages.home', ['site_id' => $unauthorized->getKey()]))
+            ->assertForbidden()
+            ->assertDontSee('Second portal');
 
         $this->get(route('filament.site.pages.home', ['site_id' => 999999]))
             ->assertForbidden()

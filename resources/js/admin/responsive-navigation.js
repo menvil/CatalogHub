@@ -55,6 +55,11 @@ export function bootResponsiveAdminNavigation(config) {
             document.body.classList.add(config.bodyLockClass);
 
             const focusTarget = sidebar.querySelector(focusableSelector) ?? sidebar;
+
+            if (focusTarget === sidebar && ! sidebar.hasAttribute('tabindex')) {
+                sidebar.setAttribute('tabindex', '-1');
+            }
+
             focusTarget.focus({ preventScroll: true });
         };
 

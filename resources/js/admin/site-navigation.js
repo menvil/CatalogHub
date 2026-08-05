@@ -16,4 +16,9 @@ export function bootSiteAdminNavigation() {
         preferenceKey: 'cataloghub.site.sidebar.collapsed',
         bodyLockClass: 'site-sidebar-scroll-locked',
     });
+
+    document.querySelectorAll('[data-site-shell]').forEach((shell) => {
+        shell.dataset.siteShellReady = 'true';
+        shell.dispatchEvent(new CustomEvent('site-admin-shell:ready', { bubbles: true }));
+    });
 }

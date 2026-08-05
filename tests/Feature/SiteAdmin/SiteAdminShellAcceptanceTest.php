@@ -37,6 +37,17 @@ final class SiteAdminShellAcceptanceTest extends TestCase
         }
     }
 
+    public function test_local_preview_rejects_unsupported_state_and_non_boolean_acceptance(): void
+    {
+        $this->get('/dev/site-admin-shell?state=unsupported')
+            ->assertRedirect()
+            ->assertSessionHasErrors('state');
+
+        $this->get('/dev/site-admin-shell?acceptance=eventually')
+            ->assertRedirect()
+            ->assertSessionHasErrors('acceptance');
+    }
+
     public function test_login_site_switch_denied_site_and_logout_flow(): void
     {
         $first = Site::factory()->active()->withRuntimeContext()->create(['name' => 'Acceptance first']);

@@ -23,7 +23,11 @@
             <p class="text-xs font-semibold uppercase tracking-wide text-admin-muted">CatalogHub</p>
             <p class="mt-1 truncate text-lg font-semibold text-admin-text">Site Admin</p>
             @if ($currentSite instanceof \App\Models\Site)
-                <p class="mt-1 truncate text-xs font-medium text-admin-muted" data-site-sidebar-current>
+                <p
+                    class="mt-1 truncate text-xs font-medium text-admin-muted"
+                    data-site-sidebar-current
+                    data-site-id="{{ $currentSite->getKey() }}"
+                >
                     {{ $currentSite->name }}
                 </p>
             @endif

@@ -48,8 +48,7 @@
 
     @push('scripts')
         <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                window.setTimeout(() => {
+            const runSiteAdminAcceptance = () => {
                     const fixture = document.querySelector('[data-site-admin-shell-fixture]');
                     const shell = document.querySelector('[data-site-shell]');
                     const sidebar = document.querySelector('[data-site-sidebar]');
@@ -104,8 +103,13 @@
 
                     fixture.dataset.browserAcceptance = failures.length === 0 ? 'passed' : 'failed';
                     fixture.dataset.browserAcceptanceFailures = failures.join(', ');
-                }, 100);
-            });
+            };
+
+            if (document.querySelector('[data-site-shell][data-site-shell-ready="true"]')) {
+                runSiteAdminAcceptance();
+            } else {
+                document.addEventListener('site-admin-shell:ready', runSiteAdminAcceptance, { once: true });
+            }
         </script>
     @endpush
 @endif

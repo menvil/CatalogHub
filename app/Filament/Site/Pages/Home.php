@@ -32,9 +32,12 @@ final class Home extends Page
     /** @return array<string, mixed> */
     protected function getLayoutData(): array
     {
+        $site = request()->attributes->get('site_context');
+
         return [
             'activeNav' => 'dashboard',
             'pageTitle' => 'Site Admin',
+            'siteAdminCurrentSite' => $site,
             'siteLabel' => $this->siteName,
             'title' => 'Site Admin',
         ];

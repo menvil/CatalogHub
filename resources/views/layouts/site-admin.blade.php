@@ -15,6 +15,7 @@
         ['id' => 'settings', 'label' => 'Settings', 'icon' => 'cog-6-tooth', 'url' => null],
     ];
     $siteAdminUser ??= auth()->user();
+    $siteAdminCurrentSite ??= request()->attributes->get('site_context');
     $documentTitle = trim($__env->yieldContent('pageTitle', $pageTitle ?? $title ?? 'Site Admin'));
 @endphp
 
@@ -50,6 +51,14 @@
 
                 <main id="site-main-content" class="px-admin-page py-admin-section" tabindex="-1">
                     <div class="mx-auto max-w-7xl space-y-admin-section">
+                        @if ($siteAdminCurrentSite instanceof \App\Models\Site && $siteAdminUser instanceof \App\Models\User)
+                            <x-site-admin.site-selector
+                                :current-site="$siteAdminCurrentSite"
+                                :user="$siteAdminUser"
+                                :sites="$siteAdminAuthorizedSites ?? null"
+                            />
+                        @endif
+
                         <x-admin.site-context-switcher
                             :site-label="$siteLabel ?? 'Demo portal'"
                             :market-label="$marketLabel ?? 'Default market'"

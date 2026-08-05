@@ -30,6 +30,9 @@ final class FoundationDesignSystem
         'bell' => 'heroicon-o-bell',
         'user-circle' => 'heroicon-o-user-circle',
         'arrow-left-start-on-rectangle' => 'heroicon-o-arrow-left-start-on-rectangle',
+        'bars-3' => 'heroicon-o-bars-3',
+        'x-mark' => 'heroicon-o-x-mark',
+        'chevron-double-left' => 'heroicon-o-chevron-double-left',
     ];
 
     /** @var array<string, array{width: int, height: int, density: string, behavior: string}> */

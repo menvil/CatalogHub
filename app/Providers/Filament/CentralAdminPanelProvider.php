@@ -37,6 +37,7 @@ final class CentralAdminPanelProvider extends PanelProvider
             ->viteTheme('resources/css/central-admin.css')
             ->brandName('CatalogHub Central')
             ->login()
+            ->sidebarCollapsibleOnDesktop()
             ->navigation(fn (CentralNavigationRegistry $registry) => $registry->filamentNavigation(auth()->user()))
             ->colors([
                 'primary' => Color::Amber,

@@ -6,9 +6,22 @@
     class="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-admin-border bg-admin-surface px-admin-page py-3 text-admin-text"
     data-central-header
 >
-    <div class="min-w-0">
-        <p class="text-xs font-semibold uppercase tracking-wide text-admin-muted">CatalogHub</p>
-        <p class="truncate text-lg font-semibold text-admin-text">Central Admin</p>
+    <div class="flex min-w-0 items-center gap-2">
+        <button
+            type="button"
+            class="central-sidebar-mobile-open rounded-admin-input p-2 text-admin-muted hover:bg-admin-surface-muted hover:text-admin-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary"
+            aria-label="Open navigation"
+            aria-controls="central-navigation"
+            aria-expanded="false"
+            data-central-sidebar-open
+        >
+            <x-ui.icon name="bars-3" size="md" />
+        </button>
+
+        <div class="min-w-0">
+            <p class="text-xs font-semibold uppercase tracking-wide text-admin-muted">CatalogHub</p>
+            <p class="truncate text-lg font-semibold text-admin-text">Central Admin</p>
+        </div>
     </div>
 
     <div class="flex min-w-0 flex-wrap items-center justify-end gap-admin-field">

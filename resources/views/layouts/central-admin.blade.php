@@ -23,6 +23,7 @@
             class="min-h-screen lg:flex"
             data-admin-layout="central"
             data-central-shell
+            data-central-sidebar-collapsed="false"
             data-presentation-context="central-admin"
         >
             <x-admin.sidebar

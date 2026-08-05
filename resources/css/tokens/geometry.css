@@ -15,6 +15,7 @@
     --shadow-foundation-modal: 0 24px 60px -28px var(--palette-foundation-shadow-modal);
 
     --width-foundation-sidebar: 18rem;
+    --width-foundation-sidebar-collapsed: 4.5rem;
     --height-foundation-header: 4rem;
     --width-foundation-modal: 40rem;
     --width-foundation-table: 42rem;

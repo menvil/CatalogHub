@@ -26,6 +26,7 @@
             data-admin-layout="central"
             data-central-shell
             data-central-sidebar-collapsed="false"
+            data-central-sidebar-mobile-open="false"
             data-central-sidebar-persist="{{ ($acceptance ?? false) ? 'false' : 'true' }}"
             @if (isset($centralShellPreviewState)) data-central-preview-state="{{ $centralShellPreviewState }}" @endif
             data-presentation-context="central-admin"

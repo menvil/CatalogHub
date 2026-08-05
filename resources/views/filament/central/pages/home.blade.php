@@ -7,8 +7,8 @@
         :breadcrumbs="[['label' => 'Dashboard']]"
     />
 
-    <section aria-labelledby="central-shell-placeholder-title">
-        <h2 id="central-shell-placeholder-title" class="text-lg font-semibold text-admin-text">Central Admin shell</h2>
-        <p class="mt-2 text-sm text-admin-muted">The foundation dashboard is being prepared.</p>
-    </section>
+    <x-admin.empty-state
+        title="Central Admin shell is ready"
+        description="No metrics are available in the foundation shell. Available sections can be opened from the navigation."
+    />
 </div>

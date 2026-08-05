@@ -173,22 +173,19 @@ final class ComponentGalleryVisualTest extends TestCase
             $port = $this->waitForServerPort($server, $log);
             $this->waitForGallery($port, $log);
             $browserArguments = [
+                'node',
+                $root.'/tests/Support/capture-chrome.mjs',
                 $chrome,
-                '--headless=new',
-                '--disable-gpu',
-                '--hide-scrollbars',
-                '--force-device-scale-factor=1',
-                "--window-size={$width},{$height}",
-                '--virtual-time-budget=2000',
-                "--screenshot={$capture}",
+                "http://127.0.0.1:{$port}/dev/component-gallery{$query}",
+                $capture,
+                (string) $width,
+                (string) $height,
             ];
 
             if ($dom !== null) {
-                $browserArguments[] = '--dump-dom';
-                $descriptors[1] = ['file', $dom, 'w'];
+                $browserArguments[] = $dom;
             }
 
-            $browserArguments[] = "http://127.0.0.1:{$port}/dev/component-gallery{$query}";
             $browser = proc_open($browserArguments, $descriptors, $browserPipes, $root);
 
             $this->assertIsResource($browser, 'Unable to start Google Chrome.');
@@ -302,19 +299,13 @@ final class ComponentGalleryVisualTest extends TestCase
         $this->assertInstanceOf(GdImage::class, $captureImage);
         $this->assertSame(imagesx($referenceImage), imagesx($captureImage));
         $this->assertSame(imagesy($referenceImage), imagesy($captureImage));
-        $comparisonWidth = max(1, intdiv(imagesx($referenceImage), 4));
-        $comparisonHeight = max(1, intdiv(imagesy($referenceImage), 4));
-        $referenceSample = imagescale($referenceImage, $comparisonWidth, $comparisonHeight, IMG_BILINEAR_FIXED);
-        $captureSample = imagescale($captureImage, $comparisonWidth, $comparisonHeight, IMG_BILINEAR_FIXED);
-        $this->assertInstanceOf(GdImage::class, $referenceSample);
-        $this->assertInstanceOf(GdImage::class, $captureSample);
         $difference = 0;
         $samples = 0;
 
-        for ($y = 0; $y < $comparisonHeight; $y++) {
-            for ($x = 0; $x < $comparisonWidth; $x++) {
-                $referenceColor = imagecolorat($referenceSample, $x, $y);
-                $captureColor = imagecolorat($captureSample, $x, $y);
+        for ($y = 0; $y < imagesy($referenceImage); $y++) {
+            for ($x = 0; $x < imagesx($referenceImage); $x++) {
+                $referenceColor = imagecolorat($referenceImage, $x, $y);
+                $captureColor = imagecolorat($captureImage, $x, $y);
 
                 foreach ([16, 8, 0] as $shift) {
                     $difference += abs((($referenceColor >> $shift) & 0xFF) - (($captureColor >> $shift) & 0xFF)) / 255;

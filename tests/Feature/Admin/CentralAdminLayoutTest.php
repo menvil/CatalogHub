@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Support\DesignSystem\CentralShellFixture;
 use Illuminate\Support\Facades\Blade;
 use Tests\TestCase;
 
@@ -10,35 +11,35 @@ class CentralAdminLayoutTest extends TestCase
     public function test_central_admin_layout_renders_sidebar_topbar_and_content_slot(): void
     {
         $html = Blade::render(<<<'BLADE'
-            @extends('layouts.central-admin', ['activeNav' => 'Dashboard', 'pageTitle' => 'Catalog quality'])
+            @extends('layouts.central-admin', [
+                'activeNav' => 'dashboard',
+                'pageTitle' => 'Catalog quality',
+                'centralUser' => $centralUser,
+            ])
 
             @section('content')
                 <div>Central admin slot content</div>
             @endsection
-        BLADE);
+        BLADE, ['centralUser' => CentralShellFixture::user()]);
 
         $this->assertStringContainsString('data-admin-layout="central"', $html);
         $this->assertStringContainsString('Central Admin', $html);
-        $this->assertStringContainsString('Search canonical catalog', $html);
-        $this->assertStringContainsString('Notifications', $html);
-        $this->assertStringContainsString('Profile', $html);
+        $this->assertStringContainsString('Search unavailable', $html);
+        $this->assertStringContainsString('Notifications unavailable', $html);
+        $this->assertStringContainsString('Central Acceptance User', $html);
         $this->assertStringContainsString('Central admin slot content', $html);
         $this->assertStringContainsString('<title>Catalog quality - ', $html);
         $this->assertStringNotContainsString('href="#"', $html);
 
         foreach ([
             'Dashboard',
-            'Products',
-            'Categories',
-            'Brands',
+            'Catalog',
             'Imports',
             'Media',
             'Translations',
-            'Price Sources',
-            'Sites',
-            'Sync',
-            'Backups',
-            'Settings',
+            'Changes',
+            'Prices',
+            'Snapshots',
         ] as $label) {
             $this->assertStringContainsString($label, $html);
         }
@@ -47,7 +48,11 @@ class CentralAdminLayoutTest extends TestCase
     public function test_central_admin_layout_renders_active_nav_breadcrumbs_and_page_actions(): void
     {
         $html = Blade::render(<<<'BLADE'
-            @extends('layouts.central-admin', ['activeNav' => 'Products', 'pageTitle' => 'Products'])
+            @extends('layouts.central-admin', [
+                'activeNav' => 'catalog',
+                'pageTitle' => 'Products',
+                'centralUser' => $centralUser,
+            ])
 
             @section('breadcrumbs')
                 <span>Admin</span>
@@ -61,7 +66,7 @@ class CentralAdminLayoutTest extends TestCase
             @section('content')
                 <p>Products shell content</p>
             @endsection
-        BLADE);
+        BLADE, ['centralUser' => CentralShellFixture::user()]);
 
         $this->assertStringContainsString('aria-current="page"', $html);
         $this->assertStringContainsString('Products shell content', $html);

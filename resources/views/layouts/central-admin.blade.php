@@ -29,8 +29,7 @@
             @if (isset($centralShellPreviewState)) data-central-preview-state="{{ $centralShellPreviewState }}" @endif
             data-presentation-context="central-admin"
         >
-            <x-admin.sidebar
-                context="central"
+            <x-central.sidebar
                 :items="$centralAdminNavigation"
                 :active-nav="$activeNav ?? null"
                 data-central-sidebar

@@ -17,6 +17,7 @@
 @source '../views/filament/widgets/**/*';
 @source '../views/layouts/central-admin.blade.php';
 @source '../views/components/admin/**/*';
+@source '../views/components/central/**/*';
 @source '../views/components/ui/**/*';
 
 .central-shell-sidebar {

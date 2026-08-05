@@ -59,6 +59,10 @@
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test"
         ],
+        "test:visual": [
+            "@php artisan config:clear --ansi @no_additional_args",
+            "@php artisan test tests/Visual"
+        ],
         "test:architecture": [
             "@php artisan test tests/Unit/Architecture",
             "@php tools/architecture/report.php"

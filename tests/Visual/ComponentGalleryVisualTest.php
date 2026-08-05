@@ -42,12 +42,7 @@ final class ComponentGalleryVisualTest extends TestCase
     private function captureGallery(string $root, string $capture): void
     {
         $chrome = $this->chromeBinary();
-
-        if ($chrome === null) {
-            $this->markTestSkipped('Google Chrome is required for the deterministic visual regression capture.');
-        }
-
-        $port = $this->availablePort();
+        $this->assertNotNull($chrome, 'Google Chrome is required for the deterministic visual regression capture.');
         $log = tempnam(sys_get_temp_dir(), 'cataloghub-gallery-server-');
         $this->assertIsString($log);
         $nullDevice = PHP_OS_FAMILY === 'Windows' ? 'NUL' : '/dev/null';
@@ -58,12 +53,11 @@ final class ComponentGalleryVisualTest extends TestCase
         ];
         $environment = getenv();
         $environment['APP_ENV'] = 'testing';
-        $environment['APP_URL'] = "http://127.0.0.1:{$port}";
         $server = proc_open(
-            [PHP_BINARY, $root.'/artisan', 'serve', '--host=127.0.0.1', "--port={$port}"],
+            [PHP_BINARY, '-S', '127.0.0.1:0', '-t', $root.'/public', $root.'/vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php'],
             $descriptors,
             $pipes,
-            $root,
+            $root.'/public',
             $environment,
         );
 
@@ -73,7 +67,8 @@ final class ComponentGalleryVisualTest extends TestCase
         }
 
         try {
-            $this->waitForServer($port, $log);
+            $port = $this->waitForServerPort($server, $log);
+            $this->waitForGallery($port, $log);
             $browser = proc_open([
                 $chrome,
                 '--headless=new',
@@ -117,33 +112,52 @@ final class ComponentGalleryVisualTest extends TestCase
         return null;
     }
 
-    private function availablePort(): int
-    {
-        $socket = stream_socket_server('tcp://127.0.0.1:0', $errorCode, $errorMessage);
-        $this->assertIsResource($socket, "Unable to reserve a visual-test port: {$errorCode} {$errorMessage}");
-        $address = stream_socket_get_name($socket, false);
-        fclose($socket);
-
-        $this->assertIsString($address);
-
-        return (int) substr($address, (int) strrpos($address, ':') + 1);
-    }
-
-    private function waitForServer(int $port, string $log): void
+    /** @param resource $server */
+    private function waitForServerPort($server, string $log): int
     {
         for ($attempt = 0; $attempt < 50; $attempt++) {
-            $connection = @fsockopen('127.0.0.1', $port, $errorCode, $errorMessage, 0.1);
+            $output = (string) file_get_contents($log);
 
-            if (is_resource($connection)) {
-                fclose($connection);
+            if (preg_match('/Development Server \(http:\/\/127\.0\.0\.1:(\d+)\) started/', $output, $matches) === 1) {
+                return (int) $matches[1];
+            }
 
-                return;
+            if (! proc_get_status($server)['running']) {
+                $this->fail('Gallery server stopped before binding: '.$output);
             }
 
             usleep(100_000);
         }
 
-        $this->fail('Gallery server did not start: '.(string) file_get_contents($log));
+        $this->fail('Gallery server did not report its assigned port: '.(string) file_get_contents($log));
+    }
+
+    private function waitForGallery(int $port, string $log): void
+    {
+        for ($attempt = 0; $attempt < 50; $attempt++) {
+            set_error_handler(static fn (): bool => true);
+
+            try {
+                $connection = stream_socket_client("tcp://127.0.0.1:{$port}", $errorCode, $errorMessage, 0.1);
+            } finally {
+                restore_error_handler();
+            }
+
+            if (is_resource($connection)) {
+                fwrite($connection, "GET /dev/component-gallery HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n");
+                stream_set_timeout($connection, 1);
+                $response = stream_get_contents($connection);
+                fclose($connection);
+
+                if (is_string($response) && str_contains($response, 'data-presentation-context="central-admin"')) {
+                    return;
+                }
+            }
+
+            usleep(100_000);
+        }
+
+        $this->fail('The assigned server did not render the gallery: '.(string) file_get_contents($log));
     }
 
     private function meanChannelDifference(string $reference, string $capture): float

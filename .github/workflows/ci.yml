@@ -233,6 +233,47 @@ jobs:
           path: storage/logs
           retention-days: 5
 
+  visual-regression:
+    name: Visual regression (Chrome)
+    runs-on: ubuntu-latest
+    needs: frontend-build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: gd, mbstring, pdo_sqlite
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v6
+        with:
+          path: vendor
+          key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Download built assets
+        uses: actions/download-artifact@v8
+        with:
+          name: public-build
+          path: public/build
+
+      - name: Prepare application and browser
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          chrome_bin="$(command -v google-chrome || command -v google-chrome-stable)"
+          test -x "$chrome_bin"
+          echo "CHROME_BIN=$chrome_bin" >> "$GITHUB_ENV"
+
+      - name: Compare component gallery with approved reference
+        run: composer test:visual
+
   migrations-mariadb:
     name: Migrations (MariaDB)
     runs-on: ubuntu-latest
@@ -537,6 +578,7 @@ jobs:
       - static-analysis
       - frontend-build
       - tests
+      - visual-regression
       - migrations-mariadb
       - migrations-postgres
       - dependency-audit
@@ -563,6 +605,7 @@ jobs:
           BUILD_FILES: ${{ needs['frontend-build'].outputs.files }}
           BUILD_SIZE: ${{ needs['frontend-build'].outputs.size }}
           TESTS_RESULT: ${{ needs.tests.result }}
+          VISUAL_REGRESSION_RESULT: ${{ needs['visual-regression'].result }}
           TEST_COUNT: ${{ needs.tests.outputs.tests }}
           ASSERTION_COUNT: ${{ needs.tests.outputs.assertions }}
           SQLITE_MIGRATIONS: ${{ needs.tests.outputs.migrations }}
@@ -608,6 +651,7 @@ jobs:
               `| Architecture debt | ${value('DEBT_ACTIVE')} registered / ${value('DEBT_ACTUAL')} actual · inline ${value('DEBT_INLINE')} · baseline ${value('DEBT_BASELINE')} · unregistered ${value('DEBT_UNREGISTERED')} · stale ${value('DEBT_STALE')} · mismatched ${value('DEBT_MISMATCHED')} · expired ${value('DEBT_EXPIRED')} · forbidden ${value('DEBT_FORBIDDEN')} |`,
               `| Frontend build | ${details(process.env.FRONTEND_BUILD_RESULT, `${value('BUILD_FILES')} files · ${value('BUILD_SIZE')}`)} |`,
               `| Tests & SQLite | ${details(process.env.TESTS_RESULT, `${tests} tests · ${assertions} assertions · ${value('SQLITE_MIGRATIONS')} migrations · seed passed`)} |`,
+              `| Visual regression | ${details(process.env.VISUAL_REGRESSION_RESULT, 'Chrome 1440 × 1200px capture matches approved reference')} |`,
               `| MariaDB | ${details(process.env.MARIADB_RESULT, `${value('MARIADB_MIGRATIONS')} migrations · approved queries ${value('MARIADB_QUERY_BOUNDARIES')} · rollback ${value('MARIADB_ROLLBACK')}`)} |`,
               `| PostgreSQL | ${details(process.env.POSTGRES_RESULT, `${value('POSTGRES_MIGRATIONS')} migrations · approved queries ${value('POSTGRES_QUERY_BOUNDARIES')} · rollback ${value('POSTGRES_ROLLBACK')}`)} |`,
               `| Dependencies | ${details(process.env.DEPENDENCY_AUDIT_RESULT, `Composer: ${value('COMPOSER_PACKAGES')} packages · ${value('COMPOSER_ADVISORIES')} advisories; npm: ${value('NPM_PACKAGES')} packages · ${value('NPM_VULNERABILITIES')} vulnerabilities (${value('NPM_HIGH')} high / ${value('NPM_CRITICAL')} critical)`)} |`,
@@ -664,6 +708,7 @@ jobs:
           STATIC_ANALYSIS_RESULT: ${{ needs['static-analysis'].result }}
           FRONTEND_BUILD_RESULT: ${{ needs['frontend-build'].result }}
           TESTS_RESULT: ${{ needs.tests.result }}
+          VISUAL_REGRESSION_RESULT: ${{ needs['visual-regression'].result }}
           MARIADB_RESULT: ${{ needs['migrations-mariadb'].result }}
           POSTGRES_RESULT: ${{ needs['migrations-postgres'].result }}
           DEPENDENCY_AUDIT_RESULT: ${{ needs['dependency-audit'].result }}
@@ -673,6 +718,7 @@ jobs:
             "$STATIC_ANALYSIS_RESULT" \
             "$FRONTEND_BUILD_RESULT" \
             "$TESTS_RESULT" \
+            "$VISUAL_REGRESSION_RESULT" \
             "$MARIADB_RESULT" \
             "$POSTGRES_RESULT" \
             "$DEPENDENCY_AUDIT_RESULT"

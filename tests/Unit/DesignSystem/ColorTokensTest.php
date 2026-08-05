@@ -33,6 +33,7 @@ final class ColorTokensTest extends TestCase
             ['--color-foundation-warning', '--color-foundation-warning-surface'],
             ['--color-foundation-danger', '--color-foundation-danger-surface'],
             ['--color-foundation-info', '--color-foundation-info-surface'],
+            ['--color-foundation-outdated', '--color-foundation-outdated-surface'],
         ];
 
         foreach ($pairs as [$foreground, $background]) {

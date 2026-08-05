@@ -7,6 +7,7 @@
     {{ $attributes->class('border-b border-admin-border') }}
     aria-label="Admin tabs"
     role="tablist"
+    data-admin-tabs
 >
     <div class="flex gap-1 overflow-x-auto">
         @foreach ($items as $item)

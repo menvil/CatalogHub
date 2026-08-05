@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Contracts\Auth\CentralAdminAccess;
 use App\Contracts\Auth\SiteAdminAccess;
+use App\Contracts\Themes\PublicThemeResolver as PublicThemeResolverContract;
 use App\Events\MarketOfferUpdated;
 use App\Importers\SerializedPhpProductImporter;
 use App\Listeners\AuditAuthenticationEvent;
@@ -25,8 +26,10 @@ use App\Services\Imports\Normalizers\MultiEnumNormalizer;
 use App\Services\Imports\Normalizers\NumberNormalizer;
 use App\Services\Imports\Normalizers\UnitNormalizer;
 use App\Services\Security\PublicRequestRateLimiter;
+use App\Services\Themes\PublicThemeResolver;
 use App\Support\PermissionMatrix;
 use App\Support\Sites\SiteRuntimeContext;
+use App\Support\Themes\PublicThemeContext;
 use App\View\Composers\PublicNavigationComposer;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
@@ -49,6 +52,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(CentralAdminAccess::class, CentralPanelPolicy::class);
         $this->app->bind(SiteAdminAccess::class, SitePanelPolicy::class);
+        $this->app->bind(PublicThemeResolverContract::class, PublicThemeResolver::class);
 
         $this->app->scoped(AttributeMappingService::class);
         $this->app->scoped(SiteRuntimeContext::class, function ($app): SiteRuntimeContext {
@@ -60,6 +64,11 @@ class AppServiceProvider extends ServiceProvider
 
             return $context;
         });
+        $this->app->scoped(
+            PublicThemeContext::class,
+            fn ($app): PublicThemeContext => $app->make(PublicThemeResolverContract::class)
+                ->resolve($app->make(SiteRuntimeContext::class)),
+        );
 
         $this->app->singleton(
             ImportService::class,

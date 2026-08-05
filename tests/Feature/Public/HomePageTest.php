@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Public;
 
+use App\Models\Site;
 use Database\Seeders\Demo\MultiCategorySiteSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -32,5 +33,16 @@ class HomePageTest extends TestCase
             ->assertOk()
             ->assertSee('Tech Compare Global')
             ->assertSee('<a href="https://tech-compare.test/en-US"', false);
+    }
+
+    public function test_unconfigured_home_renders_a_truthful_empty_shell_state(): void
+    {
+        Site::factory()->active()->withRuntimeContext(['en-US'])->create([
+            'domain' => 'empty-public-shell.test',
+        ]);
+
+        $this->get('http://empty-public-shell.test/en-US')
+            ->assertOk()
+            ->assertSee('Catalog content is not configured for this shell.');
     }
 }

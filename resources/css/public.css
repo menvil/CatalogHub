@@ -4,8 +4,25 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../views/public/**/*.blade.php';
+@source '../views/layouts/public-*.blade.php';
+@source '../views/errors/public/*.blade.php';
 
 [data-presentation-context='public-site'] :focus-visible {
     outline: var(--width-foundation-focus-ring) solid var(--color-foundation-focus);
     outline-offset: var(--spacing-foundation-focus-offset);
+}
+
+.public-multi-shell-grid {
+    display: grid;
+}
+
+body:has([data-public-preview-state$='-mobile']) {
+    width: 360px;
+    max-width: 100%;
+}
+
+@media (min-width: 64rem) {
+    .public-multi-shell-grid {
+        grid-template-columns: var(--width-foundation-sidebar) minmax(0, 1fr);
+    }
 }

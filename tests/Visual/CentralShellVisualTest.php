@@ -116,6 +116,7 @@ final class CentralShellVisualTest extends TestCase
             '--headless=new',
             '--disable-gpu',
             '--hide-scrollbars',
+            '--run-all-compositor-stages-before-draw',
             '--force-device-scale-factor=1',
             "--window-size={$configuration['width']},{$configuration['height']}",
             '--virtual-time-budget=2000',

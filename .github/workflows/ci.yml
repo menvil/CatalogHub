@@ -273,6 +273,17 @@ jobs:
 
       - name: Compare component gallery with approved reference
         run: composer test:visual
+        env:
+          VISUAL_ARTIFACT_DIR: storage/visual-artifacts
+
+      - name: Upload visual diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: visual-diagnostics
+          path: storage/visual-artifacts
+          if-no-files-found: error
+          retention-days: 5
 
   migrations-mariadb:
     name: Migrations (MariaDB)

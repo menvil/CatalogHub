@@ -76,6 +76,7 @@ final class ComponentGalleryVisualTest extends TestCase
                     $configuration['height'],
                     '?mode=components&section='.$configuration['section'],
                 );
+                $this->preserveCapture($capture, "admin-components-{$state}.png");
                 $this->assertSame(
                     [$configuration['width'], $configuration['height']],
                     array_slice(getimagesize($capture) ?: [], 0, 2),
@@ -203,6 +204,25 @@ final class ComponentGalleryVisualTest extends TestCase
     private function componentReferencePath(string $state): string
     {
         return dirname(__DIR__, 2).'/tests/Visual/baselines/admin-components-'.$state.'.png';
+    }
+
+    private function preserveCapture(string $capture, string $filename): void
+    {
+        $configuredDirectory = getenv('VISUAL_ARTIFACT_DIR');
+
+        if (! is_string($configuredDirectory) || trim($configuredDirectory) === '') {
+            return;
+        }
+
+        $directory = rtrim($configuredDirectory, DIRECTORY_SEPARATOR);
+
+        if (! is_dir($directory) && ! mkdir($directory, 0777, true) && ! is_dir($directory)) {
+            throw new \RuntimeException("Unable to create visual artifact directory [{$directory}].");
+        }
+
+        if (! copy($capture, $directory.DIRECTORY_SEPARATOR.$filename)) {
+            throw new \RuntimeException("Unable to preserve visual artifact [{$filename}].");
+        }
     }
 
     private function chromeBinary(): ?string

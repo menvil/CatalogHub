@@ -7,3 +7,7 @@
 .min-w-foundation-table {
     min-width: var(--width-foundation-table);
 }
+
+body.admin-filter-drawer-open {
+    overflow: hidden;
+}

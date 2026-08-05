@@ -31,6 +31,10 @@ final readonly class UpsertSiteMembershipAction
     ): SiteMembership {
         return DB::transaction(function () use ($actor, $member, $site, $role, $isActive): SiteMembership {
             $this->authorization->authorizeMutation($actor, Permission::SiteMutationExecute, $site);
+            $site = Site::query()
+                ->whereKey($site->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
             $membership = SiteMembership::query()
                 ->whereBelongsTo($member)
                 ->whereBelongsTo($site)

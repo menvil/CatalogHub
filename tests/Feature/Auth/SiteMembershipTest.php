@@ -2,12 +2,16 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Actions\Auth\UpsertSiteMembershipAction;
 use App\Enums\SiteMembershipRole;
+use App\Enums\UserRole;
 use App\Models\Site;
 use App\Models\SiteMembership;
 use App\Models\User;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class SiteMembershipTest extends TestCase
@@ -56,6 +60,39 @@ class SiteMembershipTest extends TestCase
             'role' => SiteMembershipRole::SiteAdmin->value,
             'is_active' => true,
         ]);
+    }
+
+    public function test_membership_upsert_locks_the_site_before_looking_up_a_missing_membership(): void
+    {
+        $site = Site::factory()->create();
+        $actor = User::factory()->siteAdmin($site)->create();
+        $member = User::factory()->create(['role' => UserRole::Translator]);
+        $queries = [];
+
+        DB::listen(static function (QueryExecuted $query) use (&$queries): void {
+            $queries[] = ['sql' => $query->sql, 'bindings' => $query->bindings];
+        });
+
+        app(UpsertSiteMembershipAction::class)->handle(
+            $actor,
+            $member,
+            $site,
+            SiteMembershipRole::Translator,
+            true,
+        );
+
+        $siteLock = collect($queries)->search(
+            fn (array $query): bool => str_contains($query['sql'], 'from "sites"')
+                && $query['bindings'] === [$site->getKey()],
+        );
+        $membershipLookup = collect($queries)->search(
+            fn (array $query): bool => str_contains($query['sql'], 'from "site_user_memberships"')
+                && $query['bindings'] === [$member->getKey(), $site->getKey()],
+        );
+
+        $this->assertIsInt($siteLock);
+        $this->assertIsInt($membershipLookup);
+        $this->assertLessThan($membershipLookup, $siteLock);
     }
 
     public function test_memberships_are_removed_when_the_user_or_site_is_deleted(): void

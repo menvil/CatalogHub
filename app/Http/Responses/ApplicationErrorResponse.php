@@ -26,12 +26,12 @@ final readonly class ApplicationErrorResponse
 
         $status = $response->getStatusCode();
 
-        if (! $request->expectsJson() && in_array($status, [403, 404, 500], true) && $this->adminContext($request) !== null) {
+        if (! $request->expectsJson() && in_array($status, [403, 404, 500, 503], true) && $this->adminContext($request) !== null) {
             return $this->adminResponse($response, $request, $status, $requestId);
         }
 
-        if (! $request->expectsJson() && $status === 500) {
-            return $this->applicationResponse($response, $requestId);
+        if (! $request->expectsJson() && in_array($status, [500, 503], true)) {
+            return $this->applicationResponse($response, $status, $requestId);
         }
 
         $response->headers->set('X-Request-ID', $requestId);
@@ -53,9 +53,11 @@ final readonly class ApplicationErrorResponse
         return $this->copyHeaders($response, $rendered, $requestId);
     }
 
-    private function applicationResponse(Response $response, string $requestId): Response
+    private function applicationResponse(Response $response, int $status, string $requestId): Response
     {
-        $rendered = response()->view('errors.500', ['requestId' => $requestId], 500);
+        $rendered = response()->view("errors.{$status}", [
+            'requestId' => $status === 500 ? $requestId : null,
+        ], $status);
 
         return $this->copyHeaders($response, $rendered, $requestId);
     }

@@ -10,3 +10,26 @@
 @source '../views/components/admin/**/*';
 @source '../views/components/site-admin/**/*';
 @source '../views/components/ui/**/*';
+@source '../views/auth/site-admin-login.blade.php';
+
+.cataloghub-auth-screen {
+    display: grid;
+    gap: var(--space-admin-card);
+}
+
+.cataloghub-auth-context,
+.cataloghub-auth-notice {
+    color: var(--color-admin-text-muted);
+    font-size: var(--font-size-foundation-caption);
+}
+
+.cataloghub-auth-context {
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.cataloghub-auth-notice {
+    text-align: center;
+}

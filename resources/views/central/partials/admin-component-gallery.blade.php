@@ -67,13 +67,14 @@
                 <x-admin.filter-bar action="/dev/component-gallery" drawer-id="gallery-filters">
                     <input type="hidden" name="mode" value="components">
                     <input type="hidden" name="section" value="tables">
+                    <input type="hidden" name="q" value="Acme">
                     <x-ui.form.select id="gallery-filter-status" name="status" label="Status" :options="$adminComponentFixture['options']" selected="active" />
                 </x-admin.filter-bar>
                 <x-admin.active-filters :filters="$adminComponentFixture['filters']" clear-all-url="?mode=components&section=tables" />
                 <x-admin.bulk-actions table-id="gallery-brands" :actions="[['id' => 'archive', 'label' => 'Archive selected']]" />
                 <x-admin.data-table table-id="gallery-brands" caption="Brand-like fixture" :columns="$adminComponentFixture['columns']" :rows="$adminComponentFixture['rows']" selectable />
                 <div class="flex justify-end"><x-admin.row-actions row-id="brand-1" :actions="[['label' => 'Edit', 'url' => '/brands/brand-1/edit'], ['label' => 'Delete', 'url' => '/brands/brand-1', 'destructive' => true, 'confirmationId' => 'gallery-delete-modal']]" /></div>
-                <x-admin.pagination previous-url="/brands?page=1" next-url="/brands?page=3" :page="2" />
+                <x-admin.pagination :previous-url="'/dev/component-gallery?mode=components&section=tables&q=Acme&page=1'" :next-url="'/dev/component-gallery?mode=components&section=tables&q=Acme&page=3'" :page="2" />
             </div>
         </x-admin.card>
     @endif

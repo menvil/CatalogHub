@@ -42,6 +42,6 @@ final class FeedbackComponentsTest extends TestCase
     {
         $html = Blade::render('<x-ui.alert title="Review needed" message="Check localized labels." />');
 
-        $this->assertStringContainsString('<h3 class="font-semibold">Review needed</h3>', $html);
+        $this->assertMatchesRegularExpression('/<h3(?:\s[^>]*)?>Review needed<\/h3>/', $html);
     }
 }

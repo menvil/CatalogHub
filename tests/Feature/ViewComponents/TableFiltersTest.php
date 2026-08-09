@@ -44,6 +44,10 @@ final class TableFiltersTest extends TestCase
         $this->assertCount(2, array_unique($drawerIds[1]));
         $this->assertCount(2, array_unique($searchIds[1]));
         $this->assertSame(2, substr_count($html, 'role="search"'));
-        $this->assertStringContainsString('class="min-w-0 flex-1"', $html);
+
+        foreach (array_unique($searchIds[1]) as $searchId) {
+            $this->assertStringContainsString('for="'.$searchId.'"', $html);
+            $this->assertMatchesRegularExpression('/<input[^>]*id="'.preg_quote($searchId, '/').'"[^>]*name="q"[^>]*type="search"/', $html);
+        }
     }
 }

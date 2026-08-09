@@ -138,6 +138,30 @@ final class ComponentGalleryVisualTest extends TestCase
         }
     }
 
+    public function test_visual_comparison_detects_a_component_sized_region_change(): void
+    {
+        $reference = tempnam(sys_get_temp_dir(), 'cataloghub-visual-reference-');
+        $capture = tempnam(sys_get_temp_dir(), 'cataloghub-visual-capture-');
+        $this->assertIsString($reference);
+        $this->assertIsString($capture);
+        $referenceImage = imagecreatetruecolor(300, 200);
+        $captureImage = imagecreatetruecolor(300, 200);
+        $this->assertInstanceOf(GdImage::class, $referenceImage);
+        $this->assertInstanceOf(GdImage::class, $captureImage);
+        imagefill($referenceImage, 0, 0, imagecolorallocate($referenceImage, 255, 255, 255));
+        imagefill($captureImage, 0, 0, imagecolorallocate($captureImage, 255, 255, 255));
+        imagefilledrectangle($captureImage, 20, 20, 139, 59, imagecolorallocate($captureImage, 15, 23, 42));
+        imagepng($referenceImage, $reference);
+        imagepng($captureImage, $capture);
+
+        try {
+            $this->assertGreaterThan(self::MAX_MEAN_CHANNEL_DIFFERENCE, $this->meanChannelDifference($reference, $capture));
+        } finally {
+            @unlink($reference);
+            @unlink($capture);
+        }
+    }
+
     private function captureGallery(
         string $root,
         string $capture,

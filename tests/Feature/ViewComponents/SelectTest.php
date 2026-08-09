@@ -20,6 +20,7 @@ final class SelectTest extends TestCase
         $this->assertStringContainsString('<optgroup label="Europe">', $html);
         $this->assertMatchesRegularExpression('/value="fr"[^>]*selected/', $html);
         $this->assertStringContainsString('Choose', $html);
+        $this->assertMatchesRegularExpression('/<option\s+value="">Choose<\/option>/', $html);
         $this->assertStringContainsString('aria-invalid="true"', $html);
     }
 
@@ -44,5 +45,15 @@ final class SelectTest extends TestCase
 
         $this->assertSame(1, substr_count($html, 'aria-describedby='));
         $this->assertStringContainsString('aria-describedby="market-guidance market-help market-error"', $html);
+    }
+
+    public function test_multi_select_merges_caller_and_field_descriptions_without_duplicate_attributes(): void
+    {
+        $html = Blade::render(
+            '<x-ui.form.multi-select id="locales" name="locales" label="Locales" :options="[]" help="Choose locales" error="Invalid" aria-describedby="locale-guidance" />'
+        );
+
+        $this->assertSame(1, substr_count($html, 'aria-describedby='));
+        $this->assertStringContainsString('aria-describedby="locale-guidance locales-help locales-error"', $html);
     }
 }

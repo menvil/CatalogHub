@@ -90,12 +90,15 @@ final class ComponentGalleryTest extends TestCase
             'data-admin-table-toolbar',
             'name="mode" value="components"',
             'name="section" value="tables"',
+            'name="q" type="search" value="Acme"',
         ], false);
         $response->assertSeeInOrder([
             'data-admin-filter-drawer',
             'name="mode" value="components"',
             'name="section" value="tables"',
+            'name="q" value="Acme"',
         ], false);
+        $response->assertSee('href="/dev/component-gallery?mode=components&amp;section=tables&amp;q=Acme&amp;page=3"', false);
         $response->assertSee('href="?mode=components&amp;section=tables"', false);
     }
 

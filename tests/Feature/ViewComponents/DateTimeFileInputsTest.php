@@ -32,4 +32,12 @@ final class DateTimeFileInputsTest extends TestCase
         $this->assertStringNotContainsString('data-upload', $html);
         $this->assertStringNotContainsString('data-preview', $html);
     }
+
+    public function test_file_input_merges_caller_and_field_descriptions_without_duplicate_attributes(): void
+    {
+        $html = Blade::render('<x-ui.form.file-input id="asset" name="asset" label="Asset" hint="PNG only" error="Invalid" aria-describedby="asset-guidance" />');
+
+        $this->assertSame(1, substr_count($html, 'aria-describedby='));
+        $this->assertStringContainsString('aria-describedby="asset-guidance asset-help asset-error"', $html);
+    }
 }

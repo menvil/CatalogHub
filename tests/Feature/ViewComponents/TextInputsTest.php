@@ -44,4 +44,16 @@ final class TextInputsTest extends TestCase
         $this->assertStringContainsString('id="brand-slug-prefix"', $html);
         $this->assertStringContainsString('aria-describedby="brand-slug-prefix brand-slug-help"', $html);
     }
+
+    public function test_text_and_slug_inputs_merge_caller_descriptions_without_duplicate_attributes(): void
+    {
+        $html = Blade::render(<<<'BLADE'
+            <x-ui.form.input id="brand-name" name="name" label="Name" help="Public label" aria-describedby="name-guidance" />
+            <x-ui.form.slug-input id="brand-slug" name="slug" label="Slug" prefix="/brands/" help="Stable URL" aria-describedby="slug-guidance" />
+        BLADE);
+
+        $this->assertSame(2, substr_count($html, 'aria-describedby='));
+        $this->assertStringContainsString('aria-describedby="name-guidance brand-name-help"', $html);
+        $this->assertStringContainsString('aria-describedby="slug-guidance brand-slug-prefix brand-slug-help"', $html);
+    }
 }

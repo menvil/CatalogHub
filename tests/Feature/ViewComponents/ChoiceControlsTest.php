@@ -36,4 +36,15 @@ final class ChoiceControlsTest extends TestCase
         $this->assertSame(2, substr_count($html, 'type="radio"'));
         $this->assertSame(1, preg_match_all('/type="radio"[^>]*checked/', $html));
     }
+
+    public function test_radio_group_merges_caller_and_field_descriptions_without_duplicate_attributes(): void
+    {
+        $html = Blade::render(
+            '<x-ui.form.radio-group id="status" name="status" label="Status" :options="$options" help="Choose status" error="Invalid" aria-describedby="status-guidance" />',
+            ['options' => ['draft' => 'Draft']],
+        );
+
+        $this->assertSame(1, substr_count($html, 'aria-describedby='));
+        $this->assertStringContainsString('aria-describedby="status-guidance status-help status-error"', $html);
+    }
 }

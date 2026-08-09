@@ -67,7 +67,7 @@ try {
             await writeFile(dom, result.result.value)
         }
 
-        await connection.send('Browser.close')
+        connection.sendWithoutReply('Browser.close')
     } finally {
         connection.close()
     }
@@ -125,6 +125,28 @@ async function connect(endpoint) {
         socket.addEventListener('error', reject, { once: true })
     })
 
+    const rejectTracked = failure => {
+        const error = failure instanceof Error ? failure : new Error(String(failure))
+
+        for (const request of pending.values()) {
+            request.reject(error)
+        }
+
+        pending.clear()
+
+        for (const listener of listeners.splice(0)) {
+            listener.reject(error)
+        }
+    }
+
+    socket.addEventListener('error', event => {
+        rejectTracked(event.error instanceof Error ? event.error : new Error('Chrome DevTools WebSocket failed.'))
+    })
+    socket.addEventListener('close', event => {
+        const reason = event.reason ? `: ${event.reason}` : ''
+        rejectTracked(new Error(`Chrome DevTools WebSocket closed (${event.code})${reason}`))
+    })
+
     socket.addEventListener('message', event => {
         const message = JSON.parse(event.data)
 
@@ -149,12 +171,16 @@ async function connect(endpoint) {
     return {
         send(method, params = {}, sessionId = undefined) {
             const id = nextId++
+            const response = new Promise((resolve, reject) => pending.set(id, { resolve, reject }))
             socket.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }))
 
-            return new Promise((resolve, reject) => pending.set(id, { resolve, reject }))
+            return response
+        },
+        sendWithoutReply(method, params = {}, sessionId = undefined) {
+            socket.send(JSON.stringify({ id: nextId++, method, params, ...(sessionId ? { sessionId } : {}) }))
         },
         event(method, sessionId, predicate = () => true) {
-            return new Promise(resolve => listeners.push({ method, sessionId, predicate, resolve }))
+            return new Promise((resolve, reject) => listeners.push({ method, sessionId, predicate, resolve, reject }))
         },
         close() {
             socket.close()

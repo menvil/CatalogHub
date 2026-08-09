@@ -9,7 +9,7 @@ use Illuminate\Validation\Rule;
 
 final class ComponentGalleryRequest extends FormRequest
 {
-    private const SECTIONS = ['forms', 'tables', 'feedback', 'states', 'acceptance'];
+    private const SECTIONS = ['forms', 'tables', 'feedback', 'states', 'actions', 'acceptance'];
 
     public function authorize(): bool
     {

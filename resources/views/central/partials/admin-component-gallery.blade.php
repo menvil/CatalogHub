@@ -127,6 +127,16 @@
         </x-admin.card>
     @endif
 
+    @if (in_array($componentSection, ['actions', 'acceptance'], true))
+        <x-admin.card title="Action progress" description="Deterministic action states never fabricate a completion percentage." data-gallery-actions-fixture>
+            <div class="grid gap-admin-section lg:grid-cols-2">
+                @foreach ($actionProgressFixture as $state => $progress)
+                    <x-ui.states.action-progress :progress="$progress" action-label="Start export" retry-label="Retry export" reset-label="Dismiss result" data-gallery-action-state="{{ $state }}" />
+                @endforeach
+            </div>
+        </x-admin.card>
+    @endif
+
     @if ($componentAcceptance && $componentSection === 'acceptance')
         <output data-browser-acceptance="pending" class="sr-only">pending</output>
         <script>
@@ -260,6 +270,14 @@
                     retry?.addEventListener('click', () => retries++);
                     retry?.click();
                     if (retries !== 1) throw new Error('feedback-retry');
+
+                    const actionProgress = document.querySelector('[data-gallery-action-state="idle"]');
+                    const actionStart = actionProgress?.querySelector('[data-action-progress-start]');
+                    let actionStarts = 0;
+                    actionProgress?.addEventListener('admin:action-progress-start', () => actionStarts++);
+                    actionStart?.click();
+                    actionStart?.click();
+                    if (actionStarts !== 1 || ! actionStart?.disabled || actionProgress?.dataset.actionProgressStarted !== 'true') throw new Error('action-progress-duplicate');
 
                     const marker = document.querySelector('[data-browser-acceptance]');
                     marker.dataset.browserAcceptance = 'passed';

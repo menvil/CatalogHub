@@ -62,6 +62,7 @@ final class ComponentGalleryTest extends TestCase
             'tables' => 'data-gallery-tables-fixture',
             'feedback' => 'data-gallery-feedback-fixture',
             'states' => 'data-gallery-states-fixture',
+            'actions' => 'data-gallery-actions-fixture',
         ];
 
         foreach ($markers as $section => $marker) {
@@ -78,6 +79,7 @@ final class ComponentGalleryTest extends TestCase
             ->assertSee('data-admin-form-state', false)
             ->assertSee('data-admin-data-table', false)
             ->assertSee('data-gallery-modal-fixture', false)
+            ->assertSee('data-ui-action-progress="idle"', false)
             ->assertSee('data-browser-acceptance="pending"', false);
     }
 

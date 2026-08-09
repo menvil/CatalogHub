@@ -9,6 +9,8 @@ use App\Http\Requests\CentralAdmin\DesignSystem\ComponentGalleryRequest;
 use App\Support\DesignSystem\AdminComponentGalleryFixture;
 use App\Support\DesignSystem\CentralShellFixture;
 use App\Support\DesignSystem\FoundationDesignSystem;
+use App\ViewModels\ActionProgressViewModel;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 
 final class ComponentGalleryController extends Controller
@@ -33,6 +35,12 @@ final class ComponentGalleryController extends Controller
                 'options' => AdminComponentGalleryFixture::OPTIONS,
                 'filters' => AdminComponentGalleryFixture::FILTERS,
                 'timestamp' => AdminComponentGalleryFixture::timestamp(),
+            ],
+            'actionProgressFixture' => [
+                'idle' => ActionProgressViewModel::idle('Ready to generate the deterministic export.'),
+                'pending' => ActionProgressViewModel::pending('Export generation is running.', CarbonImmutable::parse('2026-08-05 10:15:00 UTC')),
+                'success' => ActionProgressViewModel::success('Export completed.', CarbonImmutable::parse('2026-08-05 10:15:00 UTC'), CarbonImmutable::parse('2026-08-05 10:16:00 UTC')),
+                'failure' => ActionProgressViewModel::failure('Export failed without changing stored data.', CarbonImmutable::parse('2026-08-05 10:15:00 UTC'), CarbonImmutable::parse('2026-08-05 10:16:00 UTC')),
             ],
         ]);
     }

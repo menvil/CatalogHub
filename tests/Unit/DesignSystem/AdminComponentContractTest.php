@@ -58,6 +58,9 @@ final class AdminComponentContractTest extends TestCase
         yield 'alert' => ['ui/alert', 'feedback', 'data-ui-alert="warning"'];
         yield 'toast' => ['ui/toast', 'feedback', 'data-ui-toast'];
         yield 'retry' => ['ui/retry-block', 'feedback', 'data-ui-retry-block'];
+        yield 'empty state' => ['ui/states/empty', 'states', 'data-ui-screen-state="empty"'];
+        yield 'filtered empty state' => ['ui/states/filtered-empty', 'states', 'data-ui-screen-state="filtered-empty"'];
+        yield 'loading state' => ['ui/states/loading', 'states', 'data-ui-screen-state="loading"'];
     }
 
     public function test_field_and_label_are_covered_through_the_rendered_input_composition_pipeline(): void

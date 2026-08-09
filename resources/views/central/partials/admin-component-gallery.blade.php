@@ -117,6 +117,16 @@
         </div>
     @endif
 
+    @if (in_array($componentSection, ['states', 'acceptance'], true))
+        <x-admin.card title="Common screen states" description="Initial, filtered, and loading states stay semantically distinct." data-gallery-states-fixture>
+            <div class="grid gap-admin-section lg:grid-cols-2">
+                <x-ui.states.empty title="No brands yet" message="Create the first brand after an approved source is available." action-label="Create brand" action-url="/admin/central/brands/create" />
+                <x-ui.states.filtered-empty title="No matching brands" message="No brands match the current search and filters." clear-url="/dev/component-gallery?mode=components&amp;section=states" />
+                <x-ui.states.loading label="Loading brand records" :rows="4" class="lg:col-span-2" />
+            </div>
+        </x-admin.card>
+    @endif
+
     @if ($componentAcceptance && $componentSection === 'acceptance')
         <output data-browser-acceptance="pending" class="sr-only">pending</output>
         <script>

@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Middleware\AddSecurityHeaders;
+use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\RequirePermission;
 use App\Http\Responses\ApplicationErrorResponse;
+use App\Support\Http\RequestId;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->prepend(AssignRequestId::class);
         $middleware->append(AddSecurityHeaders::class);
         $middleware->alias([
             'cataloghub.permission' => RequirePermission::class,
@@ -30,6 +33,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );
+        $exceptions->context(fn (): array => app()->bound('request')
+            ? ['request_id' => RequestId::resolve(app(Request::class))]
+            : []);
         $exceptions->respond(
             fn (Response $response, Throwable $exception, Request $request): Response => app(ApplicationErrorResponse::class)
                 ->render($response, $exception, $request),

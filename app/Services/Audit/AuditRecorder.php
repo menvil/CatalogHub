@@ -9,6 +9,7 @@ use App\Enums\AuditContext;
 use App\Models\AuditLogEntry;
 use App\Models\Site;
 use App\Models\User;
+use App\Support\Http\RequestId;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
@@ -89,9 +90,9 @@ final class AuditRecorder
 
     private function requestId(): ?string
     {
-        $value = $this->request()?->header('X-Request-ID');
+        $request = $this->request();
 
-        return is_string($value) && trim($value) !== '' ? mb_substr(trim($value), 0, 100) : null;
+        return $request instanceof Request ? RequestId::resolve($request) : null;
     }
 
     private function request(): ?Request

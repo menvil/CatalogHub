@@ -3,6 +3,7 @@
 namespace Tests\Feature\Components;
 
 use Illuminate\Support\Facades\Blade;
+use Illuminate\View\ViewException;
 use Tests\TestCase;
 
 class ConfirmationModalTest extends TestCase
@@ -71,5 +72,13 @@ class ConfirmationModalTest extends TestCase
         $this->assertCount(2, array_unique($labelMatches[1]));
         $this->assertCount(2, array_unique($descriptionMatches[1]));
         $this->assertStringContainsString('data-admin-modal-confirm', $html);
+    }
+
+    public function test_confirmation_modal_rejects_whitespace_ids(): void
+    {
+        $this->expectException(ViewException::class);
+        $this->expectExceptionMessage('Confirmation modal IDs cannot be empty.');
+
+        Blade::render('<x-admin.confirmation-modal id="   " title="Delete" message="Confirm" />');
     }
 }

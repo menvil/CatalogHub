@@ -55,6 +55,71 @@ final class ComponentGalleryTest extends TestCase
             ->assertSee('data-presentation-context="central-admin"', false);
     }
 
+    public function test_component_mode_renders_deterministic_forms_tables_feedback_and_acceptance_fixtures(): void
+    {
+        $markers = [
+            'forms' => 'data-gallery-forms-fixture',
+            'tables' => 'data-gallery-tables-fixture',
+            'feedback' => 'data-gallery-feedback-fixture',
+        ];
+
+        foreach ($markers as $section => $marker) {
+            $this->get('/dev/component-gallery?mode=components&section='.$section)
+                ->assertOk()
+                ->assertSee('data-admin-components-fixture="admin-components-v1"', false)
+                ->assertSee('data-admin-components-section="'.$section.'"', false)
+                ->assertSee($marker, false)
+                ->assertSee('Admin component gallery');
+        }
+
+        $this->get('/dev/component-gallery?mode=components&section=acceptance&acceptance=1')
+            ->assertOk()
+            ->assertSee('data-admin-form-state', false)
+            ->assertSee('data-admin-data-table', false)
+            ->assertSee('data-gallery-modal-fixture', false)
+            ->assertSee('data-browser-acceptance="pending"', false);
+    }
+
+    public function test_table_fixture_forms_preserve_gallery_query_context(): void
+    {
+        $response = $this->get('/dev/component-gallery?mode=components&section=tables&q=Acme')
+            ->assertOk()
+            ->assertSee('data-gallery-tables-fixture', false);
+
+        $response->assertSeeInOrder([
+            'data-admin-table-toolbar',
+            'name="mode" value="components"',
+            'name="section" value="tables"',
+            'name="q" type="search" value="Acme"',
+        ], false);
+        $response->assertSeeInOrder([
+            'data-admin-filter-drawer',
+            'name="mode" value="components"',
+            'name="section" value="tables"',
+            'name="q" value="Acme"',
+        ], false);
+        $response->assertSee('href="/dev/component-gallery?mode=components&amp;section=tables&amp;q=Acme&amp;page=3"', false);
+        $response->assertSee('href="?mode=components&amp;section=tables"', false);
+    }
+
+    public function test_component_gallery_rejects_unknown_fixture_sections(): void
+    {
+        $this->get('/dev/component-gallery?mode=components&section=unknown')
+            ->assertSessionHasErrors('section');
+    }
+
+    public function test_acceptance_script_only_runs_for_the_complete_acceptance_fixture(): void
+    {
+        $this->get('/dev/component-gallery?mode=components&acceptance=1')
+            ->assertOk()
+            ->assertSee('data-gallery-forms-fixture', false)
+            ->assertDontSee('data-browser-acceptance=', false);
+
+        $this->get('/dev/component-gallery?mode=components&section=acceptance&acceptance=1')
+            ->assertOk()
+            ->assertSee('data-browser-acceptance="pending"', false);
+    }
+
     public function test_icon_contract_is_single_source_and_unknown_icons_fail_loudly(): void
     {
         foreach (FoundationDesignSystem::ICONS as $icon) {

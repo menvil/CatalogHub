@@ -7,3 +7,13 @@
 .min-w-foundation-table {
     min-width: var(--width-foundation-table);
 }
+
+@media (width < 48rem) {
+    body.admin-filter-drawer-open {
+        overflow: hidden;
+    }
+}
+
+body.admin-modal-open {
+    overflow: hidden;
+}

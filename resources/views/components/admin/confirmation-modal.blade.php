@@ -6,6 +6,7 @@
     'variant' => 'default',
     'open' => true,
     'contained' => false,
+    'id' => null,
 ])
 
 @php
@@ -27,21 +28,24 @@
         ],
     ];
 
+    throw_if($id !== null && trim((string) $id) === '', \InvalidArgumentException::class, 'Confirmation modal IDs cannot be empty.');
     $classes = $variantClasses[$variant] ?? $variantClasses['default'];
-    $modalBaseId = 'admin-confirmation-modal-'.\Illuminate\Support\Str::random(8);
+    $modalBaseId = $id ?: 'admin-confirmation-modal-'.\Illuminate\Support\Str::random(8);
     $modalTitleId = $modalBaseId.'-title';
     $modalMessageId = $modalBaseId.'-message';
 @endphp
 
 <div
+    id="{{ $modalBaseId }}"
     {{ $attributes->class([
         'inset-0 z-50 flex items-center justify-center p-admin-page',
         'absolute' => $contained,
         'fixed' => ! $contained,
         'hidden' => ! $open,
     ]) }}
-    data-admin-modal
+    data-admin-modal="{{ $modalBaseId }}"
     data-admin-modal-open="{{ $open ? 'true' : 'false' }}"
+    data-admin-modal-contained="{{ $contained ? 'true' : 'false' }}"
 >
     <button
         type="button"

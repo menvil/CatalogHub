@@ -248,6 +248,11 @@ jobs:
           extensions: gd, mbstring, pdo_sqlite
           coverage: none
 
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 26
+
       - name: Cache Composer packages
         uses: actions/cache@v6
         with:
@@ -273,6 +278,17 @@ jobs:
 
       - name: Compare component gallery with approved reference
         run: composer test:visual
+        env:
+          VISUAL_ARTIFACT_DIR: storage/visual-artifacts
+
+      - name: Upload visual diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: visual-diagnostics
+          path: storage/visual-artifacts
+          if-no-files-found: warn
+          retention-days: 5
 
   migrations-mariadb:
     name: Migrations (MariaDB)

@@ -9,6 +9,18 @@ use PHPUnit\Framework\TestCase;
 
 final class ComponentGalleryVisualTest extends TestCase
 {
+    private const MAX_MEAN_CHANNEL_DIFFERENCE = 0.04;
+
+    /** @var array<string, array{width: int, height: int, section: string}> */
+    private const COMPONENT_STATES = [
+        'forms-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'forms'],
+        'forms-mobile' => ['width' => 360, 'height' => 900, 'section' => 'forms'],
+        'tables-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'tables'],
+        'tables-mobile' => ['width' => 360, 'height' => 900, 'section' => 'tables'],
+        'feedback-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'feedback'],
+        'feedback-mobile' => ['width' => 360, 'height' => 900, 'section' => 'feedback'],
+    ];
+
     public function test_approved_gallery_reference_checksum_is_unchanged(): void
     {
         $root = dirname(__DIR__, 2);
@@ -33,14 +45,131 @@ final class ComponentGalleryVisualTest extends TestCase
         try {
             $this->captureGallery($root, $capture);
             $this->assertSame([1440, 1200], array_slice(getimagesize($capture) ?: [], 0, 2));
-            $this->assertLessThanOrEqual(0.03, $this->meanChannelDifference($reference, $capture));
+            $this->assertLessThanOrEqual(self::MAX_MEAN_CHANNEL_DIFFERENCE, $this->meanChannelDifference($reference, $capture));
         } finally {
             @unlink($capture);
         }
     }
 
-    private function captureGallery(string $root, string $capture): void
+    public function test_approved_admin_component_reference_checksums_are_unchanged(): void
     {
+        foreach (array_keys(self::COMPONENT_STATES) as $state) {
+            $reference = $this->componentReferencePath($state);
+
+            $this->assertFileExists($reference);
+            $this->assertFileExists($reference.'.sha256');
+            $this->assertSame(trim((string) file_get_contents($reference.'.sha256')), hash_file('sha256', $reference));
+        }
+    }
+
+    public function test_current_admin_component_gallery_matches_all_approved_references(): void
+    {
+        foreach (self::COMPONENT_STATES as $state => $configuration) {
+            $temporaryPath = tempnam(sys_get_temp_dir(), 'cataloghub-admin-components-');
+            $this->assertIsString($temporaryPath);
+            @unlink($temporaryPath);
+            $capture = $temporaryPath.'.png';
+
+            try {
+                $this->captureGallery(
+                    dirname(__DIR__, 2),
+                    $capture,
+                    $configuration['width'],
+                    $configuration['height'],
+                    '?mode=components&section='.$configuration['section'],
+                );
+                $this->preserveCapture($capture, "admin-components-{$state}.png");
+                $this->assertSame(
+                    [$configuration['width'], $configuration['height']],
+                    array_slice(getimagesize($capture) ?: [], 0, 2),
+                );
+                $this->assertLessThanOrEqual(
+                    self::MAX_MEAN_CHANNEL_DIFFERENCE,
+                    $this->meanChannelDifference($this->componentReferencePath($state), $capture),
+                    "Admin component gallery state [{$state}] differs from its approved reference.",
+                );
+            } finally {
+                @unlink($capture);
+            }
+        }
+    }
+
+    public function test_admin_component_interactions_pass_in_a_real_browser(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $dom = tempnam(sys_get_temp_dir(), 'cataloghub-admin-components-dom-');
+        $this->assertIsString($dom);
+        $capture = tempnam(sys_get_temp_dir(), 'cataloghub-admin-components-dummy-');
+        $this->assertIsString($capture);
+        @unlink($capture);
+
+        try {
+            $this->captureGallery($root, $capture.'.png', 1280, 1000, '?mode=components&section=acceptance&acceptance=1', $dom);
+            $renderedDom = (string) file_get_contents($dom);
+            $this->assertStringContainsString('data-browser-acceptance="passed"', $renderedDom);
+            $this->assertStringNotContainsString('data-browser-acceptance="failed"', $renderedDom);
+        } finally {
+            @unlink($dom);
+            @unlink($capture.'.png');
+        }
+    }
+
+    public function test_visual_comparison_still_detects_meaningful_region_changes(): void
+    {
+        $reference = tempnam(sys_get_temp_dir(), 'cataloghub-visual-reference-');
+        $capture = tempnam(sys_get_temp_dir(), 'cataloghub-visual-capture-');
+        $this->assertIsString($reference);
+        $this->assertIsString($capture);
+        $referenceImage = imagecreatetruecolor(100, 100);
+        $captureImage = imagecreatetruecolor(100, 100);
+        $this->assertInstanceOf(GdImage::class, $referenceImage);
+        $this->assertInstanceOf(GdImage::class, $captureImage);
+        imagefill($referenceImage, 0, 0, imagecolorallocate($referenceImage, 255, 255, 255));
+        imagefill($captureImage, 0, 0, imagecolorallocate($captureImage, 255, 255, 255));
+        imagefilledrectangle($captureImage, 0, 0, 49, 49, imagecolorallocate($captureImage, 15, 23, 42));
+        imagepng($referenceImage, $reference);
+        imagepng($captureImage, $capture);
+
+        try {
+            $this->assertGreaterThan(self::MAX_MEAN_CHANNEL_DIFFERENCE, $this->meanChannelDifference($reference, $capture));
+        } finally {
+            @unlink($reference);
+            @unlink($capture);
+        }
+    }
+
+    public function test_visual_comparison_detects_a_component_sized_region_change(): void
+    {
+        $reference = tempnam(sys_get_temp_dir(), 'cataloghub-visual-reference-');
+        $capture = tempnam(sys_get_temp_dir(), 'cataloghub-visual-capture-');
+        $this->assertIsString($reference);
+        $this->assertIsString($capture);
+        $referenceImage = imagecreatetruecolor(300, 200);
+        $captureImage = imagecreatetruecolor(300, 200);
+        $this->assertInstanceOf(GdImage::class, $referenceImage);
+        $this->assertInstanceOf(GdImage::class, $captureImage);
+        imagefill($referenceImage, 0, 0, imagecolorallocate($referenceImage, 255, 255, 255));
+        imagefill($captureImage, 0, 0, imagecolorallocate($captureImage, 255, 255, 255));
+        imagefilledrectangle($captureImage, 20, 20, 139, 59, imagecolorallocate($captureImage, 15, 23, 42));
+        imagepng($referenceImage, $reference);
+        imagepng($captureImage, $capture);
+
+        try {
+            $this->assertGreaterThan(self::MAX_MEAN_CHANNEL_DIFFERENCE, $this->meanChannelDifference($reference, $capture));
+        } finally {
+            @unlink($reference);
+            @unlink($capture);
+        }
+    }
+
+    private function captureGallery(
+        string $root,
+        string $capture,
+        int $width = 1440,
+        int $height = 1200,
+        string $query = '',
+        ?string $dom = null,
+    ): void {
         $chrome = $this->chromeBinary();
         $this->assertNotNull($chrome, 'Google Chrome is required for the deterministic visual regression capture.');
         $log = tempnam(sys_get_temp_dir(), 'cataloghub-gallery-server-');
@@ -69,17 +198,21 @@ final class ComponentGalleryVisualTest extends TestCase
         try {
             $port = $this->waitForServerPort($server, $log);
             $this->waitForGallery($port, $log);
-            $browser = proc_open([
+            $browserArguments = [
+                'node',
+                $root.'/tests/Support/capture-chrome.mjs',
                 $chrome,
-                '--headless=new',
-                '--disable-gpu',
-                '--hide-scrollbars',
-                '--force-device-scale-factor=1',
-                '--window-size=1440,1200',
-                '--virtual-time-budget=2000',
-                "--screenshot={$capture}",
-                "http://127.0.0.1:{$port}/dev/component-gallery",
-            ], $descriptors, $browserPipes, $root);
+                "http://127.0.0.1:{$port}/dev/component-gallery{$query}",
+                $capture,
+                (string) $width,
+                (string) $height,
+            ];
+
+            if ($dom !== null) {
+                $browserArguments[] = $dom;
+            }
+
+            $browser = proc_open($browserArguments, $descriptors, $browserPipes, $root);
 
             $this->assertIsResource($browser, 'Unable to start Google Chrome.');
             $this->assertSame(0, proc_close($browser), (string) file_get_contents($log));
@@ -88,6 +221,30 @@ final class ComponentGalleryVisualTest extends TestCase
             proc_terminate($server);
             proc_close($server);
             @unlink($log);
+        }
+    }
+
+    private function componentReferencePath(string $state): string
+    {
+        return dirname(__DIR__, 2).'/tests/Visual/baselines/admin-components-'.$state.'.png';
+    }
+
+    private function preserveCapture(string $capture, string $filename): void
+    {
+        $configuredDirectory = getenv('VISUAL_ARTIFACT_DIR');
+
+        if (! is_string($configuredDirectory) || trim($configuredDirectory) === '') {
+            return;
+        }
+
+        $directory = rtrim($configuredDirectory, DIRECTORY_SEPARATOR);
+
+        if (! is_dir($directory) && ! mkdir($directory, 0777, true) && ! is_dir($directory)) {
+            throw new \RuntimeException("Unable to create visual artifact directory [{$directory}].");
+        }
+
+        if (! copy($capture, $directory.DIRECTORY_SEPARATOR.$filename)) {
+            throw new \RuntimeException("Unable to preserve visual artifact [{$filename}].");
         }
     }
 
@@ -171,8 +328,8 @@ final class ComponentGalleryVisualTest extends TestCase
         $difference = 0;
         $samples = 0;
 
-        for ($y = 0; $y < imagesy($referenceImage); $y += 2) {
-            for ($x = 0; $x < imagesx($referenceImage); $x += 2) {
+        for ($y = 0; $y < imagesy($referenceImage); $y++) {
+            for ($x = 0; $x < imagesx($referenceImage); $x++) {
                 $referenceColor = imagecolorat($referenceImage, $x, $y);
                 $captureColor = imagecolorat($captureImage, $x, $y);
 

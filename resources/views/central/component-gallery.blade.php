@@ -3,6 +3,9 @@
 @section('pageTitle', 'Foundation Component Gallery')
 
 @section('content')
+    @if ($componentMode)
+        @include('central.partials.admin-component-gallery')
+    @else
     <div class="space-y-foundation-section" data-gallery-fixture="{{ $fixtureVersion }}">
         <x-admin.page-header
             screen-id="CA-DS-001"
@@ -120,4 +123,5 @@
             </div>
         </section>
     </div>
+    @endif
 @endsection

@@ -2,8 +2,8 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Central\Pages\Home;
 use App\Filament\Central\Pages\Auth\Login;
+use App\Filament\Central\Pages\Home;
 use App\Filament\Pages\CentralDashboard;
 use App\Filament\Pages\CreateSiteWizard;
 use App\Filament\Pages\ImportWizard;

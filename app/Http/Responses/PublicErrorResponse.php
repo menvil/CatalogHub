@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Responses;
 
-use App\Support\PublicSite\PublicErrorContext;
 use App\Support\Http\RequestId;
+use App\Support\PublicSite\PublicErrorContext;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;

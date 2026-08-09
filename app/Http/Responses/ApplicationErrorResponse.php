@@ -22,23 +22,23 @@ final readonly class ApplicationErrorResponse
 
         $status = $response->getStatusCode();
 
-        if (! $request->expectsJson() && $status === 403 && $this->adminContext($request) !== null) {
-            return $this->adminResponse($response, $request);
+        if (! $request->expectsJson() && in_array($status, [403, 404], true) && $this->adminContext($request) !== null) {
+            return $this->adminResponse($response, $request, $status);
         }
 
         return $response;
     }
 
-    private function adminResponse(Response $response, Request $request): Response
+    private function adminResponse(Response $response, Request $request, int $status): Response
     {
         $context = $this->adminContext($request);
         $isCentral = $context === 'central-admin';
-        $rendered = response()->view('errors.admin.403', [
+        $rendered = response()->view("errors.admin.{$status}", [
             'presentationContext' => $context,
             'dashboardUrl' => $isCentral ? '/admin/central' : '/admin/site',
             'dashboardLabel' => $isCentral ? 'Return to Central Admin' : 'Return to Site Admin',
             'requestId' => null,
-        ], 403);
+        ], $status);
 
         return $this->copyHeaders($response, $rendered);
     }

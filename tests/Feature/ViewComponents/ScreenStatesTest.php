@@ -36,6 +36,25 @@ final class ScreenStatesTest extends TestCase
         $this->assertStringNotContainsString('<script>alert(1)</script>', $html);
     }
 
+    public function test_empty_states_generate_unique_ids_and_preserve_caller_ids(): void
+    {
+        $html = Blade::render(<<<'BLADE'
+            <x-ui.states.empty title="First" message="First message" />
+            <x-ui.states.empty id="custom-empty" title="Second" message="Second message" />
+            <x-ui.states.filtered-empty title="Third" message="Third message" clear-url="/clear" />
+        BLADE);
+
+        preg_match_all('/<section[^>]*\sid="([^"]+)"[^>]*aria-labelledby="([^"]+)"/', $html, $matches);
+
+        $this->assertCount(3, $matches[1]);
+        $this->assertCount(3, array_unique($matches[1]));
+        $this->assertSame('custom-empty', $matches[1][1]);
+        foreach ($matches[1] as $index => $id) {
+            $this->assertSame($id.'-title', $matches[2][$index]);
+            $this->assertStringContainsString('id="'.$id.'-title"', $html);
+        }
+    }
+
     public function test_loading_state_is_accessible_motion_safe_and_has_no_fake_data(): void
     {
         $html = Blade::render('<x-ui.states.loading label="Loading brands" :rows="4" />');

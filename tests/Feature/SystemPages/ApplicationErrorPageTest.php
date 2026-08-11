@@ -59,6 +59,28 @@ final class ApplicationErrorPageTest extends TestCase
         $response->assertSee($requestId);
     }
 
+    public function test_request_id_length_boundaries_are_preserved_or_replaced(): void
+    {
+        $maximum = 'a'.str_repeat('b', 127);
+        $tooLong = $maximum.'c';
+
+        $this->withHeader('X-Request-ID', $maximum)
+            ->get('/__foundation-error/500')
+            ->assertStatus(500)
+            ->assertHeader('X-Request-ID', $maximum)
+            ->assertSee($maximum);
+
+        $response = $this->withHeader('X-Request-ID', $tooLong)
+            ->get('/__foundation-error/500')
+            ->assertStatus(500)
+            ->assertDontSee($tooLong);
+
+        $requestId = $response->headers->get('X-Request-ID');
+        $this->assertIsString($requestId);
+        $this->assertMatchesRegularExpression('/\A[0-9a-f-]{36}\z/i', $requestId);
+        $response->assertSee($requestId);
+    }
+
     public function test_successful_responses_also_expose_the_request_id_header(): void
     {
         $this->withHeader('X-Request-ID', 'request-success-123')

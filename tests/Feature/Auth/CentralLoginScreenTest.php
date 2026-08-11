@@ -51,17 +51,24 @@ final class CentralLoginScreenTest extends TestCase
     public function test_central_login_uses_the_same_generic_failure_for_invalid_and_disabled_accounts(): void
     {
         $disabled = User::factory()->centralAdmin()->create(['disabled_at' => now()]);
+        $messages = [];
 
         foreach ([
             ['email' => 'unknown@example.test', 'password' => 'incorrect'],
             ['email' => $disabled->email, 'password' => 'password'],
         ] as $credentials) {
-            Livewire::test(Login::class)
+            $component = Livewire::test(Login::class)
                 ->fillForm($credentials)
                 ->call('authenticate')
                 ->assertHasFormErrors(['email']);
 
+            $message = $component->errors()->first('email');
+            $this->assertIsString($message);
+            $messages[] = $message;
+
             $this->assertGuest();
         }
+
+        $this->assertSame($messages[0], $messages[1]);
     }
 }

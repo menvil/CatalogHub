@@ -62,6 +62,18 @@ final class ActionProgressStateTest extends TestCase
         );
     }
 
+    public function test_completion_cannot_precede_start_within_the_same_second(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        new ActionProgressViewModel(
+            ActionProgressStatus::Success,
+            'Completed.',
+            CarbonImmutable::parse('2026-08-09 10:00:00.500000 UTC'),
+            CarbonImmutable::parse('2026-08-09 10:00:00.499999 UTC'),
+        );
+    }
+
     /** @return iterable<string, array{ActionProgressViewModel, string}> */
     public static function stateProvider(): iterable
     {

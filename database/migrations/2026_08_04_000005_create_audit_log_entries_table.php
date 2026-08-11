@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('subject_id', 64)->nullable();
             $table->json('before_json')->nullable();
             $table->json('after_json')->nullable();
-            $table->string('request_id', 100)->nullable();
+            $table->string('request_id', 128)->nullable();
             $table->timestamp('created_at');
 
             $table->index(['actor_id', 'created_at']);

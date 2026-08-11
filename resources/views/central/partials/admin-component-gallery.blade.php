@@ -7,8 +7,8 @@
         :breadcrumbs="[['label' => 'Design system', 'url' => '/dev/component-gallery'], ['label' => ucfirst($componentSection)]]"
     >
         <x-slot:actions>
-            <x-ui.action-group label="Gallery sections">
-                @foreach (['forms', 'tables', 'feedback'] as $section)
+            <x-ui.action-group label="Gallery sections" class="!flex-nowrap">
+                @foreach (['forms', 'tables', 'feedback', 'states', 'actions'] as $section)
                     <x-ui.button variant="{{ $componentSection === $section ? 'primary' : 'secondary' }}" href="/dev/component-gallery?mode=components&amp;section={{ $section }}">{{ ucfirst($section) }}</x-ui.button>
                 @endforeach
             </x-ui.action-group>

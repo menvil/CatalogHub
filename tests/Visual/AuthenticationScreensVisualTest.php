@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Visual;
 
-use GdImage;
 use PHPUnit\Framework\TestCase;
+use Tests\Visual\Concerns\InteractsWithVisualReferences;
 
 final class AuthenticationScreensVisualTest extends TestCase
 {
+    use InteractsWithVisualReferences;
+
     private const MAX_MEAN_CHANNEL_DIFFERENCE = 0.03;
 
     /** @var array<string, array{width: int, height: int, path: string}> */
@@ -103,18 +105,6 @@ final class AuthenticationScreensVisualTest extends TestCase
         }
     }
 
-    /** @return array<int, array{string, string, string}> */
-    private function descriptors(?string $log = null): array
-    {
-        $null = PHP_OS_FAMILY === 'Windows' ? 'NUL' : '/dev/null';
-
-        return [
-            0 => ['file', $null, 'r'],
-            1 => ['file', $log ?? $null, $log === null ? 'w' : 'a'],
-            2 => ['file', $log ?? $null, $log === null ? 'w' : 'a'],
-        ];
-    }
-
     /** @param resource $server */
     private function waitForServerPort($server, string $log): int
     {
@@ -154,57 +144,5 @@ final class AuthenticationScreensVisualTest extends TestCase
         }
 
         $this->fail('Authentication visual server did not render the Central login screen.');
-    }
-
-    private function requiredChromeBinary(): string
-    {
-        $configured = getenv('CHROME_BIN');
-        $candidates = array_filter([
-            is_string($configured) ? $configured : null,
-            '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-            '/usr/bin/google-chrome',
-            '/usr/bin/google-chrome-stable',
-            '/usr/bin/chromium',
-            '/usr/bin/chromium-browser',
-        ]);
-
-        foreach ($candidates as $candidate) {
-            if (is_executable($candidate)) {
-                return $candidate;
-            }
-        }
-
-        $this->markTestSkipped('Google Chrome is required for deterministic authentication visual acceptance.');
-    }
-
-    private function referencePath(string $state): string
-    {
-        return dirname(__DIR__, 2)."/tests/Visual/baselines/{$state}.png";
-    }
-
-    private function meanChannelDifference(string $reference, string $capture): float
-    {
-        $referenceImage = imagecreatefrompng($reference);
-        $captureImage = imagecreatefrompng($capture);
-        $this->assertInstanceOf(GdImage::class, $referenceImage);
-        $this->assertInstanceOf(GdImage::class, $captureImage);
-        $this->assertSame(imagesx($referenceImage), imagesx($captureImage));
-        $this->assertSame(imagesy($referenceImage), imagesy($captureImage));
-        $difference = 0.0;
-        $samples = 0;
-
-        for ($y = 0; $y < imagesy($referenceImage); $y += 2) {
-            for ($x = 0; $x < imagesx($referenceImage); $x += 2) {
-                $referenceColor = imagecolorat($referenceImage, $x, $y);
-                $captureColor = imagecolorat($captureImage, $x, $y);
-
-                foreach ([16, 8, 0] as $shift) {
-                    $difference += abs((($referenceColor >> $shift) & 0xFF) - (($captureColor >> $shift) & 0xFF)) / 255;
-                    $samples++;
-                }
-            }
-        }
-
-        return $difference / $samples;
     }
 }

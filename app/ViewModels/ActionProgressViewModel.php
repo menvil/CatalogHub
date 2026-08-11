@@ -33,7 +33,7 @@ final readonly class ActionProgressViewModel
                 throw new InvalidArgumentException('Completed actions require start and completion timestamps.');
             }
 
-            if ($completedAt->getTimestamp() < $startedAt->getTimestamp()) {
+            if ($completedAt < $startedAt) {
                 throw new InvalidArgumentException('Action completion cannot precede its start.');
             }
         }

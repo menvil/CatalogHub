@@ -133,6 +133,32 @@ final class ContinuousIntegrationWorkflowTest extends TestCase
         self::assertStringContainsString('use_dependency_cache: false', $security);
     }
 
+    public function test_required_checks_and_merge_policy_match_stable_ci_job_names(): void
+    {
+        $workflow = $this->workflow();
+        $policy = (string) file_get_contents(dirname(__DIR__, 2).'/docs/ci/required-checks.md');
+        $requiredChecks = [
+            'Backend quality',
+            'Frontend quality',
+            'Fresh database (PostgreSQL)',
+            'Migrations (MariaDB)',
+            'Browser smoke (Playwright)',
+            'Visual regression (Chromium)',
+            'Dependency audit',
+        ];
+
+        foreach ($requiredChecks as $check) {
+            self::assertStringContainsString("name: {$check}", $workflow);
+            self::assertStringContainsString("`{$check}`", $policy);
+        }
+
+        self::assertStringContainsString('one approving review', $policy);
+        self::assertStringContainsString('stale approvals are dismissed', $policy);
+        self::assertStringContainsString('all review conversations are resolved', $policy);
+        self::assertStringContainsString('Auto-merge is disabled', $policy);
+        self::assertStringContainsString('Visual baseline changes require explicit reviewer approval', $policy);
+    }
+
     private function workflow(): string
     {
         $workflow = file_get_contents(dirname(__DIR__, 2).'/.github/workflows/ci.yml');

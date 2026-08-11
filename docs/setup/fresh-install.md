@@ -12,11 +12,14 @@ review its database target before continuing. Composer dependencies must already
 be installed so the Artisan guard can run. Node dependencies are installed from
 `package-lock.json` by the command.
 
-The command refuses every environment except `local` and `testing` before it
-touches the database. It then generates the local application key, recreates the
-database using `FoundationDemoSeeder`, recreates the public storage link, runs
-`npm ci`, creates the production frontend build, verifies the fixture graph, and
-smoke-checks the admin route inventory. Any failed step stops the command.
+An explicit non-local `APP_ENV` is rejected before any write. Otherwise the
+command copies `.env.example` when `.env` is absent, resolves the effective
+environment, and refuses every environment except `local` and `testing` before
+it touches the database. It generates a local application key only when
+`APP_KEY` is absent from both the environment and `.env`, recreates the database
+using `FoundationDemoSeeder`, recreates the public storage link, runs `npm ci`,
+creates the production frontend build, verifies the fixture graph, and confirms
+that admin routes exist. Any failed step stops the command.
 
 Expected fixture evidence:
 

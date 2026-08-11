@@ -60,7 +60,7 @@ Targeted acceptance passes:
 
 The final clean local acceptance on 2026-08-11 produced:
 
-- full PHPUnit: 2,014 tests, 8,089 assertions;
+- full PHPUnit: 2,018 tests, 8,103 assertions;
 - architecture: 72 tests, 759 assertions, zero registered suppressions;
 - PHPStan and Pint: zero errors;
 - frontend lint/unit/build: 26 JavaScript files, one unit test, Vite production build;

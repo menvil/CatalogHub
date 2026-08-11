@@ -30,7 +30,7 @@ final class FoundationDemoUsersSeeder extends Seeder
      *     memberships: array<string, SiteMembershipRole>
      * }>
      */
-    private const PERSONAS = [
+    public const PERSONAS = [
         [
             'name' => 'Foundation Super Admin',
             'email' => 'super-admin@demo.cataloghub.test',
@@ -113,7 +113,7 @@ final class FoundationDemoUsersSeeder extends Seeder
 
         DB::transaction(function (): void {
             $sites = Site::query()
-                ->whereIn('code', ['tech-germany', 'monitors-germany'])
+                ->whereIn('code', SiteFoundationSeeder::ACTIVE_SITE_CODES)
                 ->get()
                 ->keyBy('code');
 

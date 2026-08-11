@@ -9,6 +9,8 @@ use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Site;
 use App\Models\SiteMembership;
 use App\Models\User;
+use Database\Seeders\FoundationDemoUsersSeeder;
+use Database\Seeders\SiteFoundationSeeder;
 use Illuminate\Console\Command;
 
 final class VerifyFoundationInstall extends Command
@@ -19,21 +21,27 @@ final class VerifyFoundationInstall extends Command
 
     public function handle(): int
     {
-        $siteCodes = ['tech-germany', 'monitors-germany', 'archived-germany'];
-        $siteIds = Site::query()->whereIn('code', $siteCodes)->pluck('id');
-        $demoUsers = User::query()->where('email', 'like', '%@demo.cataloghub.test');
+        $expectedSites = count(SiteFoundationSeeder::SITE_CODES);
+        $expectedUsers = count(FoundationDemoUsersSeeder::PERSONAS);
+        $expectedMemberships = array_sum(array_map(
+            static fn (array $persona): int => count($persona['memberships']),
+            FoundationDemoUsersSeeder::PERSONAS,
+        ));
+        $demoEmails = array_column(FoundationDemoUsersSeeder::PERSONAS, 'email');
+        $siteIds = Site::query()->whereIn('code', SiteFoundationSeeder::SITE_CODES)->pluck('id');
+        $demoUsers = User::query()->whereIn('email', $demoEmails);
         $failures = [];
 
-        if ($siteIds->count() !== 3) {
-            $failures[] = 'Expected 3 foundation demo sites.';
+        if ($siteIds->count() !== $expectedSites) {
+            $failures[] = "Expected {$expectedSites} foundation demo sites.";
         }
 
-        if ($demoUsers->count() !== 8) {
-            $failures[] = 'Expected 8 foundation demo users.';
+        if ($demoUsers->count() !== $expectedUsers) {
+            $failures[] = "Expected {$expectedUsers} foundation demo users.";
         }
 
-        if (SiteMembership::query()->whereIn('user_id', $demoUsers->pluck('id'))->count() !== 6) {
-            $failures[] = 'Expected 6 foundation demo memberships.';
+        if (SiteMembership::query()->whereIn('user_id', $demoUsers->pluck('id'))->count() !== $expectedMemberships) {
+            $failures[] = "Expected {$expectedMemberships} foundation demo memberships.";
         }
 
         $catalogRecords = CentralBrand::query()->count()
@@ -53,7 +61,7 @@ final class VerifyFoundationInstall extends Command
             return self::FAILURE;
         }
 
-        $this->info('Foundation install verified: 3 sites, 8 users, 6 memberships, 0 catalog records.');
+        $this->info("Foundation install verified: {$expectedSites} sites, {$expectedUsers} users, {$expectedMemberships} memberships, 0 catalog records.");
 
         return self::SUCCESS;
     }

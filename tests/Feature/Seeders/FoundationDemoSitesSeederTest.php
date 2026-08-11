@@ -46,6 +46,40 @@ final class FoundationDemoSitesSeederTest extends TestCase
         }
     }
 
+    public function test_reseeding_preserves_custom_domains_and_prunes_misassigned_fixture_domains(): void
+    {
+        $this->seed(SiteFoundationSeeder::class);
+        $tech = Site::query()->where('code', 'tech-germany')->sole();
+        $monitors = Site::query()->where('code', 'monitors-germany')->sole();
+
+        $monitors->domains()->where('host', SiteFoundationSeeder::MONITORS_ALIAS_HOST)->delete();
+        $tech->domains()->create([
+            'host' => SiteFoundationSeeder::MONITORS_ALIAS_HOST,
+            'type' => SiteDomainType::Alias,
+            'is_primary' => false,
+            'is_active' => true,
+        ]);
+        $tech->domains()->create([
+            'host' => 'custom.tech-germany.example',
+            'type' => SiteDomainType::Alias,
+            'is_primary' => false,
+            'is_active' => true,
+        ]);
+
+        $this->seed(SiteFoundationSeeder::class);
+
+        self::assertSame([
+            'custom.tech-germany.example',
+            SiteFoundationSeeder::TECH_HOST,
+            SiteFoundationSeeder::TECH_ALIAS_HOST,
+        ], $tech->domains()->orderBy('host')->pluck('host')->all());
+        self::assertSame([
+            SiteFoundationSeeder::MONITORS_HOST,
+            SiteFoundationSeeder::MONITORS_ALIAS_HOST,
+        ], $monitors->domains()->orderBy('host')->pluck('host')->all());
+        self::assertSame(count(SiteFoundationSeeder::SITE_CODES), Site::query()->count());
+    }
+
     public function test_aliases_resolve_to_their_site_while_archived_hosts_remain_unavailable(): void
     {
         $this->seed(SiteFoundationSeeder::class);

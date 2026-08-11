@@ -66,17 +66,31 @@ final class FoundationDemoUsersSeederTest extends TestCase
         }
     }
 
-    public function test_it_is_idempotent_and_rejects_non_local_environments(): void
+    public function test_it_is_idempotent(): void
     {
         $this->seed(FoundationDemoUsersSeeder::class);
         $this->seed(FoundationDemoUsersSeeder::class);
 
-        self::assertSame(8, User::query()->where('email', 'like', '%@demo.cataloghub.test')->count());
+        self::assertSame(count(FoundationDemoUsersSeeder::PERSONAS), User::query()->whereIn(
+            'email',
+            array_column(FoundationDemoUsersSeeder::PERSONAS, 'email'),
+        )->count());
         self::assertSame(6, SiteMembership::query()->count());
+    }
+
+    public function test_it_rejects_non_local_environments_without_writing_data(): void
+    {
+        $usersBefore = User::query()->count();
+        $membershipsBefore = SiteMembership::query()->count();
 
         $this->app['env'] = 'production';
 
-        $this->expectException(LogicException::class);
-        $this->seed(FoundationDemoUsersSeeder::class);
+        try {
+            $this->seed(FoundationDemoUsersSeeder::class);
+            self::fail('Expected the production guard to reject seeding.');
+        } catch (LogicException) {
+            self::assertSame($usersBefore, User::query()->count());
+            self::assertSame($membershipsBefore, SiteMembership::query()->count());
+        }
     }
 }

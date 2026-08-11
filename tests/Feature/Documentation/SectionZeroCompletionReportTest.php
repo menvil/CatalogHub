@@ -41,6 +41,13 @@ final class SectionZeroCompletionReportTest extends TestCase
             }
         }
 
+        $readme = preg_replace('/\s+/', ' ', $this->document('docs/planning/section-00/README.md'));
+        self::assertIsString($readme);
+        self::assertStringContainsString(
+            'Section 0 does not authorize catalog features, deployment redesign, performance certification, or production demo credentials.',
+            $readme,
+        );
+
         $report = $this->document('docs/planning/section-00/completion-report.md');
 
         foreach ([
@@ -54,6 +61,17 @@ final class SectionZeroCompletionReportTest extends TestCase
             'No blocking Section Zero defect remains open',
         ] as $contract) {
             self::assertStringContainsString($contract, $report);
+        }
+
+        foreach ([
+            '98 migrations, three sites, eight users, six memberships, zero catalog records',
+            'full PHPUnit: 2,018 tests, 8,103 assertions;',
+            'architecture: 72 tests, 759 assertions, zero registered suppressions;',
+            'browser: 12 Playwright tests including the 11 Phase 0.16 scenarios;',
+            'visual: 28 PHP tests with 578 assertions and one approved Playwright baseline;',
+            'Composer and npm audits: zero known vulnerabilities.',
+        ] as $evidence) {
+            self::assertStringContainsString($evidence, $report);
         }
     }
 

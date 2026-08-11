@@ -18,6 +18,10 @@ use Illuminate\Support\Facades\DB;
 
 final class SiteFoundationSeeder extends Seeder
 {
+    public const SITE_CODES = ['tech-germany', 'monitors-germany', 'archived-germany'];
+
+    public const ACTIVE_SITE_CODES = ['tech-germany', 'monitors-germany'];
+
     public const TECH_HOST = 'tech-germany.test';
 
     public const TECH_ALIAS_HOST = 'www.tech-germany.test';
@@ -27,6 +31,14 @@ final class SiteFoundationSeeder extends Seeder
     public const MONITORS_ALIAS_HOST = 'www.monitors-germany.test';
 
     public const ARCHIVED_HOST = 'archived-germany.test';
+
+    private const FIXTURE_HOSTS = [
+        self::TECH_HOST,
+        self::TECH_ALIAS_HOST,
+        self::MONITORS_HOST,
+        self::MONITORS_ALIAS_HOST,
+        self::ARCHIVED_HOST,
+    ];
 
     public function run(): void
     {
@@ -135,7 +147,10 @@ final class SiteFoundationSeeder extends Seeder
             );
         }
 
-        $site->domains()->whereNotIn('host', $allowedHosts)->delete();
+        $site->domains()
+            ->whereIn('host', self::FIXTURE_HOSTS)
+            ->whereNotIn('host', $allowedHosts)
+            ->delete();
         $site->locales()->update(['is_default' => false]);
 
         foreach (['de-DE', 'en-DE'] as $position => $locale) {

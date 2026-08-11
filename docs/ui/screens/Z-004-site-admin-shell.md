@@ -1,3 +1,20 @@
+---
+screen_id: Z-004
+context: site-admin
+purpose: Provide the secure shared shell for authorized Site administration.
+roles: site_admin;catalog_editor;translator
+route: /admin/site?site_id={authorized-site}
+viewports: desktop=1280x900;mobile=360x800
+fixture: site-admin-shell-v1
+regions: sidebar;site-selector;site-context-header;page-header;main
+actions: navigate;switch-site;collapse-sidebar;logout
+states: default;mobile;one-site;multiple-sites
+permissions: site.panel.access;active-site-membership
+responsive: Current site remains visible while navigation becomes an accessible mobile drawer.
+out_of_scope: site-settings-crud;real-sync;future-modules
+reference_version: v1
+---
+
 # Z-004 — Site Admin shell
 
 ## Purpose

@@ -247,7 +247,9 @@ final class SiteAdminShellVisualTest extends TestCase
 
     private function referencePath(string $state): string
     {
-        return dirname(__DIR__, 2)."/tests/Visual/baselines/site-admin-shell-{$state}.png";
+        $name = $state === 'default' ? 'z-004__default__1280x900' : "site-admin-shell-{$state}";
+
+        return dirname(__DIR__, 2)."/tests/Visual/baselines/{$name}.png";
     }
 
     private function acceptanceFailureDetails(string $dom): string

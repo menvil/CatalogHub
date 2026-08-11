@@ -1,3 +1,20 @@
+---
+screen_id: Z-002
+context: central-admin
+purpose: Provide the secure shared shell for Central administration.
+roles: central_admin;translator;catalog_editor
+route: /admin/central
+viewports: desktop=1280x900;mobile=360x800
+fixture: central-shell-v1
+regions: sidebar;header;page-header;flash-region;main
+actions: navigate;collapse-sidebar;logout
+states: default;collapsed;mobile;long-header
+permissions: central.panel.access
+responsive: Sidebar is persistent on desktop and an accessible drawer on mobile.
+out_of_scope: business-dashboard-metrics;real-search;notification-center
+reference_version: v1
+---
+
 # Z-002 — Central Admin shell
 
 ## Purpose

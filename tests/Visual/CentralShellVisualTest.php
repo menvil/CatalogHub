@@ -236,7 +236,9 @@ final class CentralShellVisualTest extends TestCase
 
     private function referencePath(string $state): string
     {
-        return dirname(__DIR__, 2)."/tests/Visual/baselines/central-shell-{$state}.png";
+        $name = $state === 'default' ? 'z-002__default__1280x900' : "central-shell-{$state}";
+
+        return dirname(__DIR__, 2)."/tests/Visual/baselines/{$name}.png";
     }
 
     private function nullDevice(): string

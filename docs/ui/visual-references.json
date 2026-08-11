@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "source": "repository-approved-png",
+  "references": [
+    {"screen_id":"Z-001","state":"default","viewport":"1280x900","fixture":"central-login-v1","path":"tests/Visual/baselines/z-001__default__1280x900.png","sha256":"af9e049be5238aee73e4a2e5817f1dd30e233c67786d134ebf26812eea4def9e","approved_on":"2026-08-09"},
+    {"screen_id":"Z-002","state":"default","viewport":"1280x900","fixture":"central-shell-v1","path":"tests/Visual/baselines/z-002__default__1280x900.png","sha256":"ae02e96e52f616071f7dc46a773877be3f3512885418b8a7456a09e7aa99dcb6","approved_on":"2026-08-09"},
+    {"screen_id":"Z-003","state":"default","viewport":"1280x900","fixture":"site-admin-login-v1","path":"tests/Visual/baselines/z-003__default__1280x900.png","sha256":"0ff8da11e2a1f13c2c09c9fce39d9d41202b5ceca45fa51acc4e254b38d97c2f","approved_on":"2026-08-09"},
+    {"screen_id":"Z-004","state":"default","viewport":"1280x900","fixture":"site-admin-shell-v1","path":"tests/Visual/baselines/z-004__default__1280x900.png","sha256":"0960a3e811d4a7c151a5ae3c1a96377b425985fcf8a7d2ee88487b4151b3116c","approved_on":"2026-08-09"},
+    {"screen_id":"Z-005","state":"default","viewport":"1280x900","fixture":"public-shell-v1","path":"tests/Visual/baselines/z-005__default__1280x900.png","sha256":"1f98c51c38e79391c9c644b655ddd2073f0b3d551212294bba69010c651d171e","approved_on":"2026-08-09"},
+    {"screen_id":"Z-006","state":"default","viewport":"1280x900","fixture":"public-shell-v1","path":"tests/Visual/baselines/z-006__default__1280x900.png","sha256":"524eb5ce11b013cb3a9914fbce22688b133aa24d4c6c60cf932c0b85546002f0","approved_on":"2026-08-09"},
+    {"screen_id":"Z-007","state":"central-500","viewport":"1280x900","fixture":"error-response-v1","path":"tests/Visual/baselines/z-007__central-500__1280x900.png","sha256":"cef2319b825c1b5ec2a1ed9abb01d3bade8c1020164f23c75299c9b5f3dc3a18","approved_on":"2026-08-11"},
+    {"screen_id":"Z-007","state":"central-500","viewport":"360x800","fixture":"error-response-v1","path":"tests/Visual/baselines/z-007__central-500__360x800.png","sha256":"70277ddd795a04013bb5ee138db5546342045c26670a699999bd3b86c84249b3","approved_on":"2026-08-11"},
+    {"screen_id":"Z-008","state":"empty-loading","viewport":"1280x1000","fixture":"admin-components-v1","path":"tests/Visual/baselines/z-008__empty-loading__1280x1000.png","sha256":"d0f7a86fb2e486ffb916eb5b2c6b90ade4fd016693b37a074bb764c5798af8e7","approved_on":"2026-08-11"},
+    {"screen_id":"Z-009","state":"action-progress","viewport":"1280x1000","fixture":"admin-components-v1","path":"tests/Visual/baselines/z-009__action-progress__1280x1000.png","sha256":"161e7552410dadecab6f1f3704cde4247903ced597c1982914468ee69d2f290b","approved_on":"2026-08-11"},
+    {"screen_id":"Z-010","state":"wide","viewport":"1440x1200","fixture":"admin-components-v1","path":"tests/Visual/baselines/z-010__wide__1440x1200.png","sha256":"cce5a8fc9e825530ad22c1813e8b4b36d08426b232668b284440df4cafa4a0a9","approved_on":"2026-08-11"}
+  ]
+}

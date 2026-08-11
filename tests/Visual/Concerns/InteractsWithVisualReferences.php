@@ -43,7 +43,18 @@ trait InteractsWithVisualReferences
 
     protected function referencePath(string $state, string $prefix = ''): string
     {
-        return dirname(__DIR__, 3)."/tests/Visual/baselines/{$prefix}{$state}.png";
+        $legacyName = $prefix.$state;
+        $canonicalNames = [
+            'central-login-desktop' => 'z-001__default__1280x900',
+            'site-admin-login-desktop' => 'z-003__default__1280x900',
+            'system-error-desktop' => 'z-007__central-500__1280x900',
+            'system-error-mobile' => 'z-007__central-500__360x800',
+            'admin-components-states-desktop' => 'z-008__empty-loading__1280x1000',
+            'admin-components-actions-desktop' => 'z-009__action-progress__1280x1000',
+            'component-gallery-wide' => 'z-010__wide__1440x1200',
+        ];
+
+        return dirname(__DIR__, 3).'/tests/Visual/baselines/'.($canonicalNames[$legacyName] ?? $legacyName).'.png';
     }
 
     protected function meanChannelDifference(string $reference, string $capture): float

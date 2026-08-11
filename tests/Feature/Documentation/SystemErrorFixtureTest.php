@@ -18,4 +18,15 @@ final class SystemErrorFixtureTest extends TestCase
             ->assertSee('00000000-0000-4000-8000-000000000007')
             ->assertDontSee('database-password=secret');
     }
+
+    public function test_system_error_fixture_is_not_registered_in_production(): void
+    {
+        $output = [];
+        $exitCode = 0;
+
+        exec('APP_ENV=production '.PHP_BINARY.' artisan route:list --path=dev/system-error --json 2>&1', $output, $exitCode);
+
+        $this->assertSame(0, $exitCode, implode(PHP_EOL, $output));
+        $this->assertStringContainsString('doesn\'t have any routes matching', implode(PHP_EOL, $output));
+    }
 }

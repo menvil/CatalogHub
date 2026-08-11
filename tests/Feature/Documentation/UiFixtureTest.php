@@ -25,4 +25,22 @@ final class UiFixtureTest extends TestCase
         $this->assertSame($originalTimezone, date_default_timezone_get());
         $this->assertSame($originalNow, CarbonImmutable::getTestNow());
     }
+
+    public function test_fixture_clock_and_timezone_are_restored_when_the_callback_throws(): void
+    {
+        $originalTimezone = date_default_timezone_get();
+        $originalNow = CarbonImmutable::getTestNow();
+
+        try {
+            UiFixture::withFrozenClock(static function (): never {
+                throw new \RuntimeException('fixture failure');
+            });
+            $this->fail('Expected fixture exception to propagate.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame('fixture failure', $exception->getMessage());
+        }
+
+        $this->assertSame($originalTimezone, date_default_timezone_get());
+        $this->assertSame($originalNow, CarbonImmutable::getTestNow());
+    }
 }

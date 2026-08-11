@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-$root = dirname(__DIR__);
+$root = $argv[1] ?? dirname(__DIR__);
 $required = ['screen_id', 'context', 'purpose', 'roles', 'route', 'viewports', 'fixture', 'regions', 'actions', 'states', 'permissions', 'responsive', 'out_of_scope', 'reference_version'];
 $contracts = glob($root.'/docs/ui/screens/Z-*.md') ?: [];
 $errors = [];
@@ -58,11 +58,36 @@ if (! is_file($manifestPath)) {
     } else {
         $referenceIds = [];
         foreach ($manifest['references'] as $reference) {
+            foreach (['screen_id', 'state', 'viewport', 'fixture', 'path', 'sha256'] as $field) {
+                if (! is_string($reference[$field] ?? null) || $reference[$field] === '') {
+                    $errors[] = 'Visual reference has a missing required field ['.$field.'].';
+                }
+            }
+
             $key = ($reference['screen_id'] ?? '').':'.($reference['state'] ?? '').':'.($reference['viewport'] ?? '');
             if (isset($referenceIds[$key])) {
                 $errors[] = "Visual reference manifest has duplicate entry [{$key}].";
             }
             $referenceIds[$key] = true;
+            $viewport = $reference['viewport'] ?? '';
+            if (! is_string($viewport) || preg_match('/\A[1-9]\d*x[1-9]\d*\z/', $viewport) !== 1) {
+                $errors[] = "Visual reference [{$key}] has an invalid viewport.";
+            }
+
+            $fixture = $reference['fixture'] ?? '';
+            if (! is_string($fixture) || preg_match('/\A[a-z0-9]+(?:-[a-z0-9]+)*-v[1-9]\d*\z/', $fixture) !== 1) {
+                $errors[] = "Visual reference [{$key}] has an invalid deterministic fixture.";
+            }
+
+            $screenId = $reference['screen_id'] ?? '';
+            $state = $reference['state'] ?? '';
+            $expectedPath = is_string($screenId) && is_string($state) && is_string($viewport)
+                ? 'tests/Visual/baselines/'.strtolower($screenId).'__'.$state.'__'.$viewport.'.png'
+                : null;
+            if (($reference['path'] ?? null) !== $expectedPath) {
+                $errors[] = "Visual reference [{$key}] does not use the canonical screenshot path.";
+            }
+
             $path = $root.'/'.($reference['path'] ?? '');
             if (! is_file($path)) {
                 $errors[] = "Visual reference [{$key}] has no local file.";

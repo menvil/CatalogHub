@@ -243,7 +243,13 @@ final class PublicShellVisualTest extends TestCase
 
     private function referencePath(string $state): string
     {
-        return dirname(__DIR__, 2)."/tests/Visual/baselines/public-shell-{$state}.png";
+        $name = match ($state) {
+            'multi-desktop' => 'z-005__default__1280x900',
+            'single-desktop' => 'z-006__default__1280x900',
+            default => "public-shell-{$state}",
+        };
+
+        return dirname(__DIR__, 2)."/tests/Visual/baselines/{$name}.png";
     }
 
     private function acceptanceFailureDetails(string $dom): string

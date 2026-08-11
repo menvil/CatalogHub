@@ -13,7 +13,7 @@ use App\Support\Http\RequestId;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
-final class AuditRecorder
+class AuditRecorder
 {
     /** @var array<string, list<string>> */
     private const SNAPSHOT_FIELDS = [

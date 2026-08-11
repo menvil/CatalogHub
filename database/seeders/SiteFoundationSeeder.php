@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Enums\MarketStatus;
+use App\Enums\PublicThemeId;
 use App\Enums\SiteDomainType;
 use App\Enums\SiteMode;
 use App\Enums\SiteStatus;
@@ -19,7 +20,11 @@ final class SiteFoundationSeeder extends Seeder
 {
     public const TECH_HOST = 'tech-germany.test';
 
+    public const TECH_ALIAS_HOST = 'www.tech-germany.test';
+
     public const MONITORS_HOST = 'monitors-germany.test';
+
+    public const MONITORS_ALIAS_HOST = 'www.monitors-germany.test';
 
     public const ARCHIVED_HOST = 'archived-germany.test';
 
@@ -40,9 +45,9 @@ final class SiteFoundationSeeder extends Seeder
                 ],
             );
 
-            $this->upsertSite($market, 'tech-germany', 'Tech Germany', self::TECH_HOST, SiteMode::MultiCategory, SiteStatus::Active);
-            $this->upsertSite($market, 'monitors-germany', 'Monitors Germany', self::MONITORS_HOST, SiteMode::SingleCategory, SiteStatus::Active);
-            $this->upsertSite($market, 'archived-germany', 'Archived Germany', self::ARCHIVED_HOST, SiteMode::MultiCategory, SiteStatus::Archived);
+            $this->upsertSite($market, 'tech-germany', 'Tech Germany', self::TECH_HOST, self::TECH_ALIAS_HOST, SiteMode::MultiCategory, SiteStatus::Active);
+            $this->upsertSite($market, 'monitors-germany', 'Monitors Germany', self::MONITORS_HOST, self::MONITORS_ALIAS_HOST, SiteMode::SingleCategory, SiteStatus::Active);
+            $this->upsertSite($market, 'archived-germany', 'Archived Germany', self::ARCHIVED_HOST, null, SiteMode::MultiCategory, SiteStatus::Archived);
         });
     }
 
@@ -72,10 +77,14 @@ final class SiteFoundationSeeder extends Seeder
         string $code,
         string $name,
         string $host,
+        ?string $aliasHost,
         SiteMode $mode,
         SiteStatus $status,
     ): void {
         $normalizedHost = SiteDomain::normalizeHost($host);
+        $theme = $mode === SiteMode::SingleCategory
+            ? PublicThemeId::SingleCategory
+            : PublicThemeId::MultiCategory;
         $site = Site::query()->updateOrCreate(
             ['code' => $code],
             [
@@ -87,7 +96,15 @@ final class SiteFoundationSeeder extends Seeder
                 'currency_code' => 'EUR',
                 'timezone' => 'Europe/Berlin',
                 'status' => $status,
-                'settings_json' => ['foundation_fixture' => true],
+                'settings_json' => [
+                    'foundation_fixture' => true,
+                    'public_theme_id' => $theme->value,
+                    'url_scheme' => 'https',
+                    'seo' => [
+                        'meta_title' => $name,
+                        'meta_description' => "Deterministic foundation shell for {$name}.",
+                    ],
+                ],
             ],
         );
         $site->domains()
@@ -102,6 +119,23 @@ final class SiteFoundationSeeder extends Seeder
                 'is_active' => true,
             ],
         );
+
+        $allowedHosts = [$normalizedHost];
+
+        if ($aliasHost !== null) {
+            $normalizedAlias = SiteDomain::normalizeHost($aliasHost);
+            $allowedHosts[] = $normalizedAlias;
+            $site->domains()->updateOrCreate(
+                ['host' => $normalizedAlias],
+                [
+                    'type' => SiteDomainType::Alias,
+                    'is_primary' => false,
+                    'is_active' => true,
+                ],
+            );
+        }
+
+        $site->domains()->whereNotIn('host', $allowedHosts)->delete();
         $site->locales()->update(['is_default' => false]);
 
         foreach (['de-DE', 'en-DE'] as $position => $locale) {

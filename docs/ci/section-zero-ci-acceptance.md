@@ -35,5 +35,7 @@ reference or tolerance changed.
 All gate jobs completed successfully without retries, `continue-on-error`,
 baseline updates, production secrets, or cache-only success. Branch protection
 was read back from GitHub with the seven documented strict required contexts,
-one approving review, stale and last-push review enforcement, conversation
-resolution, administrator enforcement, and force-push/deletion disabled.
+solo-maintainer review settings, conversation resolution, administrator
+enforcement, and force-push/deletion disabled. Required approving reviews and
+last-push approval are disabled because GitHub does not permit self-approval;
+manual merge still requires every strict check to pass.

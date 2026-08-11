@@ -11,7 +11,10 @@ $options = getopt('', ['github-output:', 'json:']);
 
 try {
     $report = (new ArchitectureDebtScanner($root))->scan();
-    $json = json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR).PHP_EOL;
+    $artifact = $report;
+    $artifact['suppressions'] = $report['registered'];
+    $artifact['registered'] = count($report['registered']);
+    $json = json_encode($artifact, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR).PHP_EOL;
 
     if (is_string($options['json'] ?? null)) {
         file_put_contents($options['json'], $json);

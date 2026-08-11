@@ -25,6 +25,11 @@ final class ContinuousIntegrationWorkflowTest extends TestCase
             self::assertStringContainsString($command, $tests);
         }
 
+        self::assertSame(4, substr_count($tests, '--log-junit test-results/'));
+        self::assertStringContainsString('glob("test-results/*.xml")', $tests);
+        self::assertStringContainsString('$tests += (int) $suite["tests"]', $tests);
+        self::assertStringContainsString('$assertions += (int) $suite["assertions"]', $tests);
+
         self::assertStringContainsString('composer test:architecture', $staticAnalysis);
         self::assertStringContainsString('composer analyse -- --no-progress', $staticAnalysis);
         self::assertStringContainsString("!= 'success'", $gate);
@@ -122,6 +127,11 @@ final class ContinuousIntegrationWorkflowTest extends TestCase
         }
 
         $ci = $this->workflow();
+        self::assertSame(
+            substr_count($ci, 'uses: actions/checkout@'),
+            substr_count($ci, 'persist-credentials: false'),
+            'Every checkout in ci.yml must discard its persisted GitHub credentials.',
+        );
         self::assertStringContainsString('use_dependency_cache:', $ci);
         self::assertStringContainsString("if: env.DEPENDENCY_CACHE_ENABLED == 'true'", $ci);
         self::assertStringContainsString("hashFiles('composer.lock')", $ci);
@@ -152,11 +162,11 @@ final class ContinuousIntegrationWorkflowTest extends TestCase
             self::assertStringContainsString("`{$check}`", $policy);
         }
 
-        self::assertStringContainsString('one approving review', $policy);
-        self::assertStringContainsString('stale approvals are dismissed', $policy);
-        self::assertStringContainsString('all review conversations are resolved', $policy);
+        self::assertStringContainsString('required approving reviews and', $policy);
+        self::assertStringContainsString('last-push approval are disabled', $policy);
+        self::assertStringContainsString('All review conversations must still be resolved', $policy);
         self::assertStringContainsString('Auto-merge is disabled', $policy);
-        self::assertStringContainsString('Visual baseline changes require explicit reviewer approval', $policy);
+        self::assertStringContainsString('Visual baseline changes must be inspected explicitly', $policy);
     }
 
     public function test_section_zero_acceptance_records_the_successful_no_cache_run(): void

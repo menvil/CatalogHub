@@ -33,6 +33,19 @@ final class SiteDomainFactory extends Factory
         ]);
     }
 
+    public function alias(): static
+    {
+        return $this->state(fn (): array => [
+            'type' => SiteDomainType::Alias,
+            'is_primary' => false,
+        ]);
+    }
+
+    public function disabled(): static
+    {
+        return $this->state(fn (): array => ['is_active' => false]);
+    }
+
     public function preview(): static
     {
         return $this->state(fn (): array => [

@@ -82,6 +82,15 @@ class UserFactory extends Factory
             });
     }
 
+    /**
+     * Product-language alias for the active administrator membership that owns
+     * day-to-day operation of one site. The persisted role remains site_admin.
+     */
+    public function siteOwner(Site $site): static
+    {
+        return $this->siteAdmin($site);
+    }
+
     /** @return array{host: ?string, locale: ?string} */
     private function validateSiteRuntimeConfiguration(Site $site): array
     {

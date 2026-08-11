@@ -30,4 +30,17 @@ class LocaleFactory extends Factory
             'position' => 0,
         ];
     }
+
+    public function active(): static
+    {
+        return $this->state(fn (): array => ['is_active' => true]);
+    }
+
+    public function disabled(): static
+    {
+        return $this->state(fn (): array => [
+            'is_active' => false,
+            'is_default' => false,
+        ]);
+    }
 }

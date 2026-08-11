@@ -27,7 +27,7 @@ final class ExceptionMappingTest extends TestCase
         });
     }
 
-    #[DataProvider('statuses')]
+    #[DataProvider('htmlStatuses')]
     public function test_domain_exceptions_have_deterministic_html_statuses_without_internal_messages(int $status): void
     {
         $this->withHeader('X-Request-ID', 'domain-html-'.$status)
@@ -60,6 +60,18 @@ final class ExceptionMappingTest extends TestCase
             'authorization denied' => [403, 'You are not authorized to perform this action.'],
             'not found' => [404, 'The requested resource was not found.'],
             'conflict' => [409, 'The request conflicts with the current state.'],
+        ];
+    }
+
+    /** @return array<string, array{int}> */
+    public static function htmlStatuses(): array
+    {
+        return [
+            'invalid input' => [422],
+            'authentication required' => [401],
+            'authorization denied' => [403],
+            'not found' => [404],
+            'conflict' => [409],
         ];
     }
 

@@ -4,8 +4,15 @@ export const foundationDemo = Object.freeze({
     password: 'cataloghub-foundation-demo',
     centralAdmin: 'central-admin@demo.cataloghub.test',
     siteAdmin: 'site-admin@demo.cataloghub.test',
+    translator: 'translator@demo.cataloghub.test',
     noAccess: 'no-access@demo.cataloghub.test',
     disabled: 'disabled@demo.cataloghub.test',
+})
+
+export const foundationSites = Object.freeze({
+    techId: 1,
+    monitorsId: 2,
+    archivedId: 3,
 })
 
 export function observePageErrors(page) {

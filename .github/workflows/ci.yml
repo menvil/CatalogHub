@@ -476,7 +476,7 @@ jobs:
           php artisan migrate --force
 
   migrations-postgres:
-    name: Migrations (PostgreSQL)
+    name: Fresh database (PostgreSQL)
     runs-on: ubuntu-latest
     needs: frontend-build
     outputs:
@@ -546,7 +546,21 @@ jobs:
           DB_DATABASE: cataloghub
           DB_USERNAME: cataloghub
           DB_PASSWORD: cataloghub
-        run: php artisan migrate:fresh --seed --force
+        run: |
+          set -o pipefail
+          mkdir -p storage/logs
+          php artisan migrate:fresh --seed --force 2>&1 \
+            | tee storage/logs/fresh-database-postgres.log
+
+      - name: Run PostgreSQL schema smoke tests
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: cataloghub
+          DB_USERNAME: cataloghub
+          DB_PASSWORD: cataloghub
+        run: composer test:database-schema
 
       - name: Collect PostgreSQL migration metrics
         id: migration-metrics
@@ -587,6 +601,15 @@ jobs:
         run: |
           php artisan migrate:reset --force
           php artisan migrate --force
+
+      - name: Upload fresh database logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fresh-database-postgres-logs
+          path: storage/logs/fresh-database-postgres.log
+          if-no-files-found: warn
+          retention-days: 5
 
   dependency-audit:
     name: Dependency audit

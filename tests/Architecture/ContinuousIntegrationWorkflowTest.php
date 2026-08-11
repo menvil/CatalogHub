@@ -52,6 +52,25 @@ final class ContinuousIntegrationWorkflowTest extends TestCase
         self::assertStringNotContainsString('continue-on-error', $frontend);
     }
 
+    public function test_fresh_postgres_job_migrates_seeds_and_runs_schema_checks_on_an_empty_database(): void
+    {
+        $workflow = $this->workflow();
+        $database = $this->job($workflow, 'migrations-postgres');
+        $composer = json_decode(
+            (string) file_get_contents(dirname(__DIR__, 2).'/composer.json'),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+
+        self::assertStringContainsString('name: Fresh database (PostgreSQL)', $database);
+        self::assertMatchesRegularExpression('/image: postgres:\d+\.\d+-alpine/', $database);
+        self::assertStringContainsString('php artisan migrate:fresh --seed --force', $database);
+        self::assertStringContainsString('composer test:database-schema', $database);
+        self::assertStringContainsString('fresh-database-postgres.log', $database);
+        self::assertStringContainsString('if: failure()', $database);
+        self::assertArrayHasKey('test:database-schema', $composer['scripts']);
+    }
+
     private function workflow(): string
     {
         $workflow = file_get_contents(dirname(__DIR__, 2).'/.github/workflows/ci.yml');

@@ -71,6 +71,7 @@ final class ExceptionMappingTest extends TestCase
             403 => new AuthorizationDeniedException('internal diagnostic'),
             404 => new ResourceNotFoundException('internal diagnostic'),
             409 => new ResourceConflictException('internal diagnostic'),
+            default => throw new \InvalidArgumentException("Unsupported status [{$status}]."),
         };
     }
 }

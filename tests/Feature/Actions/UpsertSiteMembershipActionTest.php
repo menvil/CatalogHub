@@ -53,7 +53,7 @@ final class UpsertSiteMembershipActionTest extends TestCase
             'is_active' => true,
         ]);
         $audit = Mockery::mock(AuditRecorder::class);
-        $audit->shouldReceive('record')->once()->andThrow(new \RuntimeException('audit unavailable'));
+        $audit->shouldReceive('record')->andThrow(new \RuntimeException('audit unavailable'));
         $this->app->instance(AuditRecorder::class, $audit);
 
         try {

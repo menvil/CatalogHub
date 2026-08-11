@@ -9,7 +9,10 @@ use App\Models\PriceSource;
 use App\Models\PriceSourceSyncLog;
 use App\Pricing\PriceSourceAdapterRegistry;
 use App\Services\Pricing\PriceSourceRetryPolicy;
+use GuzzleHttp\Psr7\Response as Psr7Response;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response;
 use InvalidArgumentException;
 use LogicException;
 use ReflectionProperty;
@@ -56,6 +59,20 @@ class PriceSourceRetryPolicyTest extends TestCase
 
         $this->assertFalse($policy->shouldRetry($source, 1, new RuntimeException('Configured permanent failure.')));
         $this->assertTrue($policy->shouldRetry($source, 1, new InvalidArgumentException('No longer configured.')));
+    }
+
+    public function test_configured_request_exception_is_non_retryable_for_otherwise_retryable_statuses(): void
+    {
+        $source = PriceSource::factory()->create(['config_json' => ['max_retries' => 3]]);
+        $policy = app(PriceSourceRetryPolicy::class);
+
+        config()->set('jobs.non_retryable_exceptions', [RequestException::class]);
+
+        foreach ([408, 429, 500] as $status) {
+            $exception = new RequestException(new Response(new Psr7Response($status)));
+
+            $this->assertFalse($policy->shouldRetry($source, 1, $exception), "HTTP {$status} should not be retried.");
+        }
     }
 
     public function test_job_records_attempt_and_fails_non_retryable_configuration_error(): void

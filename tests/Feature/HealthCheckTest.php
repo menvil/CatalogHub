@@ -7,6 +7,13 @@ use Tests\TestCase;
 
 class HealthCheckTest extends TestCase
 {
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+
+        parent::tearDown();
+    }
+
     public function test_health_check_returns_healthy_status(): void
     {
         Carbon::setTestNow('2026-07-16T12:00:00+00:00');

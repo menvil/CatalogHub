@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\ViewComponents;
 
 use App\Enums\SiteStatus;
+use App\Models\Market;
 use App\Models\Site;
 use App\Services\Sites\SiteContextValueResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,7 +19,11 @@ final class SiteContextHeaderTest extends TestCase
 
     public function test_context_header_renders_resolved_site_domain_market_locale_and_active_status_without_queries(): void
     {
-        $site = Site::factory()->active()->withRuntimeContext(['de-DE'])->create(['name' => 'Tech Germany']);
+        $market = Market::factory()->create(['name' => 'DACH & <EU>']);
+        $site = Site::factory()->active()->withRuntimeContext(['de-DE'])->create([
+            'market_id' => $market->id,
+            'name' => 'Tech Germany',
+        ]);
         $site->load(['market', 'domains', 'locales.locale']);
         $domain = $site->domains->firstOrFail();
         $context = app(SiteContextValueResolver::class)->resolve($site, $domain, 'de-DE');
@@ -30,7 +35,7 @@ final class SiteContextHeaderTest extends TestCase
         $this->assertSame([], DB::getQueryLog());
         $this->assertStringContainsString('Tech Germany', $html);
         $this->assertStringContainsString((string) $domain->host, $html);
-        $this->assertStringContainsString(e((string) $site->market->name), $html);
+        $this->assertStringContainsString('DACH &amp; &lt;EU&gt;', $html);
         $this->assertStringContainsString('de-DE', $html);
         $this->assertStringContainsString('Active', $html);
         $this->assertStringContainsString('data-admin-status-badge="success"', $html);

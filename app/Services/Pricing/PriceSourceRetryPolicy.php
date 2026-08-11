@@ -20,14 +20,8 @@ final class PriceSourceRetryPolicy
             return false;
         }
 
-        if ($exception === null || $exception instanceof ConnectionException) {
+        if ($exception === null) {
             return true;
-        }
-
-        if ($exception instanceof RequestException) {
-            $status = $exception->response->status();
-
-            return $status === 408 || $status === 429 || $status >= 500;
         }
 
         $nonRetryableExceptions = config('jobs.non_retryable_exceptions', []);
@@ -38,6 +32,16 @@ final class PriceSourceRetryPolicy
                     return false;
                 }
             }
+        }
+
+        if ($exception instanceof ConnectionException) {
+            return true;
+        }
+
+        if ($exception instanceof RequestException) {
+            $status = $exception->response->status();
+
+            return $status === 408 || $status === 429 || $status >= 500;
         }
 
         if ($exception instanceof JsonException) {

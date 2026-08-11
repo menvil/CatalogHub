@@ -48,6 +48,19 @@ final class IdempotentJobTest extends TestCase
         ]);
     }
 
+    public function test_job_and_recorder_accept_a_255_character_idempotency_key(): void
+    {
+        $idempotencyKey = str_repeat('a', 255);
+        $job = new RecordFoundationHeartbeatJob($idempotencyKey);
+
+        $job->handle(app(FoundationHeartbeatRecorder::class));
+
+        $this->assertSame($idempotencyKey, $job->uniqueId());
+        $this->assertDatabaseHas('job_idempotency_records', [
+            'idempotency_key' => $idempotencyKey,
+        ]);
+    }
+
     public function test_failure_before_recording_can_retry_safely(): void
     {
         $job = new RecordFoundationHeartbeatJob('foundation-heartbeat:retry-safe');

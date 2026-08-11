@@ -32,11 +32,17 @@ final class QueueSchedulerRunbookTest extends TestCase
             self::assertStringContainsString($command, $runbook);
         }
 
-        self::assertStringContainsString('operations.queue_heartbeat_stale_after', $runbook);
-        self::assertStringContainsString('operations.scheduler_heartbeat_stale_after', $runbook);
-        self::assertIsInt(config('operations.queue_heartbeat_stale_after'));
-        self::assertIsInt(config('operations.scheduler_heartbeat_stale_after'));
-        self::assertGreaterThan(0, config('operations.queue_heartbeat_stale_after'));
-        self::assertGreaterThan(0, config('operations.scheduler_heartbeat_stale_after'));
+        foreach ([
+            'operations.queue_heartbeat_stale_after',
+            'operations.scheduler_heartbeat_stale_after',
+        ] as $configurationKey) {
+            $configuredThreshold = config($configurationKey);
+            $pattern = '/`'.preg_quote($configurationKey, '/').'` \((\d+) seconds by default\)/';
+
+            self::assertIsInt($configuredThreshold);
+            self::assertGreaterThan(0, $configuredThreshold);
+            self::assertSame(1, preg_match($pattern, $runbook, $matches));
+            self::assertSame($configuredThreshold, (int) ($matches[1] ?? 0));
+        }
     }
 }

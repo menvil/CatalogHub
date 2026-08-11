@@ -64,7 +64,7 @@ Queue health uses the configured connection, the `failed_jobs` table, and recent
 | `stale` | No foundation heartbeat, or no scheduler heartbeat, arrived inside its configured threshold. | Verify worker/scheduler processes, connection settings, and deployment state. |
 | `unavailable` | Queue or heartbeat diagnostics could not be read. | Treat this as an operational incident; it is not healthy. |
 
-The thresholds are `operations.queue_heartbeat_stale_after` and `operations.scheduler_heartbeat_stale_after` (both 300 seconds by default). Inspect the typed services without changing state when Tinker is available:
+The thresholds are `operations.queue_heartbeat_stale_after` (300 seconds by default) and `operations.scheduler_heartbeat_stale_after` (300 seconds by default). Inspect the typed services without changing state when Tinker is available:
 
 ```bash
 php artisan tinker --execute="dump(app(\App\Services\Operations\QueueHealthService::class)->inspect());"

@@ -26,6 +26,13 @@ final class QueueHealthServiceTest extends TestCase
         config()->set('operations.queue_heartbeat_stale_after', 300);
     }
 
+    protected function tearDown(): void
+    {
+        CarbonImmutable::setTestNow();
+
+        parent::tearDown();
+    }
+
     public function test_it_reports_a_healthy_queue_with_a_recent_heartbeat(): void
     {
         JobIdempotencyRecord::query()->create([

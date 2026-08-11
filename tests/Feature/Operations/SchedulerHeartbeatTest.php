@@ -25,6 +25,13 @@ final class SchedulerHeartbeatTest extends TestCase
         config()->set('operations.scheduler_heartbeat_stale_after', 300);
     }
 
+    protected function tearDown(): void
+    {
+        CarbonImmutable::setTestNow();
+
+        parent::tearDown();
+    }
+
     public function test_command_updates_one_scheduler_heartbeat_record(): void
     {
         CarbonImmutable::setTestNow('2026-08-11T12:00:00+00:00');

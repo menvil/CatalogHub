@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Responses;
 
+use App\Exceptions\Domain\DomainException;
 use App\Support\Http\RequestId;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,6 +17,11 @@ final readonly class ApplicationErrorResponse
     public function render(Response $response, Throwable $exception, Request $request): Response
     {
         $requestId = RequestId::resolve($request);
+
+        if ($exception instanceof DomainException) {
+            return $this->domainResponse($response, $exception, $request, $requestId);
+        }
+
         $publicResponse = $this->publicErrors->render($response, $exception, $request);
 
         if ($publicResponse !== $response) {
@@ -37,6 +43,43 @@ final readonly class ApplicationErrorResponse
         $response->headers->set('X-Request-ID', $requestId);
 
         return $response;
+    }
+
+    private function domainResponse(Response $response, DomainException $exception, Request $request, string $requestId): Response
+    {
+        $response->setStatusCode($exception->status());
+        $response->setContent('');
+
+        if ($request->is('api/*') || $request->expectsJson()) {
+            return response()->json([
+                'message' => $exception->publicMessage(),
+                'request_id' => $requestId,
+            ], $exception->status(), ['X-Request-ID' => $requestId]);
+        }
+
+        $publicResponse = $this->publicErrors->render($response, $exception, $request);
+
+        if ($publicResponse !== $response) {
+            $publicResponse->headers->set('X-Request-ID', $requestId);
+
+            return $publicResponse;
+        }
+
+        if (in_array($exception->status(), [403, 404], true) && $this->adminContext($request) !== null) {
+            return $this->adminResponse($response, $request, $exception->status(), $requestId);
+        }
+
+        return $this->domainFallbackResponse($response, $exception, $requestId);
+    }
+
+    private function domainFallbackResponse(Response $response, DomainException $exception, string $requestId): Response
+    {
+        $rendered = response()->view('errors.domain', [
+            'status' => $exception->status(),
+            'message' => $exception->publicMessage(),
+        ], $exception->status());
+
+        return $this->copyHeaders($response, $rendered, $requestId);
     }
 
     private function adminResponse(Response $response, Request $request, int $status, string $requestId): Response

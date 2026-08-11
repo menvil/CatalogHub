@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\SiteDomainType;
+use App\Support\Normalization\HostNormalizer;
 use Database\Factories\SiteDomainFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use InvalidArgumentException;
 
 /**
  * @property SiteDomainType $type
@@ -57,17 +57,6 @@ final class SiteDomain extends Model
 
     public static function normalizeHost(string $input): string
     {
-        $input = trim($input);
-        $parts = parse_url(str_contains($input, '://') ? $input : '//'.$input);
-        $host = is_array($parts) ? ($parts['host'] ?? null) : null;
-        $normalized = is_string($host) ? strtolower(rtrim($host, '.')) : '';
-
-        if ($normalized === ''
-            || ! str_contains($normalized, '.')
-            || filter_var($normalized, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME) === false) {
-            throw new InvalidArgumentException('A valid site host is required.');
-        }
-
-        return $normalized;
+        return HostNormalizer::normalize($input);
     }
 }

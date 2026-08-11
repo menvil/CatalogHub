@@ -37,6 +37,17 @@ final class ExceptionMappingTest extends TestCase
             ->assertDontSee('internal diagnostic');
     }
 
+    #[DataProvider('browserFallbackStatuses')]
+    public function test_non_api_domain_errors_render_a_safe_html_fallback(int $status, string $message): void
+    {
+        $this->get('/__foundation-domain/'.$status)
+            ->assertStatus($status)
+            ->assertSee('data-application-error="'.$status.'"', false)
+            ->assertSee('We could not complete this request')
+            ->assertSee($message)
+            ->assertDontSee('internal diagnostic');
+    }
+
     #[DataProvider('statuses')]
     public function test_domain_exceptions_have_safe_api_responses(int $status, string $message): void
     {
@@ -72,6 +83,16 @@ final class ExceptionMappingTest extends TestCase
             'authorization denied' => [403],
             'not found' => [404],
             'conflict' => [409],
+        ];
+    }
+
+    /** @return array<string, array{int, string}> */
+    public static function browserFallbackStatuses(): array
+    {
+        return [
+            'authentication required' => [401, 'Authentication is required.'],
+            'conflict' => [409, 'The request conflicts with the current state.'],
+            'invalid input' => [422, 'The request is invalid.'],
         ];
     }
 

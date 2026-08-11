@@ -69,9 +69,17 @@ final readonly class ApplicationErrorResponse
             return $this->adminResponse($response, $request, $exception->status(), $requestId);
         }
 
-        $response->headers->set('X-Request-ID', $requestId);
+        return $this->domainFallbackResponse($response, $exception, $requestId);
+    }
 
-        return $response;
+    private function domainFallbackResponse(Response $response, DomainException $exception, string $requestId): Response
+    {
+        $rendered = response()->view('errors.domain', [
+            'status' => $exception->status(),
+            'message' => $exception->publicMessage(),
+        ], $exception->status());
+
+        return $this->copyHeaders($response, $rendered, $requestId);
     }
 
     private function adminResponse(Response $response, Request $request, int $status, string $requestId): Response

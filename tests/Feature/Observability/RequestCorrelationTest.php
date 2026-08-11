@@ -29,6 +29,9 @@ final class RequestCorrelationTest extends TestCase
 
             return response()->json(['audit_id' => $entry->getKey()]);
         });
+        Route::get('/__foundation-correlation-error', static function (): never {
+            throw new \RuntimeException('Correlation exception fixture.');
+        });
     }
 
     public function test_valid_request_id_correlates_response_logs_and_audit_entry(): void
@@ -65,8 +68,25 @@ final class RequestCorrelationTest extends TestCase
 
         $requestId = $response->headers->get('X-Request-ID');
         $this->assertIsString($requestId);
-        $this->assertMatchesRegularExpression('/\A[0-9a-f-]{36}\z/i', $requestId);
+        $this->assertMatchesRegularExpression('/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i', $requestId);
         $this->assertSame($requestId, AuditLogEntry::query()->sole()->request_id);
         $this->assertSame([['request_id' => $requestId]], $contexts);
+    }
+
+    public function test_reported_exception_uses_the_generated_request_id_after_shared_log_context_is_flushed(): void
+    {
+        $contexts = [];
+        Event::listen(MessageLogged::class, static function (MessageLogged $event) use (&$contexts): void {
+            $contexts[] = $event->context;
+        });
+
+        $response = $this->get('/__foundation-correlation-error')->assertStatus(500);
+        $requestId = $response->headers->get('X-Request-ID');
+
+        $this->assertIsString($requestId);
+        $this->assertMatchesRegularExpression('/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i', $requestId);
+        $this->assertTrue(collect($contexts)->contains(
+            static fn (array $context): bool => ($context['request_id'] ?? null) === $requestId,
+        ));
     }
 }

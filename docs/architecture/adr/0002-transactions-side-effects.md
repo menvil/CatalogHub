@@ -2,6 +2,7 @@
 
 **Status:** Accepted  
 **Date:** 2026-08-11  
+**Owners:** Platform Engineering<br>
 **Task:** P00-100
 
 ## Decision

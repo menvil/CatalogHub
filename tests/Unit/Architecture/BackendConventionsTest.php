@@ -25,6 +25,12 @@ final class BackendConventionsTest extends TestCase
             'app/DTO',
             'app/ValueObjects',
         ], ['Illuminate\\Http\\Request']));
+
+        self::assertSame([
+            'tests/Fixtures/Architecture/Data/InvalidRequestGlobalData.php',
+        ], $this->violationsInDirectories([
+            'tests/Fixtures/Architecture/Data',
+        ], []));
     }
 
     public function test_domain_code_does_not_depend_on_presentation_namespaces(): void
@@ -86,13 +92,71 @@ final class BackendConventionsTest extends TestCase
 
         foreach ($directories as $directory) {
             foreach ($this->phpFiles($directory) as $file) {
-                if ($this->hasForbiddenDependency($this->file($file), $forbiddenDependencies)) {
+                $source = $this->file($file);
+
+                if ($this->hasForbiddenDependency($source, $forbiddenDependencies) || $this->hasRequestGlobalCall($source)) {
                     $violations[] = $file;
                 }
             }
         }
 
         return $violations;
+    }
+
+    private function hasRequestGlobalCall(string $source): bool
+    {
+        $previous = null;
+        $tokens = token_get_all($source);
+
+        foreach ($tokens as $index => $token) {
+            if (! is_array($token)) {
+                if (! in_array($token, [' ', "\t", "\n", "\r"], true)) {
+                    $previous = $token;
+                }
+
+                continue;
+            }
+
+            if ($token[0] !== T_STRING || strtolower($token[1]) !== 'request') {
+                if (! in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                    $previous = $token[0];
+                }
+
+                continue;
+            }
+
+            $next = $this->nextMeaningfulToken($tokens, $index + 1);
+
+            if ($next === '(' && ! in_array($previous, [T_OBJECT_OPERATOR, T_DOUBLE_COLON], true)) {
+                return true;
+            }
+
+            $previous = T_STRING;
+        }
+
+        return false;
+    }
+
+    /** @param list<array{int, string, int}|string> $tokens */
+    private function nextMeaningfulToken(array $tokens, int $offset): int|string|null
+    {
+        for ($index = $offset; isset($tokens[$index]); $index++) {
+            $token = $tokens[$index];
+
+            if (! is_array($token)) {
+                if (! in_array($token, [' ', "\t", "\n", "\r"], true)) {
+                    return $token;
+                }
+
+                continue;
+            }
+
+            if (! in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                return $token[0];
+            }
+        }
+
+        return null;
     }
 
     /** @return list<string> */

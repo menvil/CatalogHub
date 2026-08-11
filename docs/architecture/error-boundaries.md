@@ -1,6 +1,6 @@
 # Error boundaries
 
-Presentation code may throw framework HTTP exceptions where the framework owns the response. Application and domain code uses the typed exceptions in `App\\Exceptions\\Domain` when it needs a stable public HTTP outcome:
+Presentation code may throw framework HTTP exceptions where the framework owns the response. Application and domain code uses the typed exceptions in `App\Exceptions\Domain` when it needs a stable public HTTP outcome:
 
 | Exception | HTTP status |
 | --- | --- |

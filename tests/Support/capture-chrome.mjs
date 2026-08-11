@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process'
 const [chrome, url, capture, widthValue, heightValue, dom] = process.argv.slice(2)
 const width = Number.parseInt(widthValue, 10)
 const height = Number.parseInt(heightValue, 10)
+const chromeStartupTimeout = 30_000
 
 if (!chrome || !url || !capture || !Number.isInteger(width) || !Number.isInteger(height)) {
     throw new Error('Usage: capture-chrome.mjs <chrome> <url> <capture> <width> <height> [dom]')
@@ -95,7 +96,7 @@ async function debuggingEndpoint(process) {
     let output = ''
 
     return await new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error(`Chrome did not expose a debugging endpoint: ${output}`)), 10_000)
+        const timeout = setTimeout(() => reject(new Error(`Chrome did not expose a debugging endpoint: ${output}`)), chromeStartupTimeout)
 
         process.stderr.setEncoding('utf8')
         process.stderr.on('data', chunk => {

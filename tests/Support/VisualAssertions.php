@@ -24,27 +24,24 @@ final class VisualAssertions
         $baselineImage = self::decode($baseline);
         $currentImage = self::decode($current);
 
-        if (imagesx($baselineImage) !== imagesx($currentImage)
-            || imagesy($baselineImage) !== imagesy($currentImage)) {
-            throw new RuntimeException('Visual baseline and current image dimensions differ.');
-        }
-
         $currentDirectory = $artifactRoot.'/current';
-        $diffDirectory = $artifactRoot.'/diff';
         self::ensureDirectory($currentDirectory);
-        self::ensureDirectory($diffDirectory);
 
         if (! copy($current, $currentDirectory.'/'.$name.'.png')) {
             throw new RuntimeException('Unable to preserve the current visual capture.');
         }
 
+        if (imagesx($baselineImage) !== imagesx($currentImage)
+            || imagesy($baselineImage) !== imagesy($currentImage)) {
+            throw new RuntimeException('Visual baseline and current image dimensions differ.');
+        }
+
+        $diffDirectory = $artifactRoot.'/diff';
+        self::ensureDirectory($diffDirectory);
+
         $difference = 0.0;
         $samples = 0;
-        $diff = imagecreatetruecolor(imagesx($baselineImage), imagesy($baselineImage));
-
-        if (! $diff instanceof GdImage) {
-            throw new RuntimeException('Unable to create a visual diff image.');
-        }
+        $pixelDifferences = '';
 
         for ($y = 0; $y < imagesy($baselineImage); $y++) {
             for ($x = 0; $x < imagesx($baselineImage); $x++) {
@@ -59,15 +56,19 @@ final class VisualAssertions
                     $samples++;
                 }
 
-                $color = imagecolorallocate($diff, $pixelDifference, 0, 0);
-                imagesetpixel($diff, $x, $y, $color);
+                $pixelDifferences .= chr($pixelDifference);
             }
         }
 
         $meanDifference = $difference / $samples;
 
         if ($meanDifference > $maximumMeanDifference) {
-            imagepng($diff, $diffDirectory.'/'.$name.'.png');
+            self::writeDiff(
+                $pixelDifferences,
+                imagesx($baselineImage),
+                imagesy($baselineImage),
+                $diffDirectory.'/'.$name.'.png',
+            );
             throw new RuntimeException(sprintf(
                 'Visual mismatch for [%s]: %.6f exceeds %.6f.',
                 $name,
@@ -77,6 +78,31 @@ final class VisualAssertions
         }
 
         return $meanDifference;
+    }
+
+    private static function writeDiff(string $pixelDifferences, int $width, int $height, string $path): void
+    {
+        $diff = imagecreatetruecolor($width, $height);
+
+        if (! $diff instanceof GdImage) {
+            throw new RuntimeException('Unable to create a visual diff image.');
+        }
+
+        imagefill($diff, 0, 0, imagecolorallocate($diff, 0, 0, 0));
+
+        for ($offset = 0; $offset < strlen($pixelDifferences); $offset++) {
+            $difference = ord($pixelDifferences[$offset]);
+            imagesetpixel(
+                $diff,
+                $offset % $width,
+                intdiv($offset, $width),
+                imagecolorallocate($diff, $difference, 0, 0),
+            );
+        }
+
+        if (! imagepng($diff, $path)) {
+            throw new RuntimeException("Unable to write visual diff [{$path}].");
+        }
     }
 
     private static function decode(string $path): GdImage

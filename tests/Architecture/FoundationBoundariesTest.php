@@ -11,6 +11,14 @@ use RecursiveIteratorIterator;
 
 final class FoundationBoundariesTest extends TestCase
 {
+    private const PERMISSION_METHODS = [
+        'hasCatalogHubPermission',
+        'isSuperAdmin',
+        'isCentralAdmin',
+        'isSiteAdmin',
+        'roleEnum',
+    ];
+
     private const RULES = [
         'cross_context_import',
         'request_in_dto',
@@ -81,18 +89,74 @@ final class FoundationBoundariesTest extends TestCase
         self::assertContains($expectedRule, $this->violationsFor($file, $source));
     }
 
+    /** @return iterable<string, array{string, string, string}> */
+    public static function ignoredTokenCases(): iterable
+    {
+        yield 'request references in non-code tokens' => [
+            'app/Data/SafeData.php',
+            <<<'PHP'
+<?php
+// use Illuminate\Http\Request;
+/** @var Illuminate\Http\Request $request */
+$example = 'Illuminate\Http\Request';
+PHP,
+            'request_in_dto',
+        ];
+        yield 'admin references in non-code tokens' => [
+            'app/Domains/Catalog/SafeService.php',
+            <<<'PHP'
+<?php
+// use App\Filament\Resources\SiteResource;
+/** App\Livewire\UnsafeComponent */
+$example = 'App\Http\Controllers\CentralAdmin\UnsafeController';
+PHP,
+            'admin_in_domain',
+        ];
+        yield 'cross-context references in non-code tokens' => [
+            'app/Http/Controllers/CentralAdmin/SafeController.php',
+            <<<'PHP'
+<?php
+// use App\Filament\Site\Pages\Home;
+/** App\Http\Controllers\SiteAdmin\UnsafeController */
+$example = 'App\Filament\Site\Pages\Home';
+PHP,
+            'cross_context_import',
+        ];
+        yield 'permission calls in non-code tokens' => [
+            'app/Livewire/SafeComponent.php',
+            <<<'PHP'
+<?php
+// $user->hasCatalogHubPermission('sites.manage');
+/** PermissionMatrix and $user->isSuperAdmin() */
+$example = '$user->roleEnum()';
+PHP,
+            'raw_permission',
+        ];
+    }
+
+    #[DataProvider('ignoredTokenCases')]
+    public function test_comments_docblocks_and_strings_do_not_trigger_boundary_rules(
+        string $file,
+        string $source,
+        string $rule,
+    ): void {
+        self::assertNotContains($rule, $this->violationsFor($file, $source));
+    }
+
     /** @return list<string> */
     private function violationsFor(string $file, string $source): array
     {
         $rules = [];
+        $tokens = token_get_all($source);
+        $references = $this->namespaceReferences($tokens);
 
         if (str_starts_with($file, 'app/Data/')
-            && str_contains($source, 'Illuminate\\Http\\Request')) {
+            && $this->hasReference($references, ['Illuminate\\Http\\Request'])) {
             $rules[] = 'request_in_dto';
         }
 
         if (str_starts_with($file, 'app/Domains/')
-            && preg_match('/App\\\\(?:Filament|Http\\\\Controllers|Livewire)\\\\/', $source) === 1) {
+            && $this->hasReference($references, ['App\\Filament', 'App\\Http\\Controllers', 'App\\Livewire'])) {
             $rules[] = 'admin_in_domain';
         }
 
@@ -101,8 +165,8 @@ final class FoundationBoundariesTest extends TestCase
         $siteFile = str_starts_with($file, 'app/Filament/Site/')
             || str_starts_with($file, 'app/Http/Controllers/SiteAdmin/');
 
-        if (($centralFile && preg_match('/App\\\\(?:Filament\\\\Site|Http\\\\Controllers\\\\SiteAdmin)\\\\/', $source) === 1)
-            || ($siteFile && preg_match('/App\\\\(?:Filament\\\\Central|Http\\\\Controllers\\\\CentralAdmin)\\\\/', $source) === 1)) {
+        if (($centralFile && $this->hasReference($references, ['App\\Filament\\Site', 'App\\Http\\Controllers\\SiteAdmin']))
+            || ($siteFile && $this->hasReference($references, ['App\\Filament\\Central', 'App\\Http\\Controllers\\CentralAdmin']))) {
             $rules[] = 'cross_context_import';
         }
 
@@ -110,11 +174,126 @@ final class FoundationBoundariesTest extends TestCase
             || str_starts_with($file, 'app/Http/Controllers/')
             || str_starts_with($file, 'app/Livewire/');
 
-        if ($presentationFile && preg_match('/PermissionMatrix|hasCatalogHubPermission\s*\(|->(?:isSuperAdmin|isCentralAdmin|isSiteAdmin|roleEnum)\s*\(/', $source) === 1) {
+        if ($presentationFile && ($this->hasPermissionMatrixReference($tokens, $references)
+            || $this->hasPermissionMethodCall($tokens))) {
             $rules[] = 'raw_permission';
         }
 
         return $rules;
+    }
+
+    /**
+     * @param  list<array{int, string, int}|string>  $tokens
+     * @return list<string>
+     */
+    private function namespaceReferences(array $tokens): array
+    {
+        $references = [];
+
+        foreach ($tokens as $token) {
+            if (is_array($token) && in_array($token[0], [T_NAME_FULLY_QUALIFIED, T_NAME_QUALIFIED, T_NAME_RELATIVE], true)) {
+                $references[] = ltrim($token[1], '\\');
+            }
+        }
+
+        return $references;
+    }
+
+    /**
+     * @param  list<string>  $references
+     * @param  list<string>  $boundaries
+     */
+    private function hasReference(array $references, array $boundaries): bool
+    {
+        foreach ($references as $reference) {
+            foreach ($boundaries as $boundary) {
+                if ($reference === $boundary || str_starts_with($reference, $boundary.'\\')) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  list<array{int, string, int}|string>  $tokens
+     * @param  list<string>  $references
+     */
+    private function hasPermissionMatrixReference(array $tokens, array $references): bool
+    {
+        foreach ($references as $reference) {
+            if ($reference === 'PermissionMatrix' || str_ends_with($reference, '\\PermissionMatrix')) {
+                return true;
+            }
+        }
+
+        foreach ($tokens as $token) {
+            if (is_array($token) && $token[0] === T_STRING && $token[1] === 'PermissionMatrix') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** @param list<array{int, string, int}|string> $tokens */
+    private function hasPermissionMethodCall(array $tokens): bool
+    {
+        foreach ($tokens as $index => $token) {
+            if (! is_array($token) || $token[0] !== T_STRING || ! in_array($token[1], self::PERMISSION_METHODS, true)) {
+                continue;
+            }
+
+            $parenthesisIndex = $this->nextSignificantTokenIndex($tokens, $index + 1);
+
+            if ($parenthesisIndex === null || $tokens[$parenthesisIndex] !== '(') {
+                continue;
+            }
+
+            if ($token[1] === 'hasCatalogHubPermission') {
+                return true;
+            }
+
+            $operatorIndex = $this->previousSignificantTokenIndex($tokens, $index - 1);
+            $operator = $operatorIndex === null ? null : $tokens[$operatorIndex];
+
+            if (is_array($operator) && in_array($operator[0], [T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR], true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  list<array{int, string, int}|string>  $tokens
+     */
+    private function nextSignificantTokenIndex(array $tokens, int $start): ?int
+    {
+        for ($index = $start; $index < count($tokens); $index++) {
+            $token = $tokens[$index];
+
+            if (! is_array($token) || ! in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                return $index;
+            }
+        }
+
+        return null;
+    }
+
+    /** @param list<array{int, string, int}|string> $tokens */
+    private function previousSignificantTokenIndex(array $tokens, int $start): ?int
+    {
+        for ($index = $start; $index >= 0; $index--) {
+            $token = $tokens[$index];
+
+            if (! is_array($token) || ! in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                return $index;
+            }
+        }
+
+        return null;
     }
 
     /**

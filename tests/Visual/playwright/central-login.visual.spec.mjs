@@ -21,9 +21,10 @@ test('Central login matches the approved deterministic reference', async ({ page
         `,
     })
 
+    // Allow only bounded font-rasterization drift (~0.22% of the fixed viewport).
     await expect(page).toHaveScreenshot(['z-001__default__1280x900.png'], {
         animations: 'disabled',
-        maxDiffPixelRatio: 0.03,
+        maxDiffPixels: 2_500,
         scale: 'css',
     })
 })

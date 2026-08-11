@@ -62,7 +62,7 @@ final class TestingDocumentationTest extends TestCase
         $composer = json_decode((string) file_get_contents($root.'/composer.json'), true, flags: JSON_THROW_ON_ERROR);
         $package = json_decode((string) file_get_contents($root.'/package.json'), true, flags: JSON_THROW_ON_ERROR);
 
-        foreach (['test:unit', 'test:feature', 'test:architecture', 'test:browser', 'test:visual'] as $script) {
+        foreach (['test:unit', 'test:legacy-unit', 'test:feature', 'test:architecture', 'test:browser', 'test:visual'] as $script) {
             self::assertArrayHasKey($script, $composer['scripts']);
         }
 

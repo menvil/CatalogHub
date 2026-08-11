@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Pricing;
 
+use App\Contracts\Pricing\PriceSourceAdapterInterface;
 use App\Enums\PriceSourceType;
 use App\Jobs\Pricing\FetchExternalOffersJob;
 use App\Models\PriceSource;
@@ -10,6 +11,8 @@ use App\Pricing\PriceSourceAdapterRegistry;
 use App\Services\Pricing\PriceSourceRetryPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use InvalidArgumentException;
+use LogicException;
+use ReflectionProperty;
 use RuntimeException;
 use Tests\TestCase;
 
@@ -44,6 +47,17 @@ class PriceSourceRetryPolicyTest extends TestCase
         $this->assertTrue($policy->shouldRetry($source, 1, new RuntimeException('Temporary failure.')));
     }
 
+    public function test_non_retryable_exception_classes_come_from_job_configuration(): void
+    {
+        $source = PriceSource::factory()->create(['config_json' => ['max_retries' => 3]]);
+        $policy = app(PriceSourceRetryPolicy::class);
+
+        config()->set('jobs.non_retryable_exceptions', [RuntimeException::class]);
+
+        $this->assertFalse($policy->shouldRetry($source, 1, new RuntimeException('Configured permanent failure.')));
+        $this->assertTrue($policy->shouldRetry($source, 1, new InvalidArgumentException('No longer configured.')));
+    }
+
     public function test_job_records_attempt_and_fails_non_retryable_configuration_error(): void
     {
         $source = PriceSource::factory()->create([
@@ -57,6 +71,31 @@ class PriceSourceRetryPolicyTest extends TestCase
             $job->handle(app(PriceSourceAdapterRegistry::class));
             $this->fail('Expected permanent adapter configuration error.');
         } catch (InvalidArgumentException) {
+            $job->assertFailed();
+            $attempt = $log->fresh()->metadata['retry_attempts'][0];
+            $this->assertSame(1, $attempt['attempt']);
+            $this->assertSame('fetch', $attempt['stage']);
+            $this->assertFalse($attempt['will_retry']);
+        }
+    }
+
+    public function test_job_fails_logic_exception_without_retrying(): void
+    {
+        $source = PriceSource::factory()->create(['config_json' => ['max_retries' => 3]]);
+        $log = PriceSourceSyncLog::factory()->for($source)->create();
+        $job = (new FetchExternalOffersJob($source->id, $log->id))->withFakeQueueInteractions();
+        $adapter = $this->createMock(PriceSourceAdapterInterface::class);
+        $adapter->method('supports')->willReturn(true);
+        $adapter->method('fetchOffers')->willThrowException(new LogicException('Invalid pricing state.'));
+        $registry = app(PriceSourceAdapterRegistry::class);
+        (new ReflectionProperty($registry, 'adapters'))->setValue($registry, [$adapter]);
+
+        $this->assertSame(4, $job->tries());
+
+        try {
+            $job->handle($registry);
+            $this->fail('Expected permanent pricing state error.');
+        } catch (LogicException) {
             $job->assertFailed();
             $attempt = $log->fresh()->metadata['retry_attempts'][0];
             $this->assertSame(1, $attempt['attempt']);

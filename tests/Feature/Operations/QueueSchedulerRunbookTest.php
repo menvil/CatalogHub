@@ -20,9 +20,23 @@ final class QueueSchedulerRunbookTest extends TestCase
         self::assertArrayHasKey('queue:retry', Artisan::all());
         self::assertArrayHasKey('schedule:run', Artisan::all());
         self::assertArrayHasKey('operations:record-scheduler-heartbeat', Artisan::all());
+
+        foreach ([
+            'queue:work',
+            'queue:restart',
+            'queue:failed',
+            'queue:retry',
+            'schedule:run',
+            'operations:record-scheduler-heartbeat',
+        ] as $command) {
+            self::assertStringContainsString($command, $runbook);
+        }
+
         self::assertStringContainsString('operations.queue_heartbeat_stale_after', $runbook);
         self::assertStringContainsString('operations.scheduler_heartbeat_stale_after', $runbook);
         self::assertIsInt(config('operations.queue_heartbeat_stale_after'));
         self::assertIsInt(config('operations.scheduler_heartbeat_stale_after'));
+        self::assertGreaterThan(0, config('operations.queue_heartbeat_stale_after'));
+        self::assertGreaterThan(0, config('operations.scheduler_heartbeat_stale_after'));
     }
 }

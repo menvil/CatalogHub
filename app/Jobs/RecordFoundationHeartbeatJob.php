@@ -35,6 +35,10 @@ final class RecordFoundationHeartbeatJob implements ShouldBeUnique, ShouldQueue
             throw new InvalidArgumentException('Job idempotency key must not be empty.');
         }
 
+        if (mb_strlen($idempotencyKey) > FoundationHeartbeatRecorder::MAX_IDEMPOTENCY_KEY_LENGTH) {
+            throw new InvalidArgumentException('Job idempotency key must not exceed 255 characters.');
+        }
+
         $this->siteId = $siteId;
         $context = $correlationId === null
             ? JobContext::new($siteId)

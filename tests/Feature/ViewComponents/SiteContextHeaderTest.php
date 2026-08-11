@@ -30,7 +30,7 @@ final class SiteContextHeaderTest extends TestCase
         $this->assertSame([], DB::getQueryLog());
         $this->assertStringContainsString('Tech Germany', $html);
         $this->assertStringContainsString((string) $domain->host, $html);
-        $this->assertStringContainsString((string) $site->market->name, $html);
+        $this->assertStringContainsString(e((string) $site->market->name), $html);
         $this->assertStringContainsString('de-DE', $html);
         $this->assertStringContainsString('Active', $html);
         $this->assertStringContainsString('data-admin-status-badge="success"', $html);

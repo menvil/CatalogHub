@@ -18,7 +18,7 @@ final class QueueConfigurationTest extends TestCase
         $connection = config('queue.default');
 
         $this->assertSame('sync', $connection);
-        $this->assertNotNull(app(QueueFactory::class)->connection($connection));
+        $this->assertSame($connection, app(QueueFactory::class)->connection($connection)->getConnectionName());
         $this->assertContains(config('queue.failed.driver'), ['database', 'database-uuids']);
         $this->assertTrue(Schema::hasTable((string) config('queue.failed.table')));
     }

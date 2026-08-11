@@ -24,6 +24,7 @@ final class AssignRequestId
 
             return $response;
         } finally {
+            Log::withoutContext(['request_id']);
             Log::flushSharedContext();
         }
     }

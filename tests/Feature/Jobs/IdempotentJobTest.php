@@ -9,12 +9,30 @@ use App\Jobs\RecordFoundationHeartbeatJob;
 use App\Models\JobIdempotencyRecord;
 use App\Services\Operations\FoundationHeartbeatRecorder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Tests\TestCase;
 
 final class IdempotentJobTest extends TestCase
 {
     use RefreshDatabase;
+
+    #[DataProvider('invalidIdempotencyKeys')]
+    public function test_job_rejects_invalid_idempotency_keys(string $idempotencyKey): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        new RecordFoundationHeartbeatJob($idempotencyKey);
+    }
+
+    #[DataProvider('invalidIdempotencyKeys')]
+    public function test_recorder_rejects_invalid_idempotency_keys(string $idempotencyKey): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        app(FoundationHeartbeatRecorder::class)->record($idempotencyKey);
+    }
 
     public function test_repeated_execution_records_one_logical_foundation_effect(): void
     {
@@ -59,5 +77,13 @@ final class IdempotentJobTest extends TestCase
         $this->assertSame(config('jobs.fast.timeout'), $job->timeout);
         $this->assertSame(config('jobs.unique_for'), $job->uniqueFor);
         $this->assertInstanceOf(ApplyJobContext::class, $job->middleware()[0]);
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function invalidIdempotencyKeys(): iterable
+    {
+        yield 'empty' => [''];
+        yield 'whitespace only' => ['   '];
+        yield 'longer than the database column' => [str_repeat('a', 256)];
     }
 }

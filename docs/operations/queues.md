@@ -24,4 +24,4 @@ This asks existing workers to exit after their current job so the process manage
 
 Use `php artisan queue:failed` to inspect failed records and `php artisan queue:retry <id>` only after the cause and job idempotency have been reviewed. Do not purge failed jobs as a first response.
 
-Queue workers never resolve HTTP sessions or request globals. A future job context carries only explicit, validated correlation and site identifiers.
+Queue workers never resolve HTTP sessions or request globals. The job context carries only explicit, validated correlation and site identifiers.

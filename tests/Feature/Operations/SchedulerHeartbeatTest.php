@@ -9,6 +9,7 @@ use App\Services\Operations\SchedulerHealthService;
 use App\Services\Operations\SchedulerHeartbeatService;
 use App\Support\Operations\HealthStatus;
 use Carbon\CarbonImmutable;
+use Illuminate\Console\Scheduling\Event;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -41,12 +42,19 @@ final class SchedulerHeartbeatTest extends TestCase
 
     public function test_scheduler_health_detects_stale_and_fresh_heartbeats(): void
     {
+        CarbonImmutable::setTestNow('2026-08-11T12:00:00+00:00');
         OperationalHeartbeat::query()->create([
             'name' => SchedulerHeartbeatService::NAME,
             'last_ran_at' => now()->subSeconds(301),
         ]);
 
         self::assertSame(HealthStatus::Stale, app(SchedulerHealthService::class)->inspect()->status);
+
+        OperationalHeartbeat::query()->where('name', SchedulerHeartbeatService::NAME)->update([
+            'last_ran_at' => now()->subSeconds(300),
+        ]);
+
+        self::assertSame(HealthStatus::Healthy, app(SchedulerHealthService::class)->inspect()->status);
 
         OperationalHeartbeat::query()->where('name', SchedulerHeartbeatService::NAME)->update([
             'last_ran_at' => now(),
@@ -59,9 +67,12 @@ final class SchedulerHeartbeatTest extends TestCase
     {
         $events = array_filter(
             app(Schedule::class)->events(),
-            static fn ($event): bool => str_contains($event->getSummaryForDisplay(), 'operations:record-scheduler-heartbeat'),
+            static fn (Event $event): bool => str_contains($event->getSummaryForDisplay(), 'operations:record-scheduler-heartbeat'),
         );
 
         self::assertCount(1, $events);
+        $event = array_values($events)[0];
+        self::assertSame('* * * * *', $event->getExpression());
+        self::assertTrue($event->withoutOverlapping);
     }
 }

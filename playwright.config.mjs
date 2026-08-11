@@ -4,8 +4,12 @@ import { defineConfig } from '@playwright/test'
 const configuredBrowser = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
 const macChrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const executablePath = configuredBrowser || (existsSync(macChrome) ? macChrome : undefined)
-const visualRun = process.argv.some(argument => argument === '--project=visual')
-const port = visualRun ? 8015 : 8014
+const port = Number.parseInt(process.env.CATALOGHUB_BROWSER_PORT ?? '', 10)
+
+if (![8014, 8015].includes(port)) {
+    throw new Error('CATALOGHUB_BROWSER_PORT must be 8014 or 8015.')
+}
+
 const baseURL = `http://127.0.0.1:${port}`
 
 export default defineConfig({

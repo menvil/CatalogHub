@@ -7,8 +7,8 @@
         :breadcrumbs="[['label' => 'Design system', 'url' => '/dev/component-gallery'], ['label' => ucfirst($componentSection)]]"
     >
         <x-slot:actions>
-            <x-ui.action-group label="Gallery sections">
-                @foreach (['forms', 'tables', 'feedback'] as $section)
+            <x-ui.action-group label="Gallery sections" class="!flex-nowrap">
+                @foreach (['forms', 'tables', 'feedback', 'states', 'actions'] as $section)
                     <x-ui.button variant="{{ $componentSection === $section ? 'primary' : 'secondary' }}" href="/dev/component-gallery?mode=components&amp;section={{ $section }}">{{ ucfirst($section) }}</x-ui.button>
                 @endforeach
             </x-ui.action-group>
@@ -115,6 +115,26 @@
                 </div>
             </div>
         </div>
+    @endif
+
+    @if (in_array($componentSection, ['states', 'acceptance'], true))
+        <x-admin.card title="Common screen states" description="Initial, filtered, and loading states stay semantically distinct." data-gallery-states-fixture>
+            <div class="grid gap-admin-section lg:grid-cols-2">
+                <x-ui.states.empty title="No brands yet" message="Create the first brand after an approved source is available." action-label="Create brand" action-url="/admin/central/brands/create" />
+                <x-ui.states.filtered-empty title="No matching brands" message="No brands match the current search and filters." clear-url="/dev/component-gallery?mode=components&amp;section=states" />
+                <x-ui.states.loading label="Loading brand records" :rows="4" class="lg:col-span-2" />
+            </div>
+        </x-admin.card>
+    @endif
+
+    @if (in_array($componentSection, ['actions', 'acceptance'], true))
+        <x-admin.card title="Action progress" description="Deterministic action states never fabricate a completion percentage." data-gallery-actions-fixture>
+            <div class="grid gap-admin-section lg:grid-cols-2">
+                @foreach ($actionProgressFixture as $state => $progress)
+                    <x-ui.states.action-progress :progress="$progress" action-label="Start export" retry-label="Retry export" reset-label="Dismiss result" data-gallery-action-state="{{ $state }}" />
+                @endforeach
+            </div>
+        </x-admin.card>
     @endif
 
     @if ($componentAcceptance && $componentSection === 'acceptance')
@@ -250,6 +270,14 @@
                     retry?.addEventListener('click', () => retries++);
                     retry?.click();
                     if (retries !== 1) throw new Error('feedback-retry');
+
+                    const actionProgress = document.querySelector('[data-gallery-action-state="idle"]');
+                    const actionStart = actionProgress?.querySelector('[data-action-progress-start]');
+                    let actionStarts = 0;
+                    actionProgress?.addEventListener('admin:action-progress-start', () => actionStarts++);
+                    actionStart?.click();
+                    actionStart?.click();
+                    if (actionStarts !== 1 || ! actionStart?.disabled || actionProgress?.dataset.actionProgressStarted !== 'true') throw new Error('action-progress-duplicate');
 
                     const marker = document.querySelector('[data-browser-acceptance]');
                     marker.dataset.browserAcceptance = 'passed';

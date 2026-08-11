@@ -52,6 +52,18 @@ class FoundationAuditEventsTest extends TestCase
         $this->assertSame('request-role-123', $entry->request_id);
     }
 
+    public function test_recorder_persists_the_full_valid_request_id_length(): void
+    {
+        $requestId = 'a'.str_repeat('b', 127);
+        request()->headers->set('X-Request-ID', $requestId);
+        $actor = User::factory()->centralAdmin()->create();
+
+        $entry = app(AuditRecorder::class)->record(AuditAction::RoleAssigned, AuditContext::Central, $actor);
+
+        $this->assertSame($requestId, $entry->request_id);
+        $this->assertSame(128, strlen($entry->request_id));
+    }
+
     public function test_membership_changes_are_recorded(): void
     {
         $site = Site::factory()->create();

@@ -6,9 +6,12 @@ namespace Tests\Visual;
 
 use GdImage;
 use PHPUnit\Framework\TestCase;
+use Tests\Visual\Concerns\InteractsWithVisualReferences;
 
 final class ComponentGalleryVisualTest extends TestCase
 {
+    use InteractsWithVisualReferences;
+
     private const MAX_MEAN_CHANNEL_DIFFERENCE = 0.04;
 
     /** @var array<string, array{width: int, height: int, section: string}> */
@@ -19,12 +22,15 @@ final class ComponentGalleryVisualTest extends TestCase
         'tables-mobile' => ['width' => 360, 'height' => 900, 'section' => 'tables'],
         'feedback-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'feedback'],
         'feedback-mobile' => ['width' => 360, 'height' => 900, 'section' => 'feedback'],
+        'states-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'states'],
+        'states-mobile' => ['width' => 360, 'height' => 900, 'section' => 'states'],
+        'actions-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'actions'],
+        'actions-mobile' => ['width' => 360, 'height' => 900, 'section' => 'actions'],
     ];
 
     public function test_approved_gallery_reference_checksum_is_unchanged(): void
     {
-        $root = dirname(__DIR__, 2);
-        $reference = $root.'/tests/Visual/baselines/component-gallery-wide.png';
+        $reference = $this->referencePath('component-gallery-wide');
         $checksum = $reference.'.sha256';
 
         $this->assertFileExists($reference);
@@ -35,7 +41,7 @@ final class ComponentGalleryVisualTest extends TestCase
     public function test_current_gallery_matches_the_approved_wide_reference(): void
     {
         $root = dirname(__DIR__, 2);
-        $reference = $root.'/tests/Visual/baselines/component-gallery-wide.png';
+        $reference = $this->referencePath('component-gallery-wide');
         $temporaryPath = tempnam(sys_get_temp_dir(), 'cataloghub-gallery-');
 
         $this->assertIsString($temporaryPath);
@@ -54,7 +60,7 @@ final class ComponentGalleryVisualTest extends TestCase
     public function test_approved_admin_component_reference_checksums_are_unchanged(): void
     {
         foreach (array_keys(self::COMPONENT_STATES) as $state) {
-            $reference = $this->componentReferencePath($state);
+            $reference = $this->referencePath($state, 'admin-components-');
 
             $this->assertFileExists($reference);
             $this->assertFileExists($reference.'.sha256');
@@ -85,7 +91,7 @@ final class ComponentGalleryVisualTest extends TestCase
                 );
                 $this->assertLessThanOrEqual(
                     self::MAX_MEAN_CHANNEL_DIFFERENCE,
-                    $this->meanChannelDifference($this->componentReferencePath($state), $capture),
+                    $this->meanChannelDifference($this->referencePath($state, 'admin-components-'), $capture),
                     "Admin component gallery state [{$state}] differs from its approved reference.",
                 );
             } finally {
@@ -170,16 +176,10 @@ final class ComponentGalleryVisualTest extends TestCase
         string $query = '',
         ?string $dom = null,
     ): void {
-        $chrome = $this->chromeBinary();
-        $this->assertNotNull($chrome, 'Google Chrome is required for the deterministic visual regression capture.');
+        $chrome = $this->requiredChromeBinary();
         $log = tempnam(sys_get_temp_dir(), 'cataloghub-gallery-server-');
         $this->assertIsString($log);
-        $nullDevice = PHP_OS_FAMILY === 'Windows' ? 'NUL' : '/dev/null';
-        $descriptors = [
-            0 => ['file', $nullDevice, 'r'],
-            1 => ['file', $log, 'a'],
-            2 => ['file', $log, 'a'],
-        ];
+        $descriptors = $this->descriptors($log);
         $environment = getenv();
         $environment['APP_ENV'] = 'testing';
         $server = proc_open(
@@ -224,11 +224,6 @@ final class ComponentGalleryVisualTest extends TestCase
         }
     }
 
-    private function componentReferencePath(string $state): string
-    {
-        return dirname(__DIR__, 2).'/tests/Visual/baselines/admin-components-'.$state.'.png';
-    }
-
     private function preserveCapture(string $capture, string $filename): void
     {
         $configuredDirectory = getenv('VISUAL_ARTIFACT_DIR');
@@ -246,27 +241,6 @@ final class ComponentGalleryVisualTest extends TestCase
         if (! copy($capture, $directory.DIRECTORY_SEPARATOR.$filename)) {
             throw new \RuntimeException("Unable to preserve visual artifact [{$filename}].");
         }
-    }
-
-    private function chromeBinary(): ?string
-    {
-        $configured = getenv('CHROME_BIN');
-        $candidates = array_filter([
-            is_string($configured) ? $configured : null,
-            '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-            '/usr/bin/google-chrome',
-            '/usr/bin/google-chrome-stable',
-            '/usr/bin/chromium',
-            '/usr/bin/chromium-browser',
-        ]);
-
-        foreach ($candidates as $candidate) {
-            if (is_executable($candidate)) {
-                return $candidate;
-            }
-        }
-
-        return null;
     }
 
     /** @param resource $server */
@@ -315,31 +289,5 @@ final class ComponentGalleryVisualTest extends TestCase
         }
 
         $this->fail('The assigned server did not render the gallery: '.(string) file_get_contents($log));
-    }
-
-    private function meanChannelDifference(string $reference, string $capture): float
-    {
-        $referenceImage = imagecreatefrompng($reference);
-        $captureImage = imagecreatefrompng($capture);
-        $this->assertInstanceOf(GdImage::class, $referenceImage);
-        $this->assertInstanceOf(GdImage::class, $captureImage);
-        $this->assertSame(imagesx($referenceImage), imagesx($captureImage));
-        $this->assertSame(imagesy($referenceImage), imagesy($captureImage));
-        $difference = 0;
-        $samples = 0;
-
-        for ($y = 0; $y < imagesy($referenceImage); $y++) {
-            for ($x = 0; $x < imagesx($referenceImage); $x++) {
-                $referenceColor = imagecolorat($referenceImage, $x, $y);
-                $captureColor = imagecolorat($captureImage, $x, $y);
-
-                foreach ([16, 8, 0] as $shift) {
-                    $difference += abs((($referenceColor >> $shift) & 0xFF) - (($captureColor >> $shift) & 0xFF)) / 255;
-                    $samples++;
-                }
-            }
-        }
-
-        return $difference / $samples;
     }
 }

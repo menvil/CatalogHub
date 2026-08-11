@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Central\Pages\Auth\Login;
 use App\Filament\Central\Pages\Home;
 use App\Filament\Pages\CentralDashboard;
 use App\Filament\Pages\CreateSiteWizard;
@@ -36,7 +37,7 @@ final class CentralAdminPanelProvider extends PanelProvider
             ->path('admin/central')
             ->viteTheme('resources/css/central-admin.css')
             ->brandName('CatalogHub Central')
-            ->login()
+            ->login(Login::class)
             ->sidebarCollapsibleOnDesktop()
             ->navigation(fn (CentralNavigationRegistry $registry) => $registry->filamentNavigation(auth()->user()))
             ->colors([

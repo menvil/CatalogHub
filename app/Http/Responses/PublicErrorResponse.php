@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Responses;
 
+use App\Support\Http\RequestId;
 use App\Support\PublicSite\PublicErrorContext;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
@@ -23,7 +23,7 @@ final class PublicErrorResponse
             return $response;
         }
 
-        $requestId = $status === 500 ? $this->requestId($request) : null;
+        $requestId = $status === 500 ? RequestId::resolve($request) : null;
         $rendered = response()->view("errors.public.{$status}", [
             'errorContext' => $context instanceof PublicErrorContext ? $context : null,
             'requestId' => $requestId,
@@ -36,14 +36,5 @@ final class PublicErrorResponse
         }
 
         return $rendered;
-    }
-
-    private function requestId(Request $request): string
-    {
-        $requestId = $request->header('X-Request-ID');
-
-        return is_string($requestId) && preg_match('/\A[A-Za-z0-9._:-]{1,128}\z/', $requestId) === 1
-            ? $requestId
-            : (string) Str::uuid();
     }
 }

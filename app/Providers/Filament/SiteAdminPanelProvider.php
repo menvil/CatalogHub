@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Site\Pages\Auth\Login;
 use App\Filament\Site\Pages\Home;
 use App\Http\Middleware\EnsureSiteAdminAccess;
 use App\Http\Middleware\EnsureUserIsActive;
@@ -32,8 +33,8 @@ final class SiteAdminPanelProvider extends PanelProvider
             ->id('site')
             ->path('admin/site')
             ->viteTheme('resources/css/site-admin.css')
-            ->brandName('CatalogHub Site')
-            ->login()
+            ->brandName('CatalogHub Site Admin')
+            ->login(Login::class)
             ->navigation(fn (SiteAdminNavigationRegistry $registry) => $registry->filamentNavigation(
                 auth()->user() instanceof User ? auth()->user() : null,
                 request()->attributes->get('site_context') instanceof Site

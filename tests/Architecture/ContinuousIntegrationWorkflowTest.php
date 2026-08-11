@@ -88,10 +88,49 @@ final class ContinuousIntegrationWorkflowTest extends TestCase
 
         self::assertStringContainsString('storage/logs/browser-artifacts', $browser);
         self::assertStringContainsString('storage/logs/visual-artifacts', $visual);
-        self::assertStringContainsString("retries: 0", $playwright);
+        self::assertStringContainsString('retries: 0', $playwright);
         self::assertStringContainsString("trace: 'retain-on-failure'", $playwright);
         self::assertStringContainsString("screenshot: 'only-on-failure'", $playwright);
         self::assertStringNotContainsString('process.env.CI ? 1', $playwright);
+    }
+
+    public function test_workflows_use_minimal_permissions_pinned_actions_safe_caches_and_bounded_artifacts(): void
+    {
+        foreach (['ci.yml', 'coverage.yml'] as $name) {
+            $workflow = (string) file_get_contents(dirname(__DIR__, 2)."/.github/workflows/{$name}");
+
+            self::assertStringContainsString("permissions:\n  contents: read", $workflow);
+            self::assertStringNotContainsString('pull_request_target:', $workflow);
+            self::assertStringNotContainsString('continue-on-error:', $workflow);
+            self::assertStringNotContainsString('secrets.', $workflow);
+            self::assertStringNotContainsString('path: vendor', $workflow);
+
+            preg_match_all('/uses:\s+[^@\s]+@([^\s]+)/', $workflow, $actions);
+            self::assertNotEmpty($actions[1]);
+
+            foreach ($actions[1] as $reference) {
+                self::assertMatchesRegularExpression('/\A[0-9a-f]{40}\z/', $reference);
+            }
+
+            preg_match_all('/retention-days:\s+(\d+)/', $workflow, $retentions);
+            self::assertNotEmpty($retentions[1]);
+
+            foreach ($retentions[1] as $retention) {
+                self::assertGreaterThanOrEqual(1, (int) $retention);
+                self::assertLessThanOrEqual(30, (int) $retention);
+            }
+        }
+
+        $ci = $this->workflow();
+        self::assertStringContainsString('use_dependency_cache:', $ci);
+        self::assertStringContainsString("if: env.DEPENDENCY_CACHE_ENABLED == 'true'", $ci);
+        self::assertStringContainsString("hashFiles('composer.lock')", $ci);
+        self::assertStringNotContainsString('restore-keys:', $ci);
+
+        $security = (string) file_get_contents(dirname(__DIR__, 2).'/docs/ci/security.md');
+        self::assertStringContainsString('never `pull_request_target`', $security);
+        self::assertStringContainsString('does not reference production or deployment secrets', $security);
+        self::assertStringContainsString('use_dependency_cache: false', $security);
     }
 
     private function workflow(): string

@@ -7,9 +7,18 @@ on:
       - develop
       - main
   workflow_dispatch:
+    inputs:
+      use_dependency_cache:
+        description: Restore lockfile-keyed dependency download caches
+        required: true
+        type: boolean
+        default: true
 
 permissions:
   contents: read
+
+env:
+  DEPENDENCY_CACHE_ENABLED: ${{ github.event_name != 'workflow_dispatch' || inputs.use_dependency_cache }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -21,19 +30,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: '8.5'
           extensions: gd, mbstring
           coverage: none
 
       - name: Cache Composer packages
-        uses: actions/cache@v6
+        if: env.DEPENDENCY_CACHE_ENABLED == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: vendor
+          path: ~/.cache/composer/files
           key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
 
       - name: Validate composer.json
@@ -60,19 +70,20 @@ jobs:
       debt-forbidden: ${{ steps.architecture-debt.outputs.forbidden }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: '8.5'
           extensions: gd, mbstring
           coverage: none
 
       - name: Cache Composer packages
-        uses: actions/cache@v6
+        if: env.DEPENDENCY_CACHE_ENABLED == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: vendor
+          path: ~/.cache/composer/files
           key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
 
       - name: Install PHP dependencies
@@ -91,7 +102,7 @@ jobs:
 
       - name: Upload architecture debt report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: architecture-debt-report
           path: architecture-debt-report.json
@@ -106,13 +117,13 @@ jobs:
       size: ${{ steps.build-metrics.outputs.size }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 26
-          cache: npm
+          cache: ${{ env.DEPENDENCY_CACHE_ENABLED == 'true' && 'npm' || '' }}
 
       - name: Install Node dependencies
         run: npm ci
@@ -133,7 +144,7 @@ jobs:
           echo "size=$(du -sh public/build | cut -f1)" >> "$GITHUB_OUTPUT"
 
       - name: Upload built assets
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: public-build
           path: public/build
@@ -149,26 +160,27 @@ jobs:
       tests: ${{ steps.test-results.outputs.tests }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: '8.5'
           extensions: gd, mbstring, pdo_sqlite
           coverage: none
 
       - name: Cache Composer packages
-        uses: actions/cache@v6
+        if: env.DEPENDENCY_CACHE_ENABLED == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: vendor
+          path: ~/.cache/composer/files
           key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
 
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Download built assets
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: public-build
           path: public/build
@@ -222,6 +234,7 @@ jobs:
         id: test-results
         if: always()
         run: |
+          # shellcheck disable=SC2016
           php -r '
           $output = is_file("test-output.txt") ? file_get_contents("test-output.txt") : "";
           $tests = "n/a";
@@ -248,7 +261,7 @@ jobs:
 
       - name: Upload Laravel logs on failure
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: laravel-logs
           path: storage/logs
@@ -260,25 +273,26 @@ jobs:
     needs: frontend-build
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: '8.5'
           extensions: gd, mbstring, pdo_sqlite
           coverage: none
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 26
-          cache: npm
+          cache: ${{ env.DEPENDENCY_CACHE_ENABLED == 'true' && 'npm' || '' }}
 
       - name: Cache Composer packages
-        uses: actions/cache@v6
+        if: env.DEPENDENCY_CACHE_ENABLED == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: vendor
+          path: ~/.cache/composer/files
           key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
 
       - name: Install dependencies
@@ -287,7 +301,7 @@ jobs:
           npm ci
 
       - name: Download built assets
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: public-build
           path: public/build
@@ -307,7 +321,7 @@ jobs:
 
       - name: Upload browser failure artifacts
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: browser-artifacts
           path: storage/logs/browser-artifacts
@@ -320,25 +334,26 @@ jobs:
     needs: frontend-build
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: '8.5'
           extensions: gd, mbstring, pdo_sqlite
           coverage: none
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 26
-          cache: npm
+          cache: ${{ env.DEPENDENCY_CACHE_ENABLED == 'true' && 'npm' || '' }}
 
       - name: Cache Composer packages
-        uses: actions/cache@v6
+        if: env.DEPENDENCY_CACHE_ENABLED == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: vendor
+          path: ~/.cache/composer/files
           key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
 
       - name: Install PHP dependencies
@@ -347,7 +362,7 @@ jobs:
           npm ci
 
       - name: Download built assets
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: public-build
           path: public/build
@@ -372,7 +387,7 @@ jobs:
 
       - name: Upload visual diagnostics
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: visual-diagnostics
           path: storage/logs/visual-artifacts
@@ -404,26 +419,27 @@ jobs:
           --health-retries=10
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: '8.5'
           extensions: gd, mbstring, pdo_mysql
           coverage: none
 
       - name: Cache Composer packages
-        uses: actions/cache@v6
+        if: env.DEPENDENCY_CACHE_ENABLED == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: vendor
+          path: ~/.cache/composer/files
           key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
 
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Download built assets
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: public-build
           path: public/build
@@ -469,9 +485,8 @@ jobs:
           DB_PASSWORD: cataloghub
         run: composer test:database-boundaries
 
-      - name: Check rollback path (non-blocking)
+      - name: Check rollback path
         id: rollback
-        continue-on-error: true
         env:
           DB_CONNECTION: mariadb
           DB_HOST: 127.0.0.1
@@ -507,26 +522,27 @@ jobs:
           --health-retries=10
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: '8.5'
           extensions: gd, mbstring, pdo_pgsql
           coverage: none
 
       - name: Cache Composer packages
-        uses: actions/cache@v6
+        if: env.DEPENDENCY_CACHE_ENABLED == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: vendor
+          path: ~/.cache/composer/files
           key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
 
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Download built assets
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: public-build
           path: public/build
@@ -596,9 +612,8 @@ jobs:
           DB_PASSWORD: cataloghub
         run: composer test:database-boundaries
 
-      - name: Check rollback path (non-blocking)
+      - name: Check rollback path
         id: rollback
-        continue-on-error: true
         env:
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
@@ -612,7 +627,7 @@ jobs:
 
       - name: Upload fresh database logs on failure
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: fresh-database-postgres-logs
           path: storage/logs/fresh-database-postgres.log
@@ -631,20 +646,20 @@ jobs:
       npm-vulnerabilities: ${{ steps.dependency-metrics.outputs.npm-vulnerabilities }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: '8.5'
           extensions: gd, mbstring
           coverage: none
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 26
-          cache: npm
+          cache: ${{ env.DEPENDENCY_CACHE_ENABLED == 'true' && 'npm' || '' }}
 
       - name: Audit Composer dependencies
         shell: bash
@@ -663,6 +678,7 @@ jobs:
         id: dependency-metrics
         if: always()
         run: |
+          # shellcheck disable=SC2016
           php -r '
           $lock = json_decode(file_get_contents("composer.lock"), true) ?: [];
           $audit = is_file("composer-audit.json")
@@ -681,6 +697,7 @@ jobs:
               $advisories,
           ), FILE_APPEND);
           '
+          # shellcheck disable=SC2016
           node -e '
           const fs = require("fs");
           const report = fs.existsSync("npm-audit.json")
@@ -738,7 +755,6 @@ jobs:
     permissions:
       contents: read
       issues: write
-      pull-requests: write
     steps:
       - name: Publish CI results
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9

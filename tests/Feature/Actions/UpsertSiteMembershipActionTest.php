@@ -14,7 +14,6 @@ use App\Models\User;
 use App\Services\Audit\AuditRecorder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Mockery;
 use Tests\TestCase;
 
 final class UpsertSiteMembershipActionTest extends TestCase
@@ -52,8 +51,8 @@ final class UpsertSiteMembershipActionTest extends TestCase
             'role' => SiteMembershipRole::Translator,
             'is_active' => true,
         ]);
-        $audit = Mockery::mock(AuditRecorder::class);
-        $audit->shouldReceive('record')->andThrow(new \RuntimeException('audit unavailable'));
+        $audit = $this->createMock(AuditRecorder::class);
+        $audit->method('record')->willThrowException(new \RuntimeException('audit unavailable'));
         $this->app->instance(AuditRecorder::class, $audit);
 
         try {

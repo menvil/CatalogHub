@@ -6,10 +6,25 @@
 >
     <testsuites>
         <testsuite name="Unit">
+            <directory>tests/Unit/Foundation</directory>
+        </testsuite>
+        <testsuite name="Legacy Unit">
             <directory>tests/Unit</directory>
+            <exclude>tests/Unit/Foundation</exclude>
+            <exclude>tests/Unit/Architecture</exclude>
         </testsuite>
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
+        </testsuite>
+        <testsuite name="Architecture">
+            <directory>tests/Architecture</directory>
+            <directory>tests/Unit/Architecture</directory>
+        </testsuite>
+        <testsuite name="Browser">
+            <directory suffix="ContractTest.php">tests/Browser</directory>
+        </testsuite>
+        <testsuite name="Visual">
+            <directory>tests/Visual</directory>
         </testsuite>
     </testsuites>
     <source>

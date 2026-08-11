@@ -15,9 +15,12 @@ final class UiFixture
 
     public const CLOCK = '2026-08-09T10:00:00+00:00';
 
-    /** @template T */
-    /** @param Closure(): T $callback */
-    /** @return T */
+    /**
+     * @template T
+     *
+     * @param  Closure(): T  $callback
+     * @return T
+     */
     public static function withFrozenClock(Closure $callback): mixed
     {
         $originalTimezone = date_default_timezone_get();

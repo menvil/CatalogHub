@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 $base = $argv[1] ?? 'HEAD~1';
-$root = dirname(__DIR__);
+$root = $argv[2] ?? dirname(__DIR__);
 $command = sprintf('git -C %s diff --name-only %s -- tests/Visual/baselines', escapeshellarg($root), escapeshellarg($base));
 $output = [];
 $exitCode = 0;

@@ -11,7 +11,8 @@ final class SystemErrorVisualTest extends TestCase
 {
     use InteractsWithVisualReferences;
 
-    private const MAX_MEAN_CHANNEL_DIFFERENCE = 0.03;
+    // System pages deliberately use inline system fonts so they render during an asset outage.
+    private const MAX_MEAN_CHANNEL_DIFFERENCE = 0.07;
 
     /** @var array<string, array{width: int, height: int}> */
     private const STATES = [

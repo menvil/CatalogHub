@@ -2,13 +2,16 @@
 
 `SiteFoundationSeeder` owns three deterministic runtime-context fixtures. It is idempotent and is included in `DatabaseSeeder`.
 
-| Site | Code | Primary host | Status | Locales | Currency | Timezone |
-| --- | --- | --- | --- | --- | --- | --- |
-| Tech Germany | `tech-germany` | `tech-germany.test` | active | `de-DE` default, `en-DE` enabled | EUR | Europe/Berlin |
-| Monitors Germany | `monitors-germany` | `monitors-germany.test` | active | `de-DE` default, `en-DE` enabled | EUR | Europe/Berlin |
-| Archived Germany | `archived-germany` | `archived-germany.test` | archived | `de-DE` default, `en-DE` enabled | EUR | Europe/Berlin |
+| Site | Code | Primary / alias host | Status | Layout / theme | Locales | Currency | Timezone |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Tech Germany | `tech-germany` | `tech-germany.test` / `www.tech-germany.test` | active | multi-category / `cataloghub-multi` | `de-DE` default, `en-DE` enabled | EUR | Europe/Berlin |
+| Monitors Germany | `monitors-germany` | `monitors-germany.test` / `www.monitors-germany.test` | active | single-category / `cataloghub-single` | `de-DE` default, `en-DE` enabled | EUR | Europe/Berlin |
+| Archived Germany | `archived-germany` | `archived-germany.test` | archived | multi-category / `cataloghub-multi` | `de-DE` default, `en-DE` enabled | EUR | Europe/Berlin |
 
-The seeder creates no categories, products, projections, content, or theme data. Existing `Database\Seeders\Demo` classes remain the separate product-bearing demo dataset.
+The seeder stores only the whitelisted public theme identifier and deterministic
+SEO settings on each site. It creates no categories, products, projections,
+content, home blocks, or database-backed themes. Existing
+`Database\Seeders\Demo` classes remain the separate product-bearing demo dataset.
 
 ## Resolution contract
 

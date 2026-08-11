@@ -322,7 +322,7 @@ jobs:
           test -x "$chrome_bin"
           echo "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=$chrome_bin" >> "$GITHUB_ENV"
 
-      - name: Run Central login smoke
+      - name: Run browser acceptance suite
         run: composer test:browser
 
       - name: Upload browser failure artifacts

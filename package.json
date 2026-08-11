@@ -8,6 +8,8 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
+        "lint": "node tools/ci/lint-javascript.mjs",
+        "test:frontend": "node --test tests/Frontend/*.test.mjs",
         "test:browser": "CATALOGHUB_BROWSER_PORT=8014 playwright test --config=playwright.config.mjs --project=browser",
         "test:browser:install": "playwright install chromium",
         "test:visual": "CATALOGHUB_BROWSER_PORT=8015 playwright test --config=playwright.config.mjs --project=visual",

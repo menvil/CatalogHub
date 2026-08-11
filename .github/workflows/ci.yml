@@ -7,9 +7,18 @@ on:
       - develop
       - main
   workflow_dispatch:
+    inputs:
+      use_dependency_cache:
+        description: Restore lockfile-keyed dependency download caches
+        required: true
+        type: boolean
+        default: true
 
 permissions:
   contents: read
+
+env:
+  DEPENDENCY_CACHE_ENABLED: ${{ github.event_name != 'workflow_dispatch' || inputs.use_dependency_cache }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -21,19 +30,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: '8.5'
           extensions: gd, mbstring
           coverage: none
 
       - name: Cache Composer packages
-        uses: actions/cache@v6
+        if: env.DEPENDENCY_CACHE_ENABLED == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: vendor
+          path: ~/.cache/composer/files
           key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
 
       - name: Validate composer.json
@@ -60,19 +72,22 @@ jobs:
       debt-forbidden: ${{ steps.architecture-debt.outputs.forbidden }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: '8.5'
           extensions: gd, mbstring
           coverage: none
 
       - name: Cache Composer packages
-        uses: actions/cache@v6
+        if: env.DEPENDENCY_CACHE_ENABLED == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: vendor
+          path: ~/.cache/composer/files
           key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
 
       - name: Install PHP dependencies
@@ -91,7 +106,7 @@ jobs:
 
       - name: Upload architecture debt report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: architecture-debt-report
           path: architecture-debt-report.json
@@ -99,23 +114,31 @@ jobs:
           retention-days: 14
 
   frontend-build:
-    name: Frontend build (Vite)
+    name: Frontend quality
     runs-on: ubuntu-latest
     outputs:
       files: ${{ steps.build-metrics.outputs.files }}
       size: ${{ steps.build-metrics.outputs.size }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 26
-          cache: npm
+          cache: ${{ env.DEPENDENCY_CACHE_ENABLED == 'true' && 'npm' || '' }}
 
       - name: Install Node dependencies
         run: npm ci
+
+      - name: Lint JavaScript
+        run: npm run lint
+
+      - name: Run frontend tests
+        run: npm run test:frontend
 
       - name: Build assets
         run: npm run build
@@ -127,7 +150,7 @@ jobs:
           echo "size=$(du -sh public/build | cut -f1)" >> "$GITHUB_OUTPUT"
 
       - name: Upload built assets
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: public-build
           path: public/build
@@ -143,26 +166,29 @@ jobs:
       tests: ${{ steps.test-results.outputs.tests }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: '8.5'
           extensions: gd, mbstring, pdo_sqlite
           coverage: none
 
       - name: Cache Composer packages
-        uses: actions/cache@v6
+        if: env.DEPENDENCY_CACHE_ENABLED == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: vendor
+          path: ~/.cache/composer/files
           key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
 
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Download built assets
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: public-build
           path: public/build
@@ -185,41 +211,53 @@ jobs:
             | awk '/ Ran / { count++ } END { print "migrations=" count }' \
             >> "$GITHUB_OUTPUT"
 
-      - name: Run tests
-        id: phpunit
-        shell: bash
-        run: |
-          set -o pipefail
-          composer test | tee test-output.txt
+      - name: Initialize backend test results
+        run: mkdir -p test-results
+
+      - name: Run foundation unit tests
+        run: composer test:unit -- --log-junit test-results/unit.xml
+
+      - name: Run legacy unit tests
+        run: composer test:legacy-unit -- --log-junit test-results/legacy-unit.xml
+
+      - name: Run feature tests
+        run: composer test:feature -- --log-junit test-results/feature.xml
+
+      - name: Run browser harness contract tests
+        run: php vendor/bin/phpunit --testsuite Browser --do-not-cache-result --log-junit test-results/browser-contract.xml
 
       - name: Collect test results
         id: test-results
         if: always()
         run: |
+          # shellcheck disable=SC2016
           php -r '
-          $output = is_file("test-output.txt") ? file_get_contents("test-output.txt") : "";
-          $tests = "n/a";
-          $assertions = "n/a";
+          $files = glob("test-results/*.xml") ?: [];
+          $tests = 0;
+          $assertions = 0;
 
-          foreach (array_reverse(preg_split("/\R/", $output) ?: []) as $line) {
-              $result = json_decode($line, true);
-
-              if (is_array($result) && ($result["tool"] ?? null) === "phpunit") {
-                  $tests = $result["tests"] ?? $tests;
-                  $assertions = $result["assertions"] ?? $assertions;
-                  break;
-              }
+          if (count($files) !== 4) {
+              throw new RuntimeException(sprintf("Expected 4 PHPUnit result files, found %d.", count($files)));
           }
 
-          $plainOutput = preg_replace("/\e\[[0-9;]*m/", "", $output) ?? $output;
+          foreach ($files as $file) {
+              $xml = simplexml_load_file($file);
 
-          if ($tests === "n/a" && preg_match("/Tests:\s+(\d+) passed\s+\((\d+) assertions\)/", $plainOutput, $matches) === 1) {
-              $tests = $matches[1];
-              $assertions = $matches[2];
+              if ($xml === false) {
+                  throw new RuntimeException("Unable to parse PHPUnit result file: ".$file);
+              }
+
+              $suite = $xml->getName() === "testsuite" ? $xml : $xml->testsuite[0];
+              $tests += (int) $suite["tests"];
+              $assertions += (int) $suite["assertions"];
+          }
+
+          if ($tests === 0) {
+              throw new RuntimeException("PHPUnit result files contain no tests.");
           }
 
           file_put_contents(getenv("GITHUB_OUTPUT"), sprintf(
-              "tests=%s\nassertions=%s\n",
+              "tests=%d\nassertions=%d\n",
               $tests,
               $assertions,
           ), FILE_APPEND);
@@ -227,7 +265,7 @@ jobs:
 
       - name: Upload Laravel logs on failure
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: laravel-logs
           path: storage/logs
@@ -239,25 +277,28 @@ jobs:
     needs: frontend-build
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: '8.5'
           extensions: gd, mbstring, pdo_sqlite
           coverage: none
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 26
-          cache: npm
+          cache: ${{ env.DEPENDENCY_CACHE_ENABLED == 'true' && 'npm' || '' }}
 
       - name: Cache Composer packages
-        uses: actions/cache@v6
+        if: env.DEPENDENCY_CACHE_ENABLED == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: vendor
+          path: ~/.cache/composer/files
           key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
 
       - name: Install dependencies
@@ -266,14 +307,18 @@ jobs:
           npm ci
 
       - name: Download built assets
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: public-build
           path: public/build
 
-      - name: Select system Chromium
+      - name: Install pinned Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Select pinned Chromium
         run: |
-          chrome_bin="$(command -v google-chrome || command -v google-chrome-stable)"
+          chrome_bin="$(node --input-type=module -e \
+            "import { chromium } from '@playwright/test'; process.stdout.write(chromium.executablePath())")"
           test -x "$chrome_bin"
           echo "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=$chrome_bin" >> "$GITHUB_ENV"
 
@@ -282,7 +327,7 @@ jobs:
 
       - name: Upload browser failure artifacts
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: browser-artifacts
           path: storage/logs/browser-artifacts
@@ -290,30 +335,33 @@ jobs:
           retention-days: 5
 
   visual-regression:
-    name: Visual regression (Chrome)
+    name: Visual regression (Chromium)
     runs-on: ubuntu-latest
     needs: frontend-build
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: '8.5'
           extensions: gd, mbstring, pdo_sqlite
           coverage: none
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 26
-          cache: npm
+          cache: ${{ env.DEPENDENCY_CACHE_ENABLED == 'true' && 'npm' || '' }}
 
       - name: Cache Composer packages
-        uses: actions/cache@v6
+        if: env.DEPENDENCY_CACHE_ENABLED == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: vendor
+          path: ~/.cache/composer/files
           key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
 
       - name: Install PHP dependencies
@@ -322,16 +370,20 @@ jobs:
           npm ci
 
       - name: Download built assets
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: public-build
           path: public/build
+
+      - name: Install pinned Chromium
+        run: npx playwright install --with-deps chromium
 
       - name: Prepare application and browser
         run: |
           cp .env.example .env
           php artisan key:generate --force
-          chrome_bin="$(command -v google-chrome || command -v google-chrome-stable)"
+          chrome_bin="$(node --input-type=module -e \
+            "import { chromium } from '@playwright/test'; process.stdout.write(chromium.executablePath())")"
           test -x "$chrome_bin"
           echo "CHROME_BIN=$chrome_bin" >> "$GITHUB_ENV"
           echo "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=$chrome_bin" >> "$GITHUB_ENV"
@@ -343,7 +395,7 @@ jobs:
 
       - name: Upload visual diagnostics
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: visual-diagnostics
           path: storage/logs/visual-artifacts
@@ -375,26 +427,29 @@ jobs:
           --health-retries=10
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: '8.5'
           extensions: gd, mbstring, pdo_mysql
           coverage: none
 
       - name: Cache Composer packages
-        uses: actions/cache@v6
+        if: env.DEPENDENCY_CACHE_ENABLED == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: vendor
+          path: ~/.cache/composer/files
           key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
 
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Download built assets
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: public-build
           path: public/build
@@ -440,9 +495,8 @@ jobs:
           DB_PASSWORD: cataloghub
         run: composer test:database-boundaries
 
-      - name: Check rollback path (non-blocking)
+      - name: Check rollback path
         id: rollback
-        continue-on-error: true
         env:
           DB_CONNECTION: mariadb
           DB_HOST: 127.0.0.1
@@ -455,7 +509,7 @@ jobs:
           php artisan migrate --force
 
   migrations-postgres:
-    name: Migrations (PostgreSQL)
+    name: Fresh database (PostgreSQL)
     runs-on: ubuntu-latest
     needs: frontend-build
     outputs:
@@ -478,26 +532,29 @@ jobs:
           --health-retries=10
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: '8.5'
           extensions: gd, mbstring, pdo_pgsql
           coverage: none
 
       - name: Cache Composer packages
-        uses: actions/cache@v6
+        if: env.DEPENDENCY_CACHE_ENABLED == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: vendor
+          path: ~/.cache/composer/files
           key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
 
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Download built assets
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: public-build
           path: public/build
@@ -525,7 +582,21 @@ jobs:
           DB_DATABASE: cataloghub
           DB_USERNAME: cataloghub
           DB_PASSWORD: cataloghub
-        run: php artisan migrate:fresh --seed --force
+        run: |
+          set -o pipefail
+          mkdir -p storage/logs
+          php artisan migrate:fresh --seed --force 2>&1 \
+            | tee storage/logs/fresh-database-postgres.log
+
+      - name: Run PostgreSQL schema smoke tests
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: cataloghub
+          DB_USERNAME: cataloghub
+          DB_PASSWORD: cataloghub
+        run: composer test:database-schema
 
       - name: Collect PostgreSQL migration metrics
         id: migration-metrics
@@ -553,9 +624,8 @@ jobs:
           DB_PASSWORD: cataloghub
         run: composer test:database-boundaries
 
-      - name: Check rollback path (non-blocking)
+      - name: Check rollback path
         id: rollback
-        continue-on-error: true
         env:
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
@@ -566,6 +636,15 @@ jobs:
         run: |
           php artisan migrate:reset --force
           php artisan migrate --force
+
+      - name: Upload fresh database logs on failure
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: fresh-database-postgres-logs
+          path: storage/logs/fresh-database-postgres.log
+          if-no-files-found: warn
+          retention-days: 5
 
   dependency-audit:
     name: Dependency audit
@@ -579,20 +658,22 @@ jobs:
       npm-vulnerabilities: ${{ steps.dependency-metrics.outputs.npm-vulnerabilities }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: '8.5'
           extensions: gd, mbstring
           coverage: none
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 26
-          cache: npm
+          cache: ${{ env.DEPENDENCY_CACHE_ENABLED == 'true' && 'npm' || '' }}
 
       - name: Audit Composer dependencies
         shell: bash
@@ -611,6 +692,7 @@ jobs:
         id: dependency-metrics
         if: always()
         run: |
+          # shellcheck disable=SC2016
           php -r '
           $lock = json_decode(file_get_contents("composer.lock"), true) ?: [];
           $audit = is_file("composer-audit.json")
@@ -629,6 +711,7 @@ jobs:
               $advisories,
           ), FILE_APPEND);
           '
+          # shellcheck disable=SC2016
           node -e '
           const fs = require("fs");
           const report = fs.existsSync("npm-audit.json")
@@ -645,6 +728,29 @@ jobs:
           ].join("\n"));
           '
 
+  backend-quality:
+    name: Backend quality
+    if: always()
+    runs-on: ubuntu-latest
+    needs:
+      - code-style
+      - static-analysis
+      - tests
+    steps:
+      - name: Verify backend quality results
+        env:
+          CODE_STYLE_RESULT: ${{ needs['code-style'].result }}
+          STATIC_ANALYSIS_RESULT: ${{ needs['static-analysis'].result }}
+          TESTS_RESULT: ${{ needs.tests.result }}
+        run: |
+          for result in "$CODE_STYLE_RESULT" "$STATIC_ANALYSIS_RESULT" "$TESTS_RESULT"
+          do
+            if [ "$result" != 'success' ]; then
+              echo "A backend quality dependency did not succeed."
+              exit 1
+            fi
+          done
+
   ci-summary:
     name: Summary
     if: always()
@@ -659,10 +765,10 @@ jobs:
       - migrations-mariadb
       - migrations-postgres
       - dependency-audit
+      - backend-quality
     permissions:
       contents: read
       issues: write
-      pull-requests: write
     steps:
       - name: Publish CI results
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9

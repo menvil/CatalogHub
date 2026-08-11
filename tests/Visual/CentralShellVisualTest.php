@@ -82,6 +82,7 @@ final class CentralShellVisualTest extends TestCase
             $browser = proc_open([
                 $this->requiredChromeBinary(),
                 '--headless=new',
+                '--no-sandbox',
                 '--disable-gpu',
                 '--force-device-scale-factor=1',
                 "--window-size={$configuration['width']},{$configuration['height']}",
@@ -114,6 +115,7 @@ final class CentralShellVisualTest extends TestCase
         $browser = proc_open([
             $this->requiredChromeBinary(),
             '--headless=new',
+            '--no-sandbox',
             '--disable-gpu',
             '--hide-scrollbars',
             '--run-all-compositor-stages-before-draw',

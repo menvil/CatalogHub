@@ -42,7 +42,7 @@ final class FoundationDemoUsersSeederTest extends TestCase
             ->map(fn (SiteMembership $membership): string => implode(':', [
                 $membership->user->email,
                 $membership->site->code,
-                $membership->role->value,
+                $membership->roleEnum()->value,
                 $membership->is_active ? 'active' : 'inactive',
             ]))
             ->sort()

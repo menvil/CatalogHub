@@ -1,3 +1,20 @@
+---
+screen_id: Z-006
+context: public
+purpose: Provide the distinct public shell for a single-category site.
+roles: public_visitor
+route: /{locale}
+viewports: desktop=1280x900;mobile=360x800
+fixture: public-single-shell-v1
+regions: header;hero;filter-slot;locale-selector;content-region;footer;seo-meta
+actions: change-locale;open-filter-slot
+states: default;mobile;enabled-locales
+permissions: publicly-available-site
+responsive: The focused hero and filter slot remain usable at the mobile viewport.
+out_of_scope: catalog-data;search-implementation;theme-editor
+reference_version: v1
+---
+
 # Z-006 — Public single-category shell
 
 ## Purpose

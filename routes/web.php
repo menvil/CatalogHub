@@ -32,4 +32,13 @@ if (app()->environment(['local', 'testing'])) {
 
     Route::get('/dev/public-shell', PublicShellPreviewController::class)
         ->name('public.dev-shell.capture');
+
+    Route::get('/dev/system-error', static function () {
+        return response()->view('errors.admin.500', [
+            'presentationContext' => 'central-admin',
+            'dashboardUrl' => '/admin/central',
+            'dashboardLabel' => 'Return to Central Admin',
+            'requestId' => '00000000-0000-4000-8000-000000000007',
+        ], 500);
+    })->name('dev.system-error.capture');
 }

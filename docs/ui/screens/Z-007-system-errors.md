@@ -17,4 +17,4 @@ reference_version: v1
 
 # Z-007 — System errors
 
-The manifest reference records the common safe-state fixture pending a dedicated error-page screenshot fixture. Production responses remain covered by feature tests and must not expose secrets.
+The deterministic fixture renders the real Central 500 template with a fixed request ID. Production 403, 404, 500, and 503 responses remain covered by feature tests and must not expose secrets.

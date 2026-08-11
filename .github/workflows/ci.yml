@@ -292,9 +292,13 @@ jobs:
           name: public-build
           path: public/build
 
-      - name: Select system Chromium
+      - name: Install pinned Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Select pinned Chromium
         run: |
-          chrome_bin="$(command -v google-chrome || command -v google-chrome-stable)"
+          chrome_bin="$(node --input-type=module -e \
+            "import { chromium } from '@playwright/test'; process.stdout.write(chromium.executablePath())")"
           test -x "$chrome_bin"
           echo "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=$chrome_bin" >> "$GITHUB_ENV"
 
@@ -311,7 +315,7 @@ jobs:
           retention-days: 5
 
   visual-regression:
-    name: Visual regression (Chrome)
+    name: Visual regression (Chromium)
     runs-on: ubuntu-latest
     needs: frontend-build
     steps:
@@ -348,11 +352,15 @@ jobs:
           name: public-build
           path: public/build
 
+      - name: Install pinned Chromium
+        run: npx playwright install --with-deps chromium
+
       - name: Prepare application and browser
         run: |
           cp .env.example .env
           php artisan key:generate --force
-          chrome_bin="$(command -v google-chrome || command -v google-chrome-stable)"
+          chrome_bin="$(node --input-type=module -e \
+            "import { chromium } from '@playwright/test'; process.stdout.write(chromium.executablePath())")"
           test -x "$chrome_bin"
           echo "CHROME_BIN=$chrome_bin" >> "$GITHUB_ENV"
           echo "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=$chrome_bin" >> "$GITHUB_ENV"

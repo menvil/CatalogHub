@@ -71,6 +71,29 @@ final class ContinuousIntegrationWorkflowTest extends TestCase
         self::assertArrayHasKey('test:database-schema', $composer['scripts']);
     }
 
+    public function test_browser_and_visual_jobs_use_pinned_chromium_without_retries_or_baseline_updates(): void
+    {
+        $workflow = $this->workflow();
+        $browser = $this->job($workflow, 'browser');
+        $visual = $this->job($workflow, 'visual-regression');
+        $playwright = (string) file_get_contents(dirname(__DIR__, 2).'/playwright.config.mjs');
+
+        foreach ([$browser, $visual] as $job) {
+            self::assertStringContainsString('npm ci', $job);
+            self::assertStringContainsString('npx playwright install --with-deps chromium', $job);
+            self::assertStringContainsString('if: failure()', $job);
+            self::assertStringNotContainsString('--update-snapshots', $job);
+            self::assertStringNotContainsString('continue-on-error', $job);
+        }
+
+        self::assertStringContainsString('storage/logs/browser-artifacts', $browser);
+        self::assertStringContainsString('storage/logs/visual-artifacts', $visual);
+        self::assertStringContainsString("retries: 0", $playwright);
+        self::assertStringContainsString("trace: 'retain-on-failure'", $playwright);
+        self::assertStringContainsString("screenshot: 'only-on-failure'", $playwright);
+        self::assertStringNotContainsString('process.env.CI ? 1', $playwright);
+    }
+
     private function workflow(): string
     {
         $workflow = file_get_contents(dirname(__DIR__, 2).'/.github/workflows/ci.yml');

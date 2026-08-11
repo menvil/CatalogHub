@@ -56,6 +56,21 @@ class SiteFactory extends Factory
         return $this->state(fn (): array => ['status' => SiteStatus::Active]);
     }
 
+    public function archived(): static
+    {
+        return $this->state(fn (): array => ['status' => SiteStatus::Archived]);
+    }
+
+    public function multi(): static
+    {
+        return $this->state(fn (): array => ['mode' => SiteMode::MultiCategory]);
+    }
+
+    public function single(): static
+    {
+        return $this->state(fn (): array => ['mode' => SiteMode::SingleCategory]);
+    }
+
     /** @param list<string> $locales */
     public function withRuntimeContext(array $locales = ['en-US'], ?string $defaultLocale = null): static
     {

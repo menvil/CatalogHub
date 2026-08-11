@@ -27,4 +27,12 @@ final class SiteMembershipFactory extends Factory
     {
         return $this->state(fn (): array => ['is_active' => false]);
     }
+
+    public function siteOwner(): static
+    {
+        return $this->state(fn (): array => [
+            'role' => SiteMembershipRole::SiteAdmin,
+            'is_active' => true,
+        ]);
+    }
 }

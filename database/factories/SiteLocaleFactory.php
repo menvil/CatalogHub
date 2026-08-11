@@ -38,4 +38,17 @@ final class SiteLocaleFactory extends Factory
             'position' => 0,
         ];
     }
+
+    public function active(): static
+    {
+        return $this->state(fn (): array => ['is_enabled' => true]);
+    }
+
+    public function disabled(): static
+    {
+        return $this->state(fn (): array => [
+            'is_default' => false,
+            'is_enabled' => false,
+        ]);
+    }
 }

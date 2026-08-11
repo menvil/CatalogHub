@@ -11,3 +11,7 @@ Artisan::command('inspire', function () {
 Schedule::command('pricing:sync-due-sources')
     ->everyMinute()
     ->withoutOverlapping();
+
+Schedule::command('operations:record-scheduler-heartbeat')
+    ->everyMinute()
+    ->withoutOverlapping();

@@ -42,7 +42,7 @@ final class AuthenticationScreensVisualTest extends TestCase
                 $capture = $temporaryPath.'.png';
 
                 try {
-                    $this->capture($port, $capture, $configuration);
+                    $this->capture($port, $log, $capture, $configuration);
                     $this->assertSame([$configuration['width'], $configuration['height']], array_slice(getimagesize($capture) ?: [], 0, 2));
                     $this->assertLessThanOrEqual(
                         self::MAX_MEAN_CHANNEL_DIFFERENCE,
@@ -57,7 +57,7 @@ final class AuthenticationScreensVisualTest extends TestCase
     }
 
     /** @param array{width: int, height: int, path: string} $configuration */
-    private function capture(int $port, string $capture, array $configuration): void
+    private function capture(int $port, string $log, string $capture, array $configuration): void
     {
         $browser = proc_open([
             'node',
@@ -67,10 +67,10 @@ final class AuthenticationScreensVisualTest extends TestCase
             $capture,
             (string) $configuration['width'],
             (string) $configuration['height'],
-        ], $this->descriptors(), $pipes, dirname(__DIR__, 2));
+        ], $this->descriptors($log), $pipes, dirname(__DIR__, 2));
 
         $this->assertIsResource($browser, 'Unable to start Google Chrome.');
-        $this->assertSame(0, proc_close($browser));
+        $this->assertSame(0, proc_close($browser), (string) file_get_contents($log));
         $this->assertFileExists($capture);
     }
 

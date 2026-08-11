@@ -5,9 +5,7 @@ namespace App\Services\Pricing;
 use App\Models\PriceSource;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
-use InvalidArgumentException;
 use JsonException;
-use LogicException;
 use Throwable;
 
 final class PriceSourceRetryPolicy
@@ -22,7 +20,21 @@ final class PriceSourceRetryPolicy
             return false;
         }
 
-        if ($exception === null || $exception instanceof ConnectionException) {
+        if ($exception === null) {
+            return true;
+        }
+
+        $nonRetryableExceptions = config('jobs.non_retryable_exceptions', []);
+
+        if (is_array($nonRetryableExceptions)) {
+            foreach ($nonRetryableExceptions as $exceptionClass) {
+                if (is_string($exceptionClass) && $exception instanceof $exceptionClass) {
+                    return false;
+                }
+            }
+        }
+
+        if ($exception instanceof ConnectionException) {
             return true;
         }
 
@@ -32,9 +44,7 @@ final class PriceSourceRetryPolicy
             return $status === 408 || $status === 429 || $status >= 500;
         }
 
-        if ($exception instanceof InvalidArgumentException
-            || $exception instanceof LogicException
-            || $exception instanceof JsonException) {
+        if ($exception instanceof JsonException) {
             return false;
         }
 

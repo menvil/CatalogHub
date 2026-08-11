@@ -57,14 +57,22 @@
         "format:test": "pint --test",
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",
-            "@php artisan test"
+            "@php vendor/bin/phpunit --testsuite 'Unit,Legacy Unit,Feature,Architecture,Browser'"
         ],
+        "test:unit": "@php vendor/bin/phpunit --testsuite Unit --do-not-cache-result",
+        "test:legacy-unit": "@php vendor/bin/phpunit --testsuite 'Legacy Unit' --do-not-cache-result",
+        "test:feature": [
+            "@php artisan config:clear --ansi @no_additional_args",
+            "@php vendor/bin/phpunit --testsuite Feature --do-not-cache-result"
+        ],
+        "test:browser": "npm run test:browser",
         "test:visual": [
             "@php artisan config:clear --ansi @no_additional_args",
-            "@php artisan test tests/Visual"
+            "@php vendor/bin/phpunit --testsuite Visual --do-not-cache-result",
+            "npm run test:visual"
         ],
         "test:architecture": [
-            "@php artisan test tests/Unit/Architecture",
+            "@php vendor/bin/phpunit --testsuite Architecture --do-not-cache-result",
             "@php tools/architecture/report.php"
         ],
         "test:database-boundaries": [

@@ -99,7 +99,7 @@ jobs:
           retention-days: 14
 
   frontend-build:
-    name: Frontend build (Vite)
+    name: Frontend quality
     runs-on: ubuntu-latest
     outputs:
       files: ${{ steps.build-metrics.outputs.files }}
@@ -116,6 +116,12 @@ jobs:
 
       - name: Install Node dependencies
         run: npm ci
+
+      - name: Lint JavaScript
+        run: npm run lint
+
+      - name: Run frontend tests
+        run: npm run test:frontend
 
       - name: Build assets
         run: npm run build

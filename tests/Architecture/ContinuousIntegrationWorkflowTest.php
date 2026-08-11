@@ -31,6 +31,27 @@ final class ContinuousIntegrationWorkflowTest extends TestCase
         self::assertStringNotContainsString('continue-on-error', $gate);
     }
 
+    public function test_frontend_quality_job_uses_the_lockfile_and_runs_lint_tests_and_build(): void
+    {
+        $workflow = $this->workflow();
+        $frontend = $this->job($workflow, 'frontend-build');
+        $package = json_decode(
+            (string) file_get_contents(dirname(__DIR__, 2).'/package.json'),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+
+        self::assertStringContainsString('name: Frontend quality', $frontend);
+
+        foreach (['npm ci', 'npm run lint', 'npm run test:frontend', 'npm run build'] as $command) {
+            self::assertStringContainsString($command, $frontend);
+        }
+
+        self::assertArrayHasKey('lint', $package['scripts']);
+        self::assertArrayHasKey('test:frontend', $package['scripts']);
+        self::assertStringNotContainsString('continue-on-error', $frontend);
+    }
+
     private function workflow(): string
     {
         $workflow = file_get_contents(dirname(__DIR__, 2).'/.github/workflows/ci.yml');

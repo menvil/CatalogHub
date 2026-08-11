@@ -185,12 +185,32 @@ jobs:
             | awk '/ Ran / { count++ } END { print "migrations=" count }' \
             >> "$GITHUB_OUTPUT"
 
-      - name: Run tests
-        id: phpunit
+      - name: Initialize backend test log
+        run: ': > test-output.txt'
+
+      - name: Run foundation unit tests
         shell: bash
         run: |
           set -o pipefail
-          composer test | tee test-output.txt
+          composer test:unit | tee -a test-output.txt
+
+      - name: Run legacy unit tests
+        shell: bash
+        run: |
+          set -o pipefail
+          composer test:legacy-unit | tee -a test-output.txt
+
+      - name: Run feature tests
+        shell: bash
+        run: |
+          set -o pipefail
+          composer test:feature | tee -a test-output.txt
+
+      - name: Run browser harness contract tests
+        shell: bash
+        run: |
+          set -o pipefail
+          php vendor/bin/phpunit --testsuite Browser --do-not-cache-result | tee -a test-output.txt
 
       - name: Collect test results
         id: test-results
@@ -201,27 +221,22 @@ jobs:
           $tests = "n/a";
           $assertions = "n/a";
 
-          foreach (array_reverse(preg_split("/\R/", $output) ?: []) as $line) {
+          $tests = 0;
+          $assertions = 0;
+
+          foreach (preg_split("/\R/", $output) ?: [] as $line) {
               $result = json_decode($line, true);
 
               if (is_array($result) && ($result["tool"] ?? null) === "phpunit") {
-                  $tests = $result["tests"] ?? $tests;
-                  $assertions = $result["assertions"] ?? $assertions;
-                  break;
+                  $tests += (int) ($result["tests"] ?? 0);
+                  $assertions += (int) ($result["assertions"] ?? 0);
               }
-          }
-
-          $plainOutput = preg_replace("/\e\[[0-9;]*m/", "", $output) ?? $output;
-
-          if ($tests === "n/a" && preg_match("/Tests:\s+(\d+) passed\s+\((\d+) assertions\)/", $plainOutput, $matches) === 1) {
-              $tests = $matches[1];
-              $assertions = $matches[2];
           }
 
           file_put_contents(getenv("GITHUB_OUTPUT"), sprintf(
               "tests=%s\nassertions=%s\n",
-              $tests,
-              $assertions,
+              $tests > 0 ? (string) $tests : "n/a",
+              $assertions > 0 ? (string) $assertions : "n/a",
           ), FILE_APPEND);
           '
 
@@ -645,6 +660,29 @@ jobs:
           ].join("\n"));
           '
 
+  backend-quality:
+    name: Backend quality
+    if: always()
+    runs-on: ubuntu-latest
+    needs:
+      - code-style
+      - static-analysis
+      - tests
+    steps:
+      - name: Verify backend quality results
+        env:
+          CODE_STYLE_RESULT: ${{ needs['code-style'].result }}
+          STATIC_ANALYSIS_RESULT: ${{ needs['static-analysis'].result }}
+          TESTS_RESULT: ${{ needs.tests.result }}
+        run: |
+          for result in "$CODE_STYLE_RESULT" "$STATIC_ANALYSIS_RESULT" "$TESTS_RESULT"
+          do
+            if [ "$result" != 'success' ]; then
+              echo "A backend quality dependency did not succeed."
+              exit 1
+            fi
+          done
+
   ci-summary:
     name: Summary
     if: always()
@@ -659,6 +697,7 @@ jobs:
       - migrations-mariadb
       - migrations-postgres
       - dependency-audit
+      - backend-quality
     permissions:
       contents: read
       issues: write

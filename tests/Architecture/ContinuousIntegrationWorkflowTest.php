@@ -159,6 +159,18 @@ final class ContinuousIntegrationWorkflowTest extends TestCase
         self::assertStringContainsString('Visual baseline changes require explicit reviewer approval', $policy);
     }
 
+    public function test_section_zero_acceptance_records_the_successful_no_cache_run(): void
+    {
+        $acceptance = (string) file_get_contents(dirname(__DIR__, 2).'/docs/ci/section-zero-ci-acceptance.md');
+
+        self::assertStringContainsString('559a96bc265fdec45cba1e9a7f4754b64aedb7ba', $acceptance);
+        self::assertStringContainsString('actions/runs/31527822255', $acceptance);
+        self::assertStringContainsString('`use_dependency_cache: false`', $acceptance);
+        self::assertStringContainsString('| Visual regression (Chromium) | passed |', $acceptance);
+        self::assertStringContainsString('`visual-diagnostics`', $acceptance);
+        self::assertStringNotContainsString('pending', strtolower($acceptance));
+    }
+
     private function workflow(): string
     {
         $workflow = file_get_contents(dirname(__DIR__, 2).'/.github/workflows/ci.yml');

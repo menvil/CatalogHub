@@ -30,14 +30,22 @@ final class UiFixtureTest extends TestCase
     {
         $originalTimezone = date_default_timezone_get();
         $originalNow = CarbonImmutable::getTestNow();
+        $originalFailure = getenv('CATALOGHUB_FIXTURE_FAILURE');
 
         try {
-            UiFixture::withFrozenClock(static function (): never {
-                throw new \RuntimeException('fixture failure');
+            putenv('CATALOGHUB_FIXTURE_FAILURE=1');
+            UiFixture::withFrozenClock(static function (): string {
+                if (getenv('CATALOGHUB_FIXTURE_FAILURE') === '1') {
+                    throw new \RuntimeException('fixture failure');
+                }
+
+                return 'unexpected success';
             });
             $this->fail('Expected fixture exception to propagate.');
         } catch (\RuntimeException $exception) {
             $this->assertSame('fixture failure', $exception->getMessage());
+        } finally {
+            putenv($originalFailure === false ? 'CATALOGHUB_FIXTURE_FAILURE' : 'CATALOGHUB_FIXTURE_FAILURE='.$originalFailure);
         }
 
         $this->assertSame($originalTimezone, date_default_timezone_get());

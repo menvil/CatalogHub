@@ -74,6 +74,33 @@ final class ActionProgressStateTest extends TestCase
         );
     }
 
+    #[DataProvider('invalidStateProvider')]
+    public function test_every_action_progress_state_contract_rejects_invalid_values(
+        ActionProgressStatus $status,
+        string $message,
+        ?CarbonImmutable $startedAt,
+        ?CarbonImmutable $completedAt,
+    ): void {
+        $this->expectException(InvalidArgumentException::class);
+
+        new ActionProgressViewModel($status, $message, $startedAt, $completedAt);
+    }
+
+    /** @return iterable<string, array{ActionProgressStatus, string, ?CarbonImmutable, ?CarbonImmutable}> */
+    public static function invalidStateProvider(): iterable
+    {
+        $started = CarbonImmutable::parse('2026-08-09 10:00:00 UTC');
+        $completed = CarbonImmutable::parse('2026-08-09 10:01:00 UTC');
+
+        yield 'empty message' => [ActionProgressStatus::Idle, ' ', null, null];
+        yield 'idle start timestamp' => [ActionProgressStatus::Idle, 'Idle.', $started, null];
+        yield 'idle completion timestamp' => [ActionProgressStatus::Idle, 'Idle.', null, $completed];
+        yield 'pending without start' => [ActionProgressStatus::Pending, 'Pending.', null, null];
+        yield 'pending with completion' => [ActionProgressStatus::Pending, 'Pending.', $started, $completed];
+        yield 'success without start' => [ActionProgressStatus::Success, 'Completed.', null, $completed];
+        yield 'failure without completion' => [ActionProgressStatus::Failure, 'Failed.', $started, null];
+    }
+
     /** @return iterable<string, array{ActionProgressViewModel, string}> */
     public static function stateProvider(): iterable
     {

@@ -11,17 +11,40 @@ return new class extends Migration
 
     private const DELETE_TRIGGER = 'audit_log_entries_prevent_delete';
 
-    private const POSTGRES_FUNCTION = 'cataloghub_prevent_audit_log_entry_mutation';
-
     public function up(): void
     {
-        $this->dropImmutabilityTriggers();
+        if (DB::getDriverName() !== 'sqlite') {
+            Schema::table('audit_log_entries', function (Blueprint $table): void {
+                $table->string('request_id', 128)->nullable()->change();
+            });
 
-        Schema::table('audit_log_entries', function (Blueprint $table): void {
-            $table->string('request_id', 128)->nullable()->change();
-        });
+            return;
+        }
 
-        $this->createImmutabilityTriggers();
+        // SQLite rebuilds the table for a column change and drops its triggers.
+        // BEGIN IMMEDIATE serializes writers for the complete trigger/DDL window.
+        DB::unprepared('BEGIN IMMEDIATE TRANSACTION');
+
+        try {
+            $this->dropImmutabilityTriggers();
+
+            Schema::table('audit_log_entries', function (Blueprint $table): void {
+                $table->string('request_id', 128)->nullable()->change();
+            });
+
+            $this->createImmutabilityTriggers();
+            DB::unprepared('COMMIT');
+        } catch (Throwable $exception) {
+            // Rolling back the transactional SQLite DDL restores the original
+            // table and both append-only triggers before rethrowing the cause.
+            try {
+                DB::unprepared('ROLLBACK');
+            } catch (Throwable) {
+                // Preserve the column-alteration failure for the migrator.
+            }
+
+            throw $exception;
+        }
     }
 
     public function down(): void
@@ -75,16 +98,6 @@ return new class extends Migration
 
     private function dropImmutabilityTriggers(): void
     {
-        $driver = DB::getDriverName();
-
-        if ($driver === 'pgsql') {
-            DB::unprepared('DROP TRIGGER IF EXISTS '.self::UPDATE_TRIGGER.' ON audit_log_entries');
-            DB::unprepared('DROP TRIGGER IF EXISTS '.self::DELETE_TRIGGER.' ON audit_log_entries');
-            DB::unprepared('DROP FUNCTION IF EXISTS '.self::POSTGRES_FUNCTION.'()');
-
-            return;
-        }
-
         DB::unprepared('DROP TRIGGER IF EXISTS '.self::UPDATE_TRIGGER);
         DB::unprepared('DROP TRIGGER IF EXISTS '.self::DELETE_TRIGGER);
     }

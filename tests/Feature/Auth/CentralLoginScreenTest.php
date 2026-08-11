@@ -62,8 +62,9 @@ final class CentralLoginScreenTest extends TestCase
                 ->call('authenticate')
                 ->assertHasFormErrors(['email']);
 
-            $message = $component->errors()->first('email');
+            $message = $component->errors()->first('data.email');
             $this->assertIsString($message);
+            $this->assertNotSame('', $message);
             $messages[] = $message;
 
             $this->assertGuest();

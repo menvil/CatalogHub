@@ -24,6 +24,8 @@ final class ComponentGalleryVisualTest extends TestCase
         'feedback-mobile' => ['width' => 360, 'height' => 900, 'section' => 'feedback'],
         'states-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'states'],
         'states-mobile' => ['width' => 360, 'height' => 900, 'section' => 'states'],
+        'actions-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'actions'],
+        'actions-mobile' => ['width' => 360, 'height' => 900, 'section' => 'actions'],
     ];
 
     public function test_approved_gallery_reference_checksum_is_unchanged(): void

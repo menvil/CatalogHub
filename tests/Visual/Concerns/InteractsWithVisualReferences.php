@@ -48,10 +48,8 @@ trait InteractsWithVisualReferences
 
     protected function meanChannelDifference(string $reference, string $capture): float
     {
-        $referenceImage = imagecreatefrompng($reference);
-        $captureImage = imagecreatefrompng($capture);
-        $this->assertInstanceOf(GdImage::class, $referenceImage);
-        $this->assertInstanceOf(GdImage::class, $captureImage);
+        $referenceImage = $this->decodePng($reference);
+        $captureImage = $this->decodePng($capture);
         $this->assertSame(imagesx($referenceImage), imagesx($captureImage));
         $this->assertSame(imagesy($referenceImage), imagesy($captureImage));
         $difference = 0.0;
@@ -59,16 +57,53 @@ trait InteractsWithVisualReferences
 
         for ($y = 0; $y < imagesy($referenceImage); $y++) {
             for ($x = 0; $x < imagesx($referenceImage); $x++) {
-                $referenceColor = imagecolorat($referenceImage, $x, $y);
-                $captureColor = imagecolorat($captureImage, $x, $y);
+                $referenceColor = $this->rgbAt($referenceImage, $x, $y);
+                $captureColor = $this->rgbAt($captureImage, $x, $y);
 
-                foreach ([16, 8, 0] as $shift) {
-                    $difference += abs((($referenceColor >> $shift) & 0xFF) - (($captureColor >> $shift) & 0xFF)) / 255;
+                foreach (['red', 'green', 'blue'] as $channel) {
+                    $difference += abs($referenceColor[$channel] - $captureColor[$channel]) / 255;
                     $samples++;
                 }
             }
         }
 
         return $difference / $samples;
+    }
+
+    /** @return array{red: int, green: int, blue: int} */
+    private function rgbAt(GdImage $image, int $x, int $y): array
+    {
+        $color = imagecolorat($image, $x, $y);
+
+        if (! imageistruecolor($image)) {
+            $paletteColor = imagecolorsforindex($image, $color);
+
+            return [
+                'red' => $paletteColor['red'],
+                'green' => $paletteColor['green'],
+                'blue' => $paletteColor['blue'],
+            ];
+        }
+
+        return [
+            'red' => ($color >> 16) & 0xFF,
+            'green' => ($color >> 8) & 0xFF,
+            'blue' => $color & 0xFF,
+        ];
+    }
+
+    private function decodePng(string $path): GdImage
+    {
+        set_error_handler(static fn (): bool => true);
+
+        try {
+            $image = imagecreatefrompng($path);
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertInstanceOf(GdImage::class, $image, "Unable to decode PNG [{$path}].");
+
+        return $image;
     }
 }

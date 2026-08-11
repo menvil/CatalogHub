@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\ViewComponents;
 
 use Illuminate\Support\Facades\Blade;
+use Illuminate\View\ViewException;
 use Tests\TestCase;
 
 final class ScreenStatesTest extends TestCase
@@ -53,6 +54,22 @@ final class ScreenStatesTest extends TestCase
             $this->assertSame($id.'-title', $matches[2][$index]);
             $this->assertStringContainsString('id="'.$id.'-title"', $html);
         }
+    }
+
+    public function test_empty_state_rejects_an_action_label_without_a_url(): void
+    {
+        $this->expectException(ViewException::class);
+        $this->expectExceptionMessage('Empty-state actions require both a label and URL.');
+
+        Blade::render('<x-ui.states.empty title="No brands" message="Nothing here." action-label="Create" />');
+    }
+
+    public function test_empty_state_rejects_an_action_url_without_a_label(): void
+    {
+        $this->expectException(ViewException::class);
+        $this->expectExceptionMessage('Empty-state actions require both a label and URL.');
+
+        Blade::render('<x-ui.states.empty title="No brands" message="Nothing here." action-url="/brands/create" />');
     }
 
     public function test_loading_state_is_accessible_motion_safe_and_has_no_fake_data(): void

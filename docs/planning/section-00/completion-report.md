@@ -2,7 +2,7 @@
 
 Date: 2026-08-11
 Task: P00-134 — Publish Section Zero Completion Report
-Status: local acceptance complete; remote required CI must pass before merge.
+Status: Section Zero acceptance complete; merge remains subject to review policy.
 
 ## Phase and task evidence registry
 
@@ -68,8 +68,10 @@ The final clean local acceptance on 2026-08-11 produced:
 - visual: 28 PHP tests with 578 assertions and one approved Playwright baseline;
 - Composer and npm audits: zero known vulnerabilities.
 
-The remote required checks remain mandatory and are recorded by the MR before
-merge. Local results do not waive or replace any branch-protection gate.
+The implementation head `67c403e` passed every required check in GitHub Actions
+run [31535395243](https://github.com/menvil/CatalogHub/actions/runs/31535395243),
+including the no-cache fresh PostgreSQL, MariaDB, browser, and visual jobs. Local
+results do not waive or replace any branch-protection gate on later changes.
 
 ## Deviations and compatibility ownership
 

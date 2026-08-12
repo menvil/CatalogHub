@@ -1,31 +1,54 @@
+@php
+    $galleryRoute = request()->routeIs('central.component-gallery')
+        ? 'central.component-gallery'
+        : 'dev.component-gallery.capture';
+    $galleryUrl = route($galleryRoute, absolute: false);
+@endphp
+
 <div class="space-y-admin-section" data-admin-components-fixture="{{ $adminComponentFixture['version'] }}" data-admin-components-section="{{ $componentSection }}">
     <x-admin.page-header
         screen-id="CA-DS-002"
-        title="Admin component gallery"
-        description="Deterministic presentation fixtures."
+        title="Foundation Component Gallery"
+        description="Canonical visual reference for reusable administration components and patterns. Every example renders the production component with deterministic, non-persistent data."
         status="Foundation"
-        :breadcrumbs="[['label' => 'Design system', 'url' => '/dev/component-gallery'], ['label' => ucfirst($componentSection)]]"
+        :breadcrumbs="[['label' => 'Central Admin', 'url' => '/admin/central'], ['label' => 'Design system'], ['label' => $componentSection === 'catalog' ? 'Component catalog' : ucfirst($componentSection)]]"
     >
         <x-slot:actions>
-            <x-ui.action-group label="Gallery sections" class="!flex-nowrap">
-                @foreach (['forms', 'tables', 'feedback', 'states', 'actions'] as $section)
-                    <x-ui.button variant="{{ $componentSection === $section ? 'primary' : 'secondary' }}" href="/dev/component-gallery?mode=components&amp;section={{ $section }}">{{ ucfirst($section) }}</x-ui.button>
+            <x-ui.action-group label="Gallery sections" class="flex-wrap">
+                @foreach (['actions', 'forms', 'tables', 'indicators', 'layout', 'feedback', 'overlays', 'advanced'] as $section)
+                    <x-ui.button variant="{{ $componentSection === $section ? 'primary' : 'secondary' }}" href="{{ $galleryUrl }}?mode=components&section={{ $section }}">{{ ucfirst($section) }}</x-ui.button>
                 @endforeach
             </x-ui.action-group>
         </x-slot:actions>
     </x-admin.page-header>
 
-    @if (in_array($componentSection, ['forms', 'acceptance'], true))
-        <x-admin.card title="Buttons and form controls" description="Default, error, disabled, loading, and grouped action states." data-gallery-forms-fixture>
-            <x-ui.action-group label="Button variants" align="start" class="mb-admin-section">
+    @if (in_array($componentSection, ['actions', 'catalog', 'acceptance'], true))
+        <x-admin.card title="Buttons & Actions" description="Primary, secondary, tertiary, destructive, icon, loading, disabled, row, and bulk action states." data-gallery-actions-fixture>
+            <div class="space-y-admin-card">
+            <x-ui.action-group label="Button variants" align="start">
                 <x-ui.button>Save changes</x-ui.button>
                 <x-ui.button variant="secondary">Preview</x-ui.button>
                 <x-ui.button variant="tertiary">Cancel</x-ui.button>
                 <x-ui.button variant="danger">Delete</x-ui.button>
+                <x-ui.button icon="eye" label="View details" />
                 <x-ui.button loading>Saving</x-ui.button>
                 <x-ui.button disabled>Disabled</x-ui.button>
             </x-ui.action-group>
+            <div class="flex flex-wrap items-center justify-between gap-admin-card rounded-admin-input border border-admin-border bg-admin-surface-muted p-admin-card">
+                <x-admin.bulk-actions table-id="gallery-action-table" :actions="[['id' => 'archive', 'label' => 'Archive selected']]" />
+                <x-admin.row-actions row-id="fixture-row" :actions="[['label' => 'Edit', 'url' => '/admin/central'], ['label' => 'Delete', 'url' => '/admin/central', 'destructive' => true, 'confirmationId' => 'gallery-delete-modal']]" />
+            </div>
+            <div class="grid gap-admin-section lg:grid-cols-2">
+                @foreach ($actionProgressFixture as $state => $progress)
+                    <x-ui.states.action-progress :progress="$progress" action-label="Start export" retry-label="Retry export" reset-label="Dismiss result" data-gallery-action-state="{{ $state }}" />
+                @endforeach
+            </div>
+            </div>
+        </x-admin.card>
+    @endif
 
+    @if (in_array($componentSection, ['forms', 'catalog', 'acceptance'], true))
+        <x-admin.card title="Form Controls" description="The accepted foundation appearance for native inputs and form state; no parallel form framework." data-gallery-forms-fixture>
             <x-ui.form.form-state id="gallery-form" class="grid gap-admin-card lg:grid-cols-2">
                 <x-ui.form.input id="gallery-name" name="name" label="Brand name" value="Acme Displays" required help="Shown in administrative references." />
                 <x-ui.form.slug-input id="gallery-slug" name="slug" label="Slug" prefix="catalog.test/brands/" value="acme-displays" />
@@ -38,33 +61,21 @@
                 <x-ui.form.radio-group id="gallery-source" name="source" label="Data source" :options="['manual' => 'Manual', 'import' => 'Import']" selected="manual" />
                 <x-ui.form.date-time id="gallery-publish-at" name="publish_at" label="Publish at" value="2026-08-05T13:15" timezone="Europe/Sofia" />
                 <x-ui.form.file-input id="gallery-file" name="file" label="Reference file" accept="image/png,image/jpeg" hint="PNG or JPEG; selection only, no upload occurs." />
-                <x-ui.form.input id="gallery-disabled" name="disabled" label="Disabled field" value="Read only state" disabled />
+                <x-ui.form.input id="gallery-readonly" name="readonly" label="Read-only field" value="Immutable source value" readonly />
+                <x-ui.form.input id="gallery-disabled" name="disabled" label="Disabled field" value="Unavailable in this state" disabled />
                 <button type="submit" hidden>Submit fixture</button>
             </x-ui.form.form-state>
         </x-admin.card>
-
-        <x-admin.detail-layout>
-            <x-slot:main>
-                <x-admin.card title="Detail layout">
-                    <x-admin.tabs :items="[['key' => 'general', 'label' => 'General', 'url' => '#general'], ['key' => 'locales', 'label' => 'Locales', 'url' => '#locales', 'count' => 2]]" active="general" />
-                    <x-ui.section title="Brand identity" description="Reusable section hierarchy." class="mt-admin-card">
-                        <p class="text-sm text-admin-muted">Main content remains independent from persistence and query logic.</p>
-                    </x-ui.section>
-                </x-admin.card>
-            </x-slot:main>
-            <x-slot:aside><x-admin.card title="Reference"><x-ui.reference label="Tech Germany" kind="Site" /></x-admin.card></x-slot:aside>
-            <x-slot:actions><x-ui.action-group><x-ui.button variant="secondary">Cancel</x-ui.button><x-ui.button>Save</x-ui.button></x-ui.action-group></x-slot:actions>
-        </x-admin.detail-layout>
     @endif
 
-    @if (in_array($componentSection, ['tables', 'acceptance'], true))
-        <x-admin.card title="Table query and filter contracts" description="The fixture receives prepared rows and URL state; it performs no query." data-gallery-tables-fixture>
+    @if (in_array($componentSection, ['tables', 'catalog', 'acceptance'], true))
+        <x-admin.card title="Tables" description="Search, filters, active filters, prepared rows, selection, row actions, pagination, empty, and loading states." data-gallery-tables-fixture>
             <div class="space-y-admin-card">
-                <x-admin.table-toolbar action="/dev/component-gallery" search-id="gallery-search" search="Acme">
+                <x-admin.table-toolbar :action="$galleryUrl" search-id="gallery-search" search="Acme">
                     <input type="hidden" name="mode" value="components">
                     <input type="hidden" name="section" value="tables">
                 </x-admin.table-toolbar>
-                <x-admin.filter-bar action="/dev/component-gallery" drawer-id="gallery-filters">
+                <x-admin.filter-bar :action="$galleryUrl" drawer-id="gallery-filters">
                     <input type="hidden" name="mode" value="components">
                     <input type="hidden" name="section" value="tables">
                     <input type="hidden" name="q" value="Acme">
@@ -75,35 +86,99 @@
                 <x-admin.data-table table-id="gallery-brands" caption="Brand-like fixture" :columns="$adminComponentFixture['columns']" :rows="$adminComponentFixture['rows']" selectable />
                 <div class="flex justify-end"><x-admin.row-actions row-id="brand-1" :actions="[['label' => 'Edit', 'url' => '/brands/brand-1/edit'], ['label' => 'Delete', 'url' => '/brands/brand-1', 'destructive' => true, 'confirmationId' => 'gallery-delete-modal']]" /></div>
                 <x-admin.pagination :previous-url="'/dev/component-gallery?mode=components&section=tables&q=Acme&page=1'" :next-url="'/dev/component-gallery?mode=components&section=tables&q=Acme&page=3'" :page="2" />
+                <div class="grid gap-admin-card lg:grid-cols-2">
+                    <x-admin.data-table table-id="gallery-empty-table" caption="Empty fixture" :columns="$adminComponentFixture['columns']" :rows="[]" />
+                    <x-ui.states.loading label="Loading table records" :rows="4" />
+                </div>
             </div>
         </x-admin.card>
     @endif
 
-    @if (in_array($componentSection, ['feedback', 'acceptance'], true))
+    @if (in_array($componentSection, ['indicators', 'catalog', 'acceptance'], true))
+        <x-admin.card title="Status / Data Indicators" description="Status, locale/translation, projection, and data-quality semantics remain reusable and explicit." data-gallery-indicators-fixture>
+            <div class="space-y-admin-card">
+                <div class="flex flex-wrap gap-admin-field">
+                    @foreach (['success', 'warning', 'danger', 'info', 'neutral'] as $tone)
+                        <x-admin.status-badge :label="ucfirst($tone)" :variant="$tone" />
+                    @endforeach
+                    <x-ui.status-badge label="UI status wrapper" tone="success" />
+                </div>
+                <div class="flex flex-wrap gap-admin-field">
+                    <x-admin.translation-status-badge status="missing" locale="de-DE" />
+                    <x-admin.translation-status-badge status="machine" locale="en-DE" />
+                    <x-admin.translation-status-badge status="approved" locale="de-DE" />
+                    <x-admin.projection-status-badge status="synced" last-updated="10:15 UTC" />
+                    <x-admin.projection-status-badge status="stale" />
+                    <x-admin.projection-status-badge status="failed" />
+                    <x-admin.quality-warning-badge level="low" label="Optional metadata" />
+                    <x-admin.quality-warning-badge level="critical" label="Required value missing" :count="2" />
+                </div>
+                <div class="grid gap-admin-field sm:grid-cols-3">
+                    <x-ui.identifier value="BR-0042" label="Record code" />
+                    <x-ui.timestamp :value="$adminComponentFixture['timestamp']" timezone="Europe/Sofia" relative-hint="Fixed fixture time" />
+                    <x-ui.reference label="Tech Germany" kind="Site" url="/sites/tech-de" />
+                </div>
+            </div>
+        </x-admin.card>
+    @endif
+
+    @if (in_array($componentSection, ['layout', 'catalog', 'acceptance'], true))
+        <div class="space-y-admin-section" data-gallery-layout-fixture>
+            <x-admin.card title="Layout" description="Page header, breadcrumbs, tabs, cards, two-column detail composition, and a sticky action region.">
+                <x-admin.detail-layout>
+                    <x-slot:main>
+                        <x-admin.card title="Detail layout">
+                            <x-admin.tabs :items="[['key' => 'general', 'label' => 'General', 'url' => '#general'], ['key' => 'locales', 'label' => 'Locales', 'url' => '#locales', 'count' => 2]]" active="general" />
+                            <x-ui.section title="Record identity" description="Reusable section hierarchy." class="mt-admin-card">
+                                <p class="text-sm text-admin-muted">The full-width workspace allows this local composition to choose its own readable columns.</p>
+                            </x-ui.section>
+                        </x-admin.card>
+                    </x-slot:main>
+                    <x-slot:aside><x-admin.card title="Reference"><x-ui.reference label="Tech Germany" kind="Site" /></x-admin.card></x-slot:aside>
+                    <x-slot:actions><x-ui.action-group><x-ui.button variant="secondary">Cancel</x-ui.button><x-ui.button>Save</x-ui.button></x-ui.action-group></x-slot:actions>
+                </x-admin.detail-layout>
+            </x-admin.card>
+        </div>
+    @endif
+
+    @if (in_array($componentSection, ['feedback', 'catalog', 'acceptance'], true))
+        <x-admin.card title="Feedback" description="Success, warning, error, empty, filtered-empty, retry, validation, and loading states." data-gallery-feedback-fixture>
+            <div class="space-y-admin-card">
+                <div class="grid gap-admin-field lg:grid-cols-3">
+                    <x-ui.alert tone="success" title="Saved" message="The deterministic fixture was accepted." />
+                    <x-ui.alert tone="warning" title="Review needed" message="Two localized labels are incomplete." />
+                    <x-ui.alert tone="danger" title="Could not save" message="No data changed; retry after correcting the form." />
+                </div>
+                <x-ui.alert tone="warning" title="Unsaved changes" message="The form-state primitive warns before leaving a dirty form." />
+                <x-ui.toast tone="success" message="Draft saved." dismissible />
+                <div class="grid gap-admin-section lg:grid-cols-2">
+                    <x-admin.empty-state title="No foundation records" description="The reusable admin empty-state pattern remains available for future record screens." />
+                    <x-ui.states.empty id="gallery-empty-state" title="No records yet" message="Create the first record when an approved source is available." action-label="Create record" action-url="/admin/central" />
+                    <x-ui.states.filtered-empty id="gallery-filtered-empty-state" title="No matching records" message="No records match the current search and filters." clear-url="/dev/component-gallery?mode=components&section=feedback" />
+                    <x-ui.retry-block message="Preview could not be loaded." retry-label="Retry preview" />
+                    <x-ui.form.input id="gallery-feedback-validation" name="validation" label="Validation state" value="duplicate" error="This identifier is already used." />
+                </div>
+            </div>
+        </x-admin.card>
+    @endif
+
+    @if ($componentSection === 'states')
+        <x-admin.card title="Feedback" description="Empty, filtered-empty, and loading states remain semantically distinct." data-gallery-states-fixture>
+            <div class="grid gap-admin-section lg:grid-cols-2">
+                <x-ui.states.empty id="gallery-legacy-empty-state" title="No records yet" message="Create the first record after an approved source is available." action-label="Create record" action-url="/admin/central" />
+                <x-ui.states.filtered-empty id="gallery-legacy-filtered-state" title="No matching records" message="No records match the current search and filters." clear-url="/dev/component-gallery?mode=components&section=states" />
+                <x-ui.states.loading label="Loading records" :rows="4" class="lg:col-span-2" />
+            </div>
+        </x-admin.card>
+    @endif
+
+    @if (in_array($componentSection, ['overlays', 'catalog', 'acceptance'], true))
         @if ($componentAcceptance && $componentSection === 'acceptance')
             <button type="button" class="sr-only" data-admin-modal-open-target="gallery-modal">Open modal for acceptance</button>
             <button type="button" class="sr-only" data-admin-modal-open-target="gallery-delete-modal">Open confirmation for acceptance</button>
         @endif
-        <div class="grid gap-admin-section lg:grid-cols-2" data-gallery-feedback-fixture>
-            <x-admin.card title="Data display and feedback" class="order-2 lg:order-1">
-                <div class="space-y-admin-card">
-                    <div class="flex flex-wrap gap-admin-field">
-                        @foreach (['success', 'warning', 'danger', 'info', 'neutral'] as $tone)
-                            <x-ui.status-badge :label="ucfirst($tone)" :tone="$tone" />
-                        @endforeach
-                    </div>
-                    <div class="grid gap-admin-field sm:grid-cols-3">
-                        <x-ui.identifier value="BR-0042" label="Brand code" />
-                        <x-ui.timestamp :value="$adminComponentFixture['timestamp']" timezone="Europe/Sofia" relative-hint="Fixed fixture time" />
-                        <x-ui.reference label="Tech Germany" kind="Site" url="/sites/tech-de" />
-                    </div>
-                    <x-ui.alert tone="warning" title="Review needed" message="Two localized labels are incomplete." />
-                    <x-ui.toast tone="success" message="Draft saved." dismissible />
-                    <x-ui.retry-block message="Preview could not be loaded." retry-label="Retry preview" />
-                </div>
-            </x-admin.card>
-
-            <div class="order-1 space-y-admin-section lg:order-2">
+        <x-admin.card title="Overlays" description="Modal, confirmation, destructive confirmation, and drawer patterns; all demo actions are inert." data-gallery-overlays-fixture>
+            <div class="grid gap-admin-section xl:grid-cols-3">
                 <div class="relative min-h-80 overflow-hidden rounded-admin-card border border-admin-border" data-gallery-modal-fixture>
                     <x-ui.modal id="gallery-modal" title="Brand details" open contained>
                         This contained dialog demonstrates focus ownership without covering the gallery.
@@ -113,26 +188,56 @@
                 <div class="relative min-h-80 overflow-hidden rounded-admin-card border border-admin-border" data-gallery-confirmation-fixture>
                     <x-ui.confirmation-dialog id="gallery-delete-modal" title="Delete brand" message="This action cannot be undone." confirm-label="Delete" destructive open contained />
                 </div>
-            </div>
-        </div>
-    @endif
-
-    @if (in_array($componentSection, ['states', 'acceptance'], true))
-        <x-admin.card title="Common screen states" description="Initial, filtered, and loading states stay semantically distinct." data-gallery-states-fixture>
-            <div class="grid gap-admin-section lg:grid-cols-2">
-                <x-ui.states.empty title="No brands yet" message="Create the first brand after an approved source is available." action-label="Create brand" action-url="/admin/central/brands/create" />
-                <x-ui.states.filtered-empty title="No matching brands" message="No brands match the current search and filters." clear-url="/dev/component-gallery?mode=components&amp;section=states" />
-                <x-ui.states.loading label="Loading brand records" :rows="4" class="lg:col-span-2" />
+                <div class="relative min-h-80 overflow-hidden rounded-admin-card border border-admin-border" data-gallery-drawer-fixture>
+                    <x-admin.drawer title="Record filters" open contained size="sm">
+                        <x-ui.form.checkbox id="gallery-drawer-active" name="active" label="Active only" checked />
+                        <x-slot:actions><x-ui.button variant="secondary">Apply filters</x-ui.button></x-slot:actions>
+                    </x-admin.drawer>
+                </div>
             </div>
         </x-admin.card>
     @endif
 
-    @if (in_array($componentSection, ['actions', 'acceptance'], true))
-        <x-admin.card title="Action progress" description="Deterministic action states never fabricate a completion percentage." data-gallery-actions-fixture>
-            <div class="grid gap-admin-section lg:grid-cols-2">
-                @foreach ($actionProgressFixture as $state => $progress)
-                    <x-ui.states.action-progress :progress="$progress" action-label="Start export" retry-label="Retry export" reset-label="Dismiss result" data-gallery-action-state="{{ $state }}" />
-                @endforeach
+    @if (in_array($componentSection, ['advanced', 'catalog', 'acceptance'], true))
+        <x-admin.card title="Existing Higher-level Reusable Components" description="Existing composition primitives for localized values, measurements, media, diffs, imports, and review flows." data-gallery-advanced-fixture>
+            <div class="space-y-admin-section">
+                <x-admin.localized-field-editor
+                    field-name="Display name"
+                    :locales="[['code' => 'de-DE', 'label' => 'Deutsch'], ['code' => 'en-DE', 'label' => 'English']]"
+                    :values="['de-DE' => 'Deterministische Anzeige', 'en-DE' => 'Deterministic display']"
+                    :statuses="['de-DE' => 'approved', 'en-DE' => 'reviewed']"
+                />
+                <div class="grid gap-admin-section lg:grid-cols-2">
+                    <x-admin.card title="Unit/value input">
+                        <x-admin.unit-value-input id="gallery-screen-size" label="Screen size" value="27" unit="in" :available-units="[['value' => 'in', 'label' => 'inch'], ['value' => 'cm', 'label' => 'cm']]" canonical-preview="68.58 cm" />
+                    </x-admin.card>
+                    <x-admin.media-picker mode="multiple" :accepted-types="['image/png', 'image/jpeg']" :selected-items="[['name' => 'Front view', 'type' => 'image'], ['name' => 'Side view', 'type' => 'image']]" />
+                </div>
+                <x-admin.diff-viewer field-label="Display name" before-label="Current" before-value="Acme Display" after-label="Proposed" after-value="Acme Displays" variant="side-by-side" />
+                <x-admin.attribute-value-editor
+                    attribute-label="Screen diagonal"
+                    attribute-code="screen_diagonal"
+                    data-type="unit"
+                    raw-value="27 inch"
+                    normalized-value="27"
+                    :unit-options="[['value' => 'in', 'label' => 'inch'], ['value' => 'cm', 'label' => 'cm']]"
+                    :confidence="96"
+                    source-label="Deterministic fixture"
+                />
+                <x-admin.import-progress-panel
+                    source-name="Deterministic import fixture"
+                    category-name="Foundation preview only"
+                    status="completed"
+                    :steps="[['label' => 'Upload', 'status' => 'completed'], ['label' => 'Validate', 'status' => 'completed'], ['label' => 'Review', 'status' => 'current']]"
+                    :stats="[['label' => 'Read', 'value' => 12], ['label' => 'Valid', 'value' => 10], ['label' => 'Warnings', 'value' => 2], ['label' => 'Errors', 'value' => 0]]"
+                />
+                <div class="grid gap-admin-section xl:grid-cols-2">
+                    <x-admin.change-request-card request-title="Localized label update" requester-label="Site editor" source-site-label="Tech Germany" entity-label="Fixture record" field-label="Display name" current-value="Display" proposed-value="Displays" status="needs_info" submitted-at="2026-08-05 10:15 UTC" :actions="[['label' => 'Review later']]" />
+                    <x-admin.conflict-review-card title="Source conflict" entity-label="Fixture record" field-label="Manufacturer code" source-a="Primary source" source-b="Secondary source" value-a="ACME" value-b="ACME-DE" severity="medium" :actions="[['label' => 'Resolve later']]" />
+                </div>
+                <div class="relative min-h-80 overflow-hidden rounded-admin-card border border-admin-border">
+                    <x-admin.confirmation-modal id="gallery-foundation-confirmation" title="Archive record" message="The reusable admin confirmation pattern performs no action in this gallery." confirm-label="Archive" variant="warning" open contained />
+                </div>
             </div>
         </x-admin.card>
     @endif
@@ -144,7 +249,7 @@
                 try {
                     const row = document.querySelector('[data-admin-row-select]');
                     row?.click();
-                    const selected = document.querySelector('[data-selected-count]')?.textContent;
+                    const selected = document.querySelector('[data-admin-bulk-actions="gallery-brands"] [data-selected-count]')?.textContent;
                     if (selected !== '1') throw new Error('selection');
                     const selectedTable = row?.closest('table');
                     const independentTable = selectedTable?.cloneNode(true);

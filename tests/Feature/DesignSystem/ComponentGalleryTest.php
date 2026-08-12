@@ -36,12 +36,19 @@ final class ComponentGalleryTest extends TestCase
             ->get('/admin/central/component-gallery')
             ->assertOk()
             ->assertSee('Foundation Component Gallery')
-            ->assertSee('data-gallery-fixture="foundation-v1"', false)
-            ->assertSee('Color and status tokens')
-            ->assertSee('Typography')
-            ->assertSee('Spacing and geometry')
-            ->assertSee('Heroicons')
-            ->assertSee('Responsive density')
+            ->assertSee('data-admin-components-fixture="admin-components-v1"', false)
+            ->assertSee('data-admin-components-section="catalog"', false)
+            ->assertSee('Buttons &amp; Actions', false)
+            ->assertSee('Form Controls')
+            ->assertSee('Tables')
+            ->assertSee('Status / Data Indicators')
+            ->assertSee('Layout')
+            ->assertSee('Feedback')
+            ->assertSee('Overlays')
+            ->assertSee('data-admin-localized-field-editor', false)
+            ->assertSee('data-admin-media-picker', false)
+            ->assertSee('data-admin-diff-viewer', false)
+            ->assertSee('data-admin-import-progress-panel', false)
             ->assertSee('/build/assets/central-admin-', false)
             ->assertDontSee('data-presentation-context="site-admin"', false)
             ->assertDontSee('data-presentation-context="public-site"', false);
@@ -60,8 +67,11 @@ final class ComponentGalleryTest extends TestCase
         $markers = [
             'forms' => 'data-gallery-forms-fixture',
             'tables' => 'data-gallery-tables-fixture',
+            'indicators' => 'data-gallery-indicators-fixture',
+            'layout' => 'data-gallery-layout-fixture',
             'feedback' => 'data-gallery-feedback-fixture',
-            'states' => 'data-gallery-states-fixture',
+            'overlays' => 'data-gallery-overlays-fixture',
+            'advanced' => 'data-gallery-advanced-fixture',
             'actions' => 'data-gallery-actions-fixture',
         ];
 
@@ -71,7 +81,7 @@ final class ComponentGalleryTest extends TestCase
                 ->assertSee('data-admin-components-fixture="admin-components-v1"', false)
                 ->assertSee('data-admin-components-section="'.$section.'"', false)
                 ->assertSee($marker, false)
-                ->assertSee('Admin component gallery');
+                ->assertSee('Foundation Component Gallery');
         }
 
         $this->get('/dev/component-gallery?mode=components&section=acceptance&acceptance=1')

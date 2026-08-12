@@ -38,6 +38,18 @@ final class ComponentGalleryVisualTest extends TestCase
         $this->assertSame(trim((string) file_get_contents($checksum)), hash_file('sha256', $reference));
     }
 
+    public function test_approved_full_catalog_reference_checksums_are_unchanged(): void
+    {
+        foreach (['z-010__catalog__1440x1000', 'z-010__catalog__390x844'] as $name) {
+            $reference = dirname(__DIR__, 2)."/tests/Visual/baselines/{$name}.png";
+            $checksum = $reference.'.sha256';
+
+            $this->assertFileExists($reference);
+            $this->assertFileExists($checksum);
+            $this->assertSame(trim((string) file_get_contents($checksum)), hash_file('sha256', $reference));
+        }
+    }
+
     public function test_current_gallery_matches_the_approved_wide_reference(): void
     {
         $root = dirname(__DIR__, 2);

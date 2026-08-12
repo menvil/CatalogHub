@@ -9,7 +9,18 @@ use Illuminate\Validation\Rule;
 
 final class ComponentGalleryRequest extends FormRequest
 {
-    private const SECTIONS = ['forms', 'tables', 'feedback', 'states', 'actions', 'acceptance'];
+    private const SECTIONS = [
+        'actions',
+        'forms',
+        'tables',
+        'indicators',
+        'layout',
+        'feedback',
+        'states',
+        'overlays',
+        'advanced',
+        'acceptance',
+    ];
 
     public function authorize(): bool
     {
@@ -36,6 +47,11 @@ final class ComponentGalleryRequest extends FormRequest
         $section = $this->validated('section');
 
         return is_string($section) ? $section : 'forms';
+    }
+
+    public function hasComponentSection(): bool
+    {
+        return is_string($this->validated('section'));
     }
 
     public function acceptanceRequested(): bool

@@ -32,10 +32,12 @@ final class AdminComponentContractTest extends TestCase
         yield 'slug' => ['ui/form/slug-input', 'forms', 'data-ui-form-field="gallery-slug"'];
         yield 'select' => ['ui/form/select', 'forms', 'data-ui-form-field="gallery-status"'];
         yield 'multi select' => ['ui/form/multi-select', 'forms', 'data-ui-form-field="gallery-markets"'];
+        yield 'checkbox list' => ['ui/form/checkbox-list', 'forms', 'data-ui-checkbox-list="gallery-market-checkboxes"'];
         yield 'checkbox' => ['ui/form/checkbox', 'forms', 'id="gallery-featured"'];
         yield 'toggle' => ['ui/form/toggle', 'forms', 'data-ui-toggle-indicator'];
         yield 'radio' => ['ui/form/radio-group', 'forms', 'id="gallery-source-0"'];
         yield 'date time' => ['ui/form/date-time', 'forms', 'data-ui-form-field="gallery-publish-at"'];
+        yield 'date picker' => ['ui/form/date-picker', 'forms', 'data-ui-date-picker="gallery-publish-date"'];
         yield 'file' => ['ui/form/file-input', 'forms', 'data-ui-form-field="gallery-file"'];
         yield 'form state' => ['ui/form/form-state', 'forms', 'data-admin-form-state'];
         yield 'card' => ['admin/card', 'layout', 'data-admin-card="default"'];

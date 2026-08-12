@@ -43,6 +43,20 @@ test('Central Admin foundation flow covers login, shell, gallery, user menu, and
     await expect(page.locator('[data-admin-localized-field-editor]')).toBeVisible()
     await expect(page.locator('[data-admin-media-picker]')).toBeVisible()
     await expect(page.locator('[data-admin-diff-viewer]').first()).toBeVisible()
+    await page.locator('[data-ui-select-trigger]').first().click()
+    await expect(page.locator('[data-ui-select-menu]').first()).toBeVisible()
+    await page.getByRole('option', { name: 'Archived', exact: true }).first().click()
+    await expect(page.locator('#gallery-status')).toHaveValue('archived')
+    await page.locator('[data-ui-checkbox-list="gallery-market-checkboxes"] label').last().click()
+    await expect(page.locator('#gallery-market-checkboxes-2')).toBeChecked()
+    for (const selector of [
+        '[data-ui-select-trigger]',
+        '[data-ui-toggle-hit-area]',
+        '[data-ui-date-picker-trigger]',
+        '[data-ui-checkbox-list="gallery-market-checkboxes"] label',
+    ]) {
+        await expect(page.locator(selector).first()).toHaveCSS('cursor', 'pointer')
+    }
     await captureAcceptanceScreenshot(page, testInfo, 'central-component-gallery')
 
     await page.setViewportSize({ width: 390, height: 844 })
@@ -51,6 +65,14 @@ test('Central Admin foundation flow covers login, shell, gallery, user menu, and
         { message: 'Component Gallery must settle without horizontal page overflow at 390px.' },
     ).toBe(true)
     await captureAcceptanceScreenshot(page, testInfo, 'central-component-gallery-mobile')
+
+    await page.setViewportSize({ width: 360, height: 900 })
+    await page.goto('/admin/central/component-gallery?mode=components&section=forms')
+    await expect.poll(
+        () => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
+        { message: 'Form controls must not introduce horizontal page overflow at 360px.' },
+    ).toBe(true)
+    await captureAcceptanceScreenshot(page, testInfo, 'central-component-gallery-forms-mobile')
 
     await page.setViewportSize({ width: 1920, height: 1080 })
     await page.goto('/admin/central')

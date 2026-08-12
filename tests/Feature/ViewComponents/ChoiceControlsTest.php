@@ -22,6 +22,22 @@ final class ChoiceControlsTest extends TestCase
         $this->assertStringContainsString('disabled', $html);
         $this->assertStringContainsString('aria-invalid="true"', $html);
         $this->assertStringContainsString('data-ui-toggle-indicator', $html);
+        $this->assertStringContainsString('data-ui-toggle-hit-area', $html);
+        $this->assertStringContainsString('cursor-pointer', $html);
+    }
+
+    public function test_checkbox_list_submits_multiple_checked_values_with_a_group_label(): void
+    {
+        $html = Blade::render(
+            '<x-ui.form.checkbox-list id="markets" name="markets" label="Markets" :options="$options" :selected="$selected" />',
+            ['options' => ['de' => 'Germany', 'at' => 'Austria', 'ch' => 'Switzerland'], 'selected' => ['de', 'at']],
+        );
+
+        $this->assertStringContainsString('data-ui-checkbox-list="markets"', $html);
+        $this->assertStringContainsString('<legend', $html);
+        $this->assertSame(3, substr_count($html, 'name="markets[]"'));
+        $this->assertSame(2, preg_match_all('/type="checkbox"[^>]*checked/', $html));
+        $this->assertStringContainsString('cursor-pointer', $html);
     }
 
     public function test_radio_group_exposes_group_label_and_one_selection(): void

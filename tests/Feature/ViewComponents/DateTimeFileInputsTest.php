@@ -9,6 +9,17 @@ use Tests\TestCase;
 
 final class DateTimeFileInputsTest extends TestCase
 {
+    public function test_date_picker_has_an_explicit_calendar_trigger_and_native_date_value(): void
+    {
+        $html = Blade::render('<x-ui.form.date-picker id="publish-date" name="publish_date" label="Publish date" value="2026-08-12" min="2026-08-01" max="2026-09-01" />');
+
+        $this->assertStringContainsString('type="date"', $html);
+        $this->assertStringContainsString('value="2026-08-12"', $html);
+        $this->assertStringContainsString('data-ui-date-picker="publish-date"', $html);
+        $this->assertStringContainsString('data-ui-date-picker-trigger', $html);
+        $this->assertStringContainsString('data-foundation-icon="calendar-days"', $html);
+    }
+
     public function test_date_time_shell_renders_constraints_and_explicit_timezone(): void
     {
         $html = Blade::render('<x-ui.form.date-time id="publish-at" name="publish_at" label="Publish at" value="2026-08-05T12:00" min="2026-08-01T00:00" max="2026-09-01T00:00" timezone="Europe/Berlin" />');

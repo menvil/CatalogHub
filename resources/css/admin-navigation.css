@@ -34,6 +34,10 @@ body.site-sidebar-scroll-locked {
 }
 
 @media (max-width: 63.999rem) {
+    :is(.central-shell-sidebar, .site-shell-sidebar):not([data-central-sidebar-mobile-open='true']):not([data-site-sidebar-mobile-open='true']) {
+        display: none;
+    }
+
     [data-central-shell][data-central-sidebar-mobile-open='true'] .central-shell-sidebar-backdrop,
     [data-site-shell][data-site-sidebar-mobile-open='true'] .site-shell-sidebar-backdrop {
         display: block;

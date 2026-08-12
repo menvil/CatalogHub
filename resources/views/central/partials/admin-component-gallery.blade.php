@@ -55,10 +55,12 @@
                 <x-ui.form.textarea id="gallery-description" name="description" label="Description" value="A deterministic fixture." :rows="3" optional />
                 <x-ui.form.input id="gallery-error" name="external_id" label="External ID" value="duplicate" error="This identifier is already used." />
                 <x-ui.form.select id="gallery-status" name="status" label="Status" :options="$adminComponentFixture['options']" selected="active" />
-                <x-ui.form.multi-select id="gallery-markets" name="markets" label="Markets" :options="['de' => 'Germany', 'at' => 'Austria', 'ch' => 'Switzerland']" :selected="['de', 'at']" />
+                <x-ui.form.multi-select id="gallery-markets" name="locales" label="Locales — compact multi-select" :options="['de-DE' => 'German (Germany)', 'en-DE' => 'English (Germany)']" :selected="['de-DE']" help="Compact native variant for short lists." />
+                <x-ui.form.checkbox-list id="gallery-market-checkboxes" name="markets" label="Markets — Checkbox list" :options="['de' => 'Germany', 'at' => 'Austria', 'ch' => 'Switzerland']" :selected="['de', 'at']" help="Preferred when all choices should remain visible." />
                 <x-ui.form.checkbox id="gallery-featured" name="featured" label="Featured brand" checked help="Uses a native checkbox." />
                 <x-ui.form.toggle id="gallery-visible" name="visible" label="Public visibility" checked />
                 <x-ui.form.radio-group id="gallery-source" name="source" label="Data source" :options="['manual' => 'Manual', 'import' => 'Import']" selected="manual" />
+                <x-ui.form.date-picker id="gallery-publish-date" name="publish_date" label="Publish date — Date picker" value="2026-08-12" help="Date-only calendar choice." />
                 <x-ui.form.date-time id="gallery-publish-at" name="publish_at" label="Publish at" value="2026-08-05T13:15" timezone="Europe/Sofia" />
                 <x-ui.form.file-input id="gallery-file" name="file" label="Reference file" accept="image/png,image/jpeg" hint="PNG or JPEG; selection only, no upload occurs." />
                 <x-ui.form.input id="gallery-readonly" name="readonly" label="Read-only field" value="Immutable source value" readonly />

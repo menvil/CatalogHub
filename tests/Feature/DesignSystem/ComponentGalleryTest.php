@@ -40,6 +40,8 @@ final class ComponentGalleryTest extends TestCase
             ->assertSee('data-admin-components-section="catalog"', false)
             ->assertSee('Buttons &amp; Actions', false)
             ->assertSee('Form Controls')
+            ->assertSee('Checkbox list')
+            ->assertSee('Date picker')
             ->assertSee('Tables')
             ->assertSee('Status / Data Indicators')
             ->assertSee('Layout')

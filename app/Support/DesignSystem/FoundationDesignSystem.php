@@ -33,6 +33,8 @@ final class FoundationDesignSystem
         'bars-3' => 'heroicon-o-bars-3',
         'x-mark' => 'heroicon-o-x-mark',
         'chevron-double-left' => 'heroicon-o-chevron-double-left',
+        'chevron-down' => 'heroicon-o-chevron-down',
+        'calendar-days' => 'heroicon-o-calendar-days',
     ];
 
     /** @var array<string, array{width: int, height: int, density: string, behavior: string}> */

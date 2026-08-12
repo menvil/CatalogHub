@@ -6,10 +6,11 @@ const publicUrl = (host, path) => `http://${host}:${port}${path}`
 
 test('Multi-category public fixture exposes isolated layout, locales, and canonical SEO', async ({ page }, testInfo) => {
     const assertNoPageErrors = observePageErrors(page)
-    const response = await page.goto(publicUrl('www.tech-germany.test', '/'))
+    await page.setViewportSize({ width: 1440, height: 1000 })
+    const response = await page.goto(publicUrl('tech-germany.test', '/'))
 
     expect(response?.status()).toBe(200)
-    await expect(page).toHaveURL(publicUrl('www.tech-germany.test', '/de-DE'))
+    await expect(page).toHaveURL(publicUrl('tech-germany.test', '/de-DE'))
     await expect(page.locator('[data-presentation-context="public-site"]')).toBeVisible()
     await expect(page.locator('[data-public-layout="multi-category"]')).toBeVisible()
     await expect(page.locator('[data-public-theme="cataloghub-multi"]')).toBeVisible()
@@ -24,10 +25,11 @@ test('Multi-category public fixture exposes isolated layout, locales, and canoni
 
 test('Single-category public fixture is reproducible at mobile width', async ({ page }, testInfo) => {
     const assertNoPageErrors = observePageErrors(page)
-    await page.setViewportSize({ width: 360, height: 800 })
-    const response = await page.goto(publicUrl('monitors-germany.test', '/en-DE'))
+    await page.setViewportSize({ width: 390, height: 844 })
+    const response = await page.goto(publicUrl('monitors-germany.test', '/'))
 
     expect(response?.status()).toBe(200)
+    await expect(page).toHaveURL(publicUrl('monitors-germany.test', '/de-DE'))
     await expect(page.locator('[data-public-layout="single-category"]')).toBeVisible()
     await expect(page.locator('[data-public-theme="cataloghub-single"]')).toBeVisible()
     await expect(page.locator('[data-public-single-shell-content]')).toBeVisible()

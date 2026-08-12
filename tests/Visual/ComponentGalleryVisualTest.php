@@ -14,14 +14,15 @@ final class ComponentGalleryVisualTest extends TestCase
 
     private const MAX_MEAN_CHANNEL_DIFFERENCE = 0.04;
 
-    /** @var array<string, array{width: int, height: int, section: string}> */
+    /** @var array<string, array{width: int, height: int, section: string, maxDifference?: float}> */
     private const COMPONENT_STATES = [
         'forms-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'forms'],
         'forms-mobile' => ['width' => 360, 'height' => 900, 'section' => 'forms'],
         'tables-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'tables'],
         'tables-mobile' => ['width' => 360, 'height' => 900, 'section' => 'tables'],
         'feedback-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'feedback'],
-        'feedback-mobile' => ['width' => 360, 'height' => 900, 'section' => 'feedback'],
+        // Linux and macOS rasterize the text-dense mobile state slightly differently.
+        'feedback-mobile' => ['width' => 360, 'height' => 900, 'section' => 'feedback', 'maxDifference' => 0.045],
         'states-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'states'],
         'states-mobile' => ['width' => 360, 'height' => 900, 'section' => 'states'],
         'actions-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'actions'],
@@ -102,7 +103,7 @@ final class ComponentGalleryVisualTest extends TestCase
                     array_slice(getimagesize($capture) ?: [], 0, 2),
                 );
                 $this->assertLessThanOrEqual(
-                    self::MAX_MEAN_CHANNEL_DIFFERENCE,
+                    $configuration['maxDifference'] ?? self::MAX_MEAN_CHANNEL_DIFFERENCE,
                     $this->meanChannelDifference($this->referencePath($state, 'admin-components-'), $capture),
                     "Admin component gallery state [{$state}] differs from its approved reference.",
                 );

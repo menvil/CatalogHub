@@ -46,7 +46,10 @@ test('Central Admin foundation flow covers login, shell, gallery, user menu, and
     await captureAcceptanceScreenshot(page, testInfo, 'central-component-gallery')
 
     await page.setViewportSize({ width: 390, height: 844 })
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+    await expect.poll(
+        () => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
+        { message: 'Component Gallery must settle without horizontal page overflow at 390px.' },
+    ).toBe(true)
     await captureAcceptanceScreenshot(page, testInfo, 'central-component-gallery-mobile')
 
     await page.setViewportSize({ width: 1920, height: 1080 })

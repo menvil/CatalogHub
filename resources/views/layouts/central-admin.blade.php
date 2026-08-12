@@ -41,7 +41,7 @@
                 @include('central.components.header', ['centralUser' => $centralUser])
 
                 <main id="central-main-content" class="px-admin-page py-admin-section" tabindex="-1">
-                    <div class="mx-auto max-w-7xl space-y-admin-section">
+                    <div class="w-full space-y-admin-section" data-admin-workspace>
                         <x-admin.flash-messages />
 
                         <div class="flex flex-col gap-admin-field md:flex-row md:items-start md:justify-between">

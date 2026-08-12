@@ -6,9 +6,10 @@ const publicUrl = (host, path) => `http://${host}:${port}${path}`
 
 test('Multi-category public fixture exposes isolated layout, locales, and canonical SEO', async ({ page }, testInfo) => {
     const assertNoPageErrors = observePageErrors(page)
-    const response = await page.goto(publicUrl('www.tech-germany.test', '/de-DE'))
+    const response = await page.goto(publicUrl('www.tech-germany.test', '/'))
 
     expect(response?.status()).toBe(200)
+    await expect(page).toHaveURL(publicUrl('www.tech-germany.test', '/de-DE'))
     await expect(page.locator('[data-presentation-context="public-site"]')).toBeVisible()
     await expect(page.locator('[data-public-layout="multi-category"]')).toBeVisible()
     await expect(page.locator('[data-public-theme="cataloghub-multi"]')).toBeVisible()
@@ -38,7 +39,7 @@ test('Single-category public fixture is reproducible at mobile width', async ({ 
 
 test('Archived and unknown public hosts fail closed without leaking another site', async ({ page }) => {
     for (const host of ['archived-germany.test', 'unknown.cataloghub.test']) {
-        const response = await page.goto(publicUrl(host, '/de-DE'))
+        const response = await page.goto(publicUrl(host, '/'))
 
         expect(response?.status()).toBe(404)
         await expect(page.locator('[data-public-error="404"]')).toBeVisible()

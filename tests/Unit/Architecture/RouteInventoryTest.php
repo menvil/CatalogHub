@@ -46,7 +46,7 @@ final class RouteInventoryTest extends TestCase
         $this->withoutVite();
         config()->set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
 
-        $this->get('/')->assertOk();
+        $this->get('/')->assertNotFound();
         $this->get('/admin')->assertRedirect('/admin/central');
         $this->get('/admin/central')->assertRedirect('/admin/central/login');
         $this->get('/admin/central/login')->assertOk();

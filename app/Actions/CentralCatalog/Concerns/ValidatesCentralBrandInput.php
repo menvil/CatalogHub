@@ -45,7 +45,7 @@ trait ValidatesCentralBrandInput
             $slugRule->ignore($brand->getKey(), $brand->getKeyName());
         }
 
-        $normalized = Validator::make([
+        $normalizedValidator = Validator::make([
             'name' => $name,
             'slug' => $slug,
             'website_url' => $websiteUrl,
@@ -55,9 +55,15 @@ trait ValidatesCentralBrandInput
             'slug' => ['required', 'string', 'max:255', 'regex:/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/', $slugRule],
             'website_url' => ['nullable', 'string', 'max:255', 'url:http,https'],
             'country_code' => ['nullable', 'string', 'regex:/\A[A-Z]{2}\z/'],
-        ])->validate();
+        ]);
 
-        $this->rejectDuplicateName($name, $brand);
+        $normalizedValidator->after(function ($validator) use ($name, $brand): void {
+            if (! $validator->errors()->has('name') && (new DuplicateCentralBrandNameQuery)->exists($name, $brand)) {
+                $validator->errors()->add('name', 'A brand with this canonical name already exists.');
+            }
+        });
+
+        $normalized = $normalizedValidator->validate();
 
         return [
             'name' => (string) $normalized['name'],
@@ -137,14 +143,5 @@ trait ValidatesCentralBrandInput
         assert(is_string($countryCode) || $countryCode === null);
 
         return BrandInputNormalizer::countryCode($countryCode);
-    }
-
-    private function rejectDuplicateName(string $name, ?CentralBrand $brand): void
-    {
-        if ((new DuplicateCentralBrandNameQuery)->exists($name, $brand)) {
-            throw ValidationException::withMessages([
-                'name' => 'A brand with this canonical name already exists.',
-            ]);
-        }
     }
 }

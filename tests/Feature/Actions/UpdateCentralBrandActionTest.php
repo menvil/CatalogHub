@@ -5,14 +5,14 @@ namespace Tests\Feature\Actions;
 use App\Actions\CentralCatalog\UpdateCentralBrandAction;
 use App\Enums\CentralBrandStatus;
 use App\Models\CentralCatalog\CentralBrand;
-use Closure;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Concerns\AssertsValidationErrors;
 use Tests\TestCase;
 
 class UpdateCentralBrandActionTest extends TestCase
 {
+    use AssertsValidationErrors;
     use RefreshDatabase;
 
     public function test_updates_and_normalizes_canonical_fields_and_returns_the_persisted_model(): void
@@ -54,10 +54,11 @@ class UpdateCentralBrandActionTest extends TestCase
     {
         $brand = CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
 
-        app(UpdateCentralBrandAction::class)->handle($brand, ['name' => 'Samsung', 'slug' => '   ']);
-        $result = app(UpdateCentralBrandAction::class)->handle($brand, ['name' => 'Samsung', 'slug' => null]);
+        $blankResult = app(UpdateCentralBrandAction::class)->handle($brand, ['name' => 'Samsung', 'slug' => '   ']);
+        $this->assertSame('samsung', $blankResult->slug);
 
-        $this->assertSame('samsung', $result->slug);
+        $nullResult = app(UpdateCentralBrandAction::class)->handle($brand, ['name' => 'Samsung', 'slug' => null]);
+        $this->assertSame('samsung', $nullResult->slug);
     }
 
     public function test_clears_nullable_metadata_with_blank_or_null_input(): void
@@ -258,15 +259,5 @@ class UpdateCentralBrandActionTest extends TestCase
         $this->assertValidationError('name', fn () => app(UpdateCentralBrandAction::class)->handle($brand, [
             'website_url' => 'https://example.com',
         ]));
-    }
-
-    private function assertValidationError(string $field, Closure $callback): void
-    {
-        try {
-            $callback();
-            $this->fail("Expected validation to fail for {$field}.");
-        } catch (ValidationException $exception) {
-            $this->assertArrayHasKey($field, $exception->errors());
-        }
     }
 }

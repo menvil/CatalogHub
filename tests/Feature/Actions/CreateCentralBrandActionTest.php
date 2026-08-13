@@ -5,14 +5,15 @@ namespace Tests\Feature\Actions;
 use App\Actions\CentralCatalog\CreateCentralBrandAction;
 use App\Enums\CentralBrandStatus;
 use App\Models\CentralCatalog\CentralBrand;
-use Closure;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Concerns\AssertsValidationErrors;
 use Tests\TestCase;
 
 class CreateCentralBrandActionTest extends TestCase
 {
+    use AssertsValidationErrors;
     use RefreshDatabase;
 
     public function test_creates_a_draft_brand_with_minimal_valid_input_and_generated_slug(): void
@@ -59,6 +60,7 @@ class CreateCentralBrandActionTest extends TestCase
         ]);
 
         $this->assertSame('华为', $brand->name);
+        $this->assertSame('huawei', $brand->slug);
     }
 
     public function test_blank_nullable_metadata_is_stored_as_null(): void
@@ -122,6 +124,24 @@ class CreateCentralBrandActionTest extends TestCase
         $this->assertDatabaseCount('central_brands', 1);
     }
 
+    public function test_collects_duplicate_name_and_slug_errors_in_one_validation_response(): void
+    {
+        CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
+
+        try {
+            app(CreateCentralBrandAction::class)->handle([
+                'name' => 'SAMSUNG',
+                'slug' => 'samsung',
+            ]);
+            $this->fail('Duplicate name and slug input was accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('name', $exception->errors());
+            $this->assertArrayHasKey('slug', $exception->errors());
+        }
+
+        $this->assertDatabaseCount('central_brands', 1);
+    }
+
     #[DataProvider('duplicateNameProvider')]
     public function test_rejects_exact_case_insensitive_normalized_duplicate_names(string $duplicate): void
     {
@@ -173,6 +193,8 @@ class CreateCentralBrandActionTest extends TestCase
             'name' => 'Sony',
             'website_url' => $websiteUrl,
         ]));
+
+        $this->assertDatabaseCount('central_brands', 0);
     }
 
     /** @return iterable<string, array{string}> */
@@ -193,6 +215,8 @@ class CreateCentralBrandActionTest extends TestCase
             'name' => 'Sony',
             'country_code' => $countryCode,
         ]));
+
+        $this->assertDatabaseCount('central_brands', 0);
     }
 
     /** @return iterable<string, array{string}> */
@@ -206,28 +230,20 @@ class CreateCentralBrandActionTest extends TestCase
         yield 'non ASCII' => ['БГ'];
     }
 
-    public function test_rejects_status_and_other_unsupported_write_fields(): void
+    #[DataProvider('unsupportedFieldProvider')]
+    public function test_rejects_status_and_other_unsupported_write_fields(array $input, string $field): void
     {
-        foreach ([
-            ['name' => 'Draft Brand', 'status' => CentralBrandStatus::Draft->value],
-            ['name' => 'Active Brand', 'status' => CentralBrandStatus::Active->value],
-            ['name' => 'Archived Brand', 'status' => CentralBrandStatus::Archived->value],
-            ['name' => 'Brand With ID', 'id' => 99],
-        ] as $input) {
-            $field = array_key_exists('status', $input) ? 'status' : 'id';
-            $this->assertValidationError($field, fn () => app(CreateCentralBrandAction::class)->handle($input));
-        }
+        $this->assertValidationError($field, fn () => app(CreateCentralBrandAction::class)->handle($input));
 
         $this->assertDatabaseCount('central_brands', 0);
     }
 
-    private function assertValidationError(string $field, Closure $callback): void
+    /** @return iterable<string, array{array<string, mixed>, string}> */
+    public static function unsupportedFieldProvider(): iterable
     {
-        try {
-            $callback();
-            $this->fail("Expected validation to fail for {$field}.");
-        } catch (ValidationException $exception) {
-            $this->assertArrayHasKey($field, $exception->errors());
-        }
+        yield 'draft status' => [['name' => 'Draft Brand', 'status' => CentralBrandStatus::Draft->value], 'status'];
+        yield 'active status' => [['name' => 'Active Brand', 'status' => CentralBrandStatus::Active->value], 'status'];
+        yield 'archived status' => [['name' => 'Archived Brand', 'status' => CentralBrandStatus::Archived->value], 'status'];
+        yield 'id' => [['name' => 'Brand With ID', 'id' => 99], 'id'];
     }
 }

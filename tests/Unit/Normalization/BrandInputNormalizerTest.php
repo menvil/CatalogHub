@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Normalization;
 
 use App\Support\Normalization\BrandInputNormalizer;
-use Tests\TestCase;
+use PHPUnit\Framework\TestCase;
 
 final class BrandInputNormalizerTest extends TestCase
 {
@@ -14,6 +14,10 @@ final class BrandInputNormalizerTest extends TestCase
         self::assertSame(
             'ASUS 华为 & Co.',
             BrandInputNormalizer::name("  ASUS \t 华为  &  Co.  "),
+        );
+        self::assertSame(
+            'LG Electronics',
+            BrandInputNormalizer::name("\u{00A0}\u{2003}LG\u{202F}\u{0085}Electronics\u{3000}"),
         );
     }
 

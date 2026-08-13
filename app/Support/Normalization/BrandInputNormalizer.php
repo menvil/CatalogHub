@@ -8,9 +8,9 @@ final class BrandInputNormalizer
 {
     public static function name(string $value): string
     {
-        $normalized = preg_replace('/\s+/u', ' ', $value) ?? $value;
+        $normalized = preg_replace('/[\p{Z}\x{0009}-\x{000D}\x{0085}]+/u', ' ', $value) ?? $value;
 
-        return trim($normalized);
+        return trim($normalized, ' ');
     }
 
     public static function nullableUrl(?string $value): ?string

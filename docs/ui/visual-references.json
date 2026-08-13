@@ -15,7 +15,7 @@
     {"screen_id":"Z-010","state":"wide","viewport":"1440x1200","fixture":"admin-components-v1","path":"tests/Visual/baselines/z-010__wide__1440x1200.png","sha256":"cce5a8fc9e825530ad22c1813e8b4b36d08426b232668b284440df4cafa4a0a9","approved_on":"2026-08-11"},
     {"screen_id":"Z-010","state":"catalog","viewport":"1440x1000","fixture":"admin-components-v1","path":"tests/Visual/baselines/z-010__catalog__1440x1000.png","sha256":"ccd3a31e64d0c262e80de76e2da3333b0f82197cb25f25c81fccb1707998f913","approved_on":"2026-08-12"},
     {"screen_id":"Z-010","state":"catalog","viewport":"390x844","fixture":"admin-components-v1","path":"tests/Visual/baselines/z-010__catalog__390x844.png","sha256":"534ae5d4ed6ede5884f4b5b61707e1d5cc52c5f8d68a24468468783cfb893398","approved_on":"2026-08-12"},
-    {"screen_id":"CA-011","state":"default","viewport":"1440x1000","fixture":"brands-list-v1","path":"tests/Visual/baselines/ca-011__default__1440x1000.png","sha256":"31aa93f4908ecb19f48d4a966d262e9d27b1c02de7bd76ca35a6d8b1fd1949c5","approved_on":"2026-08-13"},
-    {"screen_id":"CA-011","state":"default","viewport":"390x844","fixture":"brands-list-v1","path":"tests/Visual/baselines/ca-011__default__390x844.png","sha256":"d65258a86148c92f047634c0064d071bc71001b4e94c5a903981ee0d6edd567d","approved_on":"2026-08-13"}
+    {"screen_id":"CA-011","state":"default","viewport":"1440x1000","fixture":"brands-list-v1","path":"tests/Visual/baselines/ca-011__default__1440x1000.png","sha256":"c222946b4e32a455e8e5f6a8f03c6aa9ac533e546c3bb8b3496137c9020ce698","approved_on":"2026-08-13"},
+    {"screen_id":"CA-011","state":"default","viewport":"390x844","fixture":"brands-list-v1","path":"tests/Visual/baselines/ca-011__default__390x844.png","sha256":"17d0d48fc82be53988a4a931824c921f720dba998834f8f798a12059e00d30a8","approved_on":"2026-08-13"}
   ]
 }

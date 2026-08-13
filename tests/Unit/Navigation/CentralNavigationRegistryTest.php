@@ -96,7 +96,7 @@ final class CentralNavigationRegistryTest extends TestCase
         $registry = app(CentralNavigationRegistry::class);
         $catalogEditor = User::factory()->create(['role' => UserRole::CatalogEditor]);
         $translator = User::factory()->create(['role' => UserRole::Translator]);
-        $route = Route::getRoutes()->getByName('filament.central.resources.brands.index');
+        $route = Route::getRoutes()->getByName('central.brands.index');
 
         $this->assertNotNull($route);
         $this->app['request']->setRouteResolver(static fn () => $route);

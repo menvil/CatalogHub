@@ -19,29 +19,29 @@ test('CA-011 supports read-only brand discovery without browser errors', async (
     await expect(page.getByText('Samsung', { exact: true })).toBeVisible()
     await expect(page.getByText('Logitech', { exact: true })).toBeVisible()
 
-    const search = page.getByRole('searchbox', { name: 'Search', exact: true })
+    const search = page.getByRole('searchbox', { name: 'Search brands', exact: true })
     await search.fill('Samsung')
+    await page.getByRole('button', { name: 'Apply', exact: true }).click()
     await expect(page.getByText('Samsung', { exact: true })).toBeVisible()
     await expect(page.getByText('Sony', { exact: true })).toHaveCount(0)
     await search.fill('')
+    await page.getByRole('button', { name: 'Apply', exact: true }).click()
     await expect(page.getByText('Logitech', { exact: true })).toBeVisible()
 
-    await page.getByRole('button', { name: 'Filter', exact: true }).click()
-    await page.getByLabel('Status').selectOption('archived')
+    await page.locator('#brand-status').selectOption('archived')
     await page.getByRole('button', { name: 'Apply filters' }).click()
     await expect(page.getByText('Sony', { exact: true })).toBeVisible()
     await expect(page.getByText('Samsung', { exact: true })).toHaveCount(0)
 
-    await page.getByRole('button', { name: 'Remove all filters', exact: true }).click()
+    await page.getByRole('link', { name: 'Clear all', exact: true }).click()
     await expect(page.getByText('Samsung', { exact: true })).toBeVisible()
 
-    await page.getByRole('button', { name: 'Next' }).click()
+    await page.getByRole('link', { name: 'Next' }).click()
     await expect(page.getByText('Xiaomi', { exact: true })).toBeVisible()
     await expect(page.getByText('Acer', { exact: true })).toHaveCount(0)
-    await page.getByRole('button', { name: 'Previous' }).click()
+    await page.getByRole('link', { name: 'Previous' }).click()
 
-    const nameSort = page.getByRole('columnheader', { name: 'Name' }).getByRole('button')
-    await nameSort.click()
+    const nameSort = page.getByRole('columnheader', { name: /Name/ }).getByRole('link')
     await nameSort.click()
     await expect(page.getByText('Xiaomi', { exact: true })).toBeVisible()
 
@@ -66,7 +66,7 @@ test('CA-011 remains usable at 390px without page-level overflow', async ({ page
     await page.goto('/admin/central/brands')
 
     await expect(page.getByRole('heading', { name: 'Brands', exact: true })).toBeVisible()
-    await expect(page.getByRole('searchbox', { name: 'Search', exact: true })).toBeVisible()
+    await expect(page.getByRole('searchbox', { name: 'Search brands', exact: true })).toBeVisible()
     await expect(page.getByRole('columnheader', { name: 'Name' })).toBeVisible()
     await expect(page.getByRole('columnheader', { name: 'Status' })).toBeVisible()
     await expect(page.getByText('Samsung', { exact: true })).toBeVisible()
@@ -75,12 +75,12 @@ test('CA-011 remains usable at 390px without page-level overflow', async ({ page
         { message: 'CA-011 must not introduce horizontal page overflow at 390px.' },
     ).toBe(true)
 
-    await page.getByRole('button', { name: 'Expand sidebar' }).click()
-    await expect(page.getByRole('navigation', { name: 'Sidebar navigation' }).getByRole('link', { name: 'Brands', exact: true })).toBeVisible()
-    await page.getByRole('button', { name: 'Collapse sidebar' }).click()
+    await page.getByRole('button', { name: 'Open navigation' }).click()
+    await expect(page.getByRole('navigation', { name: 'Central Admin sections' }).getByRole('link', { name: 'Brands', exact: true })).toBeVisible()
+    await page.getByRole('complementary', { name: 'Central Admin navigation' }).getByLabel('Close navigation').click()
 
-    await page.getByRole('button', { name: 'Filter', exact: true }).click()
-    await expect(page.getByLabel('Status')).toBeVisible()
+    await page.getByRole('button', { name: 'Filters', exact: true }).click()
+    await expect(page.locator('#brand-status-trigger')).toBeVisible()
 
     assertNoPageErrors()
 })

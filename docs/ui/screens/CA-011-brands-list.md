@@ -19,7 +19,7 @@ reference_version: v1
 
 ## Contract
 
-The read-only list shows canonical Brand name, slug, lifecycle status, country, website, and a stable absolute updated date. Search covers name and slug, the status filter covers all three lifecycle values, and sorting and pagination remain database-backed. The empty database and filtered-empty results use distinct copy. No write, row-link, or bulk action is exposed.
+The read-only list composes the canonical Foundation components demonstrated by the Central Component Gallery: page header, table toolbar, filter bar, active filters, data table, status badge, pagination, and distinct screen states. It shows canonical Brand name, slug, lifecycle status, country, website, and a stable absolute updated date. Search covers name and slug, the status filter covers all three lifecycle values, and sorting and pagination remain database-backed. No write, row-link, or bulk action is exposed.
 
 The existing `catalog.products.manage` permission is reused until Brand-specific permissions are introduced in Phase 8. Website links retain their stored HTTP(S) URL and open in a new tab. Status labels communicate state in text as well as color.
 

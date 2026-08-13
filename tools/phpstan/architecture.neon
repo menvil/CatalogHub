@@ -120,6 +120,12 @@ parameters:
                 status: approved
         paginationBoundaries:
             -
+                class: App\Queries\CentralCatalog\CentralBrandListQuery
+                method: paginate
+                uniqueOrder: [central_brands.id]
+                behaviorTests: [tests/Feature/Central/CentralBrandListTest.php]
+                status: approved
+            -
                 class: App\Queries\Media\MediaLibraryQuery
                 method: paginate
                 uniqueOrder: [media_assets.id DESC]

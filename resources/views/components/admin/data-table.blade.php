@@ -76,6 +76,8 @@
                         <td class="px-3 py-2 text-admin-text {{ $alignmentClasses[$column['align'] ?? 'start'] }} {{ $responsiveClass }}">
                             @if ($type === 'status')
                                 <x-admin.status-badge :label="$value['label']" :variant="$value['variant']" size="sm" />
+                            @elseif ($type === 'actions')
+                                <x-admin.row-actions :row-id="$identifier" :actions="is_array($value) ? $value : []" />
                             @elseif ($safeLink)
                                 <a
                                     href="{{ $value['url'] }}"

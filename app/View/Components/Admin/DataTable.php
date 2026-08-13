@@ -68,7 +68,7 @@ final class DataTable extends Component
                 throw new InvalidArgumentException("Unsupported data table responsive breakpoint [{$responsive}].");
             }
 
-            if (! in_array($type, ['text', 'status', 'link'], true)) {
+            if (! in_array($type, ['text', 'status', 'link', 'actions'], true)) {
                 throw new InvalidArgumentException("Unsupported data table cell type [{$type}].");
             }
 

@@ -14,19 +14,21 @@ final class ComponentGalleryVisualTest extends TestCase
 
     private const MAX_MEAN_CHANNEL_DIFFERENCE = 0.04;
 
+    // Linux and macOS rasterize the text-dense mobile states slightly differently.
+    private const MAX_MOBILE_MEAN_CHANNEL_DIFFERENCE = 0.045;
+
     /** @var array<string, array{width: int, height: int, section: string, maxDifference?: float}> */
     private const COMPONENT_STATES = [
         'forms-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'forms'],
-        // Linux and macOS rasterize the text-dense mobile states slightly differently.
-        'forms-mobile' => ['width' => 360, 'height' => 900, 'section' => 'forms', 'maxDifference' => 0.045],
+        'forms-mobile' => ['width' => 360, 'height' => 900, 'section' => 'forms', 'maxDifference' => self::MAX_MOBILE_MEAN_CHANNEL_DIFFERENCE],
         'tables-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'tables'],
-        'tables-mobile' => ['width' => 360, 'height' => 900, 'section' => 'tables'],
+        'tables-mobile' => ['width' => 360, 'height' => 900, 'section' => 'tables', 'maxDifference' => self::MAX_MOBILE_MEAN_CHANNEL_DIFFERENCE],
         'feedback-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'feedback'],
-        'feedback-mobile' => ['width' => 360, 'height' => 900, 'section' => 'feedback', 'maxDifference' => 0.045],
+        'feedback-mobile' => ['width' => 360, 'height' => 900, 'section' => 'feedback', 'maxDifference' => self::MAX_MOBILE_MEAN_CHANNEL_DIFFERENCE],
         'states-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'states'],
-        'states-mobile' => ['width' => 360, 'height' => 900, 'section' => 'states'],
+        'states-mobile' => ['width' => 360, 'height' => 900, 'section' => 'states', 'maxDifference' => self::MAX_MOBILE_MEAN_CHANNEL_DIFFERENCE],
         'actions-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'actions'],
-        'actions-mobile' => ['width' => 360, 'height' => 900, 'section' => 'actions'],
+        'actions-mobile' => ['width' => 360, 'height' => 900, 'section' => 'actions', 'maxDifference' => self::MAX_MOBILE_MEAN_CHANNEL_DIFFERENCE],
     ];
 
     public function test_approved_gallery_reference_checksum_is_unchanged(): void

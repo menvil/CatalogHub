@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Enums\CentralBrandStatus;
 use App\Models\CentralCatalog\CentralBrand;
+use App\Support\Normalization\BrandInputNormalizer;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -21,6 +22,8 @@ class CentralBrandFactory extends Factory
 
         return [
             'name' => $name,
+            'normalized_name' => fn (array $attributes): string => BrandInputNormalizer::nameIdentity((string) $attributes['name']),
+            'normalized_name_hash' => fn (array $attributes): string => BrandInputNormalizer::nameIdentityHash((string) $attributes['name']),
             'slug' => $slug,
             'status' => CentralBrandStatus::default(),
             'website_url' => null,

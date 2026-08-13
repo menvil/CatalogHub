@@ -19,7 +19,7 @@ trait ValidatesCentralBrandInput
 
     /**
      * @param  array<string, mixed>  $data
-     * @return array{name: string, slug: string, website_url: string|null, country_code: string|null}
+     * @return array{name: string, normalized_name: string, normalized_name_hash: string, slug: string, website_url: string|null, country_code: string|null}
      */
     private function validatedBrandInput(array $data, ?CentralBrand $brand = null): array
     {
@@ -67,10 +67,37 @@ trait ValidatesCentralBrandInput
 
         return [
             'name' => (string) $normalized['name'],
+            'normalized_name' => BrandInputNormalizer::nameIdentity((string) $normalized['name']),
+            'normalized_name_hash' => BrandInputNormalizer::nameIdentityHash((string) $normalized['name']),
             'slug' => (string) $normalized['slug'],
             'website_url' => isset($normalized['website_url']) ? (string) $normalized['website_url'] : null,
             'country_code' => isset($normalized['country_code']) ? (string) $normalized['country_code'] : null,
         ];
+    }
+
+    /**
+     * @param  array{name: string, normalized_name: string, normalized_name_hash: string, slug: string, website_url: string|null, country_code: string|null}  $validated
+     * @return array<string, string>
+     */
+    private function uniqueConstraintValidationErrors(array $validated, ?CentralBrand $brand = null): array
+    {
+        $errors = [];
+
+        if ((new DuplicateCentralBrandNameQuery)->exists($validated['name'], $brand)) {
+            $errors['name'] = 'A brand with this canonical name already exists.';
+        }
+
+        $slugQuery = CentralBrand::query()->where('slug', $validated['slug']);
+
+        if ($brand !== null) {
+            $slugQuery->where($brand->getKeyName(), '!=', $brand->getKey());
+        }
+
+        if ($slugQuery->exists()) {
+            $errors['slug'] = 'The slug has already been taken.';
+        }
+
+        return $errors;
     }
 
     /** @param array<string, mixed> $data */

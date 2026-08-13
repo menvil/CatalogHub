@@ -31,6 +31,8 @@ class UpdateCentralBrandActionTest extends TestCase
 
         $this->assertTrue($result->is($brand));
         $this->assertSame('Logitech International', $result->name);
+        $this->assertSame('logitech international', $result->normalized_name);
+        $this->assertSame(hash('sha256', 'logitech international'), $result->normalized_name_hash);
         $this->assertSame('logitech-international', $result->slug);
         $this->assertSame('https://www.logitech.com/en-us/', $result->website_url);
         $this->assertSame('CH', $result->country_code);
@@ -129,9 +131,9 @@ class UpdateCentralBrandActionTest extends TestCase
     }
 
     #[DataProvider('duplicateNameProvider')]
-    public function test_rejects_a_normalized_name_owned_by_another_brand(string $duplicate): void
+    public function test_rejects_a_normalized_name_owned_by_another_brand(string $existing, string $duplicate): void
     {
-        CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
+        CentralBrand::factory()->create(['name' => $existing, 'slug' => 'existing-brand']);
         $brand = CentralBrand::factory()->create(['name' => 'LG', 'slug' => 'lg']);
 
         $this->assertValidationError('name', fn () => app(UpdateCentralBrandAction::class)->handle($brand, [
@@ -141,12 +143,14 @@ class UpdateCentralBrandActionTest extends TestCase
         $this->assertSame('LG', $brand->fresh()->name);
     }
 
-    /** @return iterable<string, array{string}> */
+    /** @return iterable<string, array{string, string}> */
     public static function duplicateNameProvider(): iterable
     {
-        yield 'lowercase' => ['samsung'];
-        yield 'uppercase' => ['SAMSUNG'];
-        yield 'whitespace' => [' Samsung '];
+        yield 'lowercase' => ['Samsung', 'samsung'];
+        yield 'uppercase' => ['Samsung', 'SAMSUNG'];
+        yield 'whitespace' => ['Samsung', ' Samsung '];
+        yield 'Unicode case fold' => ['ÉLECTRO', 'électro'];
+        yield 'canonically equivalent Unicode' => ['ÉLECTRO', "e\u{0301}lectro"];
     }
 
     public function test_allows_the_current_brands_own_normalized_name_and_similar_names(): void
@@ -159,6 +163,26 @@ class UpdateCentralBrandActionTest extends TestCase
 
         $this->assertSame('Samsung Display', $result->name);
         $this->assertSame('samsung', $result->slug);
+    }
+
+    public function test_allows_the_current_brands_own_unicode_normalized_name(): void
+    {
+        $brand = CentralBrand::factory()->create(['name' => 'ÉLECTRO', 'slug' => 'electro']);
+
+        $result = app(UpdateCentralBrandAction::class)->handle($brand, ['name' => 'électro']);
+
+        $this->assertSame('électro', $result->name);
+        $this->assertSame($brand->getKey(), $result->getKey());
+    }
+
+    public function test_unicode_duplicate_guard_remains_accent_sensitive(): void
+    {
+        CentralBrand::factory()->create(['name' => 'ÉLECTRO', 'slug' => 'electro-accented']);
+        $brand = CentralBrand::factory()->create(['name' => 'Other', 'slug' => 'other']);
+
+        $result = app(UpdateCentralBrandAction::class)->handle($brand, ['name' => 'Electro']);
+
+        $this->assertSame('Electro', $result->name);
     }
 
     #[DataProvider('invalidWebsiteProvider')]

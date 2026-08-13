@@ -5,6 +5,8 @@ namespace App\Actions\CentralCatalog;
 use App\Actions\CentralCatalog\Concerns\ValidatesCentralBrandInput;
 use App\Enums\CentralBrandStatus;
 use App\Models\CentralCatalog\CentralBrand;
+use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Validation\ValidationException;
 
 final class CreateCentralBrandAction
 {
@@ -15,12 +17,22 @@ final class CreateCentralBrandAction
     {
         $validated = $this->validatedBrandInput($data);
 
-        return CentralBrand::query()->create([
-            'name' => $validated['name'],
-            'slug' => $validated['slug'],
-            'status' => CentralBrandStatus::Draft,
-            'website_url' => $validated['website_url'],
-            'country_code' => $validated['country_code'],
-        ]);
+        try {
+            $brand = new CentralBrand;
+            $brand->forceFill([
+                ...$validated,
+                'status' => CentralBrandStatus::Draft,
+            ])->saveOrFail();
+
+            return $brand;
+        } catch (UniqueConstraintViolationException $exception) {
+            $errors = $this->uniqueConstraintValidationErrors($validated);
+
+            if ($errors !== []) {
+                throw ValidationException::withMessages($errors);
+            }
+
+            throw $exception;
+        }
     }
 }

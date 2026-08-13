@@ -47,14 +47,6 @@ parameters:
     architecture:
         rawSqlExceptions:
             -
-                class: App\Queries\CentralCatalog\DuplicateCentralBrandNameQuery
-                ownerMethods: [exists]
-                methods: [whereRaw]
-                reason: 'Portable case-insensitive exact canonical Brand name comparison requires LOWER with a bound normalized name.'
-                bindings: required
-                behaviorTests: [tests/Feature/Actions/CreateCentralBrandActionTest.php, tests/Feature/Actions/UpdateCentralBrandActionTest.php]
-                status: approved
-            -
                 class: App\Queries\Translations\MissingTranslationsQuery
                 ownerMethods: [get]
                 methods: [whereRaw]

@@ -34,4 +34,23 @@ final class BrandInputNormalizerTest extends TestCase
         self::assertNull(BrandInputNormalizer::countryCode('   '));
         self::assertNull(BrandInputNormalizer::countryCode(null));
     }
+
+    public function test_name_identity_uses_unicode_case_folding_and_canonical_composition(): void
+    {
+        self::assertSame('électro', BrandInputNormalizer::nameIdentity('ÉLECTRO'));
+        self::assertSame('électro', BrandInputNormalizer::nameIdentity("e\u{0301}lectro"));
+        self::assertNotSame(
+            BrandInputNormalizer::nameIdentity('Électro'),
+            BrandInputNormalizer::nameIdentity('Electro'),
+        );
+    }
+
+    public function test_name_identity_hash_is_stable_for_equivalent_unicode_names(): void
+    {
+        self::assertSame(
+            BrandInputNormalizer::nameIdentityHash('ÉLECTRO'),
+            BrandInputNormalizer::nameIdentityHash("e\u{0301}lectro"),
+        );
+        self::assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/', BrandInputNormalizer::nameIdentityHash('ÉLECTRO'));
+    }
 }

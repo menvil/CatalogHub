@@ -18,6 +18,7 @@ use App\Models\MediaAssignment;
 use App\Models\Site;
 use App\Models\SiteProduct;
 use App\Models\SiteProductProjection;
+use App\Support\Normalization\BrandInputNormalizer;
 use Database\Seeders\ImperialMeasurementUnitsSeeder;
 use Database\Seeders\MeasurementDimensionsSeeder;
 use Database\Seeders\MetricMeasurementUnitsSeeder;
@@ -95,7 +96,12 @@ class PublicDemoSeeder extends Seeder
         ] as $slug => $name) {
             $brands[$slug] = CentralBrand::query()->updateOrCreate(
                 ['slug' => $slug],
-                ['name' => $name, 'status' => CentralBrandStatus::Active],
+                [
+                    'name' => $name,
+                    'normalized_name' => BrandInputNormalizer::nameIdentity($name),
+                    'normalized_name_hash' => BrandInputNormalizer::nameIdentityHash($name),
+                    'status' => CentralBrandStatus::Active,
+                ],
             );
         }
 

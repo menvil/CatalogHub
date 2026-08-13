@@ -2,19 +2,23 @@
 
 namespace App\Queries\CentralCatalog;
 
-use App\Contracts\Persistence\RawSqlPersistenceBoundary;
 use App\Models\CentralCatalog\CentralBrand;
+use App\Support\Normalization\BrandInputNormalizer;
 
-final class DuplicateCentralBrandNameQuery implements RawSqlPersistenceBoundary
+final class DuplicateCentralBrandNameQuery
 {
     public function exists(string $normalizedName, ?CentralBrand $except = null): bool
     {
-        $query = CentralBrand::query()->whereRaw('LOWER(name) = LOWER(?)', [$normalizedName]);
+        $identity = BrandInputNormalizer::nameIdentity($normalizedName);
+        $query = CentralBrand::query()
+            ->where('normalized_name_hash', BrandInputNormalizer::nameIdentityHash($normalizedName));
 
         if ($except !== null) {
             $query->where($except->getKeyName(), '!=', $except->getKey());
         }
 
-        return $query->exists();
+        return $query
+            ->pluck('normalized_name')
+            ->contains(static fn (mixed $candidate): bool => is_string($candidate) && hash_equals($identity, $candidate));
     }
 }

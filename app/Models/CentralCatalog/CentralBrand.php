@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property CentralBrandStatus $status
+ * @property string $normalized_name
+ * @property string $normalized_name_hash
  * @property string|null $website_url
  * @property string|null $country_code
  */
@@ -22,6 +24,9 @@ final class CentralBrand extends Model
     use HasFactory;
 
     protected $table = 'central_brands';
+
+    /** @var list<string> */
+    protected $hidden = ['normalized_name', 'normalized_name_hash'];
 
     protected static function newFactory(): CentralBrandFactory
     {

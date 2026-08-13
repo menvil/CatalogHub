@@ -5,6 +5,7 @@ namespace Tests\Feature\Models;
 use App\Enums\CentralBrandStatus;
 use App\Models\CentralCatalog\CentralBrand;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class CentralBrandTest extends TestCase
@@ -34,9 +35,13 @@ class CentralBrandTest extends TestCase
 
     public function test_central_brand_status_defaults_to_draft(): void
     {
-        CentralBrand::query()->create([
+        DB::table('central_brands')->insert([
             'name' => 'LG',
+            'normalized_name' => 'lg',
+            'normalized_name_hash' => hash('sha256', 'lg'),
             'slug' => 'lg',
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         $this->assertSame(CentralBrandStatus::Draft, CentralBrand::first()->status);
@@ -96,7 +101,7 @@ class CentralBrandTest extends TestCase
 
     public function test_canonical_metadata_persists(): void
     {
-        $brand = CentralBrand::query()->create([
+        $brand = CentralBrand::factory()->create([
             'name' => 'Logitech',
             'slug' => 'logitech',
             'status' => CentralBrandStatus::Active,

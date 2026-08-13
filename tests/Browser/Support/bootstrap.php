@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Database\Seeders\FoundationDemoSeeder;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Artisan;
+use Tests\Support\BrandFormFixture;
 use Tests\Support\BrandListFixture;
 
 require dirname(__DIR__, 3).'/vendor/autoload.php';
@@ -22,3 +23,4 @@ if (Artisan::call('migrate:fresh', [
 }
 
 BrandListFixture::create();
+BrandFormFixture::create();

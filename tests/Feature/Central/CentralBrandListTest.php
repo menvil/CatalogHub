@@ -41,7 +41,7 @@ final class CentralBrandListTest extends TestCase
 
     public function test_ca_011_uses_the_foundation_screen_and_table_components(): void
     {
-        CentralBrand::factory()->active()->create([
+        $brand = CentralBrand::factory()->active()->create([
             'name' => 'Samsung',
             'slug' => 'samsung',
             'country_code' => 'KR',
@@ -61,7 +61,7 @@ final class CentralBrandListTest extends TestCase
             ->assertSee('data-admin-status-badge="success"', false)
             ->assertSee('Brands')
             ->assertSee('Canonical brands used across the central catalog.')
-            ->assertSeeInOrder(['Name', 'Slug', 'Status', 'Country', 'Website', 'Updated'])
+            ->assertSeeInOrder(['Name', 'Slug', 'Status', 'Country', 'Website', 'Updated', 'Actions'])
             ->assertSee('Samsung')
             ->assertSee('samsung')
             ->assertSee('Active')
@@ -70,7 +70,12 @@ final class CentralBrandListTest extends TestCase
             ->assertSee('Aug 13, 2026')
             ->assertSee('href="https://www.samsung.com/global/long-path"', false)
             ->assertSee('target="_blank"', false)
-            ->assertSee('rel="noopener noreferrer"', false);
+            ->assertSee('rel="noopener noreferrer"', false)
+            ->assertSee('Add Brand')
+            ->assertSee('href="/admin/central/brands/create"', false)
+            ->assertSee('data-admin-row-actions="'.$brand->getKey().'"', false)
+            ->assertSee('href="/admin/central/brands/'.$brand->getKey().'/edit"', false)
+            ->assertSee('Edit');
     }
 
     public function test_search_by_name_and_slug_is_database_backed_and_preserves_constraints(): void
@@ -184,40 +189,47 @@ final class CentralBrandListTest extends TestCase
 
     public function test_database_and_filtered_empty_states_use_foundation_state_components(): void
     {
-        $this->actingAs(User::factory()->create())
+        $emptyResponse = $this->actingAs(User::factory()->create())
             ->get(route('central.brands.index'))
             ->assertOk()
             ->assertSee('data-ui-screen-state="empty"', false)
             ->assertSee('No brands yet')
             ->assertSee('Canonical brands will appear here once they are created.')
-            ->assertDontSee('Create Brand');
+            ->assertSee('Add Brand')
+            ->assertSee('href="/admin/central/brands/create"', false);
+
+        $this->assertSame(2, substr_count((string) $emptyResponse->getContent(), 'href="/admin/central/brands/create"'));
 
         CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
 
-        $this->get(route('central.brands.index', ['q' => 'zzzz-not-existing-brand']))
+        $response = $this->get(route('central.brands.index', ['q' => 'zzzz-not-existing-brand']))
             ->assertOk()
             ->assertSee('data-ui-screen-state="filtered-empty"', false)
             ->assertSee('No matching brands')
             ->assertSee('No brands match your current search or filters.')
             ->assertDontSee('Canonical brands will appear here once they are created.');
+
+        $this->assertSame(1, substr_count((string) $response->getContent(), 'href="/admin/central/brands/create"'));
     }
 
-    public function test_brand_list_exposes_no_mutation_actions_or_legacy_routes(): void
+    public function test_brand_list_exposes_only_create_and_edit_actions_and_no_legacy_routes(): void
     {
         $brand = CentralBrand::factory()->create();
         $this->actingAs(User::factory()->create())
             ->get(route('central.brands.index'))
             ->assertOk()
-            ->assertDontSee('Create Brand')
-            ->assertDontSee('Edit Brand')
+            ->assertSee('Add Brand')
+            ->assertSee('Edit')
             ->assertDontSee('Archive Brand')
+            ->assertDontSee('Restore Brand')
+            ->assertDontSee('Activate Brand')
             ->assertDontSee('Delete Brand');
 
         $this->assertFalse(Route::has('filament.central.resources.brands.index'));
         $this->assertFalse(Route::has('filament.central.resources.brands.create'));
         $this->assertFalse(Route::has('filament.central.resources.brands.edit'));
-        $this->get('/admin/central/brands/create')->assertNotFound();
-        $this->get("/admin/central/brands/{$brand->getKey()}/edit")->assertNotFound();
+        $this->get('/admin/central/brands/create')->assertOk();
+        $this->get("/admin/central/brands/{$brand->getKey()}/edit")->assertOk();
         $this->get('/admin/central/central-brands/create')->assertNotFound();
     }
 

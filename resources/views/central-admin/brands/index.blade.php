@@ -15,6 +15,9 @@
             'country' => $brand->country_code ?? '—',
             'website' => $brand->website_url === null ? '—' : ['label' => $websiteLabel, 'url' => $brand->website_url],
             'updated' => $brand->updated_at?->format('M j, Y') ?? '—',
+            'actions' => [
+                ['label' => 'Edit', 'url' => route('central.brands.edit', $brand, absolute: false)],
+            ],
         ];
     })->all();
     $brandListUrl = route('central.brands.index', absolute: false);
@@ -32,6 +35,7 @@
         ['key' => 'country', 'label' => 'Country', 'responsive' => 'md'],
         ['key' => 'website', 'label' => 'Website', 'type' => 'link', 'responsive' => 'lg'],
         ['key' => 'updated', 'label' => 'Updated', 'sortUrl' => $sortUrl('updated_at'), 'sortDirection' => $filters->sort === 'updated_at' ? $filters->direction : null, 'responsive' => 'md'],
+        ['key' => 'actions', 'label' => 'Actions', 'type' => 'actions', 'align' => 'end'],
     ];
     $activeFilters = [];
     if ($filters->status !== null) {
@@ -50,7 +54,11 @@
             title="Brands"
             description="Canonical brands used across the central catalog."
             :breadcrumbs="[['label' => 'Central Admin', 'url' => route('filament.central.pages.home', absolute: false)], ['label' => 'Brands']]"
-        />
+        >
+            <x-slot:actions>
+                <x-ui.button :href="route('central.brands.create', absolute: false)">Add Brand</x-ui.button>
+            </x-slot:actions>
+        </x-admin.page-header>
 
         <x-admin.card>
             <div class="space-y-admin-card">
@@ -84,6 +92,8 @@
                             id="brands-empty"
                             title="No brands yet"
                             message="Canonical brands will appear here once they are created."
+                            action-label="Add Brand"
+                            :action-url="route('central.brands.create', absolute: false)"
                         />
                     @endif
                 @else

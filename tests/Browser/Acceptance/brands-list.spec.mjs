@@ -49,7 +49,10 @@ test('CA-011 supports read-only brand discovery without browser errors', async (
     const wideTable = await page.locator('[data-screen-region="brands-table"]').evaluate((element) => element.getBoundingClientRect().width)
     expect(wideTable).toBeGreaterThan(1500)
 
-    for (const action of ['Create Brand', 'Edit', 'Archive', 'Restore', 'Activate', 'Delete']) {
+    await expect(page.getByRole('link', { name: 'Add Brand', exact: true })).toBeVisible()
+    expect(await page.getByRole('link', { name: 'Edit', exact: true }).count()).toBeGreaterThan(0)
+
+    for (const action of ['Archive', 'Restore', 'Activate', 'Delete']) {
         await expect(page.getByRole('button', { name: action, exact: true })).toHaveCount(0)
         await expect(page.getByRole('link', { name: action, exact: true })).toHaveCount(0)
     }

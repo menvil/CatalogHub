@@ -23,6 +23,8 @@ final class DataDisplayTest extends TestCase
         $this->assertStringContainsString('data-ui-status="success"', $html);
         $this->assertStringContainsString('BR-0042', $html);
         $this->assertStringContainsString('aria-label="Brand code: BR-0042"', $html);
+        $this->assertStringContainsString('items-center', $html);
+        $this->assertStringContainsString('leading-none', $html);
         $this->assertStringContainsString('href="/sites/tech-de"', $html);
         $this->assertStringContainsString('Not available', $html);
     }

@@ -7,7 +7,7 @@
             @if (filled($error)) aria-invalid="true" @endif @if ($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
             {{ $attributes->class('peer sr-only') }}>
         <span aria-hidden="true" data-ui-toggle-indicator
-            class="relative inline-flex h-6 w-11 shrink-0 rounded-full border border-admin-border bg-admin-surface-muted after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-admin-muted after:shadow-sm after:content-[''] after:transition-transform peer-checked:border-admin-primary peer-checked:bg-admin-primary peer-checked:after:translate-x-5 peer-checked:after:bg-white peer-focus-visible:ring-2 peer-focus-visible:ring-admin-primary/30 peer-focus-visible:ring-offset-2"></span>
+            class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-admin-border bg-admin-surface-muted after:absolute after:left-0.5 after:top-1/2 after:h-5 after:w-5 after:-translate-y-1/2 after:rounded-full after:bg-admin-muted after:shadow-sm after:content-[''] after:transition-transform peer-checked:border-admin-primary peer-checked:bg-admin-primary peer-checked:after:translate-x-5 peer-checked:after:bg-white peer-focus-visible:ring-2 peer-focus-visible:ring-admin-primary/30 peer-focus-visible:ring-offset-2"></span>
     </label>
     @if (filled($help))<p id="{{ $id }}-help" class="text-xs text-admin-muted">{{ $help }}</p>@endif
     @if (filled($error))<p id="{{ $id }}-error" class="text-xs font-medium text-admin-danger" role="alert">{{ $error }}</p>@endif

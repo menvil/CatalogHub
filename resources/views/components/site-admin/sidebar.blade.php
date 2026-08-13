@@ -19,19 +19,15 @@
     data-site-sidebar-mobile-open="{{ $mobileOpen ? 'true' : 'false' }}"
     data-site-sidebar-preference="local"
 >
-    <div class="flex min-h-16 items-center justify-between gap-2 border-b border-admin-border px-admin-card py-3">
+    <div class="flex h-[var(--height-foundation-header)] items-center justify-between gap-2 border-b border-admin-border px-admin-card" data-admin-sidebar-header>
         <div class="site-sidebar-label min-w-0">
             <p class="text-xs font-semibold uppercase tracking-wide text-admin-muted">CatalogHub</p>
-            <p class="mt-1 truncate text-lg font-semibold text-admin-text">Site Admin</p>
-            @if ($currentSite instanceof \App\Models\Site)
-                <p
-                    class="mt-1 truncate text-xs font-medium text-admin-muted"
-                    data-site-sidebar-current
-                    data-site-id="{{ $currentSite->getKey() }}"
-                >
-                    {{ $currentSite->name }}
-                </p>
-            @endif
+            <p class="truncate text-lg font-semibold text-admin-text">
+                Site Admin
+                @if ($currentSite instanceof \App\Models\Site)
+                    <span class="text-sm font-medium text-admin-muted" data-site-sidebar-current data-site-id="{{ $currentSite->getKey() }}">· {{ $currentSite->name }}</span>
+                @endif
+            </p>
         </div>
         <span class="site-sidebar-collapsed-mark text-sm font-semibold text-admin-text" aria-hidden="true">CH</span>
 

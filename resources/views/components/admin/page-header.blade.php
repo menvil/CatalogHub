@@ -20,7 +20,7 @@
     </div>
 
     @if (isset($actions) && $actions->isNotEmpty())
-        <div class="flex shrink-0 flex-wrap items-center gap-admin-field" data-page-actions>
+        <div class="flex w-full min-w-0 flex-wrap items-center gap-admin-field md:w-auto md:shrink-0" data-page-actions>
             {{ $actions }}
         </div>
     @endif

@@ -47,6 +47,10 @@ export function bootAdminSelects() {
     document.addEventListener('click', (event) => {
         if (! (event.target instanceof Element)) return;
 
+        document.querySelectorAll('[data-ui-checkbox-dropdown] details[open]').forEach((details) => {
+            if (! details.contains(event.target)) details.removeAttribute('open');
+        });
+
         const trigger = event.target.closest('[data-ui-select-trigger]');
         if (trigger) {
             const select = trigger.closest('[data-ui-select]');
@@ -87,5 +91,13 @@ export function bootAdminSelects() {
             event.preventDefault();
             selectOption(options[current]);
         }
+    });
+
+    document.addEventListener('change', (event) => {
+        if (! (event.target instanceof HTMLInputElement) || event.target.type !== 'checkbox') return;
+        const dropdown = event.target.closest('[data-ui-checkbox-dropdown]');
+        const count = dropdown?.querySelector('[data-ui-checkbox-dropdown-count]');
+        if (! dropdown || ! count) return;
+        count.textContent = String(dropdown.querySelectorAll('input[type="checkbox"]:checked').length);
     });
 }

@@ -34,6 +34,9 @@ Central Admin uses Filament's full-width application workspace with the standard
 responsive page padding. Individual pages and components may apply a local width
 constraint when readability requires it; tables and complex editors should not
 restore a global narrow container.
+The desktop sidebar identity row and application header share the same foundation
+header height; the mobile user action collapses to its icon so that alignment is
+preserved without horizontal overflow.
 
 ## Responsive states
 

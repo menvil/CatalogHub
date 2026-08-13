@@ -26,5 +26,7 @@ perform no persistence or destructive side effects.
 The catalog groups buttons/actions, form controls, tables, status/data indicators,
 layout compositions, feedback states, overlays, and the existing higher-level
 localized field, unit/value, media, diff, stepper/import, and review components.
+Form controls include visible, dropdown, and scrollable checkbox multi-selection
+patterns plus the shared date and date-time calendar popup.
 It is intentionally a compact visual reference rather than a source browser or a
 second component framework.

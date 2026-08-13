@@ -21,6 +21,11 @@ test('Central Admin foundation flow covers login, shell, gallery, user menu, and
 
     const desktopWorkspace = await page.locator('[data-admin-workspace]').evaluate((element) => element.getBoundingClientRect().width)
     expect(desktopWorkspace).toBeGreaterThan(1050)
+    const [shellHeaderHeight, sidebarHeaderHeight] = await Promise.all([
+        page.locator('[data-admin-shell-header]').evaluate((element) => element.getBoundingClientRect().height),
+        page.locator('[data-admin-sidebar-header]').evaluate((element) => element.getBoundingClientRect().height),
+    ])
+    expect(shellHeaderHeight).toBe(sidebarHeaderHeight)
 
     await page.locator('[data-central-user-menu] summary').click()
     await expect(page.locator('[data-central-user-menu]')).toContainText(foundationDemo.centralAdmin)
@@ -49,10 +54,24 @@ test('Central Admin foundation flow covers login, shell, gallery, user menu, and
     await expect(page.locator('#gallery-status')).toHaveValue('archived')
     await page.locator('[data-ui-checkbox-list="gallery-market-checkboxes"] label').last().click()
     await expect(page.locator('#gallery-market-checkboxes-2')).toBeChecked()
+    await page.locator('[data-ui-checkbox-dropdown="gallery-market-dropdown"] summary').click()
+    await expect(page.locator('[data-ui-checkbox-dropdown="gallery-market-dropdown"] [role="listbox"]')).toBeVisible()
+    await page.locator('#gallery-market-dropdown-2').check()
+    await expect(page.locator('[data-ui-checkbox-dropdown-count]')).toHaveText('3')
+    await page.locator('#gallery-market-scroll-4').check()
+    await expect(page.locator('#gallery-market-scroll-4')).toBeChecked()
+    await page.locator('#gallery-publish-date-trigger').click()
+    await expect(page.locator('#gallery-publish-date-panel')).toBeVisible()
+    await page.locator('#gallery-publish-date-panel [data-ui-date-picker-day="2026-08-13"]').click()
+    await expect(page.locator('#gallery-publish-date')).toHaveValue('2026-08-13')
+    await page.locator('#gallery-publish-date-panel [data-ui-date-picker-done]').click()
     for (const selector of [
         '[data-ui-select-trigger]',
         '[data-ui-toggle-hit-area]',
         '[data-ui-date-picker-trigger]',
+        '[data-ui-date-picker-trigger] [data-foundation-icon="calendar-days"]',
+        '[data-ui-checkbox-dropdown] summary',
+        '[data-ui-scrollable-checkbox-list] label',
         '[data-ui-checkbox-list="gallery-market-checkboxes"] label',
     ]) {
         await expect(page.locator(selector).first()).toHaveCSS('cursor', 'pointer')
@@ -73,6 +92,25 @@ test('Central Admin foundation flow covers login, shell, gallery, user menu, and
         { message: 'Form controls must not introduce horizontal page overflow at 360px.' },
     ).toBe(true)
     await captureAcceptanceScreenshot(page, testInfo, 'central-component-gallery-forms-mobile')
+
+    for (const section of ['actions', 'forms', 'tables', 'indicators', 'layout', 'feedback', 'overlays', 'advanced']) {
+        await page.goto(`/admin/central/component-gallery?mode=components&section=${section}`)
+        await expect.poll(
+            () => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
+            { message: `Gallery section ${section} must not overflow at 360px.` },
+        ).toBe(true)
+        const navigationBounds = await page.getByRole('group', { name: 'Gallery sections' }).evaluate((group) => {
+            const first = group.firstElementChild?.getBoundingClientRect()
+            const last = group.lastElementChild?.getBoundingClientRect()
+            const container = group.getBoundingClientRect()
+            return first && last
+                ? { firstLeft: first.left, lastRight: last.right, containerLeft: container.left, containerRight: container.right }
+                : null
+        })
+        expect(navigationBounds).not.toBeNull()
+        expect(navigationBounds.firstLeft).toBeGreaterThanOrEqual(navigationBounds.containerLeft)
+        expect(navigationBounds.lastRight).toBeLessThanOrEqual(navigationBounds.containerRight)
+    }
 
     await page.setViewportSize({ width: 1920, height: 1080 })
     await page.goto('/admin/central')

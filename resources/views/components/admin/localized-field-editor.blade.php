@@ -74,7 +74,7 @@
                 <textarea
                     id="{{ $inputId }}"
                     rows="3"
-                    class="mt-3 w-full resize-y rounded-admin-input border border-admin-border bg-admin-surface px-3 py-2 text-sm text-admin-text placeholder:text-admin-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary"
+                    class="mt-3 w-full resize-y rounded-admin-input border border-admin-border bg-admin-surface px-3 py-2 text-sm text-admin-text placeholder:text-admin-muted focus:border-admin-primary focus:outline-none focus:ring-2 focus:ring-admin-primary/20"
                     placeholder="Missing {{ $fieldName }} value"
                 >{{ $value }}</textarea>
 

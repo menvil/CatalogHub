@@ -14,7 +14,7 @@
         :breadcrumbs="[['label' => 'Central Admin', 'url' => '/admin/central'], ['label' => 'Design system'], ['label' => $componentSection === 'catalog' ? 'Component catalog' : ucfirst($componentSection)]]"
     >
         <x-slot:actions>
-            <x-ui.action-group label="Gallery sections" class="flex-wrap">
+            <x-ui.action-group label="Gallery sections" align="start" class="flex-wrap">
                 @foreach (['actions', 'forms', 'tables', 'indicators', 'layout', 'feedback', 'overlays', 'advanced'] as $section)
                     <x-ui.button variant="{{ $componentSection === $section ? 'primary' : 'secondary' }}" href="{{ $galleryUrl }}?mode=components&section={{ $section }}">{{ ucfirst($section) }}</x-ui.button>
                 @endforeach
@@ -57,11 +57,13 @@
                 <x-ui.form.select id="gallery-status" name="status" label="Status" :options="$adminComponentFixture['options']" selected="active" />
                 <x-ui.form.multi-select id="gallery-markets" name="locales" label="Locales — compact multi-select" :options="['de-DE' => 'German (Germany)', 'en-DE' => 'English (Germany)']" :selected="['de-DE']" help="Compact native variant for short lists." />
                 <x-ui.form.checkbox-list id="gallery-market-checkboxes" name="markets" label="Markets — Checkbox list" :options="['de' => 'Germany', 'at' => 'Austria', 'ch' => 'Switzerland']" :selected="['de', 'at']" help="Preferred when all choices should remain visible." />
+                <x-ui.form.checkbox-dropdown id="gallery-market-dropdown" name="market_dropdown" label="Markets — Checkbox dropdown" :options="['de' => 'Germany', 'at' => 'Austria', 'ch' => 'Switzerland', 'nl' => 'Netherlands']" :selected="['de', 'at']" help="Compact dropdown for multiple checked choices." />
+                <x-ui.form.scrollable-checkbox-list id="gallery-market-scroll" name="market_scroll" label="Markets — Scrollable checkbox list" :options="['de' => 'Germany', 'at' => 'Austria', 'ch' => 'Switzerland', 'nl' => 'Netherlands', 'be' => 'Belgium', 'fr' => 'France', 'it' => 'Italy']" :selected="['de', 'ch']" help="Bounded list for longer option sets." />
                 <x-ui.form.checkbox id="gallery-featured" name="featured" label="Featured brand" checked help="Uses a native checkbox." />
                 <x-ui.form.toggle id="gallery-visible" name="visible" label="Public visibility" checked />
                 <x-ui.form.radio-group id="gallery-source" name="source" label="Data source" :options="['manual' => 'Manual', 'import' => 'Import']" selected="manual" />
-                <x-ui.form.date-picker id="gallery-publish-date" name="publish_date" label="Publish date — Date picker" value="2026-08-12" help="Date-only calendar choice." />
-                <x-ui.form.date-time id="gallery-publish-at" name="publish_at" label="Publish at" value="2026-08-05T13:15" timezone="Europe/Sofia" />
+                <x-ui.form.date-picker id="gallery-publish-date" name="publish_date" label="Publish date — Calendar picker" value="2026-08-12" help="Modern date-only calendar popup." />
+                <x-ui.form.date-time id="gallery-publish-at" name="publish_at" label="Publish at — Date & time picker" value="2026-08-05T13:15" timezone="Europe/Sofia" />
                 <x-ui.form.file-input id="gallery-file" name="file" label="Reference file" accept="image/png,image/jpeg" hint="PNG or JPEG; selection only, no upload occurs." />
                 <x-ui.form.input id="gallery-readonly" name="readonly" label="Read-only field" value="Immutable source value" readonly />
                 <x-ui.form.input id="gallery-disabled" name="disabled" label="Disabled field" value="Unavailable in this state" disabled />

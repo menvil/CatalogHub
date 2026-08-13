@@ -34,6 +34,8 @@ The protected production route is `/admin/site?site_id={authorized-site}`. The `
 Site Admin uses Filament's full-width application workspace with the standard
 responsive page padding. A focused form or readable text region may constrain
 itself locally, while tables and complex editors can consume the remaining canvas.
+The sidebar identity row and application header use the same foundation header
+height, with the selected site kept in the compact sidebar identity line.
 
 ## Responsive states
 

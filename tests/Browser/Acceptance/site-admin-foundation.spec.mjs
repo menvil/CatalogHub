@@ -20,6 +20,11 @@ test('Site Admin owner can switch both active site contexts and log out', async 
     await expect(page.locator('[data-central-shell]')).toHaveCount(0)
     const desktopWorkspace = await page.locator('[data-admin-workspace]').evaluate((element) => element.getBoundingClientRect().width)
     expect(desktopWorkspace).toBeGreaterThan(1050)
+    const [shellHeaderHeight, sidebarHeaderHeight] = await Promise.all([
+        page.locator('[data-admin-shell-header]').evaluate((element) => element.getBoundingClientRect().height),
+        page.locator('[data-admin-sidebar-header]').evaluate((element) => element.getBoundingClientRect().height),
+    ])
+    expect(shellHeaderHeight).toBe(sidebarHeaderHeight)
     await captureAcceptanceScreenshot(page, testInfo, 'site-admin-dashboard')
 
     await page.setViewportSize({ width: 1920, height: 1080 })

@@ -40,6 +40,34 @@ final class ChoiceControlsTest extends TestCase
         $this->assertStringContainsString('cursor-pointer', $html);
     }
 
+    public function test_checkbox_dropdown_keeps_real_checkbox_inputs_inside_an_accessible_popup(): void
+    {
+        $html = Blade::render(
+            '<x-ui.form.checkbox-dropdown id="markets-menu" name="markets" label="Markets" :options="$options" :selected="$selected" />',
+            ['options' => ['de' => 'Germany', 'at' => 'Austria', 'ch' => 'Switzerland'], 'selected' => ['de', 'at']],
+        );
+
+        $this->assertStringContainsString('data-ui-checkbox-dropdown="markets-menu"', $html);
+        $this->assertStringContainsString('aria-haspopup="listbox"', $html);
+        $this->assertStringContainsString('role="listbox"', $html);
+        $this->assertSame(3, substr_count($html, 'name="markets[]"'));
+        $this->assertSame(2, preg_match_all('/type="checkbox"[^>]*checked/', $html));
+    }
+
+    public function test_scrollable_checkbox_list_exposes_checked_items_in_a_bounded_list(): void
+    {
+        $html = Blade::render(
+            '<x-ui.form.scrollable-checkbox-list id="market-list" name="markets" label="Markets" :options="$options" :selected="$selected" />',
+            ['options' => ['de' => 'Germany', 'at' => 'Austria', 'ch' => 'Switzerland'], 'selected' => ['ch']],
+        );
+
+        $this->assertStringContainsString('data-ui-scrollable-checkbox-list="market-list"', $html);
+        $this->assertStringContainsString('overflow-y-auto', $html);
+        $this->assertStringContainsString('role="listbox"', $html);
+        $this->assertSame(3, substr_count($html, 'name="markets[]"'));
+        $this->assertSame(1, preg_match_all('/type="checkbox"[^>]*checked/', $html));
+    }
+
     public function test_radio_group_exposes_group_label_and_one_selection(): void
     {
         $html = Blade::render(

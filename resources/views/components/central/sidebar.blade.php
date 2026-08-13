@@ -19,10 +19,10 @@
     data-central-sidebar-mobile-open="false"
     data-central-sidebar-preference="local"
 >
-    <div class="flex min-h-16 items-center justify-between gap-2 border-b border-admin-border px-admin-card py-3">
+    <div class="flex h-[var(--height-foundation-header)] items-center justify-between gap-2 border-b border-admin-border px-admin-card" data-admin-sidebar-header>
         <div class="central-sidebar-label min-w-0">
             <p class="text-xs font-semibold uppercase tracking-wide text-admin-muted">CatalogHub</p>
-            <p class="mt-1 truncate text-lg font-semibold text-admin-text">Central Admin</p>
+            <p class="truncate text-lg font-semibold text-admin-text">Central Admin</p>
         </div>
         <span class="central-sidebar-collapsed-mark text-sm font-semibold text-admin-text" aria-hidden="true">CH</span>
 

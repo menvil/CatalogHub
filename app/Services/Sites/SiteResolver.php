@@ -11,6 +11,7 @@ use App\Exceptions\Sites\UnknownSiteException;
 use App\Models\Site;
 use App\Models\SiteDomain;
 use Illuminate\Database\Eloquent\Builder;
+use InvalidArgumentException;
 
 final class SiteResolver
 {
@@ -25,7 +26,11 @@ final class SiteResolver
         string $host,
         SiteResolutionMode $mode = SiteResolutionMode::Public,
     ): SiteDomain {
-        $normalizedHost = SiteDomain::normalizeHost($host);
+        try {
+            $normalizedHost = SiteDomain::normalizeHost($host);
+        } catch (InvalidArgumentException) {
+            throw UnknownSiteException::forHost($host);
+        }
         $allowedStatuses = array_values(array_map(
             static fn (SiteStatus $status): string => $status->value,
             array_filter(

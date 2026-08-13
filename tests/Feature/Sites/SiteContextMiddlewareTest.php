@@ -97,7 +97,7 @@ final class SiteContextMiddlewareTest extends TestCase
 
     public function test_actual_public_and_site_routes_register_the_context_middleware(): void
     {
-        foreach (['public.home', 'public.search', 'filament.site.pages.home'] as $routeName) {
+        foreach (['public.landing', 'public.home', 'public.search', 'filament.site.pages.home'] as $routeName) {
             $route = app('router')->getRoutes()->getByName($routeName);
 
             self::assertNotNull($route);

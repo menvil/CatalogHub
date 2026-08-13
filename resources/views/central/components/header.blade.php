@@ -3,8 +3,9 @@
 @endphp
 
 <header
-    class="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-admin-border bg-admin-surface px-admin-page py-3 text-admin-text"
+    class="flex h-[var(--height-foundation-header)] items-center justify-between gap-3 border-b border-admin-border bg-admin-surface px-admin-page text-admin-text"
     data-central-header
+    data-admin-shell-header
 >
     <div class="flex min-w-0 items-center gap-2">
         <button

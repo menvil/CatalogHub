@@ -26,6 +26,10 @@ class DatabaseSeeder extends Seeder
             PublicDemoSeeder::class,
         ]);
 
+        if (app()->environment(['local', 'testing'])) {
+            $this->call(FoundationDemoUsersSeeder::class);
+        }
+
         User::query()->firstOrCreate(
             ['email' => 'test@example.com'],
             ['name' => 'Test User', 'password' => 'password'],

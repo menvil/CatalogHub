@@ -5,6 +5,14 @@ const configuredBrowser = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
 const macChrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const executablePath = configuredBrowser || (existsSync(macChrome) ? macChrome : undefined)
 const port = Number.parseInt(process.env.CATALOGHUB_BROWSER_PORT ?? '', 10)
+const foundationHosts = [
+    'tech-germany.test',
+    'www.tech-germany.test',
+    'monitors-germany.test',
+    'www.monitors-germany.test',
+    'archived-germany.test',
+    'unknown.cataloghub.test',
+]
 
 if (![8014, 8015].includes(port)) {
     throw new Error('CATALOGHUB_BROWSER_PORT must be 8014 or 8015.')
@@ -46,7 +54,10 @@ export default defineConfig({
         deviceScaleFactor: 1,
         screenshot: 'only-on-failure',
         trace: 'retain-on-failure',
-        launchOptions: executablePath ? { executablePath } : {},
+        launchOptions: {
+            ...(executablePath ? { executablePath } : {}),
+            args: [`--host-resolver-rules=${foundationHosts.map((host) => `MAP ${host} 127.0.0.1`).join(',')}`],
+        },
     },
     projects: [
         {

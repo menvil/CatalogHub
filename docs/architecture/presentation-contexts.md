@@ -14,9 +14,9 @@ CatalogHub is one Laravel application with three presentation contexts. Context-
 | --- | --- | --- | --- | --- | --- |
 | Central Admin | panel `central`, `/admin/central`; login `/admin/central/login` | `CentralAdminPanelProvider` and `routes/central.php`; Filament names start `filament.central.`, custom names start `central.` | `web` guard, Filament `Authenticate`, `EnsureCentralAdminAccess`; endpoint-specific gates remain additive | Central Filament shell and `layouts.central-admin`; `resources/css/central-admin.css` | `App\Filament\Central`; existing unmigrated resources remain under `App\Filament` |
 | Site Admin | panel `site`, `/admin/site`; login `/admin/site/login` | `SiteAdminPanelProvider`; names start `filament.site.`; no resources are copied from Central | `web` guard, Filament `Authenticate`, `EnsureSiteAdminAccess`, then `RequireSiteContext` | Site Filament shell and `layouts.site-admin`; `resources/css/site-admin.css` | `App\Filament\Site` |
-| Public Site | controlled host plus localized routes such as `/{locale}` (`public.home`) | `routes/public.php`; application-owned names start `public.` | no admin guard or admin access middleware; existing public throttles remain route-specific | `public.layouts.app`; `resources/css/public.css` | `App\Http\Controllers\Public` |
+| Public Site | controlled bare host (`public.landing`) plus localized routes such as `/{locale}` (`public.home`) | `routes/public.php`; application-owned names start `public.` | no admin guard or admin access middleware; existing public throttles remain route-specific | `public.layouts.app`; `resources/css/public.css` | `App\Http\Controllers\Public` |
 
-All three boundaries currently use the default Laravel `web` session guard where authentication applies. No route-level domain constraint or new domain-resolution behavior is introduced by Phase 0.2. Public site resolution remains owned by the pre-existing `SiteContextResolver`.
+All three boundaries currently use the default Laravel `web` session guard where authentication applies. Public site resolution is owned by `ResolveSiteRuntimeContext` and `SiteResolver`: an active primary or alias bare host resolves the same runtime context and temporarily redirects to the site's configured default-locale route; unknown and archived hosts fail closed.
 
 ## Request flow
 

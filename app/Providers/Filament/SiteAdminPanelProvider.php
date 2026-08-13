@@ -18,6 +18,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\Width;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -35,6 +36,7 @@ final class SiteAdminPanelProvider extends PanelProvider
             ->viteTheme('resources/css/site-admin.css')
             ->brandName('CatalogHub Site Admin')
             ->login(Login::class)
+            ->maxContentWidth(Width::Full)
             ->navigation(fn (SiteAdminNavigationRegistry $registry) => $registry->filamentNavigation(
                 auth()->user() instanceof User ? auth()->user() : null,
                 request()->attributes->get('site_context') instanceof Site

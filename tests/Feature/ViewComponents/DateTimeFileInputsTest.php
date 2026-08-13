@@ -9,13 +9,38 @@ use Tests\TestCase;
 
 final class DateTimeFileInputsTest extends TestCase
 {
+    public function test_date_picker_has_an_explicit_modern_calendar_popup_and_form_value(): void
+    {
+        $html = Blade::render('<x-ui.form.date-picker id="publish-date" name="publish_date" label="Publish date" value="2026-08-12" min="2026-08-01" max="2026-09-01" />');
+
+        $this->assertStringContainsString('type="hidden"', $html);
+        $this->assertStringContainsString('value="2026-08-12"', $html);
+        $this->assertStringContainsString('data-ui-date-picker="publish-date"', $html);
+        $this->assertStringContainsString('data-ui-date-picker-trigger', $html);
+        $this->assertStringContainsString('data-ui-date-picker-panel', $html);
+        $this->assertStringContainsString('data-ui-date-picker-grid', $html);
+        $this->assertStringContainsString('cursor-pointer', $html);
+        $this->assertStringContainsString('data-foundation-icon="calendar-days"', $html);
+    }
+
+    public function test_date_picker_does_not_render_an_overflowed_calendar_date(): void
+    {
+        $html = Blade::render('<x-ui.form.date-picker id="publish-date" name="publish_date" label="Publish date" value="2026-02-31" />');
+
+        $this->assertStringContainsString('value="2026-02-31"', $html);
+        $this->assertStringContainsString('Choose publish date', $html);
+        $this->assertStringNotContainsString('03 Mar 2026', $html);
+    }
+
     public function test_date_time_shell_renders_constraints_and_explicit_timezone(): void
     {
         $html = Blade::render('<x-ui.form.date-time id="publish-at" name="publish_at" label="Publish at" value="2026-08-05T12:00" min="2026-08-01T00:00" max="2026-09-01T00:00" timezone="Europe/Berlin" />');
 
-        $this->assertStringContainsString('type="datetime-local"', $html);
-        $this->assertStringContainsString('min="2026-08-01T00:00"', $html);
-        $this->assertStringContainsString('max="2026-09-01T00:00"', $html);
+        $this->assertStringContainsString('data-ui-date-picker-mode="datetime"', $html);
+        $this->assertStringContainsString('data-ui-date-picker-time', $html);
+        $this->assertStringContainsString('data-min="2026-08-01T00:00"', $html);
+        $this->assertStringContainsString('data-max="2026-09-01T00:00"', $html);
+        $this->assertStringContainsString('value="2026-08-05T12:00"', $html);
         $this->assertStringContainsString('Timezone: Europe/Berlin', $html);
     }
 

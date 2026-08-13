@@ -53,6 +53,7 @@ class AdminAccessTest extends TestCase
             ->get(TranslationDashboard::getUrl())
             ->assertOk();
         $this->get(CentralProductResource::getUrl('index'))->assertForbidden();
+        $this->get(CentralBrandResource::getUrl('index'))->assertForbidden();
         $this->get(route('central.media.index'))->assertForbidden();
     }
 

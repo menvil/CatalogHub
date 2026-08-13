@@ -25,6 +25,8 @@ The single-category shell is a structurally distinct public boundary for focused
 
 - Theme ID: `cataloghub-single`.
 - Layout marker: `data-public-layout="single-category"`.
+- A bare active site host redirects to `/{defaultLocale}`; unknown and archived
+  bare hosts return the safe public `404` boundary.
 - The runtime resolver maps the site mode or a whitelisted theme ID to this layout; database values can never select an executable Blade path.
 - Current site and locale remain explicit at desktop and mobile sizes.
 - Public rendering has no administrative assets, navigation, or layout classes.

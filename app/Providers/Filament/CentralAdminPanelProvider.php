@@ -20,6 +20,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\Width;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -38,6 +39,7 @@ final class CentralAdminPanelProvider extends PanelProvider
             ->viteTheme('resources/css/central-admin.css')
             ->brandName('CatalogHub Central')
             ->login(Login::class)
+            ->maxContentWidth(Width::Full)
             ->sidebarCollapsibleOnDesktop()
             ->navigation(fn (CentralNavigationRegistry $registry) => $registry->filamentNavigation(auth()->user()))
             ->colors([

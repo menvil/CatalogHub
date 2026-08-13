@@ -9,13 +9,16 @@ use App\Http\Controllers\Public\ProductListingController as PublicProductListing
 use App\Http\Controllers\Public\SearchController as PublicSearchController;
 use App\Http\Controllers\Public\TrackOfferClickController;
 use App\Http\Middleware\ResolveSiteRuntimeContext;
+use App\Support\Sites\SiteRuntimeContext;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('pages.home');
-})->name('public.landing');
-
 Route::middleware(ResolveSiteRuntimeContext::class)->group(function (): void {
+    Route::get('/', static function (SiteRuntimeContext $context) {
+        return redirect(route('public.home', [
+            'locale' => $context->resolvedLocale,
+        ], absolute: false));
+    })->name('public.landing');
+
     Route::get('/offers/{offer}/go', TrackOfferClickController::class)
         ->whereNumber('offer')
         ->name('public.offers.go');

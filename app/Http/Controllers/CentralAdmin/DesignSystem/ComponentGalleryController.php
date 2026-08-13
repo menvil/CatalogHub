@@ -25,8 +25,10 @@ final class ComponentGalleryController extends Controller
             'icons' => FoundationDesignSystem::ICONS,
             'statuses' => FoundationDesignSystem::STATUS_LABELS,
             'viewports' => FoundationDesignSystem::VIEWPORTS,
-            'componentMode' => $request->componentMode(),
-            'componentSection' => $request->componentSection(),
+            'componentMode' => $request->routeIs('central.component-gallery') || $request->componentMode(),
+            'componentSection' => $request->routeIs('central.component-gallery') && ! $request->hasComponentSection()
+                ? 'catalog'
+                : $request->componentSection(),
             'componentAcceptance' => $request->acceptanceRequested(),
             'adminComponentFixture' => [
                 'version' => AdminComponentGalleryFixture::VERSION,

@@ -13,15 +13,80 @@ final class ChoiceControlsTest extends TestCase
     {
         $html = Blade::render(<<<'BLADE'
             <x-ui.form.checkbox id="active" name="active" label="Active" checked error="Review" />
-            <x-ui.form.toggle id="featured" name="featured" label="Featured" disabled />
+            <x-ui.form.toggle id="featured" name="featured" label="Featured" />
+            <x-ui.form.toggle id="disabled-toggle" name="disabled_toggle" label="Disabled" disabled />
         BLADE);
 
-        $this->assertSame(2, substr_count($html, 'type="checkbox"'));
+        $this->assertSame(3, substr_count($html, 'type="checkbox"'));
         $this->assertStringContainsString('role="switch"', $html);
         $this->assertMatchesRegularExpression('/<input[^>]*id="active"[^>]*\schecked(?:\s|>)/', $html);
         $this->assertStringContainsString('disabled', $html);
         $this->assertStringContainsString('aria-invalid="true"', $html);
         $this->assertStringContainsString('data-ui-toggle-indicator', $html);
+        $this->assertMatchesRegularExpression('/<label(?=[^>]*data-ui-toggle-hit-area)(?=[^>]*cursor-pointer)[^>]*>/', $html);
+    }
+
+    public function test_checkbox_list_submits_multiple_checked_values_with_a_group_label(): void
+    {
+        $html = Blade::render(
+            '<x-ui.form.checkbox-list id="markets" name="markets" label="Markets" :options="$options" :selected="$selected" />',
+            ['options' => ['de' => 'Germany', 'at' => 'Austria', 'ch' => 'Switzerland'], 'selected' => ['de', 'at']],
+        );
+
+        $this->assertStringContainsString('data-ui-checkbox-list="markets"', $html);
+        $this->assertStringContainsString('<legend', $html);
+        $this->assertSame(3, substr_count($html, 'name="markets[]"'));
+        $this->assertSame(2, preg_match_all('/type="checkbox"[^>]*checked/', $html));
+        $this->assertStringContainsString('cursor-pointer', $html);
+    }
+
+    public function test_checkbox_dropdown_keeps_real_checkbox_inputs_inside_an_accessible_popup(): void
+    {
+        $html = Blade::render(
+            '<x-ui.form.checkbox-dropdown id="markets-menu" name="markets" label="Markets" :options="$options" :selected="$selected" />',
+            ['options' => ['de' => 'Germany', 'at' => 'Austria', 'ch' => 'Switzerland'], 'selected' => ['de', 'at']],
+        );
+
+        $this->assertStringContainsString('data-ui-checkbox-dropdown="markets-menu"', $html);
+        $this->assertStringContainsString('<details', $html);
+        $this->assertStringNotContainsString('role="listbox"', $html);
+        $this->assertStringNotContainsString('role="option"', $html);
+        $this->assertStringNotContainsString('aria-multiselectable', $html);
+        $this->assertSame(3, substr_count($html, 'name="markets[]"'));
+        $this->assertSame(2, preg_match_all('/type="checkbox"[^>]*checked/', $html));
+    }
+
+    public function test_scrollable_checkbox_list_exposes_checked_items_in_a_bounded_list(): void
+    {
+        $html = Blade::render(
+            '<x-ui.form.scrollable-checkbox-list id="market-list" name="markets" label="Markets" :options="$options" :selected="$selected" />',
+            ['options' => ['de' => 'Germany', 'at' => 'Austria', 'ch' => 'Switzerland'], 'selected' => ['ch']],
+        );
+
+        $this->assertStringContainsString('data-ui-scrollable-checkbox-list="market-list"', $html);
+        $this->assertStringContainsString('overflow-y-auto', $html);
+        $this->assertStringNotContainsString('role="listbox"', $html);
+        $this->assertStringNotContainsString('role="option"', $html);
+        $this->assertStringNotContainsString('aria-multiselectable', $html);
+        $this->assertSame(3, substr_count($html, 'name="markets[]"'));
+        $this->assertSame(1, preg_match_all('/type="checkbox"[^>]*checked/', $html));
+    }
+
+    public function test_required_scrollable_checkbox_list_supports_grouped_options_and_group_validation(): void
+    {
+        $html = Blade::render(
+            '<x-ui.form.scrollable-checkbox-list id="market-list" name="markets" label="Markets" :options="$options" required />',
+            ['options' => ['Europe' => ['de' => 'Germany', 'at' => 'Austria'], 'us' => 'United States']],
+        );
+
+        $this->assertSame(3, substr_count($html, 'name="markets[]"'));
+        $this->assertSame(3, substr_count($html, 'data-ui-checkbox-group-required'));
+        $this->assertSame(3, substr_count($html, ' required'));
+        $this->assertStringContainsString('id="market-list-0-0"', $html);
+        $this->assertStringContainsString('id="market-list-0-1"', $html);
+        $this->assertStringContainsString('id="market-list-1"', $html);
+        $this->assertStringContainsString('Germany', $html);
+        $this->assertStringContainsString('United States', $html);
     }
 
     public function test_radio_group_exposes_group_label_and_one_selection(): void

@@ -28,6 +28,8 @@ class CentralAdminLayoutTest extends TestCase
         $this->assertStringContainsString('Notifications unavailable', $html);
         $this->assertStringContainsString('Central Acceptance User', $html);
         $this->assertStringContainsString('Central admin slot content', $html);
+        $this->assertStringContainsString('data-admin-shell-header', $html);
+        $this->assertStringContainsString('data-admin-sidebar-header', $html);
         $this->assertStringContainsString('<title>Catalog quality - ', $html);
         $this->assertStringNotContainsString('href="#"', $html);
 

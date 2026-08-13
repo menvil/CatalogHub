@@ -6,17 +6,20 @@ body.site-sidebar-scroll-locked {
 :is(.central-shell-sidebar, .site-shell-sidebar) {
     position: fixed;
     inset-block: 0;
-    inset-inline-start: calc(-1 * min(var(--width-foundation-sidebar), calc(100vw - var(--spacing-foundation-page))));
+    inset-inline-start: 0;
     z-index: 50;
     width: min(var(--width-foundation-sidebar), calc(100vw - var(--spacing-foundation-page)));
+    transform: translateX(-100%);
     visibility: hidden;
-    transition: inset-inline-start 150ms ease-out, width 150ms ease-out, visibility 0s linear 150ms;
+    pointer-events: none;
+    transition: transform 150ms ease-out, width 150ms ease-out, visibility 0s linear 150ms;
 }
 
 .central-shell-sidebar[data-central-sidebar-mobile-open='true'],
 .site-shell-sidebar[data-site-sidebar-mobile-open='true'] {
-    inset-inline-start: 0;
+    transform: translateX(0);
     visibility: visible;
+    pointer-events: auto;
     transition-delay: 0s;
 }
 
@@ -47,7 +50,9 @@ body.site-sidebar-scroll-locked {
         z-index: 20;
         min-height: 100vh;
         width: var(--width-foundation-sidebar);
+        transform: none;
         visibility: visible;
+        pointer-events: auto;
         border-inline-end-width: 1px;
     }
 

@@ -30,6 +30,7 @@ parameters:
 
 | Boundary | Owner methods | Raw methods | Binding policy | Purpose |
 | --- | --- | --- | --- | --- |
+| `DuplicateCentralBrandNameQuery` | `exists` | `whereRaw` | required | Portable case-insensitive exact canonical Brand name comparison |
 | `FacetDocumentExpressionQuery` | price/rating ordering, numeric filter | `orderByRaw`, `whereRaw` | internal / required | Numeric JSON filters and portable NULL-last sorting |
 | `StaleProjectionQuery` | product/category queries | `whereRaw` | internal | Driver-aware timestamp version comparison |
 | `StaleProductVersionGapQuery` | `apply` | `whereRaw` | required | Bound version-gap arithmetic |

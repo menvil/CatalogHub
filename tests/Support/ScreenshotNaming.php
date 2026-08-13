@@ -10,8 +10,8 @@ final class ScreenshotNaming
 {
     public static function referencePath(string $screenId, string $state, int $width, int $height): string
     {
-        if (preg_match('/\AZ-0(?:0[1-9]|10)\z/', $screenId) !== 1) {
-            throw new InvalidArgumentException('Screen IDs must be Z-001 through Z-010.');
+        if (preg_match('/\A(?:Z-0(?:0[1-9]|10)|CA-[0-9]{3})\z/', $screenId) !== 1) {
+            throw new InvalidArgumentException('Screen IDs must use an approved Z-001–Z-010 or CA-NNN identifier.');
         }
 
         if (preg_match('/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/', $state) !== 1) {

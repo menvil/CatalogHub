@@ -5,7 +5,6 @@ namespace Tests\Feature\Security;
 use App\Filament\Central\Pages\Home as CentralHome;
 use App\Filament\Pages\TranslationDashboard;
 use App\Filament\Resources\CatalogSnapshotResource;
-use App\Filament\Resources\CentralBrandResource;
 use App\Filament\Resources\CentralCategoryResource;
 use App\Filament\Resources\CentralProductResource;
 use App\Filament\Resources\MarketResource;
@@ -35,7 +34,7 @@ class AdminAccessTest extends TestCase
         foreach ([
             CentralProductResource::getUrl('index'),
             CentralCategoryResource::getUrl('index'),
-            CentralBrandResource::getUrl('index'),
+            route('central.brands.index'),
             route('central.media.index'),
         ] as $url) {
             $this->get($url)->assertOk();
@@ -53,6 +52,7 @@ class AdminAccessTest extends TestCase
             ->get(TranslationDashboard::getUrl())
             ->assertOk();
         $this->get(CentralProductResource::getUrl('index'))->assertForbidden();
+        $this->get(route('central.brands.index'))->assertForbidden();
         $this->get(route('central.media.index'))->assertForbidden();
     }
 
@@ -89,7 +89,7 @@ class AdminAccessTest extends TestCase
             CentralHome::getUrl(panel: 'central'),
             CentralProductResource::getUrl('index', panel: 'central'),
             CentralCategoryResource::getUrl('index', panel: 'central'),
-            CentralBrandResource::getUrl('index', panel: 'central'),
+            route('central.brands.index'),
             MarketResource::getUrl('index', panel: 'central'),
             CatalogSnapshotResource::getUrl('index', panel: 'central'),
             route('central.media.index'),

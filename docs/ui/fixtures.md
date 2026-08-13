@@ -5,4 +5,5 @@ Visual fixtures are immutable presentation inputs, not demo data. Each fixture h
 - Never use Faker, current time, remote images, unordered database queries, or generated avatars in a visual fixture.
 - Use stable model keys and explicit ordering.
 - A fixture change requires a screen-contract and visual-reference review; it does not update a baseline itself.
-- `CentralShellFixture`, `SiteAdminShellFixture`, `PublicShellFixture`, and `AdminComponentGalleryFixture` are the current fixture sources. New fixture pages must expose a version marker.
+- `CentralShellFixture`, `SiteAdminShellFixture`, `PublicShellFixture`, and `AdminComponentGalleryFixture` are the Foundation fixture sources. New fixture pages must expose a version marker.
+- `BrandListFixture` provides `brands-list-v1`: 24 explicit canonical Brands with all lifecycle states, nullable metadata, stable ordering inputs, and fixed UTC timestamps. The browser harness loads it separately after the Foundation seeder; it is never production demo data.

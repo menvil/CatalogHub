@@ -23,6 +23,29 @@ class CentralBrandFactory extends Factory
             'name' => $name,
             'slug' => $slug,
             'status' => CentralBrandStatus::default(),
+            'website_url' => null,
+            'country_code' => null,
         ];
+    }
+
+    public function draft(): static
+    {
+        return $this->state(fn (): array => [
+            'status' => CentralBrandStatus::Draft,
+        ]);
+    }
+
+    public function active(): static
+    {
+        return $this->state(fn (): array => [
+            'status' => CentralBrandStatus::Active,
+        ]);
+    }
+
+    public function archived(): static
+    {
+        return $this->state(fn (): array => [
+            'status' => CentralBrandStatus::Archived,
+        ]);
     }
 }

@@ -3,17 +3,20 @@
 namespace App\Filament\Resources\CentralBrandResource\Pages;
 
 use App\Filament\Resources\CentralBrandResource;
-use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
 final class ListCentralBrands extends ListRecords
 {
     protected static string $resource = CentralBrandResource::class;
 
-    protected function getHeaderActions(): array
+    public function getSubheading(): string
     {
-        return [
-            CreateAction::make(),
-        ];
+        return 'Canonical brands used across the central catalog.';
+    }
+
+    public function hasActiveBrandTableConstraints(): bool
+    {
+        return $this->hasTableSearch()
+            || filled($this->getTableFilterState('status')['value'] ?? null);
     }
 }

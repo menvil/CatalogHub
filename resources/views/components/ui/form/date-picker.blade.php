@@ -8,6 +8,9 @@
     $dateValue = preg_match('/^\d{4}-\d{2}-\d{2}/', $rawValue) === 1 ? substr($rawValue, 0, 10) : '';
     $timeValue = $withTime && preg_match('/T(\d{2}:\d{2})/', $rawValue, $match) === 1 ? $match[1] : '00:00';
     $parsedDate = $dateValue !== '' ? \DateTimeImmutable::createFromFormat('!Y-m-d', $dateValue) : false;
+    if ($parsedDate instanceof \DateTimeImmutable && $parsedDate->format('Y-m-d') !== $dateValue) {
+        $parsedDate = false;
+    }
     $displayValue = $parsedDate instanceof \DateTimeImmutable
         ? $parsedDate->format('d M Y').($withTime ? ', '.$timeValue : '')
         : 'Choose '.strtolower($label);

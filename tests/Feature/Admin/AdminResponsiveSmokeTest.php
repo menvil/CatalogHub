@@ -64,6 +64,16 @@ class AdminResponsiveSmokeTest extends TestCase
         $this->assertSame(Width::Full, $site->getMaxContentWidth());
     }
 
+    public function test_mobile_sidebars_stay_rendered_until_the_close_transition_finishes(): void
+    {
+        $css = (string) file_get_contents(resource_path('css/admin-navigation.css'));
+
+        $this->assertStringContainsString('visibility 0s linear 150ms', $css);
+        $this->assertStringContainsString('pointer-events: none', $css);
+        $this->assertStringContainsString('pointer-events: auto', $css);
+        $this->assertDoesNotMatchRegularExpression('/\.(?:central|site)-shell-sidebar(?!-)[^{]*\{[^}]*display:\s*none/s', $css);
+    }
+
     public function test_visual_smoke_page_contains_internal_overflow_for_dense_compositions(): void
     {
         $this->get('/dev/admin-visual-smoke')

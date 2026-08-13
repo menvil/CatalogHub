@@ -117,7 +117,20 @@ final class ComponentGalleryTest extends TestCase
             'name="q" value="Acme"',
         ], false);
         $response->assertSee('href="/dev/component-gallery?mode=components&amp;section=tables&amp;q=Acme&amp;page=3"', false);
-        $response->assertSee('href="?mode=components&amp;section=tables"', false);
+        $response->assertSee('href="/dev/component-gallery?mode=components&amp;section=tables"', false);
+    }
+
+    public function test_authenticated_gallery_navigation_keeps_the_active_central_route(): void
+    {
+        $centralAdmin = User::factory()->create(['role' => UserRole::CentralAdmin]);
+
+        $response = $this->actingAs($centralAdmin)
+            ->get('/admin/central/component-gallery?mode=components&section=tables&q=Acme')
+            ->assertOk();
+
+        $response->assertSee('href="/admin/central/component-gallery?mode=components&amp;section=tables&amp;q=Acme&amp;page=3"', false);
+        $response->assertSee('href="/admin/central/component-gallery?mode=components&amp;section=tables"', false);
+        $response->assertDontSee('href="/dev/component-gallery?', false);
     }
 
     public function test_component_gallery_rejects_unknown_fixture_sections(): void

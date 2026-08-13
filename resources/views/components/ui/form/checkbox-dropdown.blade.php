@@ -16,14 +16,13 @@
                 'cursor-pointer hover:bg-admin-surface-muted' => ! $disabled,
                 'cursor-not-allowed opacity-60' => $disabled,
             ])
-            aria-haspopup="listbox"
         >
             <span><span data-ui-checkbox-dropdown-count>{{ count($selectedValues) }}</span> selected</span>
             <x-ui.icon name="chevron-down" decorative size="sm" class="transition-transform group-open:rotate-180" />
         </summary>
-        <div class="absolute z-30 mt-1 max-h-52 w-full min-w-56 overflow-y-auto rounded-admin-input border border-admin-border bg-admin-surface p-1 shadow-admin-modal" role="listbox" aria-multiselectable="true" @if ($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif>
+        <div class="absolute z-30 mt-1 max-h-52 w-full min-w-56 overflow-y-auto rounded-admin-input border border-admin-border bg-admin-surface p-1 shadow-admin-modal" @if ($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif>
             @foreach ($options as $value => $optionLabel)
-                <label for="{{ $id }}-{{ $loop->index }}" class="flex min-h-10 cursor-pointer items-center gap-2 rounded-admin-input px-3 py-2 text-sm text-admin-text hover:bg-admin-surface-muted" role="option">
+                <label for="{{ $id }}-{{ $loop->index }}" class="flex min-h-10 cursor-pointer items-center gap-2 rounded-admin-input px-3 py-2 text-sm text-admin-text hover:bg-admin-surface-muted">
                     <input id="{{ $id }}-{{ $loop->index }}" name="{{ $fieldName }}" type="checkbox" value="{{ $value }}" @checked(in_array((string) $value, $selectedValues, true)) @disabled($disabled) class="h-5 w-5 shrink-0 cursor-pointer rounded border-admin-border text-admin-primary focus:ring-admin-primary disabled:cursor-not-allowed">
                     <span>{{ $optionLabel }}</span>
                 </label>

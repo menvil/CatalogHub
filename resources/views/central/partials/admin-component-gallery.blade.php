@@ -62,8 +62,8 @@
                 <x-ui.form.checkbox id="gallery-featured" name="featured" label="Featured brand" checked help="Uses a native checkbox." />
                 <x-ui.form.toggle id="gallery-visible" name="visible" label="Public visibility" checked />
                 <x-ui.form.radio-group id="gallery-source" name="source" label="Data source" :options="['manual' => 'Manual', 'import' => 'Import']" selected="manual" />
-                <x-ui.form.date-picker id="gallery-publish-date" name="publish_date" label="Publish date — Calendar picker" value="2026-08-12" help="Modern date-only calendar popup." />
-                <x-ui.form.date-time id="gallery-publish-at" name="publish_at" label="Publish at — Date & time picker" value="2026-08-05T13:15" timezone="Europe/Sofia" />
+                <x-ui.form.date-picker id="gallery-publish-date" name="publish_date" label="Publish date — Calendar picker" value="2026-08-12" min="2026-08-10" max="2026-08-20" help="Modern date-only calendar popup." />
+                <x-ui.form.date-time id="gallery-publish-at" name="publish_at" label="Publish at — Date & time picker" value="2026-08-05T13:15" min="2026-08-02T00:00" max="2026-08-20T23:59" timezone="Europe/Sofia" />
                 <x-ui.form.file-input id="gallery-file" name="file" label="Reference file" accept="image/png,image/jpeg" hint="PNG or JPEG; selection only, no upload occurs." />
                 <x-ui.form.input id="gallery-readonly" name="readonly" label="Read-only field" value="Immutable source value" readonly />
                 <x-ui.form.input id="gallery-disabled" name="disabled" label="Disabled field" value="Unavailable in this state" disabled />
@@ -85,11 +85,11 @@
                     <input type="hidden" name="q" value="Acme">
                     <x-ui.form.select id="gallery-filter-status" name="status" label="Status" :options="$adminComponentFixture['options']" selected="active" />
                 </x-admin.filter-bar>
-                <x-admin.active-filters :filters="$adminComponentFixture['filters']" clear-all-url="?mode=components&section=tables" />
+                <x-admin.active-filters :filters="$adminComponentFixture['filters']" :clear-all-url="$galleryUrl.'?mode=components&section=tables'" />
                 <x-admin.bulk-actions table-id="gallery-brands" :actions="[['id' => 'archive', 'label' => 'Archive selected']]" />
                 <x-admin.data-table table-id="gallery-brands" caption="Brand-like fixture" :columns="$adminComponentFixture['columns']" :rows="$adminComponentFixture['rows']" selectable />
                 <div class="flex justify-end"><x-admin.row-actions row-id="brand-1" :actions="[['label' => 'Edit', 'url' => '/brands/brand-1/edit'], ['label' => 'Delete', 'url' => '/brands/brand-1', 'destructive' => true, 'confirmationId' => 'gallery-delete-modal']]" /></div>
-                <x-admin.pagination :previous-url="'/dev/component-gallery?mode=components&section=tables&q=Acme&page=1'" :next-url="'/dev/component-gallery?mode=components&section=tables&q=Acme&page=3'" :page="2" />
+                <x-admin.pagination :previous-url="$galleryUrl.'?mode=components&section=tables&q=Acme&page=1'" :next-url="$galleryUrl.'?mode=components&section=tables&q=Acme&page=3'" :page="2" />
                 <div class="grid gap-admin-card lg:grid-cols-2">
                     <x-admin.data-table table-id="gallery-empty-table" caption="Empty fixture" :columns="$adminComponentFixture['columns']" :rows="[]" />
                     <x-ui.states.loading label="Loading table records" :rows="4" />
@@ -158,7 +158,7 @@
                 <div class="grid gap-admin-section lg:grid-cols-2">
                     <x-admin.empty-state title="No foundation records" description="The reusable admin empty-state pattern remains available for future record screens." />
                     <x-ui.states.empty id="gallery-empty-state" title="No records yet" message="Create the first record when an approved source is available." action-label="Create record" action-url="/admin/central" />
-                    <x-ui.states.filtered-empty id="gallery-filtered-empty-state" title="No matching records" message="No records match the current search and filters." clear-url="/dev/component-gallery?mode=components&section=feedback" />
+                    <x-ui.states.filtered-empty id="gallery-filtered-empty-state" title="No matching records" message="No records match the current search and filters." :clear-url="$galleryUrl.'?mode=components&section=feedback'" />
                     <x-ui.retry-block message="Preview could not be loaded." retry-label="Retry preview" />
                     <x-ui.form.input id="gallery-feedback-validation" name="validation" label="Validation state" value="duplicate" error="This identifier is already used." />
                 </div>
@@ -170,7 +170,7 @@
         <x-admin.card title="Feedback" description="Empty, filtered-empty, and loading states remain semantically distinct." data-gallery-states-fixture>
             <div class="grid gap-admin-section lg:grid-cols-2">
                 <x-ui.states.empty id="gallery-legacy-empty-state" title="No records yet" message="Create the first record after an approved source is available." action-label="Create record" action-url="/admin/central" />
-                <x-ui.states.filtered-empty id="gallery-legacy-filtered-state" title="No matching records" message="No records match the current search and filters." clear-url="/dev/component-gallery?mode=components&section=states" />
+                <x-ui.states.filtered-empty id="gallery-legacy-filtered-state" title="No matching records" message="No records match the current search and filters." :clear-url="$galleryUrl.'?mode=components&section=states'" />
                 <x-ui.states.loading label="Loading records" :rows="4" class="lg:col-span-2" />
             </div>
         </x-admin.card>

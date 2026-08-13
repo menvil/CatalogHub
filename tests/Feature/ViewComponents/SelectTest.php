@@ -27,6 +27,8 @@ final class SelectTest extends TestCase
         $this->assertStringContainsString('data-foundation-icon="chevron-down"', $html);
         $this->assertStringContainsString('for="market-trigger"', $html);
         $this->assertStringContainsString('id="market-trigger"', $html);
+        $this->assertStringContainsString('data-ui-select-value', $html);
+        $this->assertSame(4, substr_count($html, 'data-ui-select-option'));
     }
 
     public function test_multi_select_uses_a_real_multiple_select(): void

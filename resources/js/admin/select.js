@@ -40,9 +40,22 @@ function selectOption(option) {
     closeSelect(select, true);
 }
 
+function syncRequiredCheckboxGroup(input) {
+    const group = input.closest('[data-ui-scrollable-checkbox-list]');
+    if (! group) return;
+
+    const inputs = Array.from(group.querySelectorAll('[data-ui-checkbox-group-required]'));
+    const hasSelection = inputs.some((candidate) => candidate.checked);
+    inputs.forEach((candidate) => {
+        candidate.required = ! hasSelection;
+    });
+}
+
 export function bootAdminSelects() {
     if (window.__catalogHubAdminSelectsBooted) return;
     window.__catalogHubAdminSelectsBooted = true;
+
+    document.querySelectorAll('[data-ui-checkbox-group-required]').forEach(syncRequiredCheckboxGroup);
 
     document.addEventListener('click', (event) => {
         if (! (event.target instanceof Element)) return;
@@ -95,6 +108,7 @@ export function bootAdminSelects() {
 
     document.addEventListener('change', (event) => {
         if (! (event.target instanceof HTMLInputElement) || event.target.type !== 'checkbox') return;
+        if (event.target.matches('[data-ui-checkbox-group-required]')) syncRequiredCheckboxGroup(event.target);
         const dropdown = event.target.closest('[data-ui-checkbox-dropdown]');
         const count = dropdown?.querySelector('[data-ui-checkbox-dropdown-count]');
         if (! dropdown || ! count) return;

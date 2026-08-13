@@ -185,6 +185,41 @@ final class ComponentGalleryVisualTest extends TestCase
         }
     }
 
+    public function test_feedback_mobile_threshold_accepts_small_drift_and_rejects_meaningful_change(): void
+    {
+        $threshold = self::COMPONENT_STATES['feedback-mobile']['maxDifference'];
+        $reference = tempnam(sys_get_temp_dir(), 'cataloghub-feedback-reference-');
+        $smallDrift = tempnam(sys_get_temp_dir(), 'cataloghub-feedback-small-');
+        $meaningfulChange = tempnam(sys_get_temp_dir(), 'cataloghub-feedback-large-');
+        $this->assertIsString($reference);
+        $this->assertIsString($smallDrift);
+        $this->assertIsString($meaningfulChange);
+        $referenceImage = imagecreatetruecolor(100, 100);
+        $smallDriftImage = imagecreatetruecolor(100, 100);
+        $meaningfulChangeImage = imagecreatetruecolor(100, 100);
+        $this->assertInstanceOf(GdImage::class, $referenceImage);
+        $this->assertInstanceOf(GdImage::class, $smallDriftImage);
+        $this->assertInstanceOf(GdImage::class, $meaningfulChangeImage);
+        imagefill($referenceImage, 0, 0, imagecolorallocate($referenceImage, 255, 255, 255));
+        imagefill($smallDriftImage, 0, 0, imagecolorallocate($smallDriftImage, 255, 255, 255));
+        imagefill($meaningfulChangeImage, 0, 0, imagecolorallocate($meaningfulChangeImage, 255, 255, 255));
+        imagefilledrectangle($smallDriftImage, 0, 0, 99, 4, imagecolorallocate($smallDriftImage, 0, 0, 0));
+        imagefilledrectangle($meaningfulChangeImage, 0, 0, 99, 5, imagecolorallocate($meaningfulChangeImage, 0, 0, 0));
+        imagepng($referenceImage, $reference);
+        imagepng($smallDriftImage, $smallDrift);
+        imagepng($meaningfulChangeImage, $meaningfulChange);
+
+        try {
+            $this->assertSame(self::MAX_FEEDBACK_MOBILE_MEAN_CHANNEL_DIFFERENCE, $threshold);
+            $this->assertLessThanOrEqual($threshold, $this->meanChannelDifference($reference, $smallDrift));
+            $this->assertGreaterThan($threshold, $this->meanChannelDifference($reference, $meaningfulChange));
+        } finally {
+            @unlink($reference);
+            @unlink($smallDrift);
+            @unlink($meaningfulChange);
+        }
+    }
+
     private function captureGallery(
         string $root,
         string $capture,

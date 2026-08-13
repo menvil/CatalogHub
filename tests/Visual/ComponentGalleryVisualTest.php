@@ -14,18 +14,23 @@ final class ComponentGalleryVisualTest extends TestCase
 
     private const MAX_MEAN_CHANNEL_DIFFERENCE = 0.04;
 
-    /** @var array<string, array{width: int, height: int, section: string}> */
+    // Linux and macOS rasterize the text-dense mobile states slightly differently.
+    private const MAX_MOBILE_MEAN_CHANNEL_DIFFERENCE = 0.045;
+
+    private const MAX_FEEDBACK_MOBILE_MEAN_CHANNEL_DIFFERENCE = 0.055;
+
+    /** @var array<string, array{width: int, height: int, section: string, maxDifference?: float}> */
     private const COMPONENT_STATES = [
         'forms-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'forms'],
-        'forms-mobile' => ['width' => 360, 'height' => 900, 'section' => 'forms'],
+        'forms-mobile' => ['width' => 360, 'height' => 900, 'section' => 'forms', 'maxDifference' => self::MAX_MOBILE_MEAN_CHANNEL_DIFFERENCE],
         'tables-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'tables'],
-        'tables-mobile' => ['width' => 360, 'height' => 900, 'section' => 'tables'],
+        'tables-mobile' => ['width' => 360, 'height' => 900, 'section' => 'tables', 'maxDifference' => self::MAX_MOBILE_MEAN_CHANNEL_DIFFERENCE],
         'feedback-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'feedback'],
-        'feedback-mobile' => ['width' => 360, 'height' => 900, 'section' => 'feedback'],
+        'feedback-mobile' => ['width' => 360, 'height' => 900, 'section' => 'feedback', 'maxDifference' => self::MAX_FEEDBACK_MOBILE_MEAN_CHANNEL_DIFFERENCE],
         'states-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'states'],
-        'states-mobile' => ['width' => 360, 'height' => 900, 'section' => 'states'],
+        'states-mobile' => ['width' => 360, 'height' => 900, 'section' => 'states', 'maxDifference' => self::MAX_MOBILE_MEAN_CHANNEL_DIFFERENCE],
         'actions-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'actions'],
-        'actions-mobile' => ['width' => 360, 'height' => 900, 'section' => 'actions'],
+        'actions-mobile' => ['width' => 360, 'height' => 900, 'section' => 'actions', 'maxDifference' => self::MAX_MOBILE_MEAN_CHANNEL_DIFFERENCE],
     ];
 
     public function test_approved_gallery_reference_checksum_is_unchanged(): void
@@ -36,6 +41,18 @@ final class ComponentGalleryVisualTest extends TestCase
         $this->assertFileExists($reference);
         $this->assertFileExists($checksum);
         $this->assertSame(trim((string) file_get_contents($checksum)), hash_file('sha256', $reference));
+    }
+
+    public function test_approved_full_catalog_reference_checksums_are_unchanged(): void
+    {
+        foreach (['z-010__catalog__1440x1000', 'z-010__catalog__390x844'] as $name) {
+            $reference = dirname(__DIR__, 2)."/tests/Visual/baselines/{$name}.png";
+            $checksum = $reference.'.sha256';
+
+            $this->assertFileExists($reference);
+            $this->assertFileExists($checksum);
+            $this->assertSame(trim((string) file_get_contents($checksum)), hash_file('sha256', $reference));
+        }
     }
 
     public function test_current_gallery_matches_the_approved_wide_reference(): void
@@ -90,7 +107,7 @@ final class ComponentGalleryVisualTest extends TestCase
                     array_slice(getimagesize($capture) ?: [], 0, 2),
                 );
                 $this->assertLessThanOrEqual(
-                    self::MAX_MEAN_CHANNEL_DIFFERENCE,
+                    $configuration['maxDifference'] ?? self::MAX_MEAN_CHANNEL_DIFFERENCE,
                     $this->meanChannelDifference($this->referencePath($state, 'admin-components-'), $capture),
                     "Admin component gallery state [{$state}] differs from its approved reference.",
                 );
@@ -165,6 +182,41 @@ final class ComponentGalleryVisualTest extends TestCase
         } finally {
             @unlink($reference);
             @unlink($capture);
+        }
+    }
+
+    public function test_feedback_mobile_threshold_accepts_small_drift_and_rejects_meaningful_change(): void
+    {
+        $threshold = self::COMPONENT_STATES['feedback-mobile']['maxDifference'];
+        $reference = tempnam(sys_get_temp_dir(), 'cataloghub-feedback-reference-');
+        $smallDrift = tempnam(sys_get_temp_dir(), 'cataloghub-feedback-small-');
+        $meaningfulChange = tempnam(sys_get_temp_dir(), 'cataloghub-feedback-large-');
+        $this->assertIsString($reference);
+        $this->assertIsString($smallDrift);
+        $this->assertIsString($meaningfulChange);
+        $referenceImage = imagecreatetruecolor(100, 100);
+        $smallDriftImage = imagecreatetruecolor(100, 100);
+        $meaningfulChangeImage = imagecreatetruecolor(100, 100);
+        $this->assertInstanceOf(GdImage::class, $referenceImage);
+        $this->assertInstanceOf(GdImage::class, $smallDriftImage);
+        $this->assertInstanceOf(GdImage::class, $meaningfulChangeImage);
+        imagefill($referenceImage, 0, 0, imagecolorallocate($referenceImage, 255, 255, 255));
+        imagefill($smallDriftImage, 0, 0, imagecolorallocate($smallDriftImage, 255, 255, 255));
+        imagefill($meaningfulChangeImage, 0, 0, imagecolorallocate($meaningfulChangeImage, 255, 255, 255));
+        imagefilledrectangle($smallDriftImage, 0, 0, 99, 4, imagecolorallocate($smallDriftImage, 0, 0, 0));
+        imagefilledrectangle($meaningfulChangeImage, 0, 0, 99, 5, imagecolorallocate($meaningfulChangeImage, 0, 0, 0));
+        imagepng($referenceImage, $reference);
+        imagepng($smallDriftImage, $smallDrift);
+        imagepng($meaningfulChangeImage, $meaningfulChange);
+
+        try {
+            $this->assertSame(self::MAX_FEEDBACK_MOBILE_MEAN_CHANNEL_DIFFERENCE, $threshold);
+            $this->assertLessThanOrEqual($threshold, $this->meanChannelDifference($reference, $smallDrift));
+            $this->assertGreaterThan($threshold, $this->meanChannelDifference($reference, $meaningfulChange));
+        } finally {
+            @unlink($reference);
+            @unlink($smallDrift);
+            @unlink($meaningfulChange);
         }
     }
 

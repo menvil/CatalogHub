@@ -14,7 +14,7 @@
 <x-ui.form.field :id="$id" :label="$label" :required="$required" :help="$help" :error="$error">
     <select id="{{ $id }}" name="{{ str_ends_with($name, '[]') ? $name : $name.'[]' }}" multiple size="{{ $size }}" @required($required) @disabled($disabled)
         @if (filled($error)) aria-invalid="true" @endif @if ($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
-        {{ $controlAttributes->class('block w-full rounded-admin-input border border-admin-border bg-admin-surface px-3 py-2 text-sm text-admin-text focus:border-admin-primary focus:outline-none focus:ring-2 focus:ring-admin-primary/20 disabled:opacity-60') }}>
+        {{ $controlAttributes->class('block w-full cursor-pointer rounded-admin-input border border-admin-border bg-admin-surface p-1 text-sm text-admin-text focus:border-admin-primary focus:outline-none focus:ring-2 focus:ring-admin-primary/20 disabled:cursor-not-allowed disabled:opacity-60') }} data-ui-multi-select>
         @foreach ($options as $value => $option)
             @if (is_array($option))
                 <optgroup label="{{ $value }}">@foreach ($option as $groupValue => $groupLabel)<option value="{{ $groupValue }}" @selected(in_array((string) $groupValue, $selectedValues, true))>{{ $groupLabel }}</option>@endforeach</optgroup>

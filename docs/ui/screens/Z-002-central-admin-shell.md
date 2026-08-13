@@ -10,7 +10,7 @@ regions: sidebar;header;page-header;flash-region;main
 actions: navigate;collapse-sidebar;logout
 states: default;collapsed;mobile;long-header
 permissions: central.panel.access
-responsive: Sidebar is persistent on desktop and an accessible drawer on mobile.
+responsive: Sidebar is persistent on desktop, the application workspace uses the available width, and navigation becomes an accessible drawer on mobile.
 out_of_scope: business-dashboard-metrics;real-search;notification-center
 reference_version: v1
 ---
@@ -29,6 +29,14 @@ The Central Admin shell is the single presentation frame for Central administrat
 - `CA-001`: a deterministic empty foundation state with no queries for future dashboard data.
 
 The protected production route is `/admin/central`. The `/dev/central-shell` fixture exists only in local and testing environments and uses a deterministic in-memory Central user.
+
+Central Admin uses Filament's full-width application workspace with the standard
+responsive page padding. Individual pages and components may apply a local width
+constraint when readability requires it; tables and complex editors should not
+restore a global narrow container.
+The desktop sidebar identity row and application header share the same foundation
+header height; the mobile user action collapses to its icon so that alignment is
+preserved without horizontal overflow.
 
 ## Responsive states
 

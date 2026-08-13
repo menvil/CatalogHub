@@ -3,8 +3,9 @@
 @endphp
 
 <header
-    class="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-admin-border bg-admin-surface px-admin-page py-3 text-admin-text"
+    class="flex h-[var(--height-foundation-header)] items-center justify-between gap-3 border-b border-admin-border bg-admin-surface px-admin-page text-admin-text"
     data-site-header
+    data-admin-shell-header
 >
     <div class="flex min-w-0 items-center gap-2">
         <button
@@ -33,7 +34,7 @@
         </span>
 
         @if ($siteAdminUser instanceof \App\Models\User)
-            <span class="max-w-48 truncate text-sm font-medium text-admin-text">{{ $siteAdminUser->name }}</span>
+            <span class="hidden max-w-48 truncate text-sm font-medium text-admin-text sm:inline">{{ $siteAdminUser->name }}</span>
             @if (\Illuminate\Support\Facades\Route::has('filament.site.auth.logout'))
                 <form method="post" action="{{ route('filament.site.auth.logout') }}">
                     @csrf

@@ -52,7 +52,7 @@
                 ])
 
                 <main id="site-main-content" class="px-admin-page py-admin-section" tabindex="-1">
-                    <div class="mx-auto max-w-7xl space-y-admin-section">
+                    <div class="w-full space-y-admin-section" data-admin-workspace>
                         @if ($siteAdminCurrentSite instanceof \App\Models\Site && $siteAdminUser instanceof \App\Models\User)
                             <x-site-admin.site-selector
                                 :current-site="$siteAdminCurrentSite"

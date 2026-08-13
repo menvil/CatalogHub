@@ -46,7 +46,7 @@ final class SiteResolverTest extends TestCase
         SiteDomain::factory()->create(['host' => 'inactive.example.test', 'is_active' => false]);
         $resolver = app(SiteResolver::class);
 
-        foreach (['unknown.example.test', 'inactive.example.test'] as $host) {
+        foreach (['unknown.example.test', 'inactive.example.test', 'localhost'] as $host) {
             try {
                 $resolver->resolve($host);
                 self::fail("Host [{$host}] unexpectedly resolved.");

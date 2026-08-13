@@ -36,12 +36,24 @@ final class ComponentGalleryTest extends TestCase
             ->get('/admin/central/component-gallery')
             ->assertOk()
             ->assertSee('Foundation Component Gallery')
-            ->assertSee('data-gallery-fixture="foundation-v1"', false)
-            ->assertSee('Color and status tokens')
-            ->assertSee('Typography')
-            ->assertSee('Spacing and geometry')
-            ->assertSee('Heroicons')
-            ->assertSee('Responsive density')
+            ->assertSee('data-admin-components-fixture="admin-components-v1"', false)
+            ->assertSee('data-admin-components-section="catalog"', false)
+            ->assertSee('Buttons &amp; Actions', false)
+            ->assertSee('Form Controls')
+            ->assertSee('Checkbox list')
+            ->assertSee('Checkbox dropdown')
+            ->assertSee('Scrollable checkbox list')
+            ->assertSee('Calendar picker')
+            ->assertSee('Date &amp; time picker', false)
+            ->assertSee('Tables')
+            ->assertSee('Status / Data Indicators')
+            ->assertSee('Layout')
+            ->assertSee('Feedback')
+            ->assertSee('Overlays')
+            ->assertSee('data-admin-localized-field-editor', false)
+            ->assertSee('data-admin-media-picker', false)
+            ->assertSee('data-admin-diff-viewer', false)
+            ->assertSee('data-admin-import-progress-panel', false)
             ->assertSee('/build/assets/central-admin-', false)
             ->assertDontSee('data-presentation-context="site-admin"', false)
             ->assertDontSee('data-presentation-context="public-site"', false);
@@ -60,8 +72,11 @@ final class ComponentGalleryTest extends TestCase
         $markers = [
             'forms' => 'data-gallery-forms-fixture',
             'tables' => 'data-gallery-tables-fixture',
+            'indicators' => 'data-gallery-indicators-fixture',
+            'layout' => 'data-gallery-layout-fixture',
             'feedback' => 'data-gallery-feedback-fixture',
-            'states' => 'data-gallery-states-fixture',
+            'overlays' => 'data-gallery-overlays-fixture',
+            'advanced' => 'data-gallery-advanced-fixture',
             'actions' => 'data-gallery-actions-fixture',
         ];
 
@@ -71,7 +86,7 @@ final class ComponentGalleryTest extends TestCase
                 ->assertSee('data-admin-components-fixture="admin-components-v1"', false)
                 ->assertSee('data-admin-components-section="'.$section.'"', false)
                 ->assertSee($marker, false)
-                ->assertSee('Admin component gallery');
+                ->assertSee('Foundation Component Gallery');
         }
 
         $this->get('/dev/component-gallery?mode=components&section=acceptance&acceptance=1')
@@ -102,7 +117,20 @@ final class ComponentGalleryTest extends TestCase
             'name="q" value="Acme"',
         ], false);
         $response->assertSee('href="/dev/component-gallery?mode=components&amp;section=tables&amp;q=Acme&amp;page=3"', false);
-        $response->assertSee('href="?mode=components&amp;section=tables"', false);
+        $response->assertSee('href="/dev/component-gallery?mode=components&amp;section=tables"', false);
+    }
+
+    public function test_authenticated_gallery_navigation_keeps_the_active_central_route(): void
+    {
+        $centralAdmin = User::factory()->create(['role' => UserRole::CentralAdmin]);
+
+        $response = $this->actingAs($centralAdmin)
+            ->get('/admin/central/component-gallery?mode=components&section=tables&q=Acme')
+            ->assertOk();
+
+        $response->assertSee('href="/admin/central/component-gallery?mode=components&amp;section=tables&amp;q=Acme&amp;page=3"', false);
+        $response->assertSee('href="/admin/central/component-gallery?mode=components&amp;section=tables"', false);
+        $response->assertDontSee('href="/dev/component-gallery?', false);
     }
 
     public function test_component_gallery_rejects_unknown_fixture_sections(): void

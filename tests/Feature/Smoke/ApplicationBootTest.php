@@ -14,8 +14,8 @@ final class ApplicationBootTest extends TestCase
         self::assertGreaterThanOrEqual(80500, PHP_VERSION_ID);
         self::assertSame(0, Artisan::call('about'));
 
-        $this->get('/')
-            ->assertOk()
-            ->assertViewIs('pages.home');
+        $centralLogin = app('router')->getRoutes()->getByName('filament.central.auth.login');
+
+        self::assertNotNull($centralLogin);
     }
 }

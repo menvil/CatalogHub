@@ -40,6 +40,8 @@ class SiteAdminLayoutTest extends TestCase
         $this->assertStringContainsString('BG market', $html);
         $this->assertStringContainsString('Locale: bg', $html);
         $this->assertStringContainsString('Site admin slot content', $html);
+        $this->assertStringContainsString('data-admin-shell-header', $html);
+        $this->assertStringContainsString('data-admin-sidebar-header', $html);
         $this->assertStringNotContainsString('data-central-shell', $html);
         $this->assertStringNotContainsString('Central Admin navigation', $html);
 

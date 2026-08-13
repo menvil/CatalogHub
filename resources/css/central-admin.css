@@ -2,6 +2,7 @@
 @import '../../public/css/filament/filament/app.css';
 @import './foundation.css';
 @import './admin-navigation.css';
+@import './admin-controls.css';
 
 @source '../../app/Filament/Central/**/*';
 @source '../../app/Filament/Pages/**/*';

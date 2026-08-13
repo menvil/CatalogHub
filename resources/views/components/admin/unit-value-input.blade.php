@@ -29,14 +29,14 @@
             value="{{ $value }}"
             aria-invalid="{{ $error ? 'true' : 'false' }}"
             @if ($error) aria-describedby="{{ $inputId }}-error" @endif
-            class="w-full rounded-admin-input border bg-admin-surface px-3 py-2 text-sm text-admin-text placeholder:text-admin-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary {{ $error ? 'border-admin-danger' : 'border-admin-border' }}"
+            class="w-full rounded-admin-input border bg-admin-surface px-3 py-2 text-sm text-admin-text placeholder:text-admin-muted focus:border-admin-primary focus:outline-none focus:ring-2 focus:ring-admin-primary/20 {{ $error ? 'border-admin-danger' : 'border-admin-border' }}"
             placeholder="Value"
         >
 
         <label for="{{ $selectId }}" class="sr-only">Unit</label>
         <select
             id="{{ $selectId }}"
-            class="w-full rounded-admin-input border border-admin-border bg-admin-surface px-3 py-2 text-sm text-admin-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary"
+            class="w-full cursor-pointer rounded-admin-input border border-admin-border bg-admin-surface px-3 py-2 text-sm text-admin-text focus:border-admin-primary focus:outline-none focus:ring-2 focus:ring-admin-primary/20"
         >
             @foreach ($availableUnits as $option)
                 @php

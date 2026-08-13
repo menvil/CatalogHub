@@ -10,7 +10,7 @@ regions: sidebar;site-selector;site-context-header;page-header;main
 actions: navigate;switch-site;collapse-sidebar;logout
 states: default;mobile;one-site;multiple-sites
 permissions: site.panel.access;active-site-membership
-responsive: Current site remains visible while navigation becomes an accessible mobile drawer.
+responsive: Current site remains visible, the application workspace uses the available width, and navigation becomes an accessible mobile drawer.
 out_of_scope: site-settings-crud;real-sync;future-modules
 reference_version: v1
 ---
@@ -30,6 +30,12 @@ The Site Admin shell is the site-aware presentation frame for authorized site ad
 - `sync status`: reports only `Not configured` or `Unknown`; it does not query future sync storage.
 
 The protected production route is `/admin/site?site_id={authorized-site}`. The `/dev/site-admin-shell` fixture exists only in local and testing environments and uses deterministic in-memory models.
+
+Site Admin uses Filament's full-width application workspace with the standard
+responsive page padding. A focused form or readable text region may constrain
+itself locally, while tables and complex editors can consume the remaining canvas.
+The sidebar identity row and application header use the same foundation header
+height, with the selected site kept in the compact sidebar identity line.
 
 ## Responsive states
 

@@ -25,6 +25,8 @@ The multi-category shell is the public presentation boundary for sites that expo
 
 - Theme ID: `cataloghub-multi`.
 - Layout marker: `data-public-layout="multi-category"`.
+- A bare active site host redirects to `/{defaultLocale}`; unknown and archived
+  bare hosts return the safe public `404` boundary.
 - Theme IDs and Blade views come only from the typed whitelist in `config/public-themes.php`.
 - Canonical and `hreflang` URLs use the active primary domain and enabled site locales.
 - Public rendering loads only the public Vite entry point and has no Central or Site Admin dependency.

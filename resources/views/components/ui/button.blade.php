@@ -23,7 +23,7 @@
     $isDisabled = (bool) $disabled || (bool) $loading;
     $rawHref = is_string($href) ? trim($href) : null;
     $safeHref = $rawHref !== null && \App\Support\Presentation\SafePresentationUrl::allows($rawHref, allowFragment: true) ? $rawHref : null;
-    $classes = 'inline-flex min-h-10 items-center justify-center gap-2 rounded-admin-input border px-3 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary disabled:cursor-not-allowed disabled:opacity-60 '.$variants[$variant];
+    $classes = 'inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-admin-input border px-3 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary disabled:cursor-not-allowed disabled:opacity-60 '.$variants[$variant];
 @endphp
 
 @if ($rawHref !== null && ! $isDisabled)

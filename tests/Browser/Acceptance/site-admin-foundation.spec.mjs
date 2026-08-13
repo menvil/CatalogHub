@@ -11,12 +11,27 @@ test('Site Admin owner can switch both active site contexts and log out', async 
     const assertNoPageErrors = observePageErrors(page)
 
     await signIn(page, 'site', foundationDemo.siteAdmin)
+    await page.setViewportSize({ width: 1440, height: 1000 })
 
     await expect(page.locator('[data-screen-id="SA-001"]')).toBeVisible()
     await expect(page.locator('[data-site-context-header]')).toContainText('Tech Germany')
     await expect(page.locator('[data-site-context-header]')).toContainText('tech-germany.test')
     await expect(page.locator('[data-site-context-header]')).toContainText('de-DE')
     await expect(page.locator('[data-central-shell]')).toHaveCount(0)
+    const desktopWorkspace = await page.locator('[data-admin-workspace]').evaluate((element) => element.getBoundingClientRect().width)
+    expect(desktopWorkspace).toBeGreaterThan(1050)
+    const [shellHeaderHeight, sidebarHeaderHeight] = await Promise.all([
+        page.locator('[data-admin-shell-header]').evaluate((element) => element.getBoundingClientRect().height),
+        page.locator('[data-admin-sidebar-header]').evaluate((element) => element.getBoundingClientRect().height),
+    ])
+    expect(shellHeaderHeight).toBe(sidebarHeaderHeight)
+    await captureAcceptanceScreenshot(page, testInfo, 'site-admin-dashboard')
+
+    await page.setViewportSize({ width: 1920, height: 1080 })
+    const wideWorkspace = await page.locator('[data-admin-workspace]').evaluate((element) => element.getBoundingClientRect().width)
+    expect(wideWorkspace).toBeGreaterThan(1500)
+    await captureAcceptanceScreenshot(page, testInfo, 'site-admin-dashboard-wide')
+    await page.setViewportSize({ width: 1440, height: 1000 })
 
     await page.getByText('Switch site', { exact: true }).click()
     await page.getByRole('link', { name: 'Monitors Germany' }).click()
@@ -29,6 +44,7 @@ test('Site Admin owner can switch both active site contexts and log out', async 
     await expect(page.getByRole('button', { name: 'Open navigation' })).toBeVisible()
     await expect(page.locator('[data-site-context-header]')).toContainText('EUR')
     await captureAcceptanceScreenshot(page, testInfo, 'site-admin-mobile')
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
 
     await page.getByRole('button', { name: 'Logout' }).click()
     await expect(page).toHaveURL(/\/admin\/site\/login$/)

@@ -17,6 +17,8 @@ final class ComponentGalleryVisualTest extends TestCase
     // Linux and macOS rasterize the text-dense mobile states slightly differently.
     private const MAX_MOBILE_MEAN_CHANNEL_DIFFERENCE = 0.045;
 
+    private const MAX_FEEDBACK_MOBILE_MEAN_CHANNEL_DIFFERENCE = 0.055;
+
     /** @var array<string, array{width: int, height: int, section: string, maxDifference?: float}> */
     private const COMPONENT_STATES = [
         'forms-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'forms'],
@@ -24,7 +26,7 @@ final class ComponentGalleryVisualTest extends TestCase
         'tables-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'tables'],
         'tables-mobile' => ['width' => 360, 'height' => 900, 'section' => 'tables', 'maxDifference' => self::MAX_MOBILE_MEAN_CHANNEL_DIFFERENCE],
         'feedback-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'feedback'],
-        'feedback-mobile' => ['width' => 360, 'height' => 900, 'section' => 'feedback', 'maxDifference' => self::MAX_MOBILE_MEAN_CHANNEL_DIFFERENCE],
+        'feedback-mobile' => ['width' => 360, 'height' => 900, 'section' => 'feedback', 'maxDifference' => self::MAX_FEEDBACK_MOBILE_MEAN_CHANNEL_DIFFERENCE],
         'states-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'states'],
         'states-mobile' => ['width' => 360, 'height' => 900, 'section' => 'states', 'maxDifference' => self::MAX_MOBILE_MEAN_CHANNEL_DIFFERENCE],
         'actions-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'actions'],

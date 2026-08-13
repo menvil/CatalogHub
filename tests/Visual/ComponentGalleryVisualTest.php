@@ -17,11 +17,11 @@ final class ComponentGalleryVisualTest extends TestCase
     /** @var array<string, array{width: int, height: int, section: string, maxDifference?: float}> */
     private const COMPONENT_STATES = [
         'forms-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'forms'],
-        'forms-mobile' => ['width' => 360, 'height' => 900, 'section' => 'forms'],
+        // Linux and macOS rasterize the text-dense mobile states slightly differently.
+        'forms-mobile' => ['width' => 360, 'height' => 900, 'section' => 'forms', 'maxDifference' => 0.045],
         'tables-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'tables'],
         'tables-mobile' => ['width' => 360, 'height' => 900, 'section' => 'tables'],
         'feedback-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'feedback'],
-        // Linux and macOS rasterize the text-dense mobile state slightly differently.
         'feedback-mobile' => ['width' => 360, 'height' => 900, 'section' => 'feedback', 'maxDifference' => 0.045],
         'states-desktop' => ['width' => 1280, 'height' => 1000, 'section' => 'states'],
         'states-mobile' => ['width' => 360, 'height' => 900, 'section' => 'states'],

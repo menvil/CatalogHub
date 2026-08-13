@@ -10,8 +10,14 @@ The persistent fields are:
 - `website_url`: optional official brand website;
 - `country_code`: optional two-character country code.
 
-The lifecycle is `draft` → `active` → `archived`. Brands are not soft-deleted, and the domain has no physical deletion workflow.
+Write operations use explicit application actions. Create always produces a `draft` Brand. The allowed lifecycle transitions are `draft` → `active`, `draft` → `archived`, `active` → `archived`, and `archived` → `draft`. Restore returns an archived Brand to `draft` so it can be reviewed before explicit activation. Generic update cannot change status. Brands are not soft-deleted, and the domain has no physical deletion workflow.
+
+On create, `slug` is generated from the normalized name when omitted. A slug is stable when the name changes and can only be changed explicitly. Slug uniqueness is the hard database invariant. Exact normalized, case-insensitive canonical name duplicates are rejected by the application layer, while similar names remain valid and `name` remains non-unique in the database.
+
+Canonical names preserve case, punctuation, and Unicode while trimming and collapsing whitespace. `website_url` is an optional HTTP or HTTPS URL. `country_code` is an optional, structurally validated uppercase two-letter ASCII code.
 
 Localized names, descriptions, and SEO data are not stored on `CentralBrand`. Logo and media data are not stored directly on `CentralBrand`. Site-specific visibility and other site-specific data belong to their respective layers.
 
 A Brand may have many `CentralProduct` records through the existing `products` relationship.
+
+Authorization, audit logging, media, translations, and site-specific configuration are outside this write contract.

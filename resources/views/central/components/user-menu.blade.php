@@ -1,12 +1,13 @@
 <details class="relative" data-central-user-menu>
     <summary
         class="flex cursor-pointer list-none items-center gap-2 rounded-admin-input border border-admin-border bg-admin-surface px-3 py-2 text-sm font-medium text-admin-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary"
+        aria-haspopup="menu"
     >
         <x-ui.icon name="user-circle" size="sm" />
         <span class="hidden max-w-40 truncate sm:block">{{ $user->name }}</span>
     </summary>
 
-    <div class="absolute right-0 z-30 mt-2 min-w-56 rounded-admin-card border border-admin-border bg-admin-surface p-2 shadow-admin-floating">
+    <div class="absolute right-0 z-30 mt-2 min-w-56 rounded-admin-card border border-admin-border bg-admin-surface p-2 shadow-admin-floating" role="menu">
         <p class="truncate px-2 py-1 text-xs text-admin-muted">{{ $user->email }}</p>
 
         @if (app()->environment(['local', 'testing']))

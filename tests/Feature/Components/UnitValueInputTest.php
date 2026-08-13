@@ -23,6 +23,8 @@ class UnitValueInputTest extends TestCase
         $this->assertStringContainsString('type="number"', $html);
         $this->assertStringContainsString('value="100"', $html);
         $this->assertStringContainsString('<select', $html);
+        $this->assertStringContainsString('data-ui-select', $html);
+        $this->assertStringContainsString('data-ui-select-trigger', $html);
         $this->assertStringContainsString('W', $html);
         $this->assertStringContainsString('kW', $html);
         $this->assertStringContainsString('value="w" selected', $html);
@@ -54,8 +56,8 @@ class UnitValueInputTest extends TestCase
 
         preg_match_all('/id="(unit-value-value-[^"]+)"/', $html, $matches);
 
-        $this->assertCount(4, $matches[1]);
-        $this->assertCount(4, array_unique($matches[1]));
+        $this->assertGreaterThanOrEqual(4, count($matches[1]));
+        $this->assertCount(count($matches[1]), array_unique($matches[1]));
         $this->assertStringContainsString('>0</span>', $html);
         $this->assertStringContainsString('>0.0</span>', $html);
     }

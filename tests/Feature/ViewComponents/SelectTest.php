@@ -28,6 +28,7 @@ final class SelectTest extends TestCase
         $this->assertStringContainsString('for="market-trigger"', $html);
         $this->assertStringContainsString('id="market-trigger"', $html);
         $this->assertStringContainsString('data-ui-select-value', $html);
+        $this->assertStringContainsString('aria-selected:bg-admin-primary aria-selected:text-white', $html);
         $this->assertSame(4, substr_count($html, 'data-ui-select-option'));
     }
 

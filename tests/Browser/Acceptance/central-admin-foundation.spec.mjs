@@ -29,7 +29,17 @@ test('Central Admin foundation flow covers login, shell, gallery, user menu, and
 
     await page.locator('[data-central-user-menu] summary').click()
     await expect(page.locator('[data-central-user-menu]')).toContainText(foundationDemo.centralAdmin)
+    await page.locator('[data-admin-workspace]').click({ position: { x: 20, y: 20 } })
+    await expect(page.locator('[data-central-user-menu]')).not.toHaveAttribute('open', '')
     await captureAcceptanceScreenshot(page, testInfo, 'central-dashboard')
+
+    await page.goto('/admin/central/brands')
+    const brandSearch = page.locator('[data-brand-list-search]')
+    await brandSearch.fill('Samsung')
+    await expect(page).toHaveURL(/search=Samsung/)
+    await brandSearch.fill('')
+    await expect(page).not.toHaveURL(/search=Samsung/)
+    await expect(brandSearch).toHaveValue('')
 
     await page.goto('/admin/central/component-gallery')
     await expect(page.locator('[data-screen-id="CA-DS-002"]')).toBeVisible()

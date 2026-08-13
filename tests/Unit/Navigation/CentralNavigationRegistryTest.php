@@ -23,6 +23,7 @@ final class CentralNavigationRegistryTest extends TestCase
         $this->assertSame([
             'dashboard',
             'catalog',
+            'brands',
             'imports',
             'media',
             'translations',
@@ -32,8 +33,8 @@ final class CentralNavigationRegistryTest extends TestCase
             'users',
             'system',
         ], array_column($items, 'id'));
-        $this->assertCount(10, array_unique(array_column($items, 'id')));
-        $this->assertCount(10, array_unique(array_column($items, 'route')));
+        $this->assertCount(11, array_unique(array_column($items, 'id')));
+        $this->assertCount(11, array_unique(array_column($items, 'route')));
         $this->assertCount(10, array_unique(array_column($items, 'permission')));
     }
 
@@ -46,6 +47,7 @@ final class CentralNavigationRegistryTest extends TestCase
         $this->assertSame([
             'dashboard',
             'catalog',
+            'brands',
             'imports',
             'media',
             'translations',

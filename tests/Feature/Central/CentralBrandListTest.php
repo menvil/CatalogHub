@@ -11,6 +11,7 @@ use App\Models\CentralCatalog\CentralBrand;
 use App\Models\User;
 use App\Queries\CentralCatalog\CentralBrandListQuery;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Tests\Support\BrandListFixture;
@@ -39,7 +40,7 @@ final class CentralBrandListTest extends TestCase
         $this->assertSame([], array_values(array_intersect($first, $second)));
     }
 
-    public function test_ca_011_uses_the_foundation_screen_and_table_components(): void
+    public function test_ca_011_uses_the_canonical_brand_list_presentation(): void
     {
         $brand = CentralBrand::factory()->active()->create([
             'name' => 'Samsung',
@@ -52,30 +53,25 @@ final class CentralBrandListTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->get(route('central.brands.index'))
             ->assertOk()
-            ->assertSee('data-central-shell', false)
+            ->assertSee('data-admin-layout="central"', false)
             ->assertSee('data-screen-id="CA-011"', false)
-            ->assertSee('data-admin-table-toolbar', false)
-            ->assertSee('data-admin-filter-bar', false)
+            ->assertSee('data-central-header-breadcrumbs', false)
+            ->assertSee('class="brand-list-filters"', false)
             ->assertSee('data-admin-data-table', false)
-            ->assertSee('table-fixed sm:min-w-foundation-table sm:table-auto', false)
             ->assertSee('data-admin-status-badge="success"', false)
             ->assertSee('Brands')
-            ->assertSee('Canonical brands used across the central catalog.')
-            ->assertSeeInOrder(['Name', 'Slug', 'Status', 'Country', 'Website', 'Updated', 'Actions'])
+            ->assertSee('Manage brand profiles, product associations, media assets, and localization across your catalog.')
+            ->assertSeeInOrder(['Brand', 'Status', 'Updated', 'Actions'])
+            ->assertSee('Add Brand')
+            ->assertSee('href="'.route('central.brands.create', absolute: false).'"', false)
             ->assertSee('Samsung')
             ->assertSee('samsung')
             ->assertSee('Active')
-            ->assertSee('KR')
-            ->assertSee('samsung.com')
-            ->assertSee('Aug 13, 2026')
-            ->assertSee('href="https://www.samsung.com/global/long-path"', false)
-            ->assertSee('target="_blank"', false)
-            ->assertSee('rel="noopener noreferrer"', false)
-            ->assertSee('Add Brand')
-            ->assertSee('href="/admin/central/brands/create"', false)
+            ->assertSee('data-row-id="'.$brand->getKey().'"', false)
             ->assertSee('data-admin-row-actions="'.$brand->getKey().'"', false)
-            ->assertSee('href="/admin/central/brands/'.$brand->getKey().'/edit"', false)
-            ->assertSee('Edit');
+            ->assertSee('href="'.route('central.brands.edit', $brand, absolute: false).'"', false)
+            ->assertSee('Edit')
+            ->assertDontSee('href="https://www.samsung.com/global/long-path"', false);
     }
 
     public function test_search_by_name_and_slug_is_database_backed_and_preserves_constraints(): void
@@ -136,8 +132,7 @@ final class CentralBrandListTest extends TestCase
                 ->assertOk()
                 ->assertSee($visible)
                 ->assertDontSee($hiddenA)
-                ->assertDontSee($hiddenB)
-                ->assertSee('Status: '.ucfirst($status));
+                ->assertDontSee($hiddenB);
         }
 
         $this->get(route('central.brands.index'))
@@ -174,42 +169,58 @@ final class CentralBrandListTest extends TestCase
             ->assertSee('Samsung')
             ->assertDontSee('Sony')
             ->assertDontSee('Xiaomi')
-            ->assertSee('Page 1')
-            ->assertSee('20')
-            ->assertSee('50')
-            ->assertSee('100');
+            ->assertSee('Showing 1 to 20')
+            ->assertSee('20 per page')
+            ->assertSee('50 per page')
+            ->assertSee('100 per page');
 
         $this->get(route('central.brands.index', ['page' => 2]))
             ->assertOk()
             ->assertDontSee('Acer')
             ->assertDontSee('Samsung')
             ->assertSeeInOrder(['Sony', 'ViewSonic', 'Xiaomi', 'Zotac'])
-            ->assertSee('Page 2');
+            ->assertSee('Showing 21 to 24');
     }
 
-    public function test_database_and_filtered_empty_states_use_foundation_state_components(): void
+    public function test_requested_page_sizes_are_cast_and_passed_to_pagination(): void
     {
-        $emptyResponse = $this->actingAs(User::factory()->create())
+        BrandListFixture::create();
+        $this->actingAs(User::factory()->create());
+
+        foreach ([50, 100] as $perPage) {
+            $response = $this->get(route('central.brands.index', ['per_page' => (string) $perPage]))
+                ->assertOk();
+
+            /** @var LengthAwarePaginator<int, CentralBrand> $brands */
+            $brands = $response->viewData('brands');
+
+            $this->assertSame($perPage, $brands->perPage());
+        }
+    }
+
+    public function test_database_and_filtered_empty_states_are_clear(): void
+    {
+        $createUrl = route('central.brands.create', absolute: false);
+
+        $this->actingAs(User::factory()->create())
             ->get(route('central.brands.index'))
             ->assertOk()
             ->assertSee('data-ui-screen-state="empty"', false)
             ->assertSee('No brands yet')
-            ->assertSee('Canonical brands will appear here once they are created.')
+            ->assertSee('Create the first canonical brand in the central catalog.')
             ->assertSee('Add Brand')
-            ->assertSee('href="/admin/central/brands/create"', false);
-
-        $this->assertSame(2, substr_count((string) $emptyResponse->getContent(), 'href="/admin/central/brands/create"'));
+            ->assertSee('href="'.$createUrl.'"', false)
+            ->assertSeeInOrder(['No brands yet', 'Add Brand']);
 
         CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
 
-        $response = $this->get(route('central.brands.index', ['q' => 'zzzz-not-existing-brand']))
+        $this->get(route('central.brands.index', ['q' => 'zzzz-not-existing-brand']))
             ->assertOk()
             ->assertSee('data-ui-screen-state="filtered-empty"', false)
             ->assertSee('No matching brands')
-            ->assertSee('No brands match your current search or filters.')
-            ->assertDontSee('Canonical brands will appear here once they are created.');
-
-        $this->assertSame(1, substr_count((string) $response->getContent(), 'href="/admin/central/brands/create"'));
+            ->assertSee('No brands match the current search and filters.')
+            ->assertSee('Clear filters')
+            ->assertDontSee('Create the first canonical brand in the central catalog.');
     }
 
     public function test_brand_list_exposes_only_create_and_edit_actions_and_no_legacy_routes(): void
@@ -221,8 +232,8 @@ final class CentralBrandListTest extends TestCase
             ->assertSee('Add Brand')
             ->assertSee('Edit')
             ->assertDontSee('Archive Brand')
-            ->assertDontSee('Restore Brand')
             ->assertDontSee('Activate Brand')
+            ->assertDontSee('Restore Brand')
             ->assertDontSee('Delete Brand');
 
         $this->assertFalse(Route::has('filament.central.resources.brands.index'));
@@ -244,13 +255,21 @@ final class CentralBrandListTest extends TestCase
 
     public function test_invalid_list_parameters_are_rejected_without_querying_unbounded_data(): void
     {
-        $this->actingAs(User::factory()->create())
-            ->get(route('central.brands.index', [
-                'status' => 'deleted',
-                'sort' => 'normalized_name_hash',
-                'direction' => 'sideways',
-                'per_page' => 1000,
-            ]))
+        $this->actingAs(User::factory()->create());
+
+        $this->get(route('central.brands.index', ['per_page' => 100]))
+            ->assertOk()
+            ->assertSessionDoesntHaveErrors();
+
+        $this->get(route('central.brands.index', ['per_page' => 101]))
+            ->assertSessionHasErrors(['per_page']);
+
+        $this->get(route('central.brands.index', [
+            'status' => 'deleted',
+            'sort' => 'normalized_name_hash',
+            'direction' => 'sideways',
+            'per_page' => 1000,
+        ]))
             ->assertSessionHasErrors(['status', 'sort', 'direction', 'per_page']);
     }
 }

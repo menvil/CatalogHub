@@ -60,7 +60,7 @@
             hidden
         >
             @if ($placeholder !== null)
-                <button type="button" class="flex min-h-9 w-full cursor-pointer items-center rounded-admin-input px-3 py-2 text-left text-sm text-admin-muted hover:bg-admin-surface-muted focus:bg-admin-surface-muted focus:outline-none" role="option" data-ui-select-option data-value="" aria-selected="{{ $selected === null || $selected === '' ? 'true' : 'false' }}">{{ $placeholder }}</button>
+                <button type="button" class="flex min-h-9 w-full cursor-pointer items-center rounded-admin-input px-3 py-2 text-left text-sm text-admin-muted hover:bg-admin-surface-muted focus:bg-admin-surface-muted focus:outline-none aria-selected:bg-admin-primary aria-selected:text-white" role="option" data-ui-select-option data-value="" aria-selected="{{ $selected === null || $selected === '' ? 'true' : 'false' }}">{{ $placeholder }}</button>
             @endif
             @foreach ($options as $value => $option)
                 @if (is_array($option))

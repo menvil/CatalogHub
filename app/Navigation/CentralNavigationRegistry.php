@@ -22,7 +22,7 @@ final class CentralNavigationRegistry
         return [
             $this->item('dashboard', 'Dashboard', 'home', 'filament.central.pages.home', Permission::CentralPageAccess, 'available'),
             $this->item('catalog', 'Catalog', 'squares-2x2', 'filament.central.resources.central-products.index', Permission::CatalogProductsManage, 'available'),
-            $this->item('brands', 'Brands', 'squares-2x2', 'central.brands.index', Permission::CatalogProductsManage, 'available'),
+            $this->item('brands', 'Brands', 'tag', 'central.brands.index', Permission::CatalogProductsManage, 'available'),
             $this->item('imports', 'Imports', 'arrow-up-tray', 'filament.central.resources.import-batches.index', Permission::ImportsManage, 'available'),
             $this->item('media', 'Media', 'photo', 'central.media.index', Permission::MediaManage, 'available'),
             $this->item('translations', 'Translations', 'language', 'central.translations.dashboard', Permission::TranslationsManage, 'available'),

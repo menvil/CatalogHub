@@ -38,23 +38,19 @@
             />
 
             <div class="min-w-0 flex-1">
-                @include('central.components.header', ['centralUser' => $centralUser])
+                @include('central.components.header', ['centralUser' => $centralUser, 'documentTitle' => $documentTitle])
 
                 <main id="central-main-content" class="px-admin-page py-admin-section" tabindex="-1">
                     <div class="w-full space-y-admin-section" data-admin-workspace>
                         <x-admin.flash-messages />
 
-                        <div class="flex flex-col gap-admin-field md:flex-row md:items-start md:justify-between">
-                            <div class="min-w-0">
-                                <nav class="text-sm text-admin-muted" aria-label="Breadcrumbs">
-                                    @yield('breadcrumbs')
-                                </nav>
+                        @hasSection('pageActions')
+                            <div class="flex justify-end">
+                                <div class="flex flex-wrap items-center gap-admin-field">
+                                    @yield('pageActions')
+                                </div>
                             </div>
-
-                            <div class="flex flex-wrap items-center gap-admin-field">
-                                @yield('pageActions')
-                            </div>
-                        </div>
+                        @endif
 
                         <section aria-label="Central Admin content">
                             {{ $slot ?? '' }}

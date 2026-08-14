@@ -50,7 +50,7 @@ final class CentralBrandFormTest extends TestCase
             ->assertSee('data-screen-id="CA-013"', false)
             ->assertSee('Create Brand')
             ->assertSee('Create a canonical brand in the central catalog.')
-            ->assertSeeInOrder(['Central Admin', 'Brands', 'Create'])
+            ->assertSeeInOrder(['Dashboard', 'Brands', 'Create'])
             ->assertSee('data-admin-form-state', false)
             ->assertSee('action="/admin/central/brands"', false)
             ->assertSee('name="_token"', false)
@@ -285,6 +285,29 @@ final class CentralBrandFormTest extends TestCase
             $this->assertSame($status, $brand->fresh()->status);
             $this->assertSame($status->label().' Updated', $brand->fresh()->name);
         }
+    }
+
+    public function test_partial_update_preserves_omitted_optional_fields(): void
+    {
+        $brand = CentralBrand::factory()->active()->create([
+            'name' => 'Samsung',
+            'slug' => 'samsung',
+            'website_url' => 'https://www.samsung.com',
+            'country_code' => 'KR',
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->patch(route('central.brands.update', $brand), [
+                'name' => 'Samsung Electronics',
+                'slug' => 'samsung',
+            ])
+            ->assertRedirect(route('central.brands.edit', $brand));
+
+        $brand->refresh();
+        $this->assertSame('Samsung Electronics', $brand->name);
+        $this->assertSame('https://www.samsung.com', $brand->website_url);
+        $this->assertSame('KR', $brand->country_code);
+        $this->assertSame(CentralBrandStatus::Active, $brand->status);
     }
 
     public function test_invalid_update_preserves_old_input_and_leaves_the_entire_brand_unchanged(): void

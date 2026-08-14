@@ -32,14 +32,32 @@ final class BrandFormVisualTest extends TestCase
             true,
             flags: JSON_THROW_ON_ERROR,
         );
+
+        self::assertIsArray($manifest);
+        self::assertArrayHasKey('references', $manifest);
+        self::assertIsArray($manifest['references']);
+        self::assertIsList($manifest['references']);
+        foreach ($manifest['references'] as $reference) {
+            self::assertIsArray($reference);
+        }
+
         $references = array_values(array_filter(
             $manifest['references'],
             static fn (array $reference): bool => $reference['screen_id'] === 'CA-013',
         ));
 
         self::assertCount(4, $references);
-        self::assertSame(['create', 'create', 'edit', 'edit'], array_column($references, 'state'));
-        self::assertSame(['1440x1000', '390x844', '1440x1000', '390x844'], array_column($references, 'viewport'));
+        $stateViewports = array_map(
+            static fn (array $reference): string => $reference['state'].'@'.$reference['viewport'],
+            $references,
+        );
+        sort($stateViewports);
+        self::assertSame([
+            'create@1440x1000',
+            'create@390x844',
+            'edit@1440x1000',
+            'edit@390x844',
+        ], $stateViewports);
         self::assertSame(array_fill(0, 4, 'brand-form-v1'), array_column($references, 'fixture'));
     }
 }

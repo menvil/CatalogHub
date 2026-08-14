@@ -75,7 +75,7 @@
         </div>
 
         <x-slot:footer>
-            <div class="flex flex-col-reverse gap-admin-field sm:flex-row sm:items-center sm:justify-between" data-screen-region="form-actions">
+            <div class="flex items-center justify-between gap-admin-field" data-screen-region="form-actions">
                 <x-ui.button variant="secondary" :href="route('central.brands.index', absolute: false)">Cancel</x-ui.button>
                 <x-ui.button type="submit">{{ $submitLabel }}</x-ui.button>
             </div>

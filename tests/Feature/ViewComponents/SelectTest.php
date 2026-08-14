@@ -28,6 +28,7 @@ final class SelectTest extends TestCase
         $this->assertStringContainsString('for="market-trigger"', $html);
         $this->assertStringContainsString('id="market-trigger"', $html);
         $this->assertStringContainsString('data-ui-select-value', $html);
+        $this->assertMatchesRegularExpression('/<button(?=[^>]*class="[^"]*aria-selected:bg-admin-primary[^"]*aria-selected:text-white[^"]*")(?=[^>]*data-ui-select-option)(?=[^>]*data-value="")[^>]*>Choose<\/button>/', $html);
         $this->assertSame(4, substr_count($html, 'data-ui-select-option'));
     }
 

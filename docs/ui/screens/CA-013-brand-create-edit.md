@@ -6,7 +6,7 @@ roles: authorized Central Admin catalog user
 route: /admin/central/brands/create (GET); /admin/central/brands (POST); /admin/central/brands/{brand}/edit (GET); /admin/central/brands/{brand} (PATCH)
 viewports: desktop=1440x1000;mobile=390x844
 fixture: brand-form-v1
-regions: central-shell;page-header;breadcrumbs;status-context;general-form-card;form-fields;form-actions;validation-errors;flash-feedback
+regions: central-shell;header-breadcrumbs;page-header;status-context;general-form-card;form-fields;form-actions;validation-errors;flash-feedback
 actions: cancel;create-brand;save-changes
 states: create-default;create-validation-error;edit-draft;edit-active;edit-archived;edit-validation-error;save-progress;save-success-via-redirect-flash
 permissions: catalog.products.manage

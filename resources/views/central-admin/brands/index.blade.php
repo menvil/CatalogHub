@@ -36,8 +36,8 @@
                         <input
                             id="brand-search"
                             type="search"
-                            name="search"
-                            value="{{ request('search') }}"
+                            name="q"
+                            value="{{ request('q') }}"
                             placeholder="Name or slug..."
                             data-brand-list-search
                         >
@@ -50,7 +50,7 @@
                         name="status"
                         label="Status"
                         placeholder="All"
-                        :options="['active' => 'Active', 'archived' => 'Archived']"
+                        :options="['draft' => 'Draft', 'active' => 'Active', 'archived' => 'Archived']"
                         :selected="request('status')"
                         data-brand-list-submit
                     />
@@ -122,8 +122,8 @@
             </p>
 
                 <form method="GET" action="{{ route('central.brands.index') }}" class="brand-list-per-page">
-                @if (request('search'))
-                    <input type="hidden" name="search" value="{{ request('search') }}">
+                @if (request('q'))
+                    <input type="hidden" name="q" value="{{ request('q') }}">
                 @endif
                 @if (request('status'))
                     <input type="hidden" name="status" value="{{ request('status') }}">

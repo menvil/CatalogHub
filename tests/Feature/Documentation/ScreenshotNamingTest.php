@@ -16,12 +16,17 @@ final class ScreenshotNamingTest extends TestCase
             'tests/Visual/baselines/z-010__component-gallery__1440x1200.png',
             ScreenshotNaming::referencePath('Z-010', 'component-gallery', 1440, 1200),
         );
+        $this->assertSame(
+            'tests/Visual/baselines/ca-011__default__390x844.png',
+            ScreenshotNaming::referencePath('CA-011', 'default', 390, 844),
+        );
     }
 
     public function test_invalid_screen_state_and_dimensions_are_rejected(): void
     {
         foreach ([
             ['screen' => 'Z-011', 'state' => 'default', 'width' => 1, 'height' => 1],
+            ['screen' => 'CA-11', 'state' => 'default', 'width' => 1, 'height' => 1],
             ['screen' => 'Z-001', 'state' => 'Default state', 'width' => 1, 'height' => 1],
             ['screen' => 'Z-001', 'state' => 'default', 'width' => 0, 'height' => 1],
         ] as $input) {

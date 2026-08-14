@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\CentralAdmin\Backup\SnapshotDownloadController;
-use App\Http\Controllers\CentralAdmin\Catalog\CentralBrandsController;
+use App\Http\Controllers\CentralAdmin\CentralBrandListController;
 use App\Http\Controllers\CentralAdmin\DesignSystem\ComponentGalleryController;
 use App\Http\Controllers\CentralAdmin\Media\MediaAssetDetailController;
 use App\Http\Controllers\CentralAdmin\Media\MediaLibraryController;
@@ -17,14 +17,14 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', EnsureCentralAdminAccess::class])
     ->prefix('admin/central')
     ->group(function (): void {
+        Route::get('/brands', CentralBrandListController::class)
+            ->middleware('can:catalog.products.manage')
+            ->name('central.brands.index');
+
         if (app()->environment(['local', 'testing'])) {
             Route::get('/component-gallery', ComponentGalleryController::class)
                 ->name('central.component-gallery');
         }
-
-        Route::get('/brands', CentralBrandsController::class)
-            ->middleware('can:catalog.products.manage')
-            ->name('central.brands.index');
 
         Route::middleware('can:translations.manage')->group(function (): void {
             Route::get('/translations/dashboard', TranslationDashboardController::class)

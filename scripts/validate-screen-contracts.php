@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 $root = $argv[1] ?? dirname(__DIR__);
 $required = ['screen_id', 'context', 'purpose', 'roles', 'route', 'viewports', 'fixture', 'regions', 'actions', 'states', 'permissions', 'responsive', 'out_of_scope', 'reference_version'];
-$contracts = glob($root.'/docs/ui/screens/Z-*.md') ?: [];
+$contracts = [
+    ...(glob($root.'/docs/ui/screens/Z-*.md') ?: []),
+    ...(glob($root.'/docs/ui/screens/CA-*.md') ?: []),
+];
 $errors = [];
 $ids = [];
 
@@ -31,7 +34,7 @@ foreach ($contracts as $contract) {
     }
 
     $id = $fields['screen_id'] ?? '';
-    if (preg_match('/\AZ-0(?:0[1-9]|10)\z/', $id) !== 1) {
+    if (preg_match('/\A(?:Z-0(?:0[1-9]|10)|CA-[0-9]{3})\z/', $id) !== 1) {
         $errors[] = "{$contract}: invalid screen ID [{$id}].";
     } elseif (isset($ids[$id])) {
         $errors[] = "{$contract}: duplicate screen ID [{$id}].";
@@ -44,7 +47,8 @@ foreach ($contracts as $contract) {
     }
 }
 
-if (count($ids) !== 10) {
+$foundationIds = array_filter(array_keys($ids), static fn (string $id): bool => str_starts_with($id, 'Z-'));
+if (count($foundationIds) !== 10) {
     $errors[] = 'Expected exactly ten Z-001 through Z-010 contracts.';
 }
 

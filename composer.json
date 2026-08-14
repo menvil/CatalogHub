@@ -7,6 +7,8 @@
     "license": "MIT",
     "require": {
         "ext-gd": "*",
+        "ext-intl": "*",
+        "ext-mbstring": "*",
         "php": "^8.5",
         "filament/filament": "^5.6",
         "laravel/framework": "^13.8",
@@ -20,7 +22,7 @@
         "laravel/pint": "^1.27",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
-        "phpunit/phpunit": "^12.5.12"
+        "phpunit/phpunit": "^13.3.0"
     },
     "autoload": {
         "psr-4": {
@@ -78,7 +80,7 @@
         ],
         "test:database-boundaries": [
             "@php artisan config:clear --ansi @no_additional_args",
-            "@php artisan test tests/Feature/Admin/MissingTranslationsScreenTest.php tests/Feature/Facets/FacetQueryBuilderSortingTest.php tests/Feature/Public/ProductPriceSortTest.php tests/Feature/Facets/FacetQueryBuilderRangeTest.php tests/Feature/Domains/Projections/ProjectionStaleDetectorTest.php tests/Feature/Public/SearchPageStubTest.php tests/Feature/SiteAdmin/CheapestProductsReportTest.php tests/Feature/SiteAdmin/OffersCoverageDashboardTest.php tests/Feature/CentralAdmin/StaleProductsScreenTest.php tests/Unit/Services/TranslationCompletenessServiceTest.php tests/Feature/Database/SiteDomainsSchemaTest.php tests/Feature/Database/SiteDomainsMigrationRecoveryTest.php"
+            "@php artisan test tests/Feature/Admin/MissingTranslationsScreenTest.php tests/Feature/Actions/CreateCentralBrandActionTest.php tests/Feature/Actions/CreateCentralBrandConcurrencyTest.php tests/Feature/Actions/UpdateCentralBrandActionTest.php tests/Feature/Actions/ActivateCentralBrandActionTest.php tests/Feature/Facets/FacetQueryBuilderSortingTest.php tests/Feature/Public/ProductPriceSortTest.php tests/Feature/Facets/FacetQueryBuilderRangeTest.php tests/Feature/Domains/Projections/ProjectionStaleDetectorTest.php tests/Feature/Public/SearchPageStubTest.php tests/Feature/SiteAdmin/CheapestProductsReportTest.php tests/Feature/SiteAdmin/OffersCoverageDashboardTest.php tests/Feature/CentralAdmin/StaleProductsScreenTest.php tests/Unit/Services/TranslationCompletenessServiceTest.php tests/Feature/Database/CentralBrandsMigrationTest.php tests/Feature/Database/CentralBrandsNameIdentityMigrationTest.php tests/Feature/Database/SiteDomainsSchemaTest.php tests/Feature/Database/SiteDomainsMigrationRecoveryTest.php"
         ],
         "test:database-schema": [
             "@php artisan config:clear --ansi @no_additional_args",
@@ -86,7 +88,7 @@
         ],
         "test:pagination-boundaries": [
             "@php artisan config:clear --ansi @no_additional_args",
-            "@php artisan test tests/Feature/Admin/CentralBrandsPageTest.php tests/Feature/Admin/MediaLibraryTest.php tests/Feature/Public/ProductListingPageTest.php tests/Feature/SiteAdmin/ProductsWithoutOffersReportTest.php tests/Feature/SiteAdmin/CheapestProductsReportTest.php tests/Feature/Sites/ProductVisibilityManagerTest.php tests/Feature/Sites/BrandVisibilityRulesTest.php"
+            "@php artisan test tests/Feature/Central/CentralBrandListTest.php tests/Feature/Admin/MediaLibraryTest.php tests/Feature/Public/ProductListingPageTest.php tests/Feature/SiteAdmin/ProductsWithoutOffersReportTest.php tests/Feature/SiteAdmin/CheapestProductsReportTest.php tests/Feature/Sites/ProductVisibilityManagerTest.php tests/Feature/Sites/BrandVisibilityRulesTest.php"
         ],
         "test:query-contracts": [
             "@php artisan config:clear --ansi @no_additional_args",

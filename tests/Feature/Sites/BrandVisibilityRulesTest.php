@@ -18,9 +18,10 @@ class BrandVisibilityRulesTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_brand_manager_pagination_is_stable_when_names_are_tied(): void
+    public function test_brand_manager_pagination_is_stable_for_unique_canonical_names(): void
     {
-        $brands = CentralBrand::factory()->count(3)->create(['name' => 'Tied Brand Name']);
+        $brands = collect(['Alpha Brand', 'Beta Brand', 'Gamma Brand'])
+            ->map(fn (string $name): CentralBrand => CentralBrand::factory()->create(['name' => $name]));
         $query = app(SiteBrandVisibilityQuery::class);
 
         $first = $query->paginate(perPage: 2, page: 1)->getCollection()->pluck('id')->all();

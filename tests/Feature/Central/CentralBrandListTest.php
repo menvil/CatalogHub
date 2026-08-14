@@ -1,0 +1,232 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature\Central;
+
+use App\Data\CentralCatalog\BrandListFiltersData;
+use App\Enums\CentralBrandStatus;
+use App\Enums\UserRole;
+use App\Models\CentralCatalog\CentralBrand;
+use App\Models\User;
+use App\Queries\CentralCatalog\CentralBrandListQuery;
+use Carbon\CarbonImmutable;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
+use Tests\Support\BrandListFixture;
+use Tests\TestCase;
+
+final class CentralBrandListTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_brand_list_pagination_is_stable_when_primary_sort_values_are_tied(): void
+    {
+        $brands = CentralBrand::factory()->count(3)->active()->create();
+        $filters = new BrandListFiltersData(
+            search: null,
+            status: null,
+            sort: 'status',
+            direction: 'asc',
+            perPage: 2,
+        );
+        $query = app(CentralBrandListQuery::class);
+
+        $first = $query->paginate($filters, page: 1)->getCollection()->pluck('id')->all();
+        $second = $query->paginate($filters, page: 2)->getCollection()->pluck('id')->all();
+
+        $this->assertSame($brands->pluck('id')->values()->all(), [...$first, ...$second]);
+        $this->assertSame([], array_values(array_intersect($first, $second)));
+    }
+
+    public function test_ca_011_uses_the_canonical_brand_list_presentation(): void
+    {
+        CentralBrand::factory()->active()->create([
+            'name' => 'Samsung',
+            'slug' => 'samsung',
+            'country_code' => 'KR',
+            'website_url' => 'https://www.samsung.com/global/long-path',
+            'updated_at' => CarbonImmutable::parse('2026-08-13T09:00:00Z'),
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('central.brands.index'))
+            ->assertOk()
+            ->assertSee('data-admin-layout="central"', false)
+            ->assertSee('data-screen-id="CA-011"', false)
+            ->assertSee('data-central-header-breadcrumbs', false)
+            ->assertSee('class="brand-list-filters"', false)
+            ->assertSee('data-admin-data-table', false)
+            ->assertSee('data-admin-status-badge="success"', false)
+            ->assertSee('Brands')
+            ->assertSee('Manage brand profiles, product associations, media assets, and localization across your catalog.')
+            ->assertSeeInOrder(['Brand', 'Status', 'Updated'])
+            ->assertSee('Samsung')
+            ->assertSee('samsung')
+            ->assertSee('Active')
+            ->assertDontSee('href="https://www.samsung.com/global/long-path"', false);
+    }
+
+    public function test_search_by_name_and_slug_is_database_backed_and_preserves_constraints(): void
+    {
+        CentralBrand::factory()->create(['name' => 'Samsung Electronics', 'slug' => 'samsung-electronics']);
+        CentralBrand::factory()->create(['name' => 'Sony', 'slug' => 'sony']);
+        CentralBrand::factory()->create(['name' => 'Logitech', 'slug' => 'gaming-slug']);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('central.brands.index', ['q' => 'samsung']))
+            ->assertOk()
+            ->assertSee('Samsung Electronics')
+            ->assertDontSee('Sony')
+            ->assertDontSee('Logitech');
+
+        $this->get(route('central.brands.index', ['q' => 'gaming-slug']))
+            ->assertOk()
+            ->assertSee('Logitech')
+            ->assertDontSee('Samsung Electronics')
+            ->assertDontSee('Sony');
+
+        $this->get(route('central.brands.index'))
+            ->assertOk()
+            ->assertSee('Samsung Electronics')
+            ->assertSee('Sony')
+            ->assertSee('Logitech');
+    }
+
+    public function test_untrusted_legacy_website_value_is_never_rendered_as_an_executable_link(): void
+    {
+        CentralBrand::factory()->create([
+            'name' => 'Legacy Brand',
+            'slug' => 'legacy-brand',
+            'website_url' => 'javascript:alert(1)',
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('central.brands.index'))
+            ->assertOk()
+            ->assertSee('Legacy Brand')
+            ->assertDontSee('href="javascript:alert(1)"', false);
+    }
+
+    public function test_status_filter_returns_each_lifecycle_state_and_clear_restores_all(): void
+    {
+        CentralBrand::factory()->draft()->create(['name' => 'Draft Brand', 'slug' => 'draft-brand']);
+        CentralBrand::factory()->active()->create(['name' => 'Active Brand', 'slug' => 'active-brand']);
+        CentralBrand::factory()->archived()->create(['name' => 'Archived Brand', 'slug' => 'archived-brand']);
+        $this->actingAs(User::factory()->create());
+
+        foreach ([
+            CentralBrandStatus::Draft->value => ['Draft Brand', 'Active Brand', 'Archived Brand'],
+            CentralBrandStatus::Active->value => ['Active Brand', 'Draft Brand', 'Archived Brand'],
+            CentralBrandStatus::Archived->value => ['Archived Brand', 'Draft Brand', 'Active Brand'],
+        ] as $status => [$visible, $hiddenA, $hiddenB]) {
+            $this->get(route('central.brands.index', ['status' => $status]))
+                ->assertOk()
+                ->assertSee($visible)
+                ->assertDontSee($hiddenA)
+                ->assertDontSee($hiddenB);
+        }
+
+        $this->get(route('central.brands.index'))
+            ->assertSee('Draft Brand')
+            ->assertSee('Active Brand')
+            ->assertSee('Archived Brand');
+    }
+
+    public function test_sorting_is_case_insensitive_stable_and_supports_updated_order(): void
+    {
+        CentralBrand::factory()->create(['name' => 'Acer', 'slug' => 'acer', 'updated_at' => '2026-08-02 09:00:00']);
+        CentralBrand::factory()->create(['name' => 'ASUS', 'slug' => 'asus', 'updated_at' => '2026-08-03 09:00:00']);
+        CentralBrand::factory()->create(['name' => 'Zulu', 'slug' => 'zulu', 'updated_at' => '2026-08-01 09:00:00']);
+        $this->actingAs(User::factory()->create());
+
+        $this->get(route('central.brands.index'))
+            ->assertSeeInOrder(['Acer', 'ASUS', 'Zulu']);
+
+        $this->get(route('central.brands.index', ['sort' => 'name', 'direction' => 'desc']))
+            ->assertSeeInOrder(['Zulu', 'ASUS', 'Acer']);
+
+        $this->get(route('central.brands.index', ['sort' => 'updated_at', 'direction' => 'asc']))
+            ->assertSeeInOrder(['Zulu', 'Acer', 'ASUS']);
+    }
+
+    public function test_pagination_is_bounded_and_has_no_page_overlap(): void
+    {
+        BrandListFixture::create();
+        $this->actingAs(User::factory()->create());
+
+        $this->get(route('central.brands.index'))
+            ->assertOk()
+            ->assertSee('Acer')
+            ->assertSee('Samsung')
+            ->assertDontSee('Sony')
+            ->assertDontSee('Xiaomi')
+            ->assertSee('Showing 1 to 20')
+            ->assertSee('20 per page')
+            ->assertSee('50 per page')
+            ->assertSee('100 per page');
+
+        $this->get(route('central.brands.index', ['page' => 2]))
+            ->assertOk()
+            ->assertDontSee('Acer')
+            ->assertDontSee('Samsung')
+            ->assertSeeInOrder(['Sony', 'ViewSonic', 'Xiaomi', 'Zotac'])
+            ->assertSee('Showing 21 to 24');
+    }
+
+    public function test_database_and_filtered_empty_states_are_clear(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->get(route('central.brands.index'))
+            ->assertOk()
+            ->assertSee('No brands match the current filters.')
+            ->assertDontSee('Create Brand');
+
+        CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
+
+        $this->get(route('central.brands.index', ['q' => 'zzzz-not-existing-brand']))
+            ->assertOk()
+            ->assertSee('No brands match the current filters.');
+    }
+
+    public function test_brand_list_exposes_no_mutation_actions_or_legacy_routes(): void
+    {
+        $brand = CentralBrand::factory()->create();
+        $this->actingAs(User::factory()->create())
+            ->get(route('central.brands.index'))
+            ->assertOk()
+            ->assertDontSee('Create Brand')
+            ->assertDontSee('Edit Brand')
+            ->assertDontSee('Archive Brand')
+            ->assertDontSee('Delete Brand');
+
+        $this->assertFalse(Route::has('filament.central.resources.brands.index'));
+        $this->assertFalse(Route::has('filament.central.resources.brands.create'));
+        $this->assertFalse(Route::has('filament.central.resources.brands.edit'));
+        $this->get('/admin/central/brands/create')->assertNotFound();
+        $this->get("/admin/central/brands/{$brand->getKey()}/edit")->assertNotFound();
+        $this->get('/admin/central/central-brands/create')->assertNotFound();
+    }
+
+    public function test_user_without_catalog_permission_cannot_open_ca_011(): void
+    {
+        $translator = User::factory()->create(['role' => UserRole::Translator]);
+
+        $this->actingAs($translator)
+            ->get(route('central.brands.index'))
+            ->assertForbidden();
+    }
+
+    public function test_invalid_list_parameters_are_rejected_without_querying_unbounded_data(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->get(route('central.brands.index', [
+                'status' => 'deleted',
+                'sort' => 'normalized_name_hash',
+                'direction' => 'sideways',
+                'per_page' => 1000,
+            ]))
+            ->assertSessionHasErrors(['status', 'sort', 'direction', 'per_page']);
+    }
+}

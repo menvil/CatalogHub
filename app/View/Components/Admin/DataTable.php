@@ -22,6 +22,7 @@ final class DataTable extends Component
         public readonly string $empty = 'No records found.',
         public readonly bool $selectable = false,
         public readonly ?string $tableId = null,
+        public readonly bool $mobileCompact = false,
     ) {
         if (trim($this->caption) === '') {
             throw new InvalidArgumentException('Data table captions cannot be empty.');
@@ -52,6 +53,8 @@ final class DataTable extends Component
             $key = trim((string) ($column['key'] ?? ''));
             $label = trim((string) ($column['label'] ?? ''));
             $align = (string) ($column['align'] ?? 'start');
+            $responsive = (string) ($column['responsive'] ?? 'always');
+            $type = (string) ($column['type'] ?? 'text');
 
             if ($key === '' || $label === '') {
                 throw new InvalidArgumentException('Data table columns require a key and label.');
@@ -59,6 +62,14 @@ final class DataTable extends Component
 
             if (! in_array($align, ['start', 'center', 'end'], true)) {
                 throw new InvalidArgumentException("Unsupported data table alignment [{$align}].");
+            }
+
+            if (! in_array($responsive, ['always', 'sm', 'md', 'lg'], true)) {
+                throw new InvalidArgumentException("Unsupported data table responsive breakpoint [{$responsive}].");
+            }
+
+            if (! in_array($type, ['text', 'status', 'link'], true)) {
+                throw new InvalidArgumentException("Unsupported data table cell type [{$type}].");
             }
 
             $keys[] = $key;

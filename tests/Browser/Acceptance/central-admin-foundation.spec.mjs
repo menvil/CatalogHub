@@ -36,9 +36,9 @@ test('Central Admin foundation flow covers login, shell, gallery, user menu, and
     await page.goto('/admin/central/brands')
     const brandSearch = page.locator('[data-brand-list-search]')
     await brandSearch.fill('Samsung')
-    await expect(page).toHaveURL(/search=Samsung/)
+    await expect(page).toHaveURL(/q=Samsung/)
     await brandSearch.fill('')
-    await expect(page).not.toHaveURL(/search=Samsung/)
+    await expect(page).not.toHaveURL(/q=Samsung/)
     await expect(brandSearch).toHaveValue('')
 
     await page.goto('/admin/central/component-gallery')

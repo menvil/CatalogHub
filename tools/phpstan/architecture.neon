@@ -123,7 +123,7 @@ parameters:
                 class: App\Queries\CentralCatalog\CentralBrandListQuery
                 method: paginate
                 uniqueOrder: [central_brands.id]
-                behaviorTests: [tests/Feature/Admin/CentralBrandsPageTest.php]
+                behaviorTests: [tests/Feature/Central/CentralBrandListTest.php]
                 status: approved
             -
                 class: App\Queries\Media\MediaLibraryQuery

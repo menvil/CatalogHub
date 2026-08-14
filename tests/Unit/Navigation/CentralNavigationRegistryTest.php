@@ -82,5 +82,35 @@ final class CentralNavigationRegistryTest extends TestCase
         $this->assertNotNull($catalog);
         $this->assertSame(FoundationDesignSystem::HEROICON_COMPONENTS['squares-2x2'], $catalog->getIcon());
         $this->assertTrue($catalog->isActive());
+
+        $brands = collect($groups[0]->getItems())->first(
+            static fn ($item): bool => $item->getLabel() === 'Brands',
+        );
+
+        $this->assertNotNull($brands);
+        $this->assertFalse($brands->isActive());
+    }
+
+    public function test_brands_navigation_uses_catalog_permission_and_has_an_exclusive_active_state(): void
+    {
+        $registry = app(CentralNavigationRegistry::class);
+        $catalogEditor = User::factory()->create(['role' => UserRole::CatalogEditor]);
+        $translator = User::factory()->create(['role' => UserRole::Translator]);
+        $route = Route::getRoutes()->getByName('central.brands.index');
+
+        $this->assertNotNull($route);
+        $this->app['request']->setRouteResolver(static fn () => $route);
+
+        $items = collect($registry->filamentNavigation($catalogEditor)->getNavigation()[0]->getItems());
+        $catalog = $items->first(static fn ($item): bool => $item->getLabel() === 'Catalog');
+        $brands = $items->first(static fn ($item): bool => $item->getLabel() === 'Brands');
+
+        $this->assertNotNull($catalog);
+        $this->assertNotNull($brands);
+        $this->assertFalse($catalog->isActive());
+        $this->assertTrue($brands->isActive());
+        $this->assertSame('/admin/central/brands', $brands->getUrl());
+        $this->assertContains('brands', array_column($registry->visibleItemsFor($catalogEditor), 'id'));
+        $this->assertNotContains('brands', array_column($registry->visibleItemsFor($translator), 'id'));
     }
 }

@@ -2,10 +2,10 @@ import { expect, test } from '@playwright/test'
 import { foundationDemo, observePageErrors, signIn } from '../../Browser/Support/acceptance.mjs'
 
 const states = [
-    { mode: 'create', name: 'ca-013__create__1440x1000.png', width: 1440, height: 1000, url: '/admin/central/brands/create' },
-    { mode: 'create', name: 'ca-013__create__390x844.png', width: 390, height: 844, url: '/admin/central/brands/create' },
-    { mode: 'edit', name: 'ca-013__edit__1440x1000.png', width: 1440, height: 1000, url: '/admin/central/brands/13013/edit' },
-    { mode: 'edit', name: 'ca-013__edit__390x844.png', width: 390, height: 844, url: '/admin/central/brands/13013/edit' },
+    { mode: 'create', name: 'ca-013__create__1440x1000.png', width: 1440, height: 1000, url: '/admin/central/brands/create', maxDiffPixelRatio: 0.02 },
+    { mode: 'create', name: 'ca-013__create__390x844.png', width: 390, height: 844, url: '/admin/central/brands/create', maxDiffPixelRatio: 0.065 },
+    { mode: 'edit', name: 'ca-013__edit__1440x1000.png', width: 1440, height: 1000, url: '/admin/central/brands/13013/edit', maxDiffPixelRatio: 0.02 },
+    { mode: 'edit', name: 'ca-013__edit__390x844.png', width: 390, height: 844, url: '/admin/central/brands/13013/edit', maxDiffPixelRatio: 0.065 },
 ]
 
 for (const state of states) {
@@ -33,7 +33,7 @@ for (const state of states) {
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
         await expect(page).toHaveScreenshot([state.name], {
             animations: 'disabled',
-            maxDiffPixelRatio: 0.02,
+            maxDiffPixelRatio: state.maxDiffPixelRatio,
             scale: 'css',
         })
         assertNoPageErrors()

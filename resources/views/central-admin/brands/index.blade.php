@@ -55,10 +55,7 @@
                         data-brand-list-submit
                     />
                 </div>
-                @if (request('sort'))
-                    <input type="hidden" name="sort" value="{{ request('sort') }}">
-                    <input type="hidden" name="direction" value="{{ request('direction', 'asc') }}">
-                @endif
+                @include('central-admin.brands._filter-inputs', ['excludedFilters' => ['q', 'status']])
                 @if (request('per_page'))
                     <input type="hidden" name="per_page" value="{{ request('per_page') }}">
                 @endif
@@ -122,16 +119,7 @@
             </p>
 
                 <form method="GET" action="{{ route('central.brands.index') }}" class="brand-list-per-page">
-                @if (request('q'))
-                    <input type="hidden" name="q" value="{{ request('q') }}">
-                @endif
-                @if (request('status'))
-                    <input type="hidden" name="status" value="{{ request('status') }}">
-                @endif
-                @if (request('sort'))
-                    <input type="hidden" name="sort" value="{{ request('sort') }}">
-                    <input type="hidden" name="direction" value="{{ request('direction', 'asc') }}">
-                @endif
+                    @include('central-admin.brands._filter-inputs', ['excludedFilters' => []])
                     <x-ui.form.select
                         id="brands-per-page"
                         name="per_page"

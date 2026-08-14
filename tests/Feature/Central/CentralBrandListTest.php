@@ -11,6 +11,7 @@ use App\Models\CentralCatalog\CentralBrand;
 use App\Models\User;
 use App\Queries\CentralCatalog\CentralBrandListQuery;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Tests\Support\BrandListFixture;
@@ -175,6 +176,22 @@ final class CentralBrandListTest extends TestCase
             ->assertSee('Showing 21 to 24');
     }
 
+    public function test_requested_page_sizes_are_cast_and_passed_to_pagination(): void
+    {
+        BrandListFixture::create();
+        $this->actingAs(User::factory()->create());
+
+        foreach ([50, 100] as $perPage) {
+            $response = $this->get(route('central.brands.index', ['per_page' => (string) $perPage]))
+                ->assertOk();
+
+            /** @var LengthAwarePaginator<int, CentralBrand> $brands */
+            $brands = $response->viewData('brands');
+
+            $this->assertSame($perPage, $brands->perPage());
+        }
+    }
+
     public function test_database_and_filtered_empty_states_are_clear(): void
     {
         $this->actingAs(User::factory()->create())
@@ -220,13 +237,21 @@ final class CentralBrandListTest extends TestCase
 
     public function test_invalid_list_parameters_are_rejected_without_querying_unbounded_data(): void
     {
-        $this->actingAs(User::factory()->create())
-            ->get(route('central.brands.index', [
-                'status' => 'deleted',
-                'sort' => 'normalized_name_hash',
-                'direction' => 'sideways',
-                'per_page' => 1000,
-            ]))
+        $this->actingAs(User::factory()->create());
+
+        $this->get(route('central.brands.index', ['per_page' => 100]))
+            ->assertOk()
+            ->assertSessionDoesntHaveErrors();
+
+        $this->get(route('central.brands.index', ['per_page' => 101]))
+            ->assertSessionHasErrors(['per_page']);
+
+        $this->get(route('central.brands.index', [
+            'status' => 'deleted',
+            'sort' => 'normalized_name_hash',
+            'direction' => 'sideways',
+            'per_page' => 1000,
+        ]))
             ->assertSessionHasErrors(['status', 'sort', 'direction', 'per_page']);
     }
 }

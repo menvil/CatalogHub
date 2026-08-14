@@ -37,6 +37,12 @@ test('CA-011 supports read-only brand discovery without browser errors', async (
     await expect(page).not.toHaveURL(/status=archived/)
     await expect(page.getByText('Samsung', { exact: true })).toBeVisible()
 
+    await page.locator('#brands-per-page').selectOption('50')
+    await expect(page).toHaveURL(/per_page=50/)
+    await expect(page.locator('[data-admin-data-table] tbody tr')).toHaveCount(24)
+
+    await page.locator('#brands-per-page').selectOption('20')
+    await expect(page).toHaveURL(/per_page=20/)
     await page.getByRole('link', { name: 'Next page' }).click()
     await expect(page.getByText('Xiaomi', { exact: true })).toBeVisible()
     await expect(page.getByText('Acer', { exact: true })).toHaveCount(0)

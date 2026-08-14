@@ -46,6 +46,7 @@
                 label="Unit"
                 :options="$unitOptions"
                 :selected="$unit"
+                placeholder="Select a unit"
             />
         </div>
     </div>

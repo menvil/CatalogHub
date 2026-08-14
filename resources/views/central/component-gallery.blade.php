@@ -2,6 +2,14 @@
 
 @section('pageTitle', 'Foundation Component Gallery')
 
+@section('breadcrumbs')
+    <a href="{{ route('filament.central.pages.home', absolute: false) }}" class="font-medium hover:text-admin-text">Dashboard</a>
+    <span aria-hidden="true">/</span>
+    <span>Design system</span>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ $componentSection === 'catalog' ? 'Component catalog' : ucfirst($componentSection) }}</span>
+@endsection
+
 @section('content')
     @if ($componentMode)
         @include('central.partials.admin-component-gallery')
@@ -12,10 +20,7 @@
             title="Foundation Component Gallery"
             description="Deterministic reference for semantic tokens and shared presentation primitives. It contains no catalog or tenant data."
             status="Foundation"
-            :breadcrumbs="[
-                ['label' => 'Dashboard', 'url' => route('filament.central.pages.home', absolute: false)],
-                ['label' => 'Design system'],
-            ]"
+            :breadcrumbs="[]"
             class="rounded-foundation-card border border-foundation-border bg-foundation-surface p-foundation-card shadow-foundation-card"
         />
 

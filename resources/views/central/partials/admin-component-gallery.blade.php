@@ -11,7 +11,8 @@
         title="Foundation Component Gallery"
         description="Canonical visual reference for reusable administration components and patterns. Every example renders the production component with deterministic, non-persistent data."
         status="Foundation"
-        :breadcrumbs="[['label' => 'Central Admin', 'url' => '/admin/central'], ['label' => 'Design system'], ['label' => $componentSection === 'catalog' ? 'Component catalog' : ucfirst($componentSection)]]"
+        :breadcrumbs="[]"
+        @class(['admin-component-gallery-catalog-header' => $componentSection === 'catalog'])
     >
         <x-slot:actions>
             <x-ui.action-group label="Gallery sections" align="start" class="flex-wrap">

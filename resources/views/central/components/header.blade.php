@@ -19,10 +19,13 @@
             <x-ui.icon name="bars-3" size="md" />
         </button>
 
-        <div class="min-w-0">
-            <p class="text-xs font-semibold uppercase tracking-wide text-admin-muted">CatalogHub</p>
-            <p class="truncate text-lg font-semibold text-admin-text">Central Admin</p>
-        </div>
+        <nav class="min-w-0 text-sm text-admin-muted" aria-label="Breadcrumbs" data-central-header-breadcrumbs>
+            @hasSection('breadcrumbs')
+                @yield('breadcrumbs')
+            @else
+                <span aria-current="page">{{ $documentTitle }}</span>
+            @endif
+        </nav>
     </div>
 
     <div class="flex min-w-0 flex-wrap items-center justify-end gap-admin-field">

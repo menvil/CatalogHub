@@ -41,6 +41,7 @@ class AttributeValueEditorTest extends TestCase
         $text = Blade::render('<x-admin.attribute-value-editor attribute-label="Color" data-type="text" normalized-value="Black" />');
 
         $this->assertStringContainsString('data-admin-unit-value-input', $unit);
+        $this->assertMatchesRegularExpression('/<div\b[^>]*\sdata-ui-select(?:\s[^>]*)?>/', $unit);
         $this->assertStringContainsString('Options placeholder', $enum);
         $this->assertStringContainsString('Boolean value placeholder', $boolean);
         $this->assertStringContainsString('Text value placeholder', $text);

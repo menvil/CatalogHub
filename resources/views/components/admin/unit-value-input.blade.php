@@ -11,6 +11,12 @@
 @php
     $inputId = $id ?: 'unit-value-'.(\Illuminate\Support\Str::slug($label ?? 'value') ?: 'value').'-'.\Illuminate\Support\Str::random(6);
     $selectId = $inputId.'-unit';
+    $unitOptions = collect($availableUnits)->mapWithKeys(function ($option): array {
+        $value = is_array($option) ? ($option['value'] ?? $option['code'] ?? '') : (string) $option;
+        $label = is_array($option) ? ($option['label'] ?? $value) : strtoupper((string) $option);
+
+        return [(string) $value => (string) $label];
+    })->all();
 @endphp
 
 <div
@@ -33,20 +39,16 @@
             placeholder="Value"
         >
 
-        <label for="{{ $selectId }}" class="sr-only">Unit</label>
-        <select
-            id="{{ $selectId }}"
-            class="w-full cursor-pointer rounded-admin-input border border-admin-border bg-admin-surface px-3 py-2 text-sm text-admin-text focus:border-admin-primary focus:outline-none focus:ring-2 focus:ring-admin-primary/20"
-        >
-            @foreach ($availableUnits as $option)
-                @php
-                    $unitValue = is_array($option) ? ($option['value'] ?? $option['code'] ?? '') : (string) $option;
-                    $unitLabel = is_array($option) ? ($option['label'] ?? $unitValue) : strtoupper((string) $option);
-                @endphp
-
-                <option value="{{ $unitValue }}" @selected($unit === $unitValue)>{{ $unitLabel }}</option>
-            @endforeach
-        </select>
+        <div class="admin-unit-select">
+            <x-ui.form.select
+                :id="$selectId"
+                :name="$selectId"
+                label="Unit"
+                :options="$unitOptions"
+                :selected="$unit"
+                placeholder="Select a unit"
+            />
+        </div>
     </div>
 
     <div class="rounded-admin-input border border-admin-border bg-admin-surface-muted px-3 py-2 text-sm text-admin-muted">

@@ -23,11 +23,41 @@ class UnitValueInputTest extends TestCase
         $this->assertStringContainsString('type="number"', $html);
         $this->assertStringContainsString('value="100"', $html);
         $this->assertStringContainsString('<select', $html);
+        $this->assertMatchesRegularExpression('/<div\b[^>]*\sdata-ui-select(?:\s[^>]*)?>/', $html);
+        $this->assertStringContainsString('data-ui-select-trigger', $html);
         $this->assertStringContainsString('W', $html);
         $this->assertStringContainsString('kW', $html);
         $this->assertStringContainsString('value="w" selected', $html);
         $this->assertStringContainsString('Canonical preview:', $html);
         $this->assertStringContainsString('100 W', $html);
+    }
+
+    public function test_unit_value_input_maps_scalar_options_and_falls_back_to_an_array_code(): void
+    {
+        $availableUnits = ['liter', 'gallon', ['code' => 'kg']];
+
+        $html = Blade::render(
+            '<x-admin.unit-value-input label="Volume" :available-units="$availableUnits" />',
+            compact('availableUnits')
+        );
+
+        $this->assertMatchesRegularExpression('/<option value="liter"[^>]*>LITER<\/option>/', $html);
+        $this->assertMatchesRegularExpression('/<option value="gallon"[^>]*>GALLON<\/option>/', $html);
+        $this->assertMatchesRegularExpression('/<option value="kg"[^>]*>kg<\/option>/', $html);
+    }
+
+    public function test_unit_value_input_uses_a_synchronized_placeholder_when_no_unit_is_selected(): void
+    {
+        $availableUnits = [['value' => 'w', 'label' => 'W']];
+
+        $html = Blade::render(
+            '<x-admin.unit-value-input label="Power" :available-units="$availableUnits" />',
+            compact('availableUnits')
+        );
+
+        $this->assertStringContainsString('<option value="">Select a unit</option>', $html);
+        $this->assertMatchesRegularExpression('/data-ui-select-value>\s*Select a unit\s*<\/span>/', $html);
+        $this->assertMatchesRegularExpression('/data-ui-select-option data-value=""[^>]*>Select a unit<\/button>/', $html);
     }
 
     public function test_unit_value_input_renders_error_state_and_default_preview(): void
@@ -52,10 +82,16 @@ class UnitValueInputTest extends TestCase
             <x-admin.unit-value-input canonical-preview="0.0" />
         BLADE);
 
-        preg_match_all('/id="(unit-value-value-[^"]+)"/', $html, $matches);
+        preg_match_all('/<input\s+id="(unit-value-value-[^"]+)"\s+type="number"/', $html, $matches);
 
-        $this->assertCount(4, $matches[1]);
-        $this->assertCount(4, array_unique($matches[1]));
+        $this->assertCount(2, $matches[1]);
+        $this->assertCount(count($matches[1]), array_unique($matches[1]));
+        foreach ($matches[1] as $inputId) {
+            $this->assertStringContainsString('id="'.$inputId.'"', $html);
+            $this->assertStringContainsString('id="'.$inputId.'-unit"', $html);
+            $this->assertStringContainsString('id="'.$inputId.'-unit-trigger"', $html);
+            $this->assertStringContainsString('id="'.$inputId.'-unit-menu"', $html);
+        }
         $this->assertStringContainsString('>0</span>', $html);
         $this->assertStringContainsString('>0.0</span>', $html);
     }

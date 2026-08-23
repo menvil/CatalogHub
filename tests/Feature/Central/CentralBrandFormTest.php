@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Central;
 
+use App\Data\CentralCatalog\CentralBrandInput;
 use App\Enums\CentralBrandStatus;
 use App\Enums\UserRole;
+use App\Http\Requests\CentralAdmin\CentralBrandFormRequest;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -125,6 +128,56 @@ final class CentralBrandFormTest extends TestCase
         $this->assertNull($brand->country_code);
     }
 
+    #[DataProvider('invalidHttpShapeProvider')]
+    public function test_form_request_rejects_invalid_http_shapes(array $payload, string $field): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->from(route('central.brands.create'))
+            ->post(route('central.brands.store'), $payload)
+            ->assertRedirect(route('central.brands.create'))
+            ->assertSessionHasErrors($field);
+
+        $this->assertDatabaseCount('central_brands', 0);
+    }
+
+    /** @return iterable<string, array{array<string, mixed>, string}> */
+    public static function invalidHttpShapeProvider(): iterable
+    {
+        yield 'name is required' => [['slug' => 'missing-name'], 'name'];
+        yield 'name must be a string' => [['name' => ['Samsung']], 'name'];
+        yield 'name respects storage length' => [['name' => str_repeat('a', 256)], 'name'];
+        yield 'slug must be a string or null' => [['name' => 'Samsung', 'slug' => ['samsung']], 'slug'];
+        yield 'website must be a string or null' => [['name' => 'Samsung', 'website_url' => ['https://example.com']], 'website_url'];
+        yield 'country must be a string or null' => [['name' => 'Samsung', 'country_code' => ['KR']], 'country_code'];
+        yield 'country respects storage length' => [['name' => 'Samsung', 'country_code' => 'KOR'], 'country_code'];
+    }
+
+    public function test_form_request_exposes_only_known_fields_as_typed_input(): void
+    {
+        $request = CentralBrandFormRequest::create('/admin/central/brands', 'POST', [
+            'name' => 'Samsung',
+            'slug' => null,
+            'website_url' => null,
+            'status' => CentralBrandStatus::Active->value,
+            'normalized_name' => 'attacker-controlled',
+            'normalized_name_hash' => str_repeat('0', 64),
+        ]);
+        $request->setContainer($this->app);
+        $request->setRedirector($this->app->make(Redirector::class));
+        $request->validateResolved();
+
+        $input = $request->brandInput();
+
+        $this->assertInstanceOf(CentralBrandInput::class, $input);
+        $this->assertTrue($input->hasWebsiteUrl);
+        $this->assertFalse($input->hasCountryCode);
+        $this->assertSame([
+            'name' => 'Samsung',
+            'slug' => null,
+            'website_url' => null,
+        ], $input->actionPayload());
+    }
+
     #[DataProvider('invalidCreatePayloadProvider')]
     public function test_store_maps_representative_validation_failures_to_fields(
         array $payload,
@@ -146,7 +199,7 @@ final class CentralBrandFormTest extends TestCase
         yield 'empty name' => [['name' => '', 'slug' => 'empty-name'], 'name'];
         yield 'invalid slug' => [['name' => 'Samsung', 'slug' => 'Samsung!!!'], 'slug'];
         yield 'invalid URL' => [['name' => 'Samsung', 'slug' => 'samsung', 'website_url' => 'not-a-url'], 'website_url'];
-        yield 'invalid country' => [['name' => 'Samsung', 'slug' => 'samsung', 'country_code' => 'KOR'], 'country_code'];
+        yield 'invalid country semantics' => [['name' => 'Samsung', 'slug' => 'samsung', 'country_code' => 'K1'], 'country_code'];
         yield 'invalid generated slug' => [['name' => '品牌', 'slug' => ''], 'slug'];
     }
 
@@ -310,6 +363,30 @@ final class CentralBrandFormTest extends TestCase
         $this->assertSame(CentralBrandStatus::Active, $brand->status);
     }
 
+    public function test_partial_update_explicitly_clears_blank_optional_fields(): void
+    {
+        $brand = CentralBrand::factory()->active()->create([
+            'name' => 'Samsung',
+            'slug' => 'samsung',
+            'website_url' => 'https://www.samsung.com',
+            'country_code' => 'KR',
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->patch(route('central.brands.update', $brand), [
+                'name' => 'Samsung',
+                'slug' => 'samsung',
+                'website_url' => '',
+                'country_code' => '',
+            ])
+            ->assertRedirect(route('central.brands.edit', $brand));
+
+        $brand->refresh();
+        $this->assertNull($brand->website_url);
+        $this->assertNull($brand->country_code);
+        $this->assertSame(CentralBrandStatus::Active, $brand->status);
+    }
+
     public function test_invalid_update_preserves_old_input_and_leaves_the_entire_brand_unchanged(): void
     {
         $brand = CentralBrand::factory()->archived()->create([
@@ -326,7 +403,7 @@ final class CentralBrandFormTest extends TestCase
                 'name' => 'Samsung Electronics',
                 'slug' => 'samsung-electronics',
                 'website_url' => 'not-a-url',
-                'country_code' => 'USA',
+                'country_code' => 'K1',
                 'status' => CentralBrandStatus::Active->value,
             ])
             ->assertRedirect(route('central.brands.edit', $brand))

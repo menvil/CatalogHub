@@ -25,7 +25,7 @@ test('CA-014 logo desktop and mobile match current v1 references', async ({ page
     await signIn(page, 'central', 'super-admin@demo.cataloghub.test')
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
     await page.goto('/admin/central/brands/20/media')
-    await page.locator('#logo').setInputFiles('tests/Visual/baselines/ca-014__empty__1440x1000.png')
+    await page.locator('#logo').setInputFiles('tests/Fixtures/media/brand-logo-a.png')
     await page.locator('form[action$="/media/logo"] button[type="submit"]').click()
     await expect(page.getByAltText('Samsung logo')).toBeVisible()
     await settle(page)

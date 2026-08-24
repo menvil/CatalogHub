@@ -8,4 +8,8 @@ The normalized bytes determine MIME, extension, checksum and deduplication. Mast
 
 Variants are typed specifications from `MediaVariantSpecificationRegistry`, processed by `ImageVariantProcessor`, and orchestrated by `MediaVariantGenerator`. Queue jobs merely delegate and propagate failures so Laravel retry/backoff applies. `MediaVariantProfile::Default` contains `thumbnail`, `card`, `gallery`, `hero`, and `og`; `MediaVariantProfile::BrandLogo` contains `brand_logo_128`, `brand_logo_256`, and `brand_logo_512`. Profiles describe why a variant is generated, not an Asset field: one asset can accumulate both groups over time. `MediaService` only ingests; the caller explicitly dispatches the needed profile after commit. Variants never upscale, use deterministic paths/specification hashes, and skip when the ready file/hash already matches.
 
+## Brand logo delivery
+
+Semantic variants are delivery contracts, not merely background work: consumers prefer an appropriate ready variant before the master. `BrandLogoPresenter` is a read-only boundary which resolves a usable URL through `MediaUrlGenerator`. CA-012 prefers `brand_logo_256`, then `brand_logo_128`, then `brand_logo_512`; CA-014 prefers `brand_logo_512`, then `brand_logo_256`, then `brand_logo_128`. In either screen, a processing, failed, or known-missing variant is skipped. The fallback chain is ready semantic variant, normalized master, then no-logo placeholder. Variant failure therefore never makes a valid master unusable.
+
 Brand Logo v1 is a global primary assignment (`central_brand`, `brand_logo`, null locale/site/market). Replacing/removing a logo only changes the assignment; assets and files are retained. Future lifecycle work may release, retain for a grace period, then purge orphaned assets.

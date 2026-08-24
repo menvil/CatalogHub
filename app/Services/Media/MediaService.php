@@ -31,14 +31,16 @@ final readonly class MediaService
                 'mime_type' => $image->mimeType, 'file_size' => $image->byteSize, 'width' => $image->width,
                 'height' => $image->height, 'checksum' => $image->checksum, 'status' => 'active',
             ]);
-        } catch (QueryException $exception) {
+        } catch (\Throwable $exception) {
             try {
                 $this->storage->delete($disk, $path);
             } catch (\Throwable) { /* preserve DB exception */
             }
-            $existing = MediaAsset::query()->where('checksum', $image->checksum)->where('status', 'active')->first();
-            if ($existing instanceof MediaAsset) {
-                return $existing;
+            if ($exception instanceof QueryException) {
+                $existing = MediaAsset::query()->where('checksum', $image->checksum)->where('status', 'active')->first();
+                if ($existing instanceof MediaAsset) {
+                    return $existing;
+                }
             }
             throw $exception;
         }

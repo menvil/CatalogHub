@@ -17,7 +17,7 @@ reference_version: v1
 
 # CA-014 — Brand Media / Logo
 
-CA-014 Phase 6 v1 manages one global primary Brand logo. Its states are: `no-logo` (upload invitation), `logo-ready` (resolved preview and metadata), `logo-processing` (master fallback while a requested variant is pending), `logo-variant-failed` (master fallback with a non-blocking variant failure status), and `upload-error` (field-level safe validation error). A Brand manager can upload or replace a JPEG, PNG or WebP logo, or detach it with confirmation. Removal retains the asset in Media Library. The responsive preview uses `object-contain` on a neutral checkerboard background and metadata wraps on mobile.
+CA-014 Phase 6 v1 manages one global primary Brand logo. Its states are: `no-logo` (upload invitation), `logo-ready` (resolved semantic preview and master metadata), `logo-processing` (master fallback while a requested variant is pending), `logo-variant-failed` (master fallback with a non-blocking variant failure status), and `upload-error` (field-level safe validation error). A Brand manager can upload or replace a JPEG, PNG or WebP logo, or detach it with confirmation. Removal retains the asset in Media Library. The preview prefers a ready `brand_logo_512` variant, then 256/128, then the normalized master; failed, processing, or missing files are never selected. The responsive preview uses `object-contain` on a neutral checkerboard background and metadata wraps on mobile.
 
 The richer design target (multiple roles, dark/light logos, wordmarks, hero/OG media, localized/site overrides, asset browser and completeness tooling) is deferred and is not this executable v1 contract.
 

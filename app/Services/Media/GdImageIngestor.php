@@ -75,6 +75,10 @@ final class GdImageIngestor implements ImageIngestor
 
     private function encode(GdImage $image, string $mime): string
     {
+        if (in_array($mime, ['image/png', 'image/webp'], true)) {
+            imagealphablending($image, false);
+            imagesavealpha($image, true);
+        }
         ob_start();
         $ok = match ($mime) {
             'image/jpeg' => imagejpeg($image, null, (int) config('media.jpeg_quality')),

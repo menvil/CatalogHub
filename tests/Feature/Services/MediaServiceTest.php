@@ -3,11 +3,13 @@
 namespace Tests\Feature\Services;
 
 use App\Models\MediaAsset;
+use App\Services\Media\ImageIngestException;
 use App\Services\Media\MediaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
+use RuntimeException;
 use Tests\TestCase;
 
 class MediaServiceTest extends TestCase
@@ -63,5 +65,55 @@ class MediaServiceTest extends TestCase
         app(MediaService::class)->uploadOriginal(
             UploadedFile::fake()->create('icon.svg', 1, 'image/svg+xml')
         );
+    }
+
+    public function test_rejects_spoofed_upload_without_creating_an_asset_or_file(): void
+    {
+        Storage::fake('public');
+
+        try {
+            app(MediaService::class)->uploadOriginal(UploadedFile::fake()->createWithContent('logo.png', 'not an image'));
+            $this->fail('Spoofed raster input must be rejected.');
+        } catch (ImageIngestException) {
+            $this->addToAssertionCount(1);
+        }
+
+        $this->assertSame(0, MediaAsset::query()->count());
+        $this->assertSame([], Storage::disk('public')->allFiles());
+    }
+
+    public function test_stored_normalized_bytes_define_asset_checksum_and_dedupe_leaves_one_file(): void
+    {
+        Storage::fake('public');
+        $file = UploadedFile::fake()->image('logo.png', 32, 16);
+
+        $first = app(MediaService::class)->uploadOriginal($file);
+        $second = app(MediaService::class)->uploadOriginal($file);
+
+        $bytes = Storage::disk('public')->get($first->original_path);
+        $this->assertSame('sha256:'.hash('sha256', $bytes), $first->checksum);
+        $this->assertSame($first->id, $second->id);
+        $this->assertSame([$first->original_path], Storage::disk('public')->allFiles());
+    }
+
+    public function test_cleans_up_only_new_file_when_asset_persistence_fails(): void
+    {
+        Storage::fake('public');
+        MediaAsset::creating(static function (): void {
+            throw new RuntimeException('persistence failed');
+        });
+
+        try {
+            app(MediaService::class)->uploadOriginal(UploadedFile::fake()->image('logo.png', 32, 16));
+            $this->fail('The persistence exception must remain visible.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('persistence failed', $exception->getMessage());
+        } finally {
+            MediaAsset::flushEventListeners();
+            MediaAsset::clearBootedModels();
+        }
+
+        $this->assertSame([], Storage::disk('public')->allFiles());
+        $this->assertSame(0, MediaAsset::query()->count());
     }
 }

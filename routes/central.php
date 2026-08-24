@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\CentralAdmin\Backup\SnapshotDownloadController;
+use App\Http\Controllers\CentralAdmin\CentralBrandDetailController;
 use App\Http\Controllers\CentralAdmin\CentralBrandFormController;
+use App\Http\Controllers\CentralAdmin\CentralBrandLifecycleController;
 use App\Http\Controllers\CentralAdmin\CentralBrandListController;
 use App\Http\Controllers\CentralAdmin\DesignSystem\ComponentGalleryController;
 use App\Http\Controllers\CentralAdmin\Media\MediaAssetDetailController;
@@ -25,10 +27,18 @@ Route::middleware(['auth', EnsureCentralAdminAccess::class])
                 ->name('central.brands.create');
             Route::post('/brands', [CentralBrandFormController::class, 'store'])
                 ->name('central.brands.store');
+            Route::get('/brands/{brand}', CentralBrandDetailController::class)
+                ->name('central.brands.show');
             Route::get('/brands/{brand}/edit', [CentralBrandFormController::class, 'edit'])
                 ->name('central.brands.edit');
             Route::patch('/brands/{brand}', [CentralBrandFormController::class, 'update'])
                 ->name('central.brands.update');
+            Route::post('/brands/{brand}/activate', [CentralBrandLifecycleController::class, 'activate'])
+                ->name('central.brands.activate');
+            Route::post('/brands/{brand}/archive', [CentralBrandLifecycleController::class, 'archive'])
+                ->name('central.brands.archive');
+            Route::post('/brands/{brand}/restore', [CentralBrandLifecycleController::class, 'restore'])
+                ->name('central.brands.restore');
         });
 
         if (app()->environment(['local', 'testing'])) {

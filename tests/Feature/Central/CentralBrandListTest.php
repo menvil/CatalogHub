@@ -69,6 +69,8 @@ final class CentralBrandListTest extends TestCase
             ->assertSee('Active')
             ->assertSee('data-row-id="'.$brand->getKey().'"', false)
             ->assertSee('data-admin-row-actions="'.$brand->getKey().'"', false)
+            ->assertSee('href="'.route('central.brands.show', $brand, absolute: false).'"', false)
+            ->assertSee('View')
             ->assertSee('href="'.route('central.brands.edit', $brand, absolute: false).'"', false)
             ->assertSee('Edit')
             ->assertDontSee('href="https://www.samsung.com/global/long-path"', false);
@@ -223,14 +225,16 @@ final class CentralBrandListTest extends TestCase
             ->assertDontSee('Create the first canonical brand in the central catalog.');
     }
 
-    public function test_brand_list_exposes_only_create_and_edit_actions_and_no_legacy_routes(): void
+    public function test_brand_list_exposes_create_view_and_edit_actions_and_no_legacy_routes(): void
     {
         $brand = CentralBrand::factory()->create();
         $this->actingAs(User::factory()->create())
             ->get(route('central.brands.index'))
             ->assertOk()
             ->assertSee('Add Brand')
+            ->assertSee('View')
             ->assertSee('Edit')
+            ->assertSee('href="'.route('central.brands.show', $brand, absolute: false).'"', false)
             ->assertDontSee('Archive Brand')
             ->assertDontSee('Activate Brand')
             ->assertDontSee('Restore Brand')

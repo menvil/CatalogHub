@@ -24,6 +24,7 @@
                 'action' => route('central.brands.store', absolute: false),
                 'method' => 'post',
                 'submitLabel' => 'Create Brand',
+                'cancelUrl' => route('central.brands.index', absolute: false),
             ])
         </div>
     </div>

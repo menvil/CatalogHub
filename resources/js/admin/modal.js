@@ -88,7 +88,14 @@ export function bootAdminModals() {
 
         if (confirmButton) {
             confirmButton.setAttribute('aria-busy', 'true');
-            confirmButton.disabled = true;
+
+            if (confirmButton.getAttribute('type') === 'submit') {
+                window.setTimeout(() => {
+                    confirmButton.disabled = true;
+                }, 0);
+            } else {
+                confirmButton.disabled = true;
+            }
         }
     });
 

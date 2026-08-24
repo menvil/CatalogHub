@@ -7,6 +7,7 @@
     'open' => true,
     'contained' => false,
     'id' => null,
+    'confirmForm' => null,
 ])
 
 @php
@@ -29,6 +30,7 @@
     ];
 
     throw_if($id !== null && trim((string) $id) === '', \InvalidArgumentException::class, 'Confirmation modal IDs cannot be empty.');
+    throw_if($confirmForm !== null && trim((string) $confirmForm) === '', \InvalidArgumentException::class, 'Confirmation modal form IDs cannot be empty.');
     $classes = $variantClasses[$variant] ?? $variantClasses['default'];
     $modalBaseId = $id ?: 'admin-confirmation-modal-'.\Illuminate\Support\Str::random(8);
     $modalTitleId = $modalBaseId.'-title';
@@ -90,7 +92,8 @@
             </button>
 
             <button
-                type="button"
+                type="{{ $confirmForm === null ? 'button' : 'submit' }}"
+                @if ($confirmForm !== null) form="{{ $confirmForm }}" @endif
                 class="rounded-admin-input px-3 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary {{ $classes['confirm'] }}"
                 data-admin-modal-confirm
             >

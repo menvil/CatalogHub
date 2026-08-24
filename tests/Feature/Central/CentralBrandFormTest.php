@@ -42,7 +42,7 @@ final class CentralBrandFormTest extends TestCase
         $this->assertSame('central.brands.create', Route::getRoutes()->match(
             request()->create('/admin/central/brands/create', 'GET'),
         )->getName());
-        $this->assertFalse(Route::has('central.brands.show'));
+        $this->assertTrue(Route::has('central.brands.show'));
     }
 
     public function test_create_screen_renders_the_shared_accessible_form_without_status_input(): void
@@ -66,6 +66,7 @@ final class CentralBrandFormTest extends TestCase
             ->assertSee('Leave blank to generate from the brand name.')
             ->assertSee('New brands are created as Draft.')
             ->assertSee('Cancel')
+            ->assertSee('href="'.route('central.brands.index', absolute: false).'"', false)
             ->assertDontSee('name="status"', false)
             ->assertDontSee('normalized_name')
             ->assertDontSee('normalized_name_hash');
@@ -270,9 +271,28 @@ final class CentralBrandFormTest extends TestCase
                 ->assertSee('value="US"', false)
                 ->assertSee('data-admin-status-badge', false)
                 ->assertSee($status->label())
+                ->assertSee('href="'.route('central.brands.show', $brand, absolute: false).'"', false)
                 ->assertSee('name="_method" value="PATCH"', false)
                 ->assertDontSee('name="status"', false);
         }
+    }
+
+    public function test_edit_breadcrumb_and_cancel_return_to_brand_detail_while_create_cancel_returns_to_list(): void
+    {
+        $brand = CentralBrand::factory()->create(['name' => 'Samsung']);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('central.brands.edit', $brand))
+            ->assertOk()
+            ->assertSee('href="'.route('central.brands.show', $brand, absolute: false).'"', false)
+            ->assertSeeInOrder(['Brands', 'Samsung', 'Edit'])
+            ->assertSee('Cancel');
+
+        $this->get(route('central.brands.create'))
+            ->assertOk()
+            ->assertSee('href="'.route('central.brands.index', absolute: false).'"', false)
+            ->assertSee('Cancel');
     }
 
     public function test_update_changes_canonical_fields_keeps_slug_stable_and_flashes_once(): void

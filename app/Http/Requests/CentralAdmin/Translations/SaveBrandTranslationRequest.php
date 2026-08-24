@@ -50,7 +50,7 @@ final class SaveBrandTranslationRequest extends SaveTranslationRequest
         $locale = $this->route('locale');
 
         return $brand instanceof CentralBrand && $locale instanceof Locale
-            ? $brand->translations()->where('locale', $locale->code)->first()
+            ? $brand->translations()->where('locale_id', $locale->id)->first()
             : null;
     }
 

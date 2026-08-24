@@ -13,7 +13,7 @@ final readonly class BrandTranslationEditorData
 {
     /**
      * @param  Collection<int, Locale>  $locales
-     * @param  Collection<string, BrandTranslation>  $translationsByLocale
+     * @param  Collection<int, BrandTranslation>  $translationsByLocale
      */
     public function __construct(
         public CentralBrand $brand,

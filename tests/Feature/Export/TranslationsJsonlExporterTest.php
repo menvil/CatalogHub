@@ -20,7 +20,14 @@ class TranslationsJsonlExporterTest extends TestCase
         Storage::fake('local');
         ProductTranslation::factory()->count(2)->create();
         CategoryTranslation::factory()->create();
-        BrandTranslation::factory()->create();
+        BrandTranslation::factory()->create([
+            'name' => 'Samsung',
+            'tagline' => 'Technology for everyone',
+            'short_description' => 'Localized summary',
+            'description' => 'Localized description',
+            'seo_title' => 'Samsung localized',
+            'seo_description' => 'Samsung products',
+        ]);
         $snapshot = CatalogSnapshot::factory()->create(['storage_disk' => 'local']);
 
         $result = app(TranslationsJsonlExporter::class)->export($snapshot);
@@ -29,6 +36,17 @@ class TranslationsJsonlExporterTest extends TestCase
 
         $this->assertSame(4, $result->lineCount);
         $this->assertEqualsCanonicalizing(['brand', 'category', 'product'], $rows->pluck('entity_type')->unique()->values()->all());
+
+        $brandRow = $rows->firstWhere('entity_type', 'brand');
+        $this->assertIsArray($brandRow);
+        $this->assertSame([
+            'name' => 'Samsung',
+            'tagline' => 'Technology for everyone',
+            'short_description' => 'Localized summary',
+            'description' => 'Localized description',
+            'seo_title' => 'Samsung localized',
+            'seo_description' => 'Samsung products',
+        ], $brandRow['value']);
 
         foreach ($rows as $row) {
             $this->assertArrayHasKey('entity_id', $row);

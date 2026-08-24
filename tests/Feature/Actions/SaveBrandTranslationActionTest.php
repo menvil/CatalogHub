@@ -10,6 +10,7 @@ use App\Enums\TranslationStatus;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\Locale;
 use App\Models\Translations\BrandTranslation;
+use App\Queries\Translations\BrandTranslationEditorQuery;
 use App\Services\Translations\TranslationSourceHashService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -64,6 +65,28 @@ final class SaveBrandTranslationActionTest extends TestCase
         );
 
         $this->assertFalse(Cache::has('translations.dashboard.stats'));
+    }
+
+    public function test_locale_code_rename_updates_the_existing_locale_identity(): void
+    {
+        $brand = CentralBrand::factory()->create();
+        $locale = Locale::factory()->create(['code' => 'de-DE']);
+        $action = app(SaveBrandTranslationAction::class);
+        $created = $action->handle($brand, $locale, $this->input(name: 'Samsung Deutschland'));
+
+        $locale->update(['code' => 'de-AT']);
+        $locale->refresh();
+
+        $editor = app(BrandTranslationEditorQuery::class)->forBrand($brand, $locale);
+        $this->assertTrue($created->is($editor->translation));
+
+        $updated = $action->handle($brand, $locale, $this->input(name: 'Samsung Österreich'));
+
+        $this->assertTrue($created->is($updated));
+        $this->assertSame($locale->id, $updated->locale_id);
+        $this->assertSame('de-AT', $updated->locale);
+        $this->assertSame('Samsung Österreich', $updated->name);
+        $this->assertSame(1, BrandTranslation::query()->count());
     }
 
     private function input(

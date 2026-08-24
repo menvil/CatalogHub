@@ -81,6 +81,23 @@ final class BrandTranslationGlobalIntegrationTest extends TestCase
             ->assertSee('Samsung');
     }
 
+    public function test_missing_brand_search_treats_like_metacharacters_as_literals(): void
+    {
+        $matching = CentralBrand::factory()->create(['name' => 'Samsung 100%_safe!']);
+        $wildcardOnly = CentralBrand::factory()->create(['name' => 'Samsung 100XxsafeX']);
+        $locale = Locale::factory()->create(['code' => 'de-DE', 'is_active' => true]);
+
+        $items = app(MissingTranslationsQuery::class)->get(
+            locale: $locale->code,
+            entityType: 'brand',
+            search: '100%_safe!',
+        );
+        $entityIds = collect($items)->pluck('entity_id');
+
+        $this->assertTrue($entityIds->contains($matching->id));
+        $this->assertFalse($entityIds->contains($wildcardOnly->id));
+    }
+
     public function test_completeness_and_dashboard_totals_include_brands_without_regressing_existing_sections(): void
     {
         Locale::query()->update(['is_active' => false, 'is_default' => false]);

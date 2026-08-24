@@ -22,13 +22,13 @@ final class BrandTranslationEditorQuery
 
         $translations = BrandTranslation::query()
             ->where('brand_id', $brand->getKey())
-            ->whereIn('locale', $locales->pluck('code'))
+            ->whereIn('locale_id', $locales->modelKeys())
             ->with('approvedBy')
             ->get()
-            ->keyBy(fn (BrandTranslation $translation): string => $translation->locale);
+            ->keyBy(fn (BrandTranslation $translation): int => (int) $translation->locale_id);
 
         $translation = $selectedLocale instanceof Locale
-            ? $translations->get($selectedLocale->code)
+            ? $translations->get($selectedLocale->getKey())
             : null;
 
         return new BrandTranslationEditorData(

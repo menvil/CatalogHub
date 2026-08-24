@@ -58,7 +58,7 @@ final class BrandTranslationModelTest extends TestCase
         BrandTranslation::factory()->create([
             'brand_id' => $brand->id,
             'locale_id' => $locale->id,
-            'locale' => $locale->code,
+            'locale' => 'de-AT',
         ]);
     }
 

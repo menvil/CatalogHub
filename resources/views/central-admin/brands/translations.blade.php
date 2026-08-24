@@ -39,7 +39,7 @@
                 <nav class="flex gap-2 overflow-x-auto pb-1" aria-label="Translation locales">
                     @foreach ($locales as $locale)
                         @php
-                            $localeTranslation = $translationsByLocale->get($locale->code);
+                            $localeTranslation = $translationsByLocale->get($locale->getKey());
                             $localeStatus = $localeTranslation?->status ?? \App\Enums\TranslationStatus::Missing;
                         @endphp
                         <a

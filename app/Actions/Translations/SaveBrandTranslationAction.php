@@ -17,23 +17,34 @@ final readonly class SaveBrandTranslationAction
 
     public function handle(CentralBrand $brand, Locale $locale, BrandTranslationInput $input): BrandTranslation
     {
-        $translation = BrandTranslation::query()->firstOrNew([
+        BrandTranslation::query()->upsert([[
             'brand_id' => $brand->id,
-            'locale' => $locale->code,
-        ]);
-
-        $translation->fill([
             'locale_id' => $locale->id,
+            'locale' => $locale->code,
             'name' => $input->name,
             'tagline' => $input->tagline,
             'short_description' => $input->shortDescription,
             'description' => $input->description,
             'seo_title' => $input->seoTitle,
             'seo_description' => $input->seoDescription,
-            'status' => $input->status,
+            'status' => $input->status->value,
+            'source_hash' => $this->hashService->forBrand($brand),
+        ]], ['brand_id', 'locale_id'], [
+            'locale',
+            'name',
+            'tagline',
+            'short_description',
+            'description',
+            'seo_title',
+            'seo_description',
+            'status',
+            'source_hash',
         ]);
-        $translation->forceFill(['source_hash' => $this->hashService->forBrand($brand)]);
-        $translation->save();
+
+        $translation = BrandTranslation::query()
+            ->where('brand_id', $brand->id)
+            ->where('locale_id', $locale->id)
+            ->firstOrFail();
 
         TranslationStatsService::forgetDashboardCache();
 

@@ -9,7 +9,7 @@
 @section('content')
     <div class="space-y-admin-section">
         <x-admin.page-header screen-id="CA-014" :show-screen-id="false" title="Brand Media" :description="$brand->name.' — manage its primary global logo.'" :breadcrumbs="[]" />
-        <nav class="flex gap-5 border-b border-admin-border text-sm" aria-label="Brand sections"><a class="pb-3 text-admin-muted" href="{{ route('central.brands.show', $brand) }}">Overview</a><a class="border-b-2 border-admin-primary pb-3 font-medium text-admin-text" aria-current="page" href="{{ route('central.brands.media', $brand) }}">Media</a></nav>
+        @include('central-admin.brands.partials.subnav', ['active' => 'media'])
         <x-admin.card title="Brand logo">
             @if ($asset && $logo->url)
                 <div class="grid gap-6 md:grid-cols-[minmax(0,18rem)_1fr]">

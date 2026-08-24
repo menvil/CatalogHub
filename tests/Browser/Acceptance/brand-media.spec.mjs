@@ -13,7 +13,7 @@ test('CA-014 uploads, replaces, and safely removes the primary Brand logo', asyn
     await signIn(page, 'central', foundationDemo.centralAdmin)
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
     await page.goto(`/admin/central/brands/${samsungBrandId}`)
-    await page.locator('[data-screen-id="CA-012"]').getByRole('link', { name: 'Media', exact: true }).click()
+    await page.getByRole('tab', { name: 'Media', exact: true }).click()
 
     await expect(page.locator('[data-screen-id="CA-014"]')).toBeVisible()
     await expect(page.getByText('No logo has been assigned to this brand yet.')).toBeVisible()

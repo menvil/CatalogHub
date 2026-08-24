@@ -3,6 +3,7 @@
 namespace Tests\Feature\Export;
 
 use App\Models\CatalogSnapshot;
+use App\Models\Translations\BrandTranslation;
 use App\Models\Translations\CategoryTranslation;
 use App\Models\Translations\ProductTranslation;
 use App\Services\Export\TranslationsJsonlExporter;
@@ -19,14 +20,33 @@ class TranslationsJsonlExporterTest extends TestCase
         Storage::fake('local');
         ProductTranslation::factory()->count(2)->create();
         CategoryTranslation::factory()->create();
+        BrandTranslation::factory()->create([
+            'name' => 'Samsung',
+            'tagline' => 'Technology for everyone',
+            'short_description' => 'Localized summary',
+            'description' => 'Localized description',
+            'seo_title' => 'Samsung localized',
+            'seo_description' => 'Samsung products',
+        ]);
         $snapshot = CatalogSnapshot::factory()->create(['storage_disk' => 'local']);
 
         $result = app(TranslationsJsonlExporter::class)->export($snapshot);
         $rows = collect(explode("\n", trim(Storage::disk($result->disk)->get($result->path))))
             ->map(fn (string $line): array => json_decode($line, true, flags: JSON_THROW_ON_ERROR));
 
-        $this->assertSame(3, $result->lineCount);
-        $this->assertEqualsCanonicalizing(['category', 'product'], $rows->pluck('entity_type')->unique()->values()->all());
+        $this->assertSame(4, $result->lineCount);
+        $this->assertEqualsCanonicalizing(['brand', 'category', 'product'], $rows->pluck('entity_type')->unique()->values()->all());
+
+        $brandRow = $rows->firstWhere('entity_type', 'brand');
+        $this->assertIsArray($brandRow);
+        $this->assertSame([
+            'name' => 'Samsung',
+            'tagline' => 'Technology for everyone',
+            'short_description' => 'Localized summary',
+            'description' => 'Localized description',
+            'seo_title' => 'Samsung localized',
+            'seo_description' => 'Samsung products',
+        ], $brandRow['value']);
 
         foreach ($rows as $row) {
             $this->assertArrayHasKey('entity_id', $row);
@@ -37,6 +57,6 @@ class TranslationsJsonlExporterTest extends TestCase
             $this->assertArrayHasKey('source_hash', $row);
         }
 
-        $this->assertSame(3, $snapshot->fresh()->files_json['translations']['line_count']);
+        $this->assertSame(4, $snapshot->fresh()->files_json['translations']['line_count']);
     }
 }

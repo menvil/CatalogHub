@@ -1,0 +1,13 @@
+# Translation architecture
+
+CatalogHub uses normalized, typed per-entity translation tables around the shared `Locale` and `TranslationStatus` contracts. `BrandTranslation` follows the same pattern as Product, Category, Attribute, Section, Option, and Unit translations; there is no Brand-only locale, status, JSON payload, or second translation engine.
+
+`central_brands.name` and `central_brands.slug` remain the canonical administrative identity. `brand_translations.name` is a localized display-name override. The other localized Brand fields are `tagline`, `short_description`, `description`, `seo_title`, and `seo_description`. Slug, lifecycle status, website URL, country code, and media assignments are language-neutral and remain on their canonical domains.
+
+Each Brand/Locale has at most one row, with `brand_id + locale_id` as its database identity. The denormalized locale code follows the established translation schema and is refreshed from the referenced Locale on save, so renaming a code updates the existing row rather than creating another identity. The row uses the shared status enum and carries the common `source_hash`, `approved_at`, and `approved_by_user_id` metadata. Physical Brand or Locale deletion cascades to prevent orphan translations; deleting an approver only nulls the approval actor.
+
+`TranslationSourceHashService::forBrand()` hashes exactly the normalized canonical `name` and `slug`. Website, country, lifecycle status, timestamps, and media do not make translated text stale. Saves refresh the hash and invalidate the shared dashboard cache. The existing `DetectOutdatedTranslationsAction` can compare this hash and mark Brand rows outdated; the project does not add a Brand-only observer, job, or background detector.
+
+Brands participate in shared Translation Stats, completeness, Missing, Outdated, status filtering, snapshot translation export, and common approval actions. Required Brand coverage for a locale is the canonical Brand count; approved and outdated are row status counts, while missing is required minus existing rows. CA-015 is the Brand-specific authoring presentation, while reports link to its selected-locale route.
+
+Public Brand localization, locale fallback resolution, localized APIs/pages, translated slugs, sitemap/SEO delivery, and localized media are outside Phase 7. Storing SEO text does not publish it.

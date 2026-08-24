@@ -12,7 +12,9 @@ class TranslationStatusBadgeTest extends TestCase
         foreach ([
             'missing' => 'Missing',
             'machine' => 'Machine',
+            'machine_translated' => 'Machine translated',
             'reviewed' => 'Reviewed',
+            'human_reviewed' => 'Human reviewed',
             'approved' => 'Approved',
             'outdated' => 'Outdated',
         ] as $status => $label) {

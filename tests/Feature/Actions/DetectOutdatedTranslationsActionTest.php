@@ -7,6 +7,7 @@ use App\Enums\TranslationStatus;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeSection;
+use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Locale;
@@ -14,6 +15,7 @@ use App\Models\MeasurementUnit;
 use App\Models\Translations\AttributeOptionTranslation;
 use App\Models\Translations\AttributeSectionTranslation;
 use App\Models\Translations\AttributeTranslation;
+use App\Models\Translations\BrandTranslation;
 use App\Models\Translations\CategoryTranslation;
 use App\Models\Translations\ProductTranslation;
 use App\Models\Translations\UnitTranslation;
@@ -68,6 +70,7 @@ class DetectOutdatedTranslationsActionTest extends TestCase
 
     public function test_detects_outdated_translations_for_all_translatable_entities(): void
     {
+        $this->assertBrandOutdatedDetection(true);
         $this->assertCategoryOutdatedDetection(true);
         $this->assertAttributeOutdatedDetection(true);
         $this->assertAttributeSectionOutdatedDetection(true);
@@ -77,11 +80,35 @@ class DetectOutdatedTranslationsActionTest extends TestCase
 
     public function test_leaves_unchanged_source_hashes_for_all_translatable_entities(): void
     {
+        $this->assertBrandOutdatedDetection(false);
         $this->assertCategoryOutdatedDetection(false);
         $this->assertAttributeOutdatedDetection(false);
         $this->assertAttributeSectionOutdatedDetection(false);
         $this->assertAttributeOptionOutdatedDetection(false);
         $this->assertUnitOutdatedDetection(false);
+    }
+
+    private function assertBrandOutdatedDetection(bool $mutate): void
+    {
+        $hashService = app(TranslationSourceHashService::class);
+        $brand = CentralBrand::factory()->create(['name' => 'Old brand', 'slug' => 'old-brand']);
+        $locale = Locale::factory()->create();
+        $translation = BrandTranslation::factory()->create([
+            'brand_id' => $brand->id,
+            'locale_id' => $locale->id,
+            'locale' => $locale->code,
+            'source_hash' => $hashService->forBrand($brand),
+            'status' => TranslationStatus::Approved,
+        ]);
+
+        if ($mutate) {
+            $brand->update(['slug' => 'new-brand']);
+        }
+
+        $updated = app(DetectOutdatedTranslationsAction::class)->handle($brand);
+
+        $this->assertSame($mutate ? 1 : 0, $updated, 'brand');
+        $this->assertSame($mutate ? TranslationStatus::Outdated : TranslationStatus::Approved, $translation->fresh()->status, 'brand');
     }
 
     private function assertCategoryOutdatedDetection(bool $mutate): void

@@ -5,12 +5,21 @@ namespace App\Services\Translations;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeSection;
+use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\MeasurementUnit;
 
 final class TranslationSourceHashService
 {
+    public function forBrand(CentralBrand $brand): string
+    {
+        return $this->hash([
+            'name' => $brand->name,
+            'slug' => $brand->slug,
+        ]);
+    }
+
     public function forProduct(CentralProduct $product): string
     {
         return $this->hash([

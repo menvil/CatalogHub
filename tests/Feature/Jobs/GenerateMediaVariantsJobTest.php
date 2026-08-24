@@ -5,6 +5,9 @@ namespace Tests\Feature\Jobs;
 use App\Jobs\Media\GenerateMediaVariantsJob;
 use App\Models\MediaAsset;
 use App\Services\Media\MediaService;
+use App\Services\Media\MediaVariantGenerationException;
+use App\Services\Media\MediaVariantGenerator;
+use App\Services\Media\MediaVariantProfile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -17,7 +20,7 @@ class GenerateMediaVariantsJobTest extends TestCase
     public function test_has_generate_media_variants_job(): void
     {
         $asset = MediaAsset::factory()->create();
-        $job = new GenerateMediaVariantsJob($asset->id);
+        $job = new GenerateMediaVariantsJob($asset->id, MediaVariantProfile::Default);
 
         $this->assertSame($asset->id, $job->mediaAssetId);
     }
@@ -30,7 +33,7 @@ class GenerateMediaVariantsJobTest extends TestCase
             UploadedFile::fake()->image('monitor.jpg', 2400, 1600)
         );
 
-        (new GenerateMediaVariantsJob($asset->id))->handle();
+        (new GenerateMediaVariantsJob($asset->id, MediaVariantProfile::Default))->handle(app(MediaVariantGenerator::class));
 
         foreach (['thumbnail', 'card', 'gallery', 'hero', 'og'] as $type) {
             $variant = $asset->variants()->where('variant_type', $type)->first();
@@ -62,7 +65,8 @@ class GenerateMediaVariantsJobTest extends TestCase
             'original_path' => 'media/originals/missing.jpg',
         ]);
 
-        (new GenerateMediaVariantsJob($asset->id))->handle();
+        $this->expectException(MediaVariantGenerationException::class);
+        (new GenerateMediaVariantsJob($asset->id, MediaVariantProfile::Default))->handle(app(MediaVariantGenerator::class));
 
         $this->assertSame('failed', $asset->variants()->where('variant_type', 'thumbnail')->firstOrFail()->status);
     }

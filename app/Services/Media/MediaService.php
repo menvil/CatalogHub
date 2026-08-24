@@ -2,7 +2,6 @@
 
 namespace App\Services\Media;
 
-use App\Jobs\Media\GenerateMediaVariantsJob;
 use App\Models\MediaAsset;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
@@ -42,9 +41,6 @@ final readonly class MediaService
                 return $existing;
             }
             throw $exception;
-        }
-        if ((bool) config('media.dispatch_variants_on_upload')) {
-            GenerateMediaVariantsJob::dispatch($asset->id)->afterCommit();
         }
 
         return $asset;

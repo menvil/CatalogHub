@@ -17,6 +17,8 @@ reference_version: v1
 
 # CA-014 — Brand Media / Logo
 
-CA-014 manages one global primary Brand logo. It provides no-logo, logo-ready, logo-processing/fallback and upload-error states. A Brand manager can upload or replace a JPEG, PNG or WebP logo, or detach it with confirmation. Removal retains the asset in Media Library. The responsive preview uses `object-contain` on a neutral checkerboard background and metadata wraps on mobile.
+CA-014 Phase 6 v1 manages one global primary Brand logo. It provides no-logo, logo-ready, logo-processing/fallback and upload-error states. A Brand manager can upload or replace a JPEG, PNG or WebP logo, or detach it with confirmation. Removal retains the asset in Media Library. The responsive preview uses `object-contain` on a neutral checkerboard background and metadata wraps on mobile.
+
+The richer design target (multiple roles, dark/light logos, wordmarks, hero/OG media, localized/site overrides, asset browser and completeness tooling) is deferred and is not this executable v1 contract.
 
 Routes: `GET central.brands.media`, `POST central.brands.media.logo.store`, `DELETE central.brands.media.logo.destroy`.

@@ -9,11 +9,19 @@ final readonly class MediaVariantGenerator
 {
     public function __construct(private MediaStorage $storage, private MediaPathGenerator $paths, private MediaVariantSpecificationRegistry $registry, private ImageVariantProcessor $processor) {}
 
-    public function generateForAsset(int $assetId): void
+    public function generateForAsset(int $assetId, MediaVariantProfile $profile): void
     {
         $asset = MediaAsset::query()->findOrFail($assetId);
-        foreach ($this->registry->all() as $spec) {
-            $this->generate($asset, $spec);
+        $failures = [];
+        foreach ($this->registry->forProfile($profile) as $spec) {
+            try {
+                $this->generate($asset, $spec);
+            } catch (\Throwable $exception) {
+                $failures[] = $exception;
+            }
+        }
+        if ($failures !== []) {
+            throw new MediaVariantGenerationException("One or more {$profile->value} variants failed.", previous: $failures[0]);
         }
     }
 
@@ -29,7 +37,6 @@ final readonly class MediaVariantGenerator
             $this->storage->putContents($asset->disk, $path, $result['bytes']);
             MediaVariant::query()->updateOrCreate(['media_asset_id' => $asset->id, 'variant_type' => $spec->name, 'locale' => null, 'site_id' => null, 'market_id' => null], ['disk' => $asset->disk, 'path' => $path, 'width' => $result['width'], 'height' => $result['height'], 'format' => $spec->format, 'file_size' => strlen($result['bytes']), 'quality' => $spec->quality, 'transform_hash' => $spec->transformHash(), 'status' => 'ready']);
         } catch (\Throwable $e) {
-            report($e);
             MediaVariant::query()->updateOrCreate(['media_asset_id' => $asset->id, 'variant_type' => $spec->name, 'locale' => null, 'site_id' => null, 'market_id' => null], ['disk' => $asset->disk, 'path' => $path, 'format' => $spec->format, 'quality' => $spec->quality, 'transform_hash' => $spec->transformHash(), 'status' => 'failed']);
             throw $e;
         }

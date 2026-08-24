@@ -5,6 +5,7 @@ namespace App\Actions\CentralCatalog;
 use App\Jobs\Media\GenerateMediaVariantsJob;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Services\Media\MediaService;
+use App\Services\Media\MediaVariantProfile;
 use Illuminate\Http\UploadedFile;
 
 final readonly class UploadCentralBrandLogoAction
@@ -15,6 +16,6 @@ final readonly class UploadCentralBrandLogoAction
     {
         $asset = $this->media->uploadOriginal($file);
         $this->setLogo->execute($brand, $asset);
-        GenerateMediaVariantsJob::dispatch($asset->id)->afterCommit();
+        GenerateMediaVariantsJob::dispatch($asset->id, MediaVariantProfile::BrandLogo)->afterCommit();
     }
 }

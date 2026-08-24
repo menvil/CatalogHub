@@ -19,6 +19,7 @@ final class PageHeader extends Component
         public readonly ?string $description = null,
         public readonly array $breadcrumbs = [],
         public readonly ?string $status = null,
+        public readonly bool $showScreenId = true,
     ) {
         if (preg_match('/^[A-Z]{2}-[A-Z0-9]+(?:-[A-Z0-9]+)*$/', $screenId) !== 1) {
             throw new InvalidArgumentException("Invalid screen ID [{$screenId}].");

@@ -19,15 +19,20 @@
     <div class="space-y-admin-section" data-brand-detail-fixture="brand-detail-v1">
         <x-admin.page-header
             screen-id="CA-012"
+            :show-screen-id="false"
             :title="$brand->name"
             description="Canonical brand in the central catalog."
             :breadcrumbs="[]"
         >
             <x-slot:actions>
+                @if ($logo->url)
+                    <img src="{{ $logo->url }}" alt="{{ $brand->name }} logo" class="h-10 w-16 rounded border border-admin-border object-contain p-1">
+                @endif
                 <div data-screen-region="status-context">
                     <x-admin.status-badge :label="$brand->status->label()" :variant="$statusVariant" />
                 </div>
                 <x-ui.button variant="secondary" :href="route('central.brands.edit', $brand, absolute: false)">Edit Brand</x-ui.button>
+                <x-ui.button variant="secondary" :href="route('central.brands.media', $brand, absolute: false)">Media</x-ui.button>
             </x-slot:actions>
         </x-admin.page-header>
 

@@ -6,7 +6,9 @@
         <x-admin.breadcrumbs :items="$breadcrumbs" />
 
         <div class="flex flex-wrap items-center gap-2">
-            <span class="font-foundation-mono text-xs font-semibold text-admin-muted">{{ $screenId }}</span>
+            @if ($showScreenId)
+                <span class="font-foundation-mono text-xs font-semibold text-admin-muted">{{ $screenId }}</span>
+            @endif
             @if ($status)
                 <span class="rounded-admin-badge bg-admin-info-soft px-2 py-1 text-xs font-medium text-admin-info">{{ $status }}</span>
             @endif

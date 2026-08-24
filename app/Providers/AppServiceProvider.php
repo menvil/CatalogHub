@@ -9,6 +9,7 @@ use App\Events\MarketOfferUpdated;
 use App\Importers\SerializedPhpProductImporter;
 use App\Listeners\AuditAuthenticationEvent;
 use App\Listeners\RebuildPriceAffectedProjections;
+use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Imports\NormalizedProductDraft;
 use App\Models\User;
@@ -25,6 +26,12 @@ use App\Services\Imports\Normalizers\EnumNormalizer;
 use App\Services\Imports\Normalizers\MultiEnumNormalizer;
 use App\Services\Imports\Normalizers\NumberNormalizer;
 use App\Services\Imports\Normalizers\UnitNormalizer;
+use App\Services\Media\FilesystemMediaStorage;
+use App\Services\Media\GdImageIngestor;
+use App\Services\Media\GdImageVariantProcessor;
+use App\Services\Media\ImageIngestor;
+use App\Services\Media\ImageVariantProcessor;
+use App\Services\Media\MediaStorage;
 use App\Services\Security\PublicRequestRateLimiter;
 use App\Services\Themes\PublicThemeResolver;
 use App\Support\PermissionMatrix;
@@ -53,6 +60,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(CentralAdminAccess::class, CentralPanelPolicy::class);
         $this->app->bind(SiteAdminAccess::class, SitePanelPolicy::class);
         $this->app->bind(PublicThemeResolverContract::class, PublicThemeResolver::class);
+        $this->app->bind(ImageIngestor::class, GdImageIngestor::class);
+        $this->app->bind(MediaStorage::class, FilesystemMediaStorage::class);
+        $this->app->bind(ImageVariantProcessor::class, GdImageVariantProcessor::class);
 
         $this->app->scoped(AttributeMappingService::class);
         $this->app->scoped(SiteRuntimeContext::class, function ($app): SiteRuntimeContext {
@@ -105,6 +115,7 @@ class AppServiceProvider extends ServiceProvider
 
         Relation::morphMap([
             'central_product' => CentralProduct::class,
+            'central_brand' => CentralBrand::class,
             'normalized_product_draft' => NormalizedProductDraft::class,
         ]);
 

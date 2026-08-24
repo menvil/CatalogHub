@@ -1,0 +1,15 @@
+# Media architecture
+
+CatalogHub keeps media identity separate from its storage location and public URL. `MediaAsset` is the normalized master, `MediaVariant` is a derived delivery representation, and `MediaAssignment` attaches an asset to a generic entity/role/context. URLs are generated at read time by `MediaUrlGenerator`; no URL is persisted.
+
+New user raster uploads enter only through `MediaService`: `UploadedFile → ImageInput → ImageIngestor → NormalizedImage → MediaStorage → MediaAsset`. The GD ingestor reads bytes, cross-checks `getimagesizefromstring` and fileinfo, limits input to 20 MiB, 8000px per dimension and 16,000,000 pixels before decode, then fully decodes and re-encodes it. JPEG orientation is normalized and re-encoding strips EXIF/GPS/XMP metadata. JPEG, PNG and WebP are accepted; GIF, SVG, AVIF and other formats are rejected for new uploads. SVG/vector ingest needs its own sanitizer/security pipeline and is deferred.
+
+The normalized bytes determine MIME, extension, checksum and deduplication. Masters retain their detected format; transparent PNG/WebP input keeps alpha. `MediaStorage` owns disk I/O and only accepts normalized images for untrusted writes. Paths use generated UUIDs and canonical extensions. A failed database insert after a write triggers best-effort cleanup while preserving the database exception.
+
+Variants are typed specifications from `MediaVariantSpecificationRegistry`, processed by `ImageVariantProcessor`, and orchestrated by `MediaVariantGenerator`. Queue jobs merely delegate and propagate failures so Laravel retry/backoff applies. `MediaVariantProfile::Default` contains `thumbnail`, `card`, `gallery`, `hero`, and `og`; `MediaVariantProfile::BrandLogo` contains `brand_logo_128`, `brand_logo_256`, and `brand_logo_512`. Profiles describe why a variant is generated, not an Asset field: one asset can accumulate both groups over time. `MediaService` only ingests; the caller explicitly dispatches the needed profile after commit. Variants never upscale, use deterministic paths/specification hashes, and skip when the ready file/hash already matches.
+
+## Brand logo delivery
+
+Semantic variants are delivery contracts, not merely background work: consumers prefer an appropriate ready variant before the master. `BrandLogoPresenter` is a read-only boundary which resolves a usable URL through `MediaUrlGenerator`. CA-012 prefers `brand_logo_256`, then `brand_logo_128`, then `brand_logo_512`; CA-014 prefers `brand_logo_512`, then `brand_logo_256`, then `brand_logo_128`. In either screen, a processing, failed, or known-missing variant is skipped. The fallback chain is ready semantic variant, normalized master, then no-logo placeholder. Variant failure therefore never makes a valid master unusable.
+
+Brand Logo v1 is a global primary assignment (`central_brand`, `brand_logo`, null locale/site/market). Replacing/removing a logo only changes the assignment; assets and files are retained. Future lifecycle work may release, retain for a grace period, then purge orphaned assets.

@@ -7,8 +7,13 @@ import {
 
 const formFixtureId = 13013
 
-test('CA-013 creates a normalized draft and lands on Edit', async ({ page }) => {
+test('CA-013 creates a normalized draft and returns to Brands', async ({ page }) => {
     const assertNoPageErrors = observePageErrors(page)
+    const unexpectedDialogs = []
+    page.on('dialog', (dialog) => {
+        unexpectedDialogs.push(`${dialog.type()}: ${dialog.message()}`)
+        void dialog.dismiss()
+    })
 
     await signIn(page, 'central', foundationDemo.centralAdmin)
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
@@ -17,18 +22,17 @@ test('CA-013 creates a normalized draft and lands on Edit', async ({ page }) => 
 
     await expect(page).toHaveURL(/\/admin\/central\/brands\/create$/)
     await expect(page.locator('[data-screen-id="CA-013"]')).toBeVisible()
+    await expect(page.getByText('CA-013', { exact: true })).toHaveCount(0)
+    await expect(page.locator('#brand-form')).toHaveAttribute('data-admin-form-leave-warning', 'false')
     await page.getByLabel('Name').fill('Samsung Electronics')
     await page.getByLabel('Website').fill('https://www.samsung.com')
     await page.getByLabel('Country code').fill('kr')
     await page.getByRole('button', { name: 'Create Brand', exact: true }).click()
 
-    await expect(page).toHaveURL(/\/admin\/central\/brands\/\d+\/edit$/)
+    await expect(page).toHaveURL(/\/admin\/central\/brands$/)
     await expect(page.getByText('Brand created.', { exact: true })).toBeVisible()
-    await expect(page.getByLabel('Name')).toHaveValue('Samsung Electronics')
-    await expect(page.getByLabel('Slug')).toHaveValue('samsung-electronics')
-    await expect(page.getByLabel('Website')).toHaveValue('https://www.samsung.com')
-    await expect(page.getByLabel('Country code')).toHaveValue('KR')
-    await expect(page.getByText('Draft', { exact: true })).toBeVisible()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    expect(unexpectedDialogs, 'Create Brand must not trigger a native browser confirmation.').toEqual([])
     assertNoPageErrors()
 })
 
@@ -55,6 +59,11 @@ test('CA-013 displays server validation, retains submitted input, and writes not
 
 test('CA-013 edits canonical fields while preserving slug and lifecycle', async ({ page }) => {
     const assertNoPageErrors = observePageErrors(page)
+    const unexpectedDialogs = []
+    page.on('dialog', (dialog) => {
+        unexpectedDialogs.push(`${dialog.type()}: ${dialog.message()}`)
+        void dialog.dismiss()
+    })
 
     await signIn(page, 'central', foundationDemo.centralAdmin)
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
@@ -71,6 +80,7 @@ test('CA-013 edits canonical fields while preserving slug and lifecycle', async 
     await expect(page.getByLabel('Slug')).toHaveValue('samsung-form-fixture')
     await expect(page.getByLabel('Website')).toHaveValue('https://www.samsung.com/global')
     await expect(page.getByText('Draft', { exact: true })).toBeVisible()
+    expect(unexpectedDialogs, 'Save changes must not trigger a native browser confirmation.').toEqual([])
     assertNoPageErrors()
 })
 

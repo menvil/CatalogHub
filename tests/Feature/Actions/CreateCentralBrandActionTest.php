@@ -3,6 +3,7 @@
 namespace Tests\Feature\Actions;
 
 use App\Actions\CentralCatalog\CreateCentralBrandAction;
+use App\Data\CentralCatalog\CentralBrandInput;
 use App\Enums\CentralBrandStatus;
 use App\Models\CentralCatalog\CentralBrand;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,7 +19,9 @@ class CreateCentralBrandActionTest extends TestCase
 
     public function test_creates_a_draft_brand_with_minimal_valid_input_and_generated_slug(): void
     {
-        $brand = app(CreateCentralBrandAction::class)->handle(['name' => 'Samsung Electronics']);
+        $brand = app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(
+            name: 'Samsung Electronics',
+        ));
 
         $this->assertTrue($brand->exists);
         $this->assertSame('Samsung Electronics', $brand->name);
@@ -33,12 +36,14 @@ class CreateCentralBrandActionTest extends TestCase
 
     public function test_normalizes_all_canonical_create_input(): void
     {
-        $brand = app(CreateCentralBrandAction::class)->handle([
-            'name' => '  Samsung   Electronics  ',
-            'slug' => ' Samsung_Phones ',
-            'website_url' => '  https://www.samsung.com/en-us/  ',
-            'country_code' => ' kr ',
-        ]);
+        $brand = app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(
+            name: '  Samsung   Electronics  ',
+            slug: ' Samsung_Phones ',
+            hasWebsiteUrl: true,
+            websiteUrl: '  https://www.samsung.com/en-us/  ',
+            hasCountryCode: true,
+            countryCode: ' kr ',
+        ));
 
         $this->assertSame('Samsung Electronics', $brand->name);
         $this->assertSame('samsung-phones', $brand->slug);
@@ -49,17 +54,17 @@ class CreateCentralBrandActionTest extends TestCase
 
     public function test_generated_slug_handles_ampersands(): void
     {
-        $brand = app(CreateCentralBrandAction::class)->handle(['name' => 'Bang & Olufsen']);
+        $brand = app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(name: 'Bang & Olufsen'));
 
         $this->assertSame('bang-olufsen', $brand->slug);
     }
 
     public function test_preserves_unicode_and_canonical_name_case_when_an_ascii_slug_is_supplied(): void
     {
-        $brand = app(CreateCentralBrandAction::class)->handle([
-            'name' => '华为',
-            'slug' => 'huawei',
-        ]);
+        $brand = app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(
+            name: '华为',
+            slug: 'huawei',
+        ));
 
         $this->assertSame('华为', $brand->name);
         $this->assertSame('huawei', $brand->slug);
@@ -67,11 +72,13 @@ class CreateCentralBrandActionTest extends TestCase
 
     public function test_blank_nullable_metadata_is_stored_as_null(): void
     {
-        $brand = app(CreateCentralBrandAction::class)->handle([
-            'name' => 'Logitech',
-            'website_url' => '   ',
-            'country_code' => '   ',
-        ]);
+        $brand = app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(
+            name: 'Logitech',
+            hasWebsiteUrl: true,
+            websiteUrl: '   ',
+            hasCountryCode: true,
+            countryCode: '   ',
+        ));
 
         $this->assertNull($brand->website_url);
         $this->assertNull($brand->country_code);
@@ -80,9 +87,9 @@ class CreateCentralBrandActionTest extends TestCase
     #[DataProvider('invalidNameProvider')]
     public function test_rejects_invalid_names(string $name): void
     {
-        $this->assertValidationError('name', fn () => app(CreateCentralBrandAction::class)->handle([
-            'name' => $name,
-        ]));
+        $this->assertValidationError('name', fn () => app(CreateCentralBrandAction::class)->handle(
+            new CentralBrandInput(name: $name),
+        ));
 
         $this->assertDatabaseCount('central_brands', 0);
     }
@@ -97,19 +104,18 @@ class CreateCentralBrandActionTest extends TestCase
 
     public function test_rejects_an_invalid_explicit_slug_as_a_field_validation_error(): void
     {
-        $this->assertValidationError('slug', fn () => app(CreateCentralBrandAction::class)->handle([
-            'name' => 'Samsung',
-            'slug' => 'Samsung!!!',
-        ]));
+        $this->assertValidationError('slug', fn () => app(CreateCentralBrandAction::class)->handle(
+            new CentralBrandInput(name: 'Samsung', slug: 'Samsung!!!'),
+        ));
 
         $this->assertDatabaseCount('central_brands', 0);
     }
 
     public function test_rejects_a_name_that_cannot_generate_an_ascii_slug(): void
     {
-        $this->assertValidationError('slug', fn () => app(CreateCentralBrandAction::class)->handle([
-            'name' => '💻',
-        ]));
+        $this->assertValidationError('slug', fn () => app(CreateCentralBrandAction::class)->handle(
+            new CentralBrandInput(name: '💻'),
+        ));
 
         $this->assertDatabaseCount('central_brands', 0);
     }
@@ -118,10 +124,9 @@ class CreateCentralBrandActionTest extends TestCase
     {
         CentralBrand::factory()->create(['slug' => 'samsung']);
 
-        $this->assertValidationError('slug', fn () => app(CreateCentralBrandAction::class)->handle([
-            'name' => 'Samsung New',
-            'slug' => 'samsung',
-        ]));
+        $this->assertValidationError('slug', fn () => app(CreateCentralBrandAction::class)->handle(
+            new CentralBrandInput(name: 'Samsung New', slug: 'samsung'),
+        ));
 
         $this->assertDatabaseCount('central_brands', 1);
     }
@@ -131,10 +136,10 @@ class CreateCentralBrandActionTest extends TestCase
         CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
 
         try {
-            app(CreateCentralBrandAction::class)->handle([
-                'name' => 'SAMSUNG',
-                'slug' => 'samsung',
-            ]);
+            app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(
+                name: 'SAMSUNG',
+                slug: 'samsung',
+            ));
             $this->fail('Duplicate name and slug input was accepted.');
         } catch (ValidationException $exception) {
             $this->assertArrayHasKey('name', $exception->errors());
@@ -149,10 +154,9 @@ class CreateCentralBrandActionTest extends TestCase
     {
         CentralBrand::factory()->create(['name' => $existing, 'slug' => 'existing-brand']);
 
-        $this->assertValidationError('name', fn () => app(CreateCentralBrandAction::class)->handle([
-            'name' => $duplicate,
-            'slug' => 'different-slug',
-        ]));
+        $this->assertValidationError('name', fn () => app(CreateCentralBrandAction::class)->handle(
+            new CentralBrandInput(name: $duplicate, slug: 'different-slug'),
+        ));
 
         $this->assertDatabaseCount('central_brands', 1);
     }
@@ -171,8 +175,8 @@ class CreateCentralBrandActionTest extends TestCase
     {
         CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
 
-        app(CreateCentralBrandAction::class)->handle(['name' => 'Samsung Electronics']);
-        app(CreateCentralBrandAction::class)->handle(['name' => 'Samsung Display']);
+        app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(name: 'Samsung Electronics'));
+        app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(name: 'Samsung Display'));
 
         $this->assertDatabaseCount('central_brands', 3);
     }
@@ -184,20 +188,19 @@ class CreateCentralBrandActionTest extends TestCase
             'slug' => 'samsung-electronics',
         ]);
 
-        $this->assertValidationError('name', fn () => app(CreateCentralBrandAction::class)->handle([
-            'name' => 'Samsung   Electronics',
-            'slug' => 'different-slug',
-        ]));
+        $this->assertValidationError('name', fn () => app(CreateCentralBrandAction::class)->handle(
+            new CentralBrandInput(name: 'Samsung   Electronics', slug: 'different-slug'),
+        ));
     }
 
     public function test_unicode_duplicate_guard_remains_accent_sensitive(): void
     {
         CentralBrand::factory()->create(['name' => 'ÉLECTRO', 'slug' => 'electro-accented']);
 
-        $brand = app(CreateCentralBrandAction::class)->handle([
-            'name' => 'Electro',
-            'slug' => 'electro',
-        ]);
+        $brand = app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(
+            name: 'Electro',
+            slug: 'electro',
+        ));
 
         $this->assertSame('Electro', $brand->name);
         $this->assertDatabaseCount('central_brands', 2);
@@ -206,10 +209,9 @@ class CreateCentralBrandActionTest extends TestCase
     #[DataProvider('invalidWebsiteProvider')]
     public function test_rejects_invalid_or_non_http_website_urls(string $websiteUrl): void
     {
-        $this->assertValidationError('website_url', fn () => app(CreateCentralBrandAction::class)->handle([
-            'name' => 'Sony',
-            'website_url' => $websiteUrl,
-        ]));
+        $this->assertValidationError('website_url', fn () => app(CreateCentralBrandAction::class)->handle(
+            new CentralBrandInput(name: 'Sony', hasWebsiteUrl: true, websiteUrl: $websiteUrl),
+        ));
 
         $this->assertDatabaseCount('central_brands', 0);
     }
@@ -228,10 +230,9 @@ class CreateCentralBrandActionTest extends TestCase
     #[DataProvider('invalidCountryCodeProvider')]
     public function test_rejects_structurally_invalid_country_codes(string $countryCode): void
     {
-        $this->assertValidationError('country_code', fn () => app(CreateCentralBrandAction::class)->handle([
-            'name' => 'Sony',
-            'country_code' => $countryCode,
-        ]));
+        $this->assertValidationError('country_code', fn () => app(CreateCentralBrandAction::class)->handle(
+            new CentralBrandInput(name: 'Sony', hasCountryCode: true, countryCode: $countryCode),
+        ));
 
         $this->assertDatabaseCount('central_brands', 0);
     }
@@ -247,20 +248,4 @@ class CreateCentralBrandActionTest extends TestCase
         yield 'non ASCII' => ['БГ'];
     }
 
-    #[DataProvider('unsupportedFieldProvider')]
-    public function test_rejects_status_and_other_unsupported_write_fields(array $input, string $field): void
-    {
-        $this->assertValidationError($field, fn () => app(CreateCentralBrandAction::class)->handle($input));
-
-        $this->assertDatabaseCount('central_brands', 0);
-    }
-
-    /** @return iterable<string, array{array<string, mixed>, string}> */
-    public static function unsupportedFieldProvider(): iterable
-    {
-        yield 'draft status' => [['name' => 'Draft Brand', 'status' => CentralBrandStatus::Draft->value], 'status'];
-        yield 'active status' => [['name' => 'Active Brand', 'status' => CentralBrandStatus::Active->value], 'status'];
-        yield 'archived status' => [['name' => 'Archived Brand', 'status' => CentralBrandStatus::Archived->value], 'status'];
-        yield 'id' => [['name' => 'Brand With ID', 'id' => 99], 'id'];
-    }
 }

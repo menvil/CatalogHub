@@ -2,6 +2,7 @@
 
 namespace App\Actions\CentralCatalog\Concerns;
 
+use App\Data\CentralCatalog\CentralBrandInput;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Queries\CentralCatalog\DuplicateCentralBrandNameQuery;
 use App\Support\Normalization\BrandInputNormalizer;
@@ -14,30 +15,20 @@ use InvalidArgumentException;
 
 trait ValidatesCentralBrandInput
 {
-    /** @var list<string> */
-    private const SUPPORTED_FIELDS = ['name', 'slug', 'website_url', 'country_code'];
-
     /**
-     * @param  array<string, mixed>  $data
      * @return array{name: string, normalized_name: string, normalized_name_hash: string, slug: string, website_url: string|null, country_code: string|null}
      */
-    private function validatedBrandInput(array $data, ?CentralBrand $brand = null): array
+    private function validatedBrandInput(CentralBrandInput $input, ?CentralBrand $brand = null): array
     {
-        $this->rejectUnsupportedFields($data);
+        $name = BrandInputNormalizer::name($input->name);
 
-        $validated = Validator::make($data, [
-            'name' => ['required', 'string'],
-            'slug' => ['sometimes', 'nullable', 'string'],
-            'website_url' => ['sometimes', 'nullable', 'string'],
-            'country_code' => ['sometimes', 'nullable', 'string'],
+        Validator::make(['name' => $name], [
+            'name' => ['required', 'min:1', 'max:255'],
         ])->validate();
 
-        $nameInput = $validated['name'];
-        assert(is_string($nameInput));
-        $name = BrandInputNormalizer::name($nameInput);
-        $slug = $this->normalizedSlug($validated, $name, $brand);
-        $websiteUrl = $this->normalizedWebsiteUrl($validated, $brand);
-        $countryCode = $this->normalizedCountryCode($validated, $brand);
+        $slug = $this->normalizedSlug($input->slug, $name, $brand);
+        $websiteUrl = $this->normalizedWebsiteUrl($input, $brand);
+        $countryCode = $this->normalizedCountryCode($input, $brand);
 
         $slugRule = Rule::unique('central_brands', 'slug');
 
@@ -51,10 +42,9 @@ trait ValidatesCentralBrandInput
             'website_url' => $websiteUrl,
             'country_code' => $countryCode,
         ], [
-            'name' => ['required', 'string', 'min:1', 'max:255'],
-            'slug' => ['required', 'string', 'max:255', 'regex:/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/', $slugRule],
-            'website_url' => ['nullable', 'string', 'max:255', 'url:http,https'],
-            'country_code' => ['nullable', 'string', 'regex:/\A[A-Z]{2}\z/'],
+            'slug' => ['required', 'max:255', 'regex:/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/', $slugRule],
+            'website_url' => ['nullable', 'max:255', 'url:http,https'],
+            'country_code' => ['nullable', 'regex:/\A[A-Z]{2}\z/'],
         ]);
 
         $normalizedValidator->after(function ($validator) use ($name, $brand): void {
@@ -66,9 +56,9 @@ trait ValidatesCentralBrandInput
         $normalized = $normalizedValidator->validate();
 
         return [
-            'name' => (string) $normalized['name'],
-            'normalized_name' => BrandInputNormalizer::nameIdentity((string) $normalized['name']),
-            'normalized_name_hash' => BrandInputNormalizer::nameIdentityHash((string) $normalized['name']),
+            'name' => $name,
+            'normalized_name' => BrandInputNormalizer::nameIdentity($name),
+            'normalized_name_hash' => BrandInputNormalizer::nameIdentityHash($name),
             'slug' => (string) $normalized['slug'],
             'website_url' => isset($normalized['website_url']) ? (string) $normalized['website_url'] : null,
             'country_code' => isset($normalized['country_code']) ? (string) $normalized['country_code'] : null,
@@ -100,33 +90,8 @@ trait ValidatesCentralBrandInput
         return $errors;
     }
 
-    /** @param array<string, mixed> $data */
-    private function rejectUnsupportedFields(array $data): void
+    private function normalizedSlug(?string $slugInput, string $name, ?CentralBrand $brand): string
     {
-        $inputFields = array_map('strval', array_keys($data));
-        $unsupported = array_values(array_diff($inputFields, self::SUPPORTED_FIELDS));
-
-        if ($unsupported === []) {
-            return;
-        }
-
-        $messages = [];
-
-        foreach ($unsupported as $field) {
-            $messages[$field] = "The {$field} field is not supported.";
-        }
-
-        throw ValidationException::withMessages($messages);
-    }
-
-    /**
-     * @param  array<string, mixed>  $validated
-     */
-    private function normalizedSlug(array $validated, string $name, ?CentralBrand $brand): string
-    {
-        $slugInput = $validated['slug'] ?? null;
-        assert(is_string($slugInput) || $slugInput === null);
-
         if ($slugInput === null || trim($slugInput) === '') {
             if ($brand !== null) {
                 return $brand->slug;
@@ -146,29 +111,21 @@ trait ValidatesCentralBrandInput
         }
     }
 
-    /** @param array<string, mixed> $validated */
-    private function normalizedWebsiteUrl(array $validated, ?CentralBrand $brand): ?string
+    private function normalizedWebsiteUrl(CentralBrandInput $input, ?CentralBrand $brand): ?string
     {
-        if (! array_key_exists('website_url', $validated)) {
+        if (! $input->hasWebsiteUrl) {
             return $brand?->website_url;
         }
 
-        $websiteUrl = $validated['website_url'];
-        assert(is_string($websiteUrl) || $websiteUrl === null);
-
-        return BrandInputNormalizer::nullableUrl($websiteUrl);
+        return BrandInputNormalizer::nullableUrl($input->websiteUrl);
     }
 
-    /** @param array<string, mixed> $validated */
-    private function normalizedCountryCode(array $validated, ?CentralBrand $brand): ?string
+    private function normalizedCountryCode(CentralBrandInput $input, ?CentralBrand $brand): ?string
     {
-        if (! array_key_exists('country_code', $validated)) {
+        if (! $input->hasCountryCode) {
             return $brand?->country_code;
         }
 
-        $countryCode = $validated['country_code'];
-        assert(is_string($countryCode) || $countryCode === null);
-
-        return BrandInputNormalizer::countryCode($countryCode);
+        return BrandInputNormalizer::countryCode($input->countryCode);
     }
 }

@@ -21,8 +21,7 @@ final class CentralBrandFormController extends Controller
 
     public function store(CentralBrandFormRequest $request, CreateCentralBrandAction $createBrand): RedirectResponse
     {
-        $input = $request->brandInput();
-        $createBrand->handle($input->actionPayload());
+        $createBrand->handle($request->brandInput());
 
         return redirect()
             ->route('central.brands.index')
@@ -39,8 +38,7 @@ final class CentralBrandFormController extends Controller
         CentralBrand $brand,
         UpdateCentralBrandAction $updateBrand,
     ): RedirectResponse {
-        $input = $request->brandInput();
-        $updateBrand->handle($brand, $input->actionPayload());
+        $updateBrand->handle($brand, $request->brandInput());
 
         return redirect()
             ->route('central.brands.edit', $brand)

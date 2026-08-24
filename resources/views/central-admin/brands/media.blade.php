@@ -16,8 +16,10 @@
                     <div class="flex h-52 items-center justify-center rounded-admin-card border border-admin-border bg-[linear-gradient(45deg,#f4f4f5_25%,transparent_25%),linear-gradient(-45deg,#f4f4f5_25%,transparent_25%)] bg-[size:20px_20px] p-6"><img class="max-h-full max-w-full object-contain" src="{{ $logo->url }}" alt="{{ $brand->name }} logo"></div>
                     <div class="space-y-3 text-sm"><p class="font-medium text-admin-text">{{ $asset->original_filename ?? 'Brand logo' }}</p><dl class="grid grid-cols-[7rem_1fr] gap-y-2 text-admin-muted"><dt>MIME</dt><dd>{{ $asset->mime_type }}</dd><dt>Dimensions</dt><dd>{{ $asset->width }} × {{ $asset->height }}</dd><dt>File size</dt><dd>{{ number_format($asset->file_size / 1024, 1) }} KB</dd><dt>Asset</dt><dd class="break-all font-foundation-mono">{{ $asset->uuid }}</dd></dl></div>
                 </div>
-            @else
+            @elseif (! $asset)
                 <p class="text-sm text-admin-muted">No logo has been assigned to this brand yet.</p>
+            @else
+                <p class="text-sm text-admin-muted">The assigned logo file is unavailable. You can replace it with a new logo.</p>
             @endif
             <form class="mt-6 space-y-3" method="POST" enctype="multipart/form-data" action="{{ route('central.brands.media.logo.store', $brand) }}">@csrf
                 <label class="block text-sm font-medium text-admin-text" for="logo">{{ $asset ? 'Replace logo' : 'Upload logo' }}</label><input id="logo" name="logo" type="file" accept="image/jpeg,image/png,image/webp" class="block w-full text-sm" required aria-describedby="logo-help logo-error"><p id="logo-help" class="text-sm text-admin-muted">JPEG, PNG or WebP. Maximum 20 MB.</p>@error('logo')<p id="logo-error" class="text-sm text-admin-danger" role="alert">{{ $message }}</p>@enderror

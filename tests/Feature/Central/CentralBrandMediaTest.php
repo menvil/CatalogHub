@@ -92,6 +92,59 @@ final class CentralBrandMediaTest extends TestCase
         Queue::assertNothingPushed();
     }
 
+    public function test_guests_and_translators_cannot_upload_a_brand_logo(): void
+    {
+        Storage::fake('public');
+        Queue::fake();
+        $brand = CentralBrand::factory()->create();
+        $route = route('central.brands.media.logo.store', $brand);
+
+        $this->post($route, ['logo' => UploadedFile::fake()->image('logo.png', 32, 16)])
+            ->assertRedirect(route('filament.central.auth.login'));
+        $this->actingAs(User::factory()->create(['role' => UserRole::Translator]))
+            ->post($route, ['logo' => UploadedFile::fake()->image('logo.png', 32, 16)])
+            ->assertForbidden();
+
+        $this->assertSame(0, MediaAsset::query()->count());
+        $this->assertSame(0, MediaAssignment::query()->count());
+        $this->assertSame([], Storage::disk('public')->allFiles());
+        Queue::assertNothingPushed();
+    }
+
+    public function test_guests_and_translators_cannot_remove_a_brand_logo(): void
+    {
+        Storage::fake('public');
+        Queue::fake();
+        $brand = CentralBrand::factory()->create();
+        $asset = MediaAsset::factory()->create(['disk' => 'public', 'original_path' => 'media/originals/assigned.png']);
+        Storage::disk('public')->put($asset->original_path, 'assigned');
+        app(SetCentralBrandLogoAction::class)->execute($brand, $asset);
+        $route = route('central.brands.media.logo.destroy', $brand);
+
+        $this->delete($route)->assertRedirect(route('filament.central.auth.login'));
+        $this->actingAs(User::factory()->create(['role' => UserRole::Translator]))
+            ->delete($route)
+            ->assertForbidden();
+
+        $this->assertSame($asset->id, app(MediaResolver::class)->resolve(MediaAssignment::ENTITY_TYPE_CENTRAL_BRAND, $brand->id, MediaAssignment::ROLE_BRAND_LOGO)?->id);
+        $this->assertDatabaseHas('media_assignments', ['media_asset_id' => $asset->id]);
+        Storage::disk('public')->assertExists($asset->original_path);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_assigned_logo_with_an_unavailable_file_is_not_presented_as_unassigned(): void
+    {
+        $brand = CentralBrand::factory()->create(['name' => 'Samsung']);
+        $asset = MediaAsset::factory()->create(['disk' => 'public', 'original_path' => 'media/originals/missing.png']);
+        app(SetCentralBrandLogoAction::class)->execute($brand, $asset);
+
+        $this->actingAs(User::factory()->centralAdmin()->create())
+            ->get(route('central.brands.media', $brand))
+            ->assertOk()
+            ->assertSee('The assigned logo file is unavailable.')
+            ->assertDontSee('No logo has been assigned to this brand yet.');
+    }
+
     public function test_replace_and_remove_retain_the_previous_media_asset_and_file(): void
     {
         Storage::fake('public');

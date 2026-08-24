@@ -15,7 +15,9 @@ final class UploadCentralBrandLogoRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['logo' => ['required', 'file', 'max:'.((int) ceil((int) config('media.max_upload_bytes') / 1024))]];
+        $maxKilobytes = (int) ceil((int) config('media.max_upload_bytes') / 1024);
+
+        return ['logo' => ['required', 'file', 'max:'.$maxKilobytes]];
     }
 
     public function logo(): UploadedFile
@@ -25,6 +27,6 @@ final class UploadCentralBrandLogoRequest extends FormRequest
             throw new LogicException('Logo upload is missing.');
         }
 
-return $file;
+        return $file;
     }
 }

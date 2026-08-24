@@ -19,7 +19,8 @@ test('CA-014 empty desktop matches its current v1 reference', async ({ page }) =
 })
 
 test('CA-014 logo desktop and mobile match current v1 references', async ({ page }) => {
-    const assertNoPageErrors = observePageErrors(page)
+    const errors = []
+    page.on('pageerror', (error) => errors.push(error.message))
     await page.setViewportSize({ width: 1440, height: 1000 })
     await signIn(page, 'central', 'super-admin@demo.cataloghub.test')
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
@@ -32,5 +33,5 @@ test('CA-014 logo desktop and mobile match current v1 references', async ({ page
     await page.setViewportSize({ width: 390, height: 844 })
     await settle(page)
     await expect(page).toHaveScreenshot(['ca-014__logo-ready__390x844.png'], { animations: 'disabled', scale: 'css', maxDiffPixelRatio: 0.065 })
-    assertNoPageErrors()
+    expect(errors).toEqual([])
 })

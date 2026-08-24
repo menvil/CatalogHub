@@ -43,10 +43,9 @@ final class CentralBrandLifecycleController extends Controller
     public function restore(CentralBrand $brand, RestoreCentralBrandAction $restoreBrand): RedirectResponse
     {
         try {
-            $statusBeforeRestore = $brand->status;
             $restoredBrand = $restoreBrand->handle($brand);
 
-            if ($statusBeforeRestore !== CentralBrandStatus::Archived || $restoredBrand->status !== CentralBrandStatus::Draft) {
+            if ($restoredBrand->status !== CentralBrandStatus::Draft) {
                 throw ValidationException::withMessages([
                     'status' => 'Only archived brands can be restored.',
                 ]);

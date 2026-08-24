@@ -4,19 +4,24 @@ namespace App\Actions\CentralCatalog;
 
 use App\Enums\CentralBrandStatus;
 use App\Models\CentralCatalog\CentralBrand;
+use Illuminate\Support\Facades\DB;
 
 final class RestoreCentralBrandAction
 {
     public function handle(CentralBrand $brand): CentralBrand
     {
-        $brand->refresh();
+        return DB::transaction(function () use ($brand): CentralBrand {
+            $lockedBrand = CentralBrand::query()
+                ->lockForUpdate()
+                ->findOrFail($brand->getKey());
 
-        if ($brand->status !== CentralBrandStatus::Archived) {
-            return $brand;
-        }
+            if ($lockedBrand->status !== CentralBrandStatus::Archived) {
+                return $lockedBrand;
+            }
 
-        $brand->forceFill(['status' => CentralBrandStatus::Draft])->saveOrFail();
+            $lockedBrand->forceFill(['status' => CentralBrandStatus::Draft])->saveOrFail();
 
-        return $brand->refresh();
+            return $lockedBrand->refresh();
+        });
     }
 }

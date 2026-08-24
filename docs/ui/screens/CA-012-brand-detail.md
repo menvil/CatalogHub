@@ -47,3 +47,6 @@ The active desktop/mobile and archived desktop `CA-012` entries in `docs/ui/visu
 ## Explicit non-goals
 
 No logo/media placeholder, translations or tabs, Product list/filtering, site projections, audit history, granular Brand permissions, deletion, hard deletion, soft deletion, or migration is introduced.
+# Brand logo and navigation
+
+When a global primary `brand_logo` assignment exists, CA-012 presents a small contained logo in the header identity context and exposes the Media screen. Logo management remains on CA-014; the Overview does not upload or mutate media.

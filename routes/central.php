@@ -5,6 +5,7 @@ use App\Http\Controllers\CentralAdmin\CentralBrandDetailController;
 use App\Http\Controllers\CentralAdmin\CentralBrandFormController;
 use App\Http\Controllers\CentralAdmin\CentralBrandLifecycleController;
 use App\Http\Controllers\CentralAdmin\CentralBrandListController;
+use App\Http\Controllers\CentralAdmin\CentralBrandMediaController;
 use App\Http\Controllers\CentralAdmin\DesignSystem\ComponentGalleryController;
 use App\Http\Controllers\CentralAdmin\Media\MediaAssetDetailController;
 use App\Http\Controllers\CentralAdmin\Media\MediaLibraryController;
@@ -29,6 +30,9 @@ Route::middleware(['auth', EnsureCentralAdminAccess::class])
                 ->name('central.brands.store');
             Route::get('/brands/{brand}', CentralBrandDetailController::class)
                 ->name('central.brands.show');
+            Route::get('/brands/{brand}/media', [CentralBrandMediaController::class, 'show'])->name('central.brands.media');
+            Route::post('/brands/{brand}/media/logo', [CentralBrandMediaController::class, 'storeLogo'])->name('central.brands.media.logo.store');
+            Route::delete('/brands/{brand}/media/logo', [CentralBrandMediaController::class, 'destroyLogo'])->name('central.brands.media.logo.destroy');
             Route::get('/brands/{brand}/edit', [CentralBrandFormController::class, 'edit'])
                 ->name('central.brands.edit');
             Route::patch('/brands/{brand}', [CentralBrandFormController::class, 'update'])

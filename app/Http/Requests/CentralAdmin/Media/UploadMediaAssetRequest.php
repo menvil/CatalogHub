@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\CentralAdmin\Media;
 
-use App\Rules\Media\ValidMediaDimensions;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
 use LogicException;
@@ -21,13 +20,7 @@ final class UploadMediaAssetRequest extends FormRequest
             'file' => [
                 'required',
                 'file',
-                'mimetypes:'.implode(',', config('media.allowed_upload_mimes', [])),
-                'max:10240',
-                new ValidMediaDimensions(
-                    maxWidth: (int) config('media.max_upload_width'),
-                    maxHeight: (int) config('media.max_upload_height'),
-                    maxPixels: (int) config('media.max_upload_pixels'),
-                ),
+                'max:'.((int) ceil((int) config('media.max_upload_bytes') / 1024)),
             ],
         ];
     }

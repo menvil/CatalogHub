@@ -25,6 +25,10 @@ final class MediaAssignment extends Model
 {
     public const ENTITY_TYPE_CENTRAL_PRODUCT = 'central_product';
 
+    public const ENTITY_TYPE_CENTRAL_BRAND = 'central_brand';
+
+    public const ROLE_BRAND_LOGO = 'brand_logo';
+
     /** @use HasFactory<MediaAssignmentFactory> */
     use HasFactory;
 

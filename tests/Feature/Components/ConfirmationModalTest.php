@@ -46,6 +46,26 @@ class ConfirmationModalTest extends TestCase
         $this->assertStringContainsString('bg-admin-warning', $html);
     }
 
+    public function test_confirmation_modal_can_submit_an_explicit_server_form(): void
+    {
+        $html = Blade::render(<<<'BLADE'
+            <form id="archive-brand-form" method="POST" action="/brands/1/archive"></form>
+            <x-admin.confirmation-modal
+                id="archive-brand-modal"
+                title="Archive brand?"
+                message="The brand will be archived."
+                confirm-label="Archive Brand"
+                confirm-form="archive-brand-form"
+                :open="false"
+            />
+        BLADE);
+
+        $this->assertMatchesRegularExpression(
+            '/<button\s+[^>]*type="submit"[^>]*form="archive-brand-form"[^>]*data-admin-modal-confirm/s',
+            $html,
+        );
+    }
+
     public function test_confirmation_modal_escapes_text_props(): void
     {
         $html = Blade::render(
@@ -80,5 +100,13 @@ class ConfirmationModalTest extends TestCase
         $this->expectExceptionMessage('Confirmation modal IDs cannot be empty.');
 
         Blade::render('<x-admin.confirmation-modal id="   " title="Delete" message="Confirm" />');
+    }
+
+    public function test_confirmation_modal_rejects_whitespace_form_ids(): void
+    {
+        $this->expectException(ViewException::class);
+        $this->expectExceptionMessage('Confirmation modal form IDs cannot be empty.');
+
+        Blade::render('<x-admin.confirmation-modal title="Archive" message="Confirm" confirm-form="   " />');
     }
 }

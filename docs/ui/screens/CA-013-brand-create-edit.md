@@ -7,11 +7,11 @@ route: /admin/central/brands/create (GET); /admin/central/brands (POST); /admin/
 viewports: desktop=1440x1000;mobile=390x844
 fixture: brand-form-v1
 regions: central-shell;header-breadcrumbs;page-header;status-context;general-form-card;form-fields;form-actions;validation-errors;flash-feedback
-actions: cancel;create-brand;save-changes
+actions: cancel-to-list;cancel-to-detail;create-brand;save-changes
 states: create-default;create-validation-error;edit-draft;edit-active;edit-archived;edit-validation-error;save-progress;save-success-via-redirect-flash
 permissions: catalog.products.manage
 responsive: The Central Admin workspace remains full width while the form card is locally capped at a readable max width; fields and actions stack without page-level horizontal overflow on mobile.
-out_of_scope: detail;status-lifecycle-control;media;translations;product-usage;activity-log;delete;audit
+out_of_scope: status-lifecycle-control;media;translations;product-usage;activity-log;delete;audit
 reference_version: v1
 ---
 
@@ -25,7 +25,7 @@ Create accepts an optional slug. A blank slug is generated from the canonical na
 
 Edit loads the Brand through route model binding. Its existing slug remains stable when the name changes unless the user explicitly edits the slug. Draft, Active, and Archived Brands may all update canonical fields, while lifecycle status is rendered only as a semantic `x-admin.status-badge`. Status is never a form input and `Brand updated.` feedback is delivered through the shared one-time flash region.
 
-The shared form uses `x-ui.form.form-state`, `x-ui.form.input`, `x-ui.form.slug-input`, `x-admin.card`, and the standard button primitives. This supplies CSRF, PATCH method spoofing, submitting/double-submit state, dirty-form leave warning, adjacent field errors, `role=alert`, `aria-invalid`, and `aria-describedby`. Cancel always returns to `central.brands.index`.
+The shared form uses `x-ui.form.form-state`, `x-ui.form.input`, `x-ui.form.slug-input`, `x-admin.card`, and the standard button primitives. This supplies CSRF, PATCH method spoofing, submitting/double-submit state, dirty-form leave warning, adjacent field errors, `role=alert`, `aria-invalid`, and `aria-describedby`. Create Cancel returns to `central.brands.index`. Edit links the Brand breadcrumb to `central.brands.show`, and Edit Cancel returns to that Detail screen as the natural parent.
 
 ## State details
 
@@ -42,4 +42,4 @@ The `CA-013` Create and Edit desktop/mobile entries in `docs/ui/visual-reference
 
 ## Explicit non-goals
 
-There is no Brand detail route, lifecycle mutation control, media/logo management, translation UI, product usage, activity log, delete action, audit implementation, or Brand-specific permission expansion in this phase.
+There is no lifecycle mutation control on the form, media/logo management, translation UI, product usage, activity log, delete action, audit implementation, or Brand-specific permission expansion in CA-013.

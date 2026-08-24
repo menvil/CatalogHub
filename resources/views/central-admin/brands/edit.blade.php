@@ -9,7 +9,7 @@
     <span aria-hidden="true">/</span>
     <a href="{{ route('central.brands.index', absolute: false) }}" class="font-medium hover:text-admin-text">Brands</a>
     <span aria-hidden="true">/</span>
-    <span>{{ $brand->name }}</span>
+    <a href="{{ route('central.brands.show', $brand, absolute: false) }}" class="font-medium hover:text-admin-text">{{ $brand->name }}</a>
     <span aria-hidden="true">/</span>
     <span aria-current="page">Edit</span>
 @endsection
@@ -35,6 +35,7 @@
                 'action' => route('central.brands.update', $brand, absolute: false),
                 'method' => 'patch',
                 'submitLabel' => 'Save changes',
+                'cancelUrl' => route('central.brands.show', $brand, absolute: false),
             ])
         </div>
     </div>

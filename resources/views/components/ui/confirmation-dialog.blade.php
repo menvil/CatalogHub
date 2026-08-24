@@ -7,6 +7,7 @@
     'destructive' => false,
     'open' => false,
     'contained' => false,
+    'confirmForm' => null,
 ])
 
 <x-admin.confirmation-modal
@@ -18,6 +19,7 @@
     :variant="$destructive ? 'danger' : 'default'"
     :open="$open"
     :contained="$contained"
+    :confirm-form="$confirmForm"
     :data-destructive-confirmation="$destructive ? 'true' : null"
     {{ $attributes }}
 >{{ $slot }}</x-admin.confirmation-modal>

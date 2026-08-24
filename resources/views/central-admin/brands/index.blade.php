@@ -109,10 +109,16 @@
                             <td class="px-3 py-2 text-admin-text">
                                 <x-admin.row-actions
                                     :row-id="$brand->getKey()"
-                                    :actions="[[
-                                        'label' => 'Edit',
-                                        'url' => route('central.brands.edit', $brand, absolute: false),
-                                    ]]"
+                                    :actions="[
+                                        [
+                                            'label' => 'View',
+                                            'url' => route('central.brands.show', $brand, absolute: false),
+                                        ],
+                                        [
+                                            'label' => 'Edit',
+                                            'url' => route('central.brands.edit', $brand, absolute: false),
+                                        ],
+                                    ]"
                                 />
                             </td>
                         </tr>

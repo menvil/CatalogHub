@@ -42,12 +42,12 @@ final class CentralBrandFormTest extends TestCase
         $this->assertSame('central.brands.create', Route::getRoutes()->match(
             request()->create('/admin/central/brands/create', 'GET'),
         )->getName());
-        $this->assertFalse(Route::has('central.brands.show'));
+        $this->assertTrue(Route::has('central.brands.show'));
     }
 
     public function test_create_screen_renders_the_shared_accessible_form_without_status_input(): void
     {
-        $this->actingAs(User::factory()->create())
+        $response = $this->actingAs(User::factory()->create())
             ->get(route('central.brands.create'))
             ->assertOk()
             ->assertSee('data-screen-id="CA-013"', false)
@@ -69,6 +69,8 @@ final class CentralBrandFormTest extends TestCase
             ->assertDontSee('name="status"', false)
             ->assertDontSee('normalized_name')
             ->assertDontSee('normalized_name_hash');
+
+        $this->assertCancelTargets($response->getContent(), route('central.brands.index', absolute: false));
     }
 
     public function test_store_creates_a_normalized_draft_and_redirects_to_edit_with_one_time_flash(): void
@@ -270,9 +272,29 @@ final class CentralBrandFormTest extends TestCase
                 ->assertSee('value="US"', false)
                 ->assertSee('data-admin-status-badge', false)
                 ->assertSee($status->label())
+                ->assertSee('href="'.route('central.brands.show', $brand, absolute: false).'"', false)
                 ->assertSee('name="_method" value="PATCH"', false)
                 ->assertDontSee('name="status"', false);
         }
+    }
+
+    public function test_edit_breadcrumb_and_cancel_return_to_brand_detail_while_create_cancel_returns_to_list(): void
+    {
+        $brand = CentralBrand::factory()->create(['name' => 'Samsung']);
+        $user = User::factory()->create();
+
+        $editResponse = $this->actingAs($user)
+            ->get(route('central.brands.edit', $brand))
+            ->assertOk()
+            ->assertSee('href="'.route('central.brands.show', $brand, absolute: false).'"', false)
+            ->assertSeeInOrder(['Brands', 'Samsung', 'Edit'])
+            ->assertSee('Cancel');
+        $this->assertCancelTargets($editResponse->getContent(), route('central.brands.show', $brand, absolute: false));
+
+        $createResponse = $this->get(route('central.brands.create'))
+            ->assertOk()
+            ->assertSee('Cancel');
+        $this->assertCancelTargets($createResponse->getContent(), route('central.brands.index', absolute: false));
     }
 
     public function test_update_changes_canonical_fields_keeps_slug_stable_and_flashes_once(): void
@@ -457,5 +479,15 @@ final class CentralBrandFormTest extends TestCase
         foreach ($routes as [$method, $url]) {
             $this->actingAs($translator)->{$method}($url)->assertForbidden();
         }
+    }
+
+    private function assertCancelTargets(string $html, string $expectedUrl): void
+    {
+        $pattern = sprintf(
+            '/<a\b(?=[^>]*\bdata-brand-form-cancel\b)(?=[^>]*\bhref="%s")[^>]*>/',
+            preg_quote($expectedUrl, '/'),
+        );
+
+        $this->assertMatchesRegularExpression($pattern, $html);
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Database\Seeders\FoundationDemoSeeder;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Artisan;
+use Tests\Support\BrandDetailFixture;
 use Tests\Support\BrandFormFixture;
 use Tests\Support\BrandListFixture;
 
@@ -24,3 +25,4 @@ if (Artisan::call('migrate:fresh', [
 
 BrandListFixture::create();
 BrandFormFixture::create();
+BrandDetailFixture::create();

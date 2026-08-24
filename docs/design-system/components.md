@@ -9,6 +9,7 @@ The Phase 0.9 library is presentation-only. Pages and query services prepare val
 - Every form control owns an explicit, stable ID and uses the shared field wrapper for label, help, and escaped error associations.
 - Table callers whitelist sort/filter keys through `TableQueryState` and pass already prepared rows. Bulk selection covers visible rows only and resets when query state changes.
 - Destructive operations require the confirmation dialog and server-side authorization. Hiding an action is never an authorization decision.
+- `x-admin.confirmation-modal` accepts an optional `confirmForm` ID; when present, its confirm control is a submit button associated with that explicit server form. The caller still owns the form method, CSRF token, action URL, and authorization.
 - Transient feedback uses toasts; persistent or actionable failures use alerts or retry blocks. Retry is always an explicit user action.
 
 ## Gallery and visual references

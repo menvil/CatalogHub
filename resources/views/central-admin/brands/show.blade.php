@@ -24,8 +24,8 @@
             :breadcrumbs="[]"
         >
             <x-slot:actions>
-                @if ($logoAsset)
-                    <img src="{{ $mediaUrls->forAsset($logoAsset) }}" alt="{{ $brand->name }} logo" class="h-10 w-16 rounded border border-admin-border object-contain p-1">
+                @if ($logo->url)
+                    <img src="{{ $logo->url }}" alt="{{ $brand->name }} logo" class="h-10 w-16 rounded border border-admin-border object-contain p-1">
                 @endif
                 <div data-screen-region="status-context">
                     <x-admin.status-badge :label="$brand->status->label()" :variant="$statusVariant" />

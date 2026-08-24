@@ -8,18 +8,18 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CentralAdmin\UploadCentralBrandLogoRequest;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Queries\CentralCatalog\CentralBrandMediaQuery;
+use App\Services\Media\BrandLogoPresenter;
 use App\Services\Media\ImageIngestException;
-use App\Services\Media\MediaUrlGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 final class CentralBrandMediaController extends Controller
 {
-    public function show(CentralBrand $brand, CentralBrandMediaQuery $query, MediaUrlGenerator $urls): View
+    public function show(CentralBrand $brand, CentralBrandMediaQuery $query, BrandLogoPresenter $logos): View
     {
         $asset = $query->logoFor($brand);
 
-        return view('central-admin.brands.media', compact('brand', 'asset', 'urls'));
+        return view('central-admin.brands.media', ['brand' => $brand, 'asset' => $asset, 'logo' => $logos->forMedia($asset)]);
     }
 
     public function storeLogo(UploadCentralBrandLogoRequest $request, CentralBrand $brand, UploadCentralBrandLogoAction $action): RedirectResponse

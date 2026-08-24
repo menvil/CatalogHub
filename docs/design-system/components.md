@@ -17,7 +17,7 @@ The protected gallery remains at `/admin/central/component-gallery`. Local/test 
 
 - `actions` covers button variants, icon/loading/disabled states, row and bulk actions, and progress states.
 - `forms` covers fields, validation, disabled/read-only state, and form state.
-- `tables` covers query controls, filters, prepared rows, selection, row actions, and pagination.
+- `tables` covers query controls, filters, prepared rows, selection, the generic `actions` cell type backed by `x-admin.row-actions`, and pagination. Action URLs retain the shared safe-URL and destructive-confirmation contracts.
 - `indicators` covers status, translation, projection, quality, identifier, timestamp, and reference display.
 - `layout` covers cards, tabs, sections, two-column detail composition, and sticky actions.
 - `feedback` covers success/warning/error, empty, validation, loading, and retry states.

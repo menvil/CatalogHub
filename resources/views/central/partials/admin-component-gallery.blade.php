@@ -89,7 +89,7 @@
                 <x-admin.active-filters :filters="$adminComponentFixture['filters']" :clear-all-url="$galleryUrl.'?mode=components&section=tables'" />
                 <x-admin.bulk-actions table-id="gallery-brands" :actions="[['id' => 'archive', 'label' => 'Archive selected']]" />
                 <x-admin.data-table table-id="gallery-brands" caption="Brand-like fixture" :columns="$adminComponentFixture['columns']" :rows="$adminComponentFixture['rows']" selectable />
-                <div class="flex justify-end"><x-admin.row-actions row-id="brand-1" :actions="[['label' => 'Edit', 'url' => '/brands/brand-1/edit'], ['label' => 'Delete', 'url' => '/brands/brand-1', 'destructive' => true, 'confirmationId' => 'gallery-delete-modal']]" /></div>
+                <div class="flex justify-end"><x-admin.row-actions row-id="destructive-example" :actions="[['label' => 'Delete', 'url' => '/brands/brand-1', 'destructive' => true, 'confirmationId' => 'gallery-delete-modal']]" /></div>
                 <x-admin.pagination :previous-url="$galleryUrl.'?mode=components&section=tables&q=Acme&page=1'" :next-url="$galleryUrl.'?mode=components&section=tables&q=Acme&page=3'" :page="2" />
                 <div class="grid gap-admin-card lg:grid-cols-2">
                     <x-admin.data-table table-id="gallery-empty-table" caption="Empty fixture" :columns="$adminComponentFixture['columns']" :rows="[]" />

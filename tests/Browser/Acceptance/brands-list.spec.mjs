@@ -39,7 +39,10 @@ test('CA-011 supports read-only brand discovery without browser errors', async (
 
     await page.locator('#brands-per-page').selectOption('50')
     await expect(page).toHaveURL(/per_page=50/)
-    await expect(page.locator('[data-admin-data-table] tbody tr')).toHaveCount(24)
+    const paginationSummary = await page.locator('.brand-list-pagination > p').textContent()
+    const totalBrands = Number.parseInt(paginationSummary?.match(/of\s+([\d,]+)\s+brands/i)?.[1].replaceAll(',', '') ?? '', 10)
+    expect(totalBrands).toBeGreaterThanOrEqual(25)
+    await expect(page.locator('[data-admin-data-table] tbody tr')).toHaveCount(totalBrands)
 
     await page.locator('#brands-per-page').selectOption('20')
     await expect(page).toHaveURL(/per_page=20/)
@@ -56,7 +59,10 @@ test('CA-011 supports read-only brand discovery without browser errors', async (
     const wideTable = await page.locator('.brand-list-table-wrap').evaluate((element) => element.getBoundingClientRect().width)
     expect(wideTable).toBeGreaterThan(1500)
 
-    for (const action of ['Create Brand', 'Edit', 'Archive', 'Restore', 'Activate', 'Delete']) {
+    await expect(page.getByRole('link', { name: 'Add Brand', exact: true })).toBeVisible()
+    expect(await page.getByRole('link', { name: 'Edit', exact: true }).count()).toBeGreaterThan(0)
+
+    for (const action of ['Archive', 'Restore', 'Activate', 'Delete']) {
         await expect(page.getByRole('button', { name: action, exact: true })).toHaveCount(0)
         await expect(page.getByRole('link', { name: action, exact: true })).toHaveCount(0)
     }

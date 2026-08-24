@@ -23,8 +23,11 @@
 
     <div class="brand-list-page" data-screen-id="CA-011">
         <header class="brand-list-heading">
-            <h1 class="text-foundation-heading font-semibold text-admin-text">Brands</h1>
-            <p class="max-w-3xl text-sm text-admin-muted">Manage brand profiles, product associations, media assets, and localization across your catalog.</p>
+            <div class="min-w-0">
+                <h1 class="text-foundation-heading font-semibold text-admin-text">Brands</h1>
+                <p class="max-w-3xl text-sm text-admin-muted">Manage brand profiles, product associations, media assets, and localization across your catalog.</p>
+            </div>
+            <x-ui.button :href="route('central.brands.create', absolute: false)">Add Brand</x-ui.button>
         </header>
 
         <section class="brand-list-surface" aria-label="Brands list">
@@ -83,6 +86,7 @@
                             </a>
                         </th>
                         <th scope="col" class="px-3 py-2 font-semibold">Updated</th>
+                        <th scope="col" class="px-3 py-2 text-right font-semibold">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-admin-border">
@@ -95,17 +99,43 @@
                                 default => 'neutral',
                             };
                         @endphp
-                        <tr>
+                        <tr data-row-id="{{ $brand->getKey() }}">
                             <td class="px-3 py-2 text-admin-text">
                                 <strong>{{ $brand->name }}</strong>
                                 <span class="brand-list-slug">{{ $brand->slug }}</span>
                             </td>
                             <td class="px-3 py-2 text-admin-text"><x-ui.status-badge :label="$status->label()" :tone="$tone" size="sm" /></td>
                             <td class="brand-list-muted px-3 py-2 text-admin-text">{{ $brand->updated_at?->diffForHumans() }}</td>
+                            <td class="px-3 py-2 text-admin-text">
+                                <x-admin.row-actions
+                                    :row-id="$brand->getKey()"
+                                    :actions="[[
+                                        'label' => 'Edit',
+                                        'url' => route('central.brands.edit', $brand, absolute: false),
+                                    ]]"
+                                />
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="brand-list-empty px-3 py-8 text-center text-admin-muted">No brands match the current filters.</td>
+                            <td colspan="4" class="brand-list-empty p-4 text-admin-muted">
+                                @if ($filters->hasConstraints())
+                                    <x-ui.states.filtered-empty
+                                        id="brands-filtered-empty"
+                                        title="No matching brands"
+                                        message="No brands match the current search and filters."
+                                        :clear-url="route('central.brands.index', absolute: false)"
+                                    />
+                                @else
+                                    <x-ui.states.empty
+                                        id="brands-empty"
+                                        title="No brands yet"
+                                        message="Create the first canonical brand in the central catalog."
+                                        action-label="Add Brand"
+                                        :action-url="route('central.brands.create', absolute: false)"
+                                    />
+                                @endif
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>

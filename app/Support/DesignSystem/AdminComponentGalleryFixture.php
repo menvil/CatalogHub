@@ -10,19 +10,20 @@ final class AdminComponentGalleryFixture
 {
     public const VERSION = 'admin-components-v1';
 
-    /** @var list<array{key: string, label: string, align?: string}> */
+    /** @var list<array{key: string, label: string, align?: string, type?: string}> */
     public const COLUMNS = [
         ['key' => 'name', 'label' => 'Brand'],
         ['key' => 'code', 'label' => 'Code'],
         ['key' => 'status', 'label' => 'Status'],
         ['key' => 'updated', 'label' => 'Updated', 'align' => 'end'],
+        ['key' => 'actions', 'label' => 'Actions', 'type' => 'actions', 'align' => 'end'],
     ];
 
-    /** @var list<array{id: string, name: string, code: string, status: string, updated: string}> */
+    /** @var list<array{id: string, name: string, code: string, status: string, updated: string, actions: list<array{label: string, url: string}>}> */
     public const ROWS = [
-        ['id' => 'brand-1', 'name' => 'Acme Displays', 'code' => 'ACME', 'status' => 'Active', 'updated' => '2026-08-05'],
-        ['id' => 'brand-2', 'name' => 'Northstar Labs', 'code' => 'NORTHSTAR', 'status' => 'Draft', 'updated' => '2026-08-04'],
-        ['id' => 'brand-3', 'name' => 'Helios Systems', 'code' => 'HELIOS', 'status' => 'Needs review', 'updated' => '2026-08-03'],
+        ['id' => 'brand-1', 'name' => 'Acme Displays', 'code' => 'ACME', 'status' => 'Active', 'updated' => '2026-08-05', 'actions' => [['label' => 'Edit', 'url' => '/brands/brand-1/edit']]],
+        ['id' => 'brand-2', 'name' => 'Northstar Labs', 'code' => 'NORTHSTAR', 'status' => 'Draft', 'updated' => '2026-08-04', 'actions' => [['label' => 'Edit', 'url' => '/brands/brand-2/edit']]],
+        ['id' => 'brand-3', 'name' => 'Helios Systems', 'code' => 'HELIOS', 'status' => 'Needs review', 'updated' => '2026-08-03', 'actions' => [['label' => 'Edit', 'url' => '/brands/brand-3/edit']]],
     ];
 
     /** @var array<string, string> */

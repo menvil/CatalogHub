@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CentralAdmin\Backup\SnapshotDownloadController;
+use App\Http\Controllers\CentralAdmin\CentralBrandFormController;
 use App\Http\Controllers\CentralAdmin\CentralBrandListController;
 use App\Http\Controllers\CentralAdmin\DesignSystem\ComponentGalleryController;
 use App\Http\Controllers\CentralAdmin\Media\MediaAssetDetailController;
@@ -17,9 +18,18 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', EnsureCentralAdminAccess::class])
     ->prefix('admin/central')
     ->group(function (): void {
-        Route::get('/brands', CentralBrandListController::class)
-            ->middleware('can:catalog.products.manage')
-            ->name('central.brands.index');
+        Route::middleware('can:catalog.products.manage')->group(function (): void {
+            Route::get('/brands', CentralBrandListController::class)
+                ->name('central.brands.index');
+            Route::get('/brands/create', [CentralBrandFormController::class, 'create'])
+                ->name('central.brands.create');
+            Route::post('/brands', [CentralBrandFormController::class, 'store'])
+                ->name('central.brands.store');
+            Route::get('/brands/{brand}/edit', [CentralBrandFormController::class, 'edit'])
+                ->name('central.brands.edit');
+            Route::patch('/brands/{brand}', [CentralBrandFormController::class, 'update'])
+                ->name('central.brands.update');
+        });
 
         if (app()->environment(['local', 'testing'])) {
             Route::get('/component-gallery', ComponentGalleryController::class)

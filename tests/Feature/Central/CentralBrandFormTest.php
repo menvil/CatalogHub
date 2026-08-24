@@ -51,6 +51,7 @@ final class CentralBrandFormTest extends TestCase
             ->get(route('central.brands.create'))
             ->assertOk()
             ->assertSee('data-screen-id="CA-013"', false)
+            ->assertDontSee('>CA-013<', false)
             ->assertSee('Create Brand')
             ->assertSee('Create a canonical brand in the central catalog.')
             ->assertSeeInOrder(['Dashboard', 'Brands', 'Create'])
@@ -73,7 +74,7 @@ final class CentralBrandFormTest extends TestCase
         $this->assertCancelTargets($response->getContent(), route('central.brands.index', absolute: false));
     }
 
-    public function test_store_creates_a_normalized_draft_and_redirects_to_edit_with_one_time_flash(): void
+    public function test_store_creates_a_normalized_draft_and_redirects_to_list_with_one_time_flash(): void
     {
         $response = $this->actingAs(User::factory()->create())
             ->post(route('central.brands.store'), [
@@ -90,7 +91,7 @@ final class CentralBrandFormTest extends TestCase
         $brand = CentralBrand::query()->sole();
 
         $response
-            ->assertRedirect(route('central.brands.edit', $brand))
+            ->assertRedirect(route('central.brands.index'))
             ->assertSessionHas('success', 'Brand created.');
         $this->assertSame('Samsung Electronics', $brand->name);
         $this->assertSame('samsung-electronics', $brand->slug);
@@ -101,14 +102,12 @@ final class CentralBrandFormTest extends TestCase
         $this->assertNotSame(str_repeat('0', 64), $brand->normalized_name_hash);
         $this->assertTrue($brand->created_at->greaterThan(CarbonImmutable::parse('2026-01-01')));
 
-        $this->get(route('central.brands.edit', $brand))
+        $this->get(route('central.brands.index'))
             ->assertOk()
             ->assertSee('Brand created.')
-            ->assertSee('value="samsung-electronics"', false)
-            ->assertSee('value="KR"', false)
-            ->assertSee('Draft');
+            ->assertSee('Samsung Electronics');
 
-        $this->get(route('central.brands.edit', $brand))
+        $this->get(route('central.brands.index'))
             ->assertOk()
             ->assertDontSee('Brand created.');
     }

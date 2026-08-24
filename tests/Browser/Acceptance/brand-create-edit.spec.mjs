@@ -7,7 +7,7 @@ import {
 
 const formFixtureId = 13013
 
-test('CA-013 creates a normalized draft and lands on Edit', async ({ page }) => {
+test('CA-013 creates a normalized draft and returns to Brands', async ({ page }) => {
     const assertNoPageErrors = observePageErrors(page)
 
     await signIn(page, 'central', foundationDemo.centralAdmin)
@@ -22,13 +22,9 @@ test('CA-013 creates a normalized draft and lands on Edit', async ({ page }) => 
     await page.getByLabel('Country code').fill('kr')
     await page.getByRole('button', { name: 'Create Brand', exact: true }).click()
 
-    await expect(page).toHaveURL(/\/admin\/central\/brands\/\d+\/edit$/)
+    await expect(page).toHaveURL(/\/admin\/central\/brands$/)
     await expect(page.getByText('Brand created.', { exact: true })).toBeVisible()
-    await expect(page.getByLabel('Name')).toHaveValue('Samsung Electronics')
-    await expect(page.getByLabel('Slug')).toHaveValue('samsung-electronics')
-    await expect(page.getByLabel('Website')).toHaveValue('https://www.samsung.com')
-    await expect(page.getByLabel('Country code')).toHaveValue('KR')
-    await expect(page.getByText('Draft', { exact: true })).toBeVisible()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
     assertNoPageErrors()
 })
 

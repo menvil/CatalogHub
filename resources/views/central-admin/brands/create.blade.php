@@ -12,6 +12,7 @@
     <div class="space-y-admin-section" data-brand-form-fixture="brand-form-v1" data-brand-form-mode="create">
         <x-admin.page-header
             screen-id="CA-013"
+            :show-screen-id="false"
             title="Create Brand"
             description="Create a canonical brand in the central catalog."
             :breadcrumbs="[]"

@@ -27,7 +27,12 @@ final class CentralBrandMediaTest extends TestCase
         $active = CentralBrand::factory()->active()->create(['name' => 'Samsung']);
         $archived = CentralBrand::factory()->archived()->create();
 
-        $this->actingAs($user)->get(route('central.brands.media', $active))->assertOk()->assertSee('Brand Media');
+        $this->actingAs($user)->get(route('central.brands.media', $active))
+            ->assertOk()
+            ->assertSee('Brand Media')
+            ->assertSee('data-screen-id="CA-014"', false)
+            ->assertDontSee('>CA-014<', false)
+            ->assertDontSee('mx-auto max-w-4xl space-y-admin-section', false);
         $this->get(route('central.brands.media', $archived))->assertOk();
         $this->get(route('central.brands.media', 999999))->assertNotFound();
         $this->actingAs(User::factory()->create(['role' => UserRole::Translator]))

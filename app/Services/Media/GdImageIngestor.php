@@ -80,6 +80,7 @@ final class GdImageIngestor implements ImageIngestor
             'image/jpeg' => imagejpeg($image, null, (int) config('media.jpeg_quality')),
             'image/png' => imagepng($image, null, (int) config('media.png_compression')),
             'image/webp' => imagewebp($image, null, (int) config('media.webp_quality')),
+            default => false,
         };
         $bytes = (string) ob_get_clean();
         if (! $ok || $bytes === '') {

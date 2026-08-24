@@ -23,6 +23,7 @@
     {"screen_id":"CA-013","state":"create","viewport":"1440x1000","fixture":"brand-form-v1","path":"tests/Visual/baselines/ca-013__create__1440x1000.png","sha256":"27916afa8557b3c2dfc11765f57b2f90ba9c6d52fb80e6ced7c21d3048e433fa","approved_on":"2026-08-14"},
     {"screen_id":"CA-013","state":"create","viewport":"390x844","fixture":"brand-form-v1","path":"tests/Visual/baselines/ca-013__create__390x844.png","sha256":"1c37f08037db552bdbe4b67e0b8b0c32ca71c0d71474f58d862d7095bd3c23c7","approved_on":"2026-08-14"},
     {"screen_id":"CA-013","state":"edit","viewport":"1440x1000","fixture":"brand-form-v1","path":"tests/Visual/baselines/ca-013__edit__1440x1000.png","sha256":"8a77f1ed70281a39b09d8f25225936220550723d0d60d5cc3acfe63b0e6903f2","approved_on":"2026-08-14"},
-    {"screen_id":"CA-013","state":"edit","viewport":"390x844","fixture":"brand-form-v1","path":"tests/Visual/baselines/ca-013__edit__390x844.png","sha256":"63ce85bfc44fe70ef93d4809a25907f470580e137213c55c750c787d22332bab","approved_on":"2026-08-14"}
+    {"screen_id":"CA-013","state":"edit","viewport":"390x844","fixture":"brand-form-v1","path":"tests/Visual/baselines/ca-013__edit__390x844.png","sha256":"63ce85bfc44fe70ef93d4809a25907f470580e137213c55c750c787d22332bab","approved_on":"2026-08-14"},
+    {"screen_id":"CA-014","state":"logo","viewport":"1448x1086","fixture":"brand-media-v1","path":"tests/Visual/baselines/ca-014__logo__1448x1086.png","sha256":"79973a4c00b177e49d3f5401e5e4fab122a2e4c0d803953b72998584f42dc1e1","approved_on":"2026-08-24"}
   ]
 }

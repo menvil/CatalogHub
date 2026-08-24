@@ -11,7 +11,7 @@ final readonly class UploadCentralBrandLogoAction
 {
     public function __construct(private MediaService $media, private SetCentralBrandLogoAction $setLogo) {}
 
-    public function execute(CentralBrand $brand, UploadedFile $file): void
+    public function __invoke(CentralBrand $brand, UploadedFile $file): void
     {
         $asset = $this->media->uploadOriginal($file);
         $this->setLogo->execute($brand, $asset);

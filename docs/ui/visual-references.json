@@ -24,6 +24,8 @@
     {"screen_id":"CA-013","state":"create","viewport":"390x844","fixture":"brand-form-v1","path":"tests/Visual/baselines/ca-013__create__390x844.png","sha256":"1c37f08037db552bdbe4b67e0b8b0c32ca71c0d71474f58d862d7095bd3c23c7","approved_on":"2026-08-14"},
     {"screen_id":"CA-013","state":"edit","viewport":"1440x1000","fixture":"brand-form-v1","path":"tests/Visual/baselines/ca-013__edit__1440x1000.png","sha256":"8a77f1ed70281a39b09d8f25225936220550723d0d60d5cc3acfe63b0e6903f2","approved_on":"2026-08-14"},
     {"screen_id":"CA-013","state":"edit","viewport":"390x844","fixture":"brand-form-v1","path":"tests/Visual/baselines/ca-013__edit__390x844.png","sha256":"63ce85bfc44fe70ef93d4809a25907f470580e137213c55c750c787d22332bab","approved_on":"2026-08-14"},
-    {"screen_id":"CA-014","state":"logo","viewport":"1448x1086","fixture":"brand-media-v1","path":"tests/Visual/baselines/ca-014__logo__1448x1086.png","sha256":"79973a4c00b177e49d3f5401e5e4fab122a2e4c0d803953b72998584f42dc1e1","approved_on":"2026-08-24"}
+    {"screen_id":"CA-014","state":"empty","viewport":"1440x1000","fixture":"brand-media-v1","path":"tests/Visual/baselines/ca-014__empty__1440x1000.png","sha256":"689f8100ace2f2cdfa690c79a17f13063194ecea614a1316c8ac4c26a29f3db5","approved_on":"2026-08-24"},
+    {"screen_id":"CA-014","state":"logo-ready","viewport":"1440x1000","fixture":"brand-media-v1","path":"tests/Visual/baselines/ca-014__logo-ready__1440x1000.png","sha256":"97a9925ac15442c9c7c4fe0e437855b4e53a3155970543ffca4ff312fbf50f14","approved_on":"2026-08-24"},
+    {"screen_id":"CA-014","state":"logo-ready","viewport":"390x844","fixture":"brand-media-v1","path":"tests/Visual/baselines/ca-014__logo-ready__390x844.png","sha256":"709b87f4fec14b42450ac704425e38f805e02e52e81e2b1b6c8ef6a11674e936","approved_on":"2026-08-24"}
   ]
 }

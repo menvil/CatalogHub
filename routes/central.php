@@ -28,11 +28,11 @@ Route::middleware(['auth', EnsureCentralAdminAccess::class])
                 ->name('central.brands.create');
             Route::post('/brands', [CentralBrandFormController::class, 'store'])
                 ->name('central.brands.store');
-            Route::get('/brands/{brand}', CentralBrandDetailController::class)
-                ->name('central.brands.show');
             Route::get('/brands/{brand}/media', [CentralBrandMediaController::class, 'show'])->name('central.brands.media');
             Route::post('/brands/{brand}/media/logo', [CentralBrandMediaController::class, 'storeLogo'])->name('central.brands.media.logo.store');
             Route::delete('/brands/{brand}/media/logo', [CentralBrandMediaController::class, 'destroyLogo'])->name('central.brands.media.logo.destroy');
+            Route::get('/brands/{brand}', CentralBrandDetailController::class)
+                ->name('central.brands.show');
             Route::get('/brands/{brand}/edit', [CentralBrandFormController::class, 'edit'])
                 ->name('central.brands.edit');
             Route::patch('/brands/{brand}', [CentralBrandFormController::class, 'update'])

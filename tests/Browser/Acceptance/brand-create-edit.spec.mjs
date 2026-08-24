@@ -17,6 +17,8 @@ test('CA-013 creates a normalized draft and returns to Brands', async ({ page })
 
     await expect(page).toHaveURL(/\/admin\/central\/brands\/create$/)
     await expect(page.locator('[data-screen-id="CA-013"]')).toBeVisible()
+    await expect(page.getByText('CA-013', { exact: true })).toHaveCount(0)
+    await expect(page.locator('#brand-form')).toHaveAttribute('data-admin-form-leave-warning', 'false')
     await page.getByLabel('Name').fill('Samsung Electronics')
     await page.getByLabel('Website').fill('https://www.samsung.com')
     await page.getByLabel('Country code').fill('kr')

@@ -19,6 +19,7 @@
     <div class="space-y-admin-section" data-brand-detail-fixture="brand-detail-v1">
         <x-admin.page-header
             screen-id="CA-012"
+            :show-screen-id="false"
             :title="$brand->name"
             description="Canonical brand in the central catalog."
             :breadcrumbs="[]"

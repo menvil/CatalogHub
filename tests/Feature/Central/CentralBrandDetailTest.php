@@ -59,6 +59,7 @@ final class CentralBrandDetailTest extends TestCase
             ->get(route('central.brands.show', $brand))
             ->assertOk()
             ->assertSee('data-screen-id="CA-012"', false)
+            ->assertDontSee('>CA-012<', false)
             ->assertSee('data-admin-detail-layout', false)
             ->assertSeeInOrder(['Dashboard', 'Brands', 'Samsung'])
             ->assertSee('Canonical brand in the central catalog.')

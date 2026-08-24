@@ -10,6 +10,7 @@
     id="brand-form"
     :action="$action"
     :method="$method"
+    :leave-warning="false"
     class="min-w-0"
     data-screen-region="form-fields"
 >

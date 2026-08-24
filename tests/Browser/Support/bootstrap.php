@@ -23,6 +23,11 @@ if (Artisan::call('migrate:fresh', [
     exit(1);
 }
 
+if (Artisan::call('storage:link') !== 0) {
+    fwrite(STDERR, Artisan::output());
+    exit(1);
+}
+
 BrandListFixture::create();
 BrandFormFixture::create();
 BrandDetailFixture::create();

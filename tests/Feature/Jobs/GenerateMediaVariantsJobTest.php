@@ -65,8 +65,11 @@ class GenerateMediaVariantsJobTest extends TestCase
             'original_path' => 'media/originals/missing.jpg',
         ]);
 
-        $this->expectException(MediaVariantGenerationException::class);
-        (new GenerateMediaVariantsJob($asset->id, MediaVariantProfile::Default))->handle(app(MediaVariantGenerator::class));
+        try {
+            (new GenerateMediaVariantsJob($asset->id, MediaVariantProfile::Default))->handle(app(MediaVariantGenerator::class));
+            $this->fail('Expected generation failure to propagate from the job.');
+        } catch (MediaVariantGenerationException) {
+        }
 
         $this->assertSame('failed', $asset->variants()->where('variant_type', 'thumbnail')->firstOrFail()->status);
     }

@@ -20,6 +20,7 @@ final class CentralBrandLogoActionTest extends TestCase
     {
         Storage::fake('public');
         $brand = CentralBrand::factory()->create();
+        $otherBrand = CentralBrand::factory()->create();
         $first = MediaAsset::factory()->create(['disk' => 'public', 'original_path' => 'media/originals/a.png']);
         $second = MediaAsset::factory()->create(['disk' => 'public', 'original_path' => 'media/originals/b.png']);
         Storage::disk('public')->put($first->original_path, 'a');
@@ -27,13 +28,16 @@ final class CentralBrandLogoActionTest extends TestCase
         $set = app(SetCentralBrandLogoAction::class);
         $set->execute($brand, $first);
         $set->execute($brand, $second);
+        $set->execute($otherBrand, $first);
         $this->assertSame($second->id, app(MediaResolver::class)->resolve(MediaAssignment::ENTITY_TYPE_CENTRAL_BRAND, $brand->id, MediaAssignment::ROLE_BRAND_LOGO)?->id);
         $this->assertSame(1, MediaAssignment::query()->forEntity(MediaAssignment::ENTITY_TYPE_CENTRAL_BRAND, $brand->id)->forRole(MediaAssignment::ROLE_BRAND_LOGO)->count());
         $this->assertDatabaseHas('media_assets', ['id' => $first->id]);
         Storage::disk('public')->assertExists($first->original_path);
         app(RemoveCentralBrandLogoAction::class)->__invoke($brand);
+        app(RemoveCentralBrandLogoAction::class)->__invoke($brand);
         $this->assertNull(app(MediaResolver::class)->resolve(MediaAssignment::ENTITY_TYPE_CENTRAL_BRAND, $brand->id, MediaAssignment::ROLE_BRAND_LOGO));
         $this->assertDatabaseHas('media_assets', ['id' => $second->id]);
         Storage::disk('public')->assertExists($second->original_path);
+        $this->assertSame($first->id, app(MediaResolver::class)->resolve(MediaAssignment::ENTITY_TYPE_CENTRAL_BRAND, $otherBrand->id, MediaAssignment::ROLE_BRAND_LOGO)?->id);
     }
 }

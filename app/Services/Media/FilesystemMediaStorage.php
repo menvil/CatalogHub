@@ -28,7 +28,13 @@ final readonly class FilesystemMediaStorage implements MediaStorage
 
     public function read(string $disk, string $path): string
     {
-        return (string) $this->filesystems->disk($disk)->get($path);
+        $contents = $this->filesystems->disk($disk)->get($path);
+
+        if (! is_string($contents)) {
+            throw new RuntimeException('Unable to read media.');
+        }
+
+        return $contents;
     }
 
     public function size(string $disk, string $path): int

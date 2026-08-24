@@ -6,12 +6,12 @@ roles: authorized Central Admin catalog user
 route: /admin/central/brands/{brand} (GET); /admin/central/brands/{brand}/activate (POST); /admin/central/brands/{brand}/archive (POST); /admin/central/brands/{brand}/restore (POST)
 viewports: desktop=1440x1000;mobile=390x844
 fixture: brand-detail-v1
-regions: central-shell;breadcrumbs;page-header;status-context;general-information;usage;record-metadata;lifecycle;confirmation-modal;flash-feedback
+regions: central-shell;breadcrumbs;page-header;status-context;brand-tabs;general-information;usage;record-metadata;lifecycle;confirmation-modal;flash-feedback
 actions: edit-brand;activate-brand;archive-brand;restore-brand;confirm;cancel
 states: draft;active;archived;status-action-error
 permissions: catalog.products.manage
 responsive: Desktop uses the full Central Admin workspace with main content and a right aside; mobile stacks the detail-layout regions, keeps actions tappable, and prevents long slugs or URLs from causing page-level overflow.
-out_of_scope: logo;media;translations;product-list;site-projections;audit-history;granular-brand-permissions;delete;hard-delete;soft-delete
+out_of_scope: translation-editing;product-list;site-projections;audit-history;granular-brand-permissions;delete;hard-delete;soft-delete
 reference_version: v1
 ---
 
@@ -46,8 +46,8 @@ The active desktop/mobile and archived desktop `CA-012` entries in `docs/ui/visu
 
 ## Explicit non-goals
 
-No media mutation, translations or tabs, Product list/filtering, site projections, audit history, granular Brand permissions, deletion, hard deletion, soft deletion, or migration is introduced.
+No media or translation mutation, Product list/filtering, site projections, audit history, granular Brand permissions, deletion, hard deletion, soft deletion, or migration is introduced on CA-012.
 
 ## Brand logo and navigation
 
-When a global primary `brand_logo` assignment exists, CA-012 presents a small contained logo in the header identity context and exposes the Media screen. Logo management remains on CA-014; the Overview does not upload or mutate media.
+When a global primary `brand_logo` assignment exists, CA-012 presents a small contained logo in the header identity context. The Brand sub-navigation contains Overview and Media for catalog users and adds Translations only when the current user has `translations.manage`. Logo management remains on CA-014 and translation editing remains on CA-015; Overview mutates neither.

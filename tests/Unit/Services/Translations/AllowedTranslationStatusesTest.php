@@ -24,5 +24,6 @@ class AllowedTranslationStatusesTest extends TestCase
         $translation = new ProductTranslation(['status' => TranslationStatus::Approved]);
 
         $this->assertContains(TranslationStatus::Approved->value, $statuses->for($translation));
+        $this->assertSame('Approved', $statuses->optionsFor($translation)[TranslationStatus::Approved->value]);
     }
 }

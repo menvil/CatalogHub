@@ -3,6 +3,7 @@
 namespace App\Models\CentralCatalog;
 
 use App\Enums\CentralBrandStatus;
+use App\Models\Translations\BrandTranslation;
 use Database\Factories\CentralBrandFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -64,5 +65,13 @@ final class CentralBrand extends Model
     public function products(): HasMany
     {
         return $this->hasMany(CentralProduct::class, 'central_brand_id');
+    }
+
+    /**
+     * @return HasMany<BrandTranslation, $this>
+     */
+    public function translations(): HasMany
+    {
+        return $this->hasMany(BrandTranslation::class, 'brand_id');
     }
 }

@@ -8,7 +8,9 @@
     $statusClasses = [
         'missing' => 'bg-admin-danger-soft text-admin-danger ring-admin-danger/25',
         'machine' => 'bg-admin-info-soft text-admin-info ring-admin-info/25',
+        'machine_translated' => 'bg-admin-info-soft text-admin-info ring-admin-info/25',
         'reviewed' => 'bg-admin-warning-soft text-admin-warning ring-admin-warning/25',
+        'human_reviewed' => 'bg-admin-warning-soft text-admin-warning ring-admin-warning/25',
         'approved' => 'bg-admin-success-soft text-admin-success ring-admin-success/20',
         'outdated' => 'bg-admin-outdated-soft text-admin-outdated ring-admin-outdated/25',
     ];
@@ -16,7 +18,9 @@
     $statusLabels = [
         'missing' => 'Missing',
         'machine' => 'Machine',
+        'machine_translated' => 'Machine translated',
         'reviewed' => 'Reviewed',
+        'human_reviewed' => 'Human reviewed',
         'approved' => 'Approved',
         'outdated' => 'Outdated',
     ];

@@ -6,6 +6,7 @@ use App\Enums\TranslationStatus;
 use App\Models\Translations\AttributeOptionTranslation;
 use App\Models\Translations\AttributeSectionTranslation;
 use App\Models\Translations\AttributeTranslation;
+use App\Models\Translations\BrandTranslation;
 use App\Models\Translations\CategoryTranslation;
 use App\Models\Translations\ProductTranslation;
 use App\Models\Translations\UnitTranslation;
@@ -43,7 +44,10 @@ final class OutdatedTranslationsQuery
                         ? $translation->getAttribute('status')->value
                         : (string) $translation->getAttribute('status'),
                     'updated_at' => (string) $translation->updated_at,
-                    'editor_url' => $entity === null ? '#' : route($config['route'], [$entity, $translation->localeModel]),
+                    'editor_url' => $entity === null ? '#' : route($config['route'], [
+                        $entity,
+                        $config['locale_by_code'] ? $translation->locale : $translation->localeModel,
+                    ]),
                 ];
             }
         }
@@ -52,17 +56,18 @@ final class OutdatedTranslationsQuery
     }
 
     /**
-     * @return list<array{type: string, model: class-string, relation: string, source_label: string, translated_label: string, route: string}>
+     * @return list<array{type: string, model: class-string, relation: string, source_label: string, translated_label: string, route: string, locale_by_code: bool}>
      */
     private function configs(): array
     {
         return [
-            ['type' => 'product', 'model' => ProductTranslation::class, 'relation' => 'product', 'source_label' => 'name', 'translated_label' => 'name', 'route' => 'central.products.translations.edit'],
-            ['type' => 'category', 'model' => CategoryTranslation::class, 'relation' => 'category', 'source_label' => 'name', 'translated_label' => 'name', 'route' => 'central.categories.translations.edit'],
-            ['type' => 'attribute', 'model' => AttributeTranslation::class, 'relation' => 'attributeDefinition', 'source_label' => 'name', 'translated_label' => 'label', 'route' => 'central.attributes.translations.edit'],
-            ['type' => 'section', 'model' => AttributeSectionTranslation::class, 'relation' => 'attributeSection', 'source_label' => 'name', 'translated_label' => 'name', 'route' => 'central.attribute-sections.translations.edit'],
-            ['type' => 'option', 'model' => AttributeOptionTranslation::class, 'relation' => 'attributeOption', 'source_label' => 'label', 'translated_label' => 'label', 'route' => 'central.attribute-options.translations.edit'],
-            ['type' => 'unit', 'model' => UnitTranslation::class, 'relation' => 'measurementUnit', 'source_label' => 'name', 'translated_label' => 'short_name', 'route' => 'central.units.translations.edit'],
+            ['type' => 'brand', 'model' => BrandTranslation::class, 'relation' => 'brand', 'source_label' => 'name', 'translated_label' => 'name', 'route' => 'central.brands.translations.edit', 'locale_by_code' => true],
+            ['type' => 'product', 'model' => ProductTranslation::class, 'relation' => 'product', 'source_label' => 'name', 'translated_label' => 'name', 'route' => 'central.products.translations.edit', 'locale_by_code' => false],
+            ['type' => 'category', 'model' => CategoryTranslation::class, 'relation' => 'category', 'source_label' => 'name', 'translated_label' => 'name', 'route' => 'central.categories.translations.edit', 'locale_by_code' => false],
+            ['type' => 'attribute', 'model' => AttributeTranslation::class, 'relation' => 'attributeDefinition', 'source_label' => 'name', 'translated_label' => 'label', 'route' => 'central.attributes.translations.edit', 'locale_by_code' => false],
+            ['type' => 'section', 'model' => AttributeSectionTranslation::class, 'relation' => 'attributeSection', 'source_label' => 'name', 'translated_label' => 'name', 'route' => 'central.attribute-sections.translations.edit', 'locale_by_code' => false],
+            ['type' => 'option', 'model' => AttributeOptionTranslation::class, 'relation' => 'attributeOption', 'source_label' => 'label', 'translated_label' => 'label', 'route' => 'central.attribute-options.translations.edit', 'locale_by_code' => false],
+            ['type' => 'unit', 'model' => UnitTranslation::class, 'relation' => 'measurementUnit', 'source_label' => 'name', 'translated_label' => 'short_name', 'route' => 'central.units.translations.edit', 'locale_by_code' => false],
         ];
     }
 }

@@ -7,6 +7,7 @@ use App\Models\Locale;
 use App\Models\Translations\AttributeOptionTranslation;
 use App\Models\Translations\AttributeSectionTranslation;
 use App\Models\Translations\AttributeTranslation;
+use App\Models\Translations\BrandTranslation;
 use App\Models\Translations\CategoryTranslation;
 use App\Models\Translations\ProductTranslation;
 use App\Models\Translations\UnitTranslation;
@@ -68,6 +69,7 @@ final readonly class TranslationStatsService
     private function translationModels(): array
     {
         return [
+            BrandTranslation::class,
             ProductTranslation::class,
             CategoryTranslation::class,
             AttributeTranslation::class,

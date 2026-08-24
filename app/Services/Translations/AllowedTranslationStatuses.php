@@ -17,4 +17,13 @@ final class AllowedTranslationStatuses
             ->values()
             ->all();
     }
+
+    /** @return array<string, string> */
+    public function optionsFor(?Model $translation): array
+    {
+        return array_intersect_key(
+            TranslationStatus::options(),
+            array_flip($this->for($translation)),
+        );
+    }
 }

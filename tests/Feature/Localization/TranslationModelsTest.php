@@ -13,6 +13,7 @@ use App\Models\MeasurementUnit;
 use App\Models\Translations\AttributeOptionTranslation;
 use App\Models\Translations\AttributeSectionTranslation;
 use App\Models\Translations\AttributeTranslation;
+use App\Models\Translations\BrandTranslation;
 use App\Models\Translations\CategoryTranslation;
 use App\Models\Translations\ProductTranslation;
 use App\Models\Translations\UnitTranslation;
@@ -143,6 +144,7 @@ class TranslationModelsTest extends TestCase
     public function test_translation_factories_keep_locale_string_consistent_with_locale_model(): void
     {
         $translations = [
+            BrandTranslation::factory()->create(),
             ProductTranslation::factory()->create(),
             CategoryTranslation::factory()->create(),
             AttributeTranslation::factory()->create(),

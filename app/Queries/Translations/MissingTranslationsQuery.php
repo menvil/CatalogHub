@@ -6,6 +6,7 @@ use App\Contracts\Persistence\RawSqlPersistenceBoundary;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeSection;
+use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Locale;
@@ -58,7 +59,10 @@ final class MissingTranslationsQuery implements RawSqlPersistenceBoundary
                         'entity_id' => (int) $entity->getKey(),
                         'source_label' => (string) $entity->getAttribute($config['label']),
                         'locale' => $activeLocale->code,
-                        'editor_url' => route($config['route'], [$entity, $activeLocale]),
+                        'editor_url' => route($config['route'], [
+                            $entity,
+                            $config['locale_by_code'] ? $activeLocale->code : $activeLocale,
+                        ]),
                     ];
                 }
             }
@@ -68,17 +72,18 @@ final class MissingTranslationsQuery implements RawSqlPersistenceBoundary
     }
 
     /**
-     * @return list<array{type: string, model: class-string, label: string, route: string}>
+     * @return list<array{type: string, model: class-string, label: string, route: string, locale_by_code: bool}>
      */
     private function entityConfigs(): array
     {
         return [
-            ['type' => 'product', 'model' => CentralProduct::class, 'label' => 'name', 'route' => 'central.products.translations.edit'],
-            ['type' => 'category', 'model' => CentralCategory::class, 'label' => 'name', 'route' => 'central.categories.translations.edit'],
-            ['type' => 'attribute', 'model' => AttributeDefinition::class, 'label' => 'name', 'route' => 'central.attributes.translations.edit'],
-            ['type' => 'section', 'model' => AttributeSection::class, 'label' => 'name', 'route' => 'central.attribute-sections.translations.edit'],
-            ['type' => 'option', 'model' => AttributeOption::class, 'label' => 'label', 'route' => 'central.attribute-options.translations.edit'],
-            ['type' => 'unit', 'model' => MeasurementUnit::class, 'label' => 'name', 'route' => 'central.units.translations.edit'],
+            ['type' => 'brand', 'model' => CentralBrand::class, 'label' => 'name', 'route' => 'central.brands.translations.edit', 'locale_by_code' => true],
+            ['type' => 'product', 'model' => CentralProduct::class, 'label' => 'name', 'route' => 'central.products.translations.edit', 'locale_by_code' => false],
+            ['type' => 'category', 'model' => CentralCategory::class, 'label' => 'name', 'route' => 'central.categories.translations.edit', 'locale_by_code' => false],
+            ['type' => 'attribute', 'model' => AttributeDefinition::class, 'label' => 'name', 'route' => 'central.attributes.translations.edit', 'locale_by_code' => false],
+            ['type' => 'section', 'model' => AttributeSection::class, 'label' => 'name', 'route' => 'central.attribute-sections.translations.edit', 'locale_by_code' => false],
+            ['type' => 'option', 'model' => AttributeOption::class, 'label' => 'label', 'route' => 'central.attribute-options.translations.edit', 'locale_by_code' => false],
+            ['type' => 'unit', 'model' => MeasurementUnit::class, 'label' => 'name', 'route' => 'central.units.translations.edit', 'locale_by_code' => false],
         ];
     }
 }

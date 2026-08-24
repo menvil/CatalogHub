@@ -21,4 +21,6 @@ CA-014 Phase 6 v1 manages one global primary Brand logo. Its states are: `no-log
 
 The richer design target (multiple roles, dark/light logos, wordmarks, hero/OG media, localized/site overrides, asset browser and completeness tooling) is deferred and is not this executable v1 contract.
 
+The shared Brand sub-navigation contains Overview and Media and conditionally exposes Translations to users with `translations.manage`. CA-014 does not load or mutate translation data. Phase 7 adds text translation navigation only; localized Brand media remains deferred.
+
 Routes: `GET central.brands.media`, `POST central.brands.media.logo.store`, `DELETE central.brands.media.logo.destroy`.

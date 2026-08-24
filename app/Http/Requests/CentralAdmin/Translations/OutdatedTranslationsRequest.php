@@ -17,7 +17,7 @@ final class OutdatedTranslationsRequest extends FormRequest
     {
         return [
             'locale' => ['nullable', 'string', 'max:20'],
-            'entity_type' => ['nullable', 'string', 'in:product,category,attribute,section,option,unit'],
+            'entity_type' => ['nullable', 'string', 'in:brand,product,category,attribute,section,option,unit'],
         ];
     }
 

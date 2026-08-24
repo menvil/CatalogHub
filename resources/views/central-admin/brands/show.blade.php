@@ -32,9 +32,10 @@
                     <x-admin.status-badge :label="$brand->status->label()" :variant="$statusVariant" />
                 </div>
                 <x-ui.button variant="secondary" :href="route('central.brands.edit', $brand, absolute: false)">Edit Brand</x-ui.button>
-                <x-ui.button variant="secondary" :href="route('central.brands.media', $brand, absolute: false)">Media</x-ui.button>
             </x-slot:actions>
         </x-admin.page-header>
+
+        @include('central-admin.brands.partials.subnav', ['active' => 'overview'])
 
         <x-admin.detail-layout>
             <x-slot:main>

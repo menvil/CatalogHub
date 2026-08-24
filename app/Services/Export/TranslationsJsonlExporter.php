@@ -7,6 +7,7 @@ use App\Models\ContentTranslation;
 use App\Models\Translations\AttributeOptionTranslation;
 use App\Models\Translations\AttributeSectionTranslation;
 use App\Models\Translations\AttributeTranslation;
+use App\Models\Translations\BrandTranslation;
 use App\Models\Translations\CategoryTranslation;
 use App\Models\Translations\ProductTranslation;
 use App\Models\Translations\UnitTranslation;
@@ -17,6 +18,12 @@ use Illuminate\Database\Eloquent\Model;
 final class TranslationsJsonlExporter implements JsonlExporter
 {
     private const SOURCES = [
+        [
+            'model' => BrandTranslation::class,
+            'entity_type' => 'brand',
+            'entity_key' => 'brand_id',
+            'fields' => ['name', 'tagline', 'short_description', 'description', 'seo_title', 'seo_description'],
+        ],
         [
             'model' => ProductTranslation::class,
             'entity_type' => 'product',

@@ -6,6 +6,7 @@ use App\Enums\TranslationStatus;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeSection;
+use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\MeasurementUnit;
@@ -25,6 +26,7 @@ final readonly class DetectOutdatedTranslationsAction
         $currentHash = $this->hashFor($entity);
 
         $updated = match (true) {
+            $entity instanceof CentralBrand,
             $entity instanceof CentralProduct,
             $entity instanceof CentralCategory,
             $entity instanceof AttributeDefinition,
@@ -44,6 +46,7 @@ final readonly class DetectOutdatedTranslationsAction
     private function hashFor(Model $entity): string
     {
         return match (true) {
+            $entity instanceof CentralBrand => $this->hashService->forBrand($entity),
             $entity instanceof CentralProduct => $this->hashService->forProduct($entity),
             $entity instanceof CentralCategory => $this->hashService->forCategory($entity),
             $entity instanceof AttributeDefinition => $this->hashService->forAttribute($entity),

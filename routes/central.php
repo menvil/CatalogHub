@@ -6,6 +6,7 @@ use App\Http\Controllers\CentralAdmin\CentralBrandFormController;
 use App\Http\Controllers\CentralAdmin\CentralBrandLifecycleController;
 use App\Http\Controllers\CentralAdmin\CentralBrandListController;
 use App\Http\Controllers\CentralAdmin\CentralBrandMediaController;
+use App\Http\Controllers\CentralAdmin\CentralBrandTranslationController;
 use App\Http\Controllers\CentralAdmin\DesignSystem\ComponentGalleryController;
 use App\Http\Controllers\CentralAdmin\Media\MediaAssetDetailController;
 use App\Http\Controllers\CentralAdmin\Media\MediaLibraryController;
@@ -57,6 +58,15 @@ Route::middleware(['auth', EnsureCentralAdminAccess::class])
                 ->name('central.translations.missing');
             Route::get('/translations/outdated', OutdatedTranslationsController::class)
                 ->name('central.translations.outdated');
+
+            Route::get('/brands/{brand}/translations', [CentralBrandTranslationController::class, 'index'])
+                ->name('central.brands.translations.index');
+            Route::get('/brands/{brand}/translations/{locale:code}', [CentralBrandTranslationController::class, 'edit'])
+                ->withoutScopedBindings()
+                ->name('central.brands.translations.edit');
+            Route::post('/brands/{brand}/translations/{locale:code}', [CentralBrandTranslationController::class, 'save'])
+                ->withoutScopedBindings()
+                ->name('central.brands.translations.save');
 
             Route::get('/products/{product}/translations/{locale}', [TranslationEditorController::class, 'editProduct'])
                 ->name('central.products.translations.edit');

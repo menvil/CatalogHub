@@ -6,6 +6,7 @@ use App\Enums\TranslationStatus;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeSection;
+use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Locale;
@@ -13,6 +14,7 @@ use App\Models\MeasurementUnit;
 use App\Models\Translations\AttributeOptionTranslation;
 use App\Models\Translations\AttributeSectionTranslation;
 use App\Models\Translations\AttributeTranslation;
+use App\Models\Translations\BrandTranslation;
 use App\Models\Translations\CategoryTranslation;
 use App\Models\Translations\ProductTranslation;
 use App\Models\Translations\UnitTranslation;
@@ -107,6 +109,7 @@ final class TranslationCompletenessService
     private function configs(): array
     {
         return [
+            ['key' => 'brands', 'source' => CentralBrand::class, 'translation' => BrandTranslation::class],
             ['key' => 'products', 'source' => CentralProduct::class, 'translation' => ProductTranslation::class],
             ['key' => 'categories', 'source' => CentralCategory::class, 'translation' => CategoryTranslation::class],
             ['key' => 'attributes', 'source' => AttributeDefinition::class, 'translation' => AttributeTranslation::class],

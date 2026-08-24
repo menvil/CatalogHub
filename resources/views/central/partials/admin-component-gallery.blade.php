@@ -241,8 +241,7 @@
                     <x-admin.conflict-review-card title="Source conflict" entity-label="Fixture record" field-label="Manufacturer code" source-a="Primary source" source-b="Secondary source" value-a="ACME" value-b="ACME-DE" severity="medium" :actions="[['label' => 'Resolve later']]" />
                 </div>
                 <div class="relative min-h-80 overflow-hidden rounded-admin-card border border-admin-border">
-                    <form id="gallery-foundation-confirmation-form" method="POST" action="{{ $galleryUrl }}">@csrf</form>
-                    <x-admin.confirmation-modal id="gallery-foundation-confirmation" title="Archive record" message="The reusable admin confirmation pattern performs no action in this gallery." confirm-label="Archive" confirm-form="gallery-foundation-confirmation-form" variant="warning" open contained />
+                    <x-admin.confirmation-modal id="gallery-foundation-confirmation" title="Archive record" message="The reusable admin confirmation pattern performs no action in this gallery." confirm-label="Archive" variant="warning" open contained />
                 </div>
             </div>
         </x-admin.card>

@@ -216,6 +216,23 @@ final class CentralBrandDetailTest extends TestCase
         $this->assertSame(CentralBrandStatus::Archived, $brand->fresh()->status);
     }
 
+    public function test_restore_rejects_non_archived_brands_without_flashing_success(): void
+    {
+        $user = User::factory()->create();
+
+        foreach ([CentralBrandStatus::Draft, CentralBrandStatus::Active] as $status) {
+            $brand = CentralBrand::factory()->create(['status' => $status]);
+
+            $this->actingAs($user)
+                ->post(route('central.brands.restore', $brand))
+                ->assertRedirect(route('central.brands.show', $brand))
+                ->assertSessionHasErrors(['status' => 'Only archived brands can be restored.'])
+                ->assertSessionMissing('success');
+
+            $this->assertSame($status, $brand->fresh()->status);
+        }
+    }
+
     public function test_archived_brand_cannot_be_activated_directly_and_detail_shows_status_error(): void
     {
         $brand = CentralBrand::factory()->archived()->create();

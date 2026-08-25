@@ -3,7 +3,7 @@
     $name = old('name', $editing ? $brand?->name : null);
     $slug = old('slug', $editing ? $brand?->slug : null);
     $websiteUrl = old('website_url', $editing ? $brand?->website_url : null);
-    $countryCode = old('country_code', $editing ? $brand?->country_code : null);
+    $countryId = old('country_id', $editing ? $brand?->country_id : null);
 @endphp
 
 <x-ui.form.form-state
@@ -55,17 +55,17 @@
                 optional
             />
 
-            <x-ui.form.input
-                id="brand-country-code"
-                name="country_code"
-                label="Country code"
-                :value="$countryCode"
-                :error="$errors->first('country_code')"
-                help="Two-letter country code, for example KR, JP or US."
-                autocomplete="country"
-                maxlength="2"
-                inputmode="text"
-                optional
+            <x-ui.form.searchable-select
+                id="brand-country"
+                name="country_id"
+                label="Country"
+                :options="$countryOptions"
+                :selected="$countryId"
+                :error="$errors->first('country_id')"
+                placeholder="Select a Country"
+                search-placeholder="Search by name or code"
+                help="Search by localized name, English name, alpha-2, or alpha-3 code."
+                clearable
             />
 
             @unless ($editing)

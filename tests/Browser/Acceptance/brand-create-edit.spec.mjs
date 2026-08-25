@@ -26,13 +26,59 @@ test('CA-013 creates a normalized draft and returns to Brands', async ({ page })
     await expect(page.locator('#brand-form')).toHaveAttribute('data-admin-form-leave-warning', 'false')
     await page.getByLabel('Name').fill('Samsung Electronics')
     await page.getByLabel('Website').fill('https://www.samsung.com')
-    await page.getByLabel('Country code').fill('kr')
+    const country = page.getByRole('combobox', { name: 'Country' })
+    await country.fill('Korea')
+    await expect(page.getByRole('option', { name: 'South Korea (KR)', exact: true })).toBeVisible()
+    await page.getByRole('option', { name: 'South Korea (KR)', exact: true }).click()
+    await expect(country).toHaveValue('South Korea (KR)')
     await page.getByRole('button', { name: 'Create Brand', exact: true }).click()
 
     await expect(page).toHaveURL(/\/admin\/central\/brands$/)
     await expect(page.getByText('Brand created.', { exact: true })).toBeVisible()
+    await page.goto('/admin/central/brands?q=Samsung+Electronics')
+    const createdRow = page.getByRole('row').filter({ hasText: 'Samsung Electronics' })
+    await createdRow.getByRole('link', { name: 'View', exact: true }).click()
+    await expect(page.locator('[data-screen-region="general-information"]')).toContainText('South Korea (KR)')
     await expect(page.getByRole('dialog')).toHaveCount(0)
     expect(unexpectedDialogs, 'Create Brand must not trigger a native browser confirmation.').toEqual([])
+    assertNoPageErrors()
+})
+
+test('CA-013 supports keyboard Country selection, Escape, change, and clear', async ({ page }) => {
+    const assertNoPageErrors = observePageErrors(page)
+    const unexpectedDialogs = []
+    page.on('dialog', (dialog) => {
+        unexpectedDialogs.push(`${dialog.type()}: ${dialog.message()}`)
+        void dialog.dismiss()
+    })
+
+    await signIn(page, 'central', foundationDemo.centralAdmin)
+    await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
+    await page.goto(`/admin/central/brands/${formFixtureId}/edit`)
+
+    const country = page.getByRole('combobox', { name: 'Country' })
+    await expect(country).toHaveValue('South Korea (KR)')
+    await country.fill('Germany')
+    await expect(page.getByRole('option', { name: 'Germany (DE)', exact: true })).toBeVisible()
+    await country.press('Escape')
+    await expect(country).toHaveValue('South Korea (KR)')
+    await expect(page.locator('#brand-country-listbox')).toBeHidden()
+
+    await country.fill('Japan')
+    await country.press('ArrowDown')
+    await expect(country).toHaveAttribute('aria-activedescendant', /brand-country-option-/)
+    await country.press('Enter')
+    await expect(country).toHaveValue('Japan (JP)')
+    await page.getByRole('button', { name: 'Save changes', exact: true }).click()
+    await expect(page.getByText('Brand updated.', { exact: true })).toBeVisible()
+    await expect(country).toHaveValue('Japan (JP)')
+
+    await page.getByRole('button', { name: 'Clear Country', exact: true }).click()
+    await expect(country).toHaveValue('')
+    await page.getByRole('button', { name: 'Save changes', exact: true }).click()
+    await expect(page.getByText('Brand updated.', { exact: true })).toBeVisible()
+    await expect(country).toHaveValue('')
+    expect(unexpectedDialogs, 'Country selection must not trigger a native browser confirmation.').toEqual([])
     assertNoPageErrors()
 })
 
@@ -95,6 +141,7 @@ test('CA-013 create and edit remain usable without horizontal overflow at 390px'
         await page.goto(url)
         await expect(page.locator('[data-screen-id="CA-013"]')).toBeVisible()
         await expect(page.getByLabel('Name')).toBeVisible()
+        await expect(page.getByRole('combobox', { name: 'Country' })).toBeVisible()
         await expect(page.getByRole('link', { name: 'Cancel', exact: true })).toBeVisible()
         await expect.poll(
             () => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),

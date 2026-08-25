@@ -15,7 +15,7 @@ for (const state of states) {
         await signIn(page, 'central', foundationDemo.centralAdmin)
         await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
         await page.goto(state.url)
-        await expect(page.locator('[data-brand-detail-fixture="brand-detail-v1"]')).toBeVisible()
+        await expect(page.locator('[data-brand-detail-fixture="brand-detail-v2"]')).toBeVisible()
         await page.evaluate(() => document.fonts.ready)
         await page.addStyleTag({
             content: `

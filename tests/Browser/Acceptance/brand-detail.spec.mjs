@@ -20,6 +20,7 @@ test('CA-012 supports list, detail, edit, and detail navigation', async ({ page 
     await expect(page.locator('[data-screen-id="CA-012"]')).toContainText('Samsung')
     await expect(page.getByText('CA-012', { exact: true })).toHaveCount(0)
     await expect(page.locator('[data-screen-region="status-context"]')).toContainText('Active')
+    await expect(page.locator('[data-screen-region="general-information"]')).toContainText('South Korea (KR)')
     await page.getByRole('link', { name: 'Edit Brand', exact: true }).click()
 
     await expect(page).toHaveURL(new RegExp(`/admin/central/brands/${activeBrandId}/edit$`))

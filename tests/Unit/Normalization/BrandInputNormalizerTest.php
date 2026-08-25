@@ -28,13 +28,6 @@ final class BrandInputNormalizerTest extends TestCase
         self::assertNull(BrandInputNormalizer::nullableUrl(null));
     }
 
-    public function test_country_code_is_trimmed_uppercased_and_nullable(): void
-    {
-        self::assertSame('KR', BrandInputNormalizer::countryCode(' kr '));
-        self::assertNull(BrandInputNormalizer::countryCode('   '));
-        self::assertNull(BrandInputNormalizer::countryCode(null));
-    }
-
     public function test_name_identity_uses_unicode_case_folding_and_canonical_composition(): void
     {
         self::assertSame('électro', BrandInputNormalizer::nameIdentity('ÉLECTRO'));

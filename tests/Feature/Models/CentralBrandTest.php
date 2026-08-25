@@ -6,6 +6,7 @@ use App\Enums\CentralBrandStatus;
 use App\Models\CentralCatalog\CentralBrand;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\CountryReference;
 use Tests\TestCase;
 
 class CentralBrandTest extends TestCase
@@ -106,13 +107,13 @@ class CentralBrandTest extends TestCase
             'slug' => 'logitech',
             'status' => CentralBrandStatus::Active,
             'website_url' => 'https://www.logitech.com',
-            'country_code' => 'CH',
+            'country_id' => CountryReference::id('CH'),
         ]);
 
         $brand->refresh();
 
         $this->assertSame('https://www.logitech.com', $brand->website_url);
-        $this->assertSame('CH', $brand->country_code);
+        $this->assertSame('CH', $brand->country()->first()?->alpha2);
     }
 
     public function test_canonical_metadata_is_nullable(): void
@@ -120,6 +121,6 @@ class CentralBrandTest extends TestCase
         $brand = CentralBrand::factory()->create();
 
         $this->assertNull($brand->website_url);
-        $this->assertNull($brand->country_code);
+        $this->assertNull($brand->country_id);
     }
 }

@@ -15,6 +15,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Support\CountryReference;
 use Tests\TestCase;
 
 final class CentralBrandFormTest extends TestCase
@@ -63,9 +64,11 @@ final class CentralBrandFormTest extends TestCase
             ->assertSee('name="name"', false)
             ->assertSee('name="slug"', false)
             ->assertSee('name="website_url"', false)
-            ->assertSee('name="country_code"', false)
+            ->assertSee('name="country_id"', false)
+            ->assertSee('role="combobox"', false)
+            ->assertSee('South Korea (KR)')
             ->assertSee('autocomplete="organization"', false)
-            ->assertSee('autocomplete="country"', false)
+            ->assertDontSee('name="country_code"', false)
             ->assertSee('Leave blank to generate from the brand name.')
             ->assertSee('New brands are created as Draft.')
             ->assertSee('Cancel')
@@ -83,7 +86,7 @@ final class CentralBrandFormTest extends TestCase
                 'name' => 'Samsung Electronics',
                 'slug' => '',
                 'website_url' => 'https://www.samsung.com',
-                'country_code' => 'kr',
+                'country_id' => CountryReference::id('KR'),
                 'status' => CentralBrandStatus::Active->value,
                 'normalized_name' => 'attacker-controlled',
                 'normalized_name_hash' => str_repeat('0', 64),
@@ -98,7 +101,7 @@ final class CentralBrandFormTest extends TestCase
         $this->assertSame('Samsung Electronics', $brand->name);
         $this->assertSame('samsung-electronics', $brand->slug);
         $this->assertSame('https://www.samsung.com', $brand->website_url);
-        $this->assertSame('KR', $brand->country_code);
+        $this->assertSame('KR', $brand->country()->first()?->alpha2);
         $this->assertSame(CentralBrandStatus::Draft, $brand->status);
         $this->assertSame('samsung electronics', $brand->normalized_name);
         $this->assertNotSame(str_repeat('0', 64), $brand->normalized_name_hash);
@@ -114,6 +117,34 @@ final class CentralBrandFormTest extends TestCase
             ->assertDontSee('Brand created.');
     }
 
+    public function test_country_code_is_no_longer_an_http_assignment_contract(): void
+    {
+        $this->actingAs(User::factory()->create())->post(route('central.brands.store'), [
+            'name' => 'No Raw Country',
+            'country_code' => 'KR',
+        ])->assertRedirect(route('central.brands.index'));
+
+        $this->assertNull(CentralBrand::query()->sole()->country_id);
+    }
+
+    public function test_inactive_country_is_rejected_for_create_without_brand_or_audit(): void
+    {
+        $inactive = CountryReference::get('KR');
+        $inactive->update(['is_active' => false]);
+
+        $this->actingAs(User::factory()->create())
+            ->from(route('central.brands.create'))
+            ->post(route('central.brands.store'), [
+                'name' => 'Rejected Country Brand',
+                'country_id' => $inactive->id,
+            ])
+            ->assertRedirect(route('central.brands.create'))
+            ->assertSessionHasErrors('country_id');
+
+        $this->assertDatabaseCount('central_brands', 0);
+        $this->assertDatabaseCount('audit_log_entries', 0);
+    }
+
     public function test_explicit_slug_is_normalized_by_the_action(): void
     {
         $this->actingAs(User::factory()->create())
@@ -121,14 +152,14 @@ final class CentralBrandFormTest extends TestCase
                 'name' => 'Samsung Phones',
                 'slug' => ' Samsung_Phones ',
                 'website_url' => '',
-                'country_code' => '',
+                'country_id' => '',
             ])
             ->assertRedirect();
 
         $brand = CentralBrand::query()->sole();
         $this->assertSame('samsung-phones', $brand->slug);
         $this->assertNull($brand->website_url);
-        $this->assertNull($brand->country_code);
+        $this->assertNull($brand->country_id);
     }
 
     #[DataProvider('invalidHttpShapeProvider')]
@@ -151,8 +182,8 @@ final class CentralBrandFormTest extends TestCase
         yield 'name respects storage length' => [['name' => str_repeat('a', 256)], 'name'];
         yield 'slug must be a string or null' => [['name' => 'Samsung', 'slug' => ['samsung']], 'slug'];
         yield 'website must be a string or null' => [['name' => 'Samsung', 'website_url' => ['https://example.com']], 'website_url'];
-        yield 'country must be a string or null' => [['name' => 'Samsung', 'country_code' => ['KR']], 'country_code'];
-        yield 'country respects storage length' => [['name' => 'Samsung', 'country_code' => 'KOR'], 'country_code'];
+        yield 'country must be an integer or null' => [['name' => 'Samsung', 'country_id' => ['1']], 'country_id'];
+        yield 'country must exist' => [['name' => 'Samsung', 'country_id' => 999999], 'country_id'];
     }
 
     public function test_form_request_exposes_only_known_fields_as_typed_input(): void
@@ -173,11 +204,11 @@ final class CentralBrandFormTest extends TestCase
 
         $this->assertInstanceOf(CentralBrandInput::class, $input);
         $this->assertTrue($input->hasWebsiteUrl);
-        $this->assertFalse($input->hasCountryCode);
+        $this->assertFalse($input->hasCountryId);
         $this->assertSame('Samsung', $input->name);
         $this->assertNull($input->slug);
         $this->assertNull($input->websiteUrl);
-        $this->assertNull($input->countryCode);
+        $this->assertNull($input->countryId);
     }
 
     #[DataProvider('invalidCreatePayloadProvider')]
@@ -201,7 +232,6 @@ final class CentralBrandFormTest extends TestCase
         yield 'empty name' => [['name' => '', 'slug' => 'empty-name'], 'name'];
         yield 'invalid slug' => [['name' => 'Samsung', 'slug' => 'Samsung!!!'], 'slug'];
         yield 'invalid URL' => [['name' => 'Samsung', 'slug' => 'samsung', 'website_url' => 'not-a-url'], 'website_url'];
-        yield 'invalid country semantics' => [['name' => 'Samsung', 'slug' => 'samsung', 'country_code' => 'K1'], 'country_code'];
         yield 'invalid generated slug' => [['name' => '品牌', 'slug' => ''], 'slug'];
     }
 
@@ -215,7 +245,7 @@ final class CentralBrandFormTest extends TestCase
                 'name' => 'électro',
                 'slug' => 'electro-new',
                 'website_url' => 'https://submitted.example',
-                'country_code' => 'fr',
+                'country_id' => CountryReference::id('FR'),
             ])
             ->assertRedirect(route('central.brands.create'))
             ->assertSessionHasErrors('name')
@@ -241,7 +271,7 @@ final class CentralBrandFormTest extends TestCase
                 'name' => 'Valid New Name',
                 'slug' => 'valid-new-name',
                 'website_url' => 'invalid',
-                'country_code' => 'KR',
+                'country_id' => CountryReference::id('KR'),
             ])
             ->assertSessionHasErrors('website_url');
 
@@ -258,7 +288,7 @@ final class CentralBrandFormTest extends TestCase
                 'slug' => $status->value.'-brand',
                 'status' => $status,
                 'website_url' => 'https://'.$status->value.'.example.com',
-                'country_code' => 'US',
+                'country_id' => CountryReference::id('US'),
             ]);
 
             $this->actingAs($user)
@@ -271,13 +301,29 @@ final class CentralBrandFormTest extends TestCase
                 ->assertSee('value="'.$brand->name.'"', false)
                 ->assertSee('value="'.$brand->slug.'"', false)
                 ->assertSee('value="'.$brand->website_url.'"', false)
-                ->assertSee('value="US"', false)
+                ->assertSee('value="'.CountryReference::id('US').'" selected', false)
+                ->assertSee('United States (US)')
                 ->assertSee('data-admin-status-badge', false)
                 ->assertSee($status->label())
                 ->assertSee('href="'.route('central.brands.show', $brand, absolute: false).'"', false)
                 ->assertSee('name="_method" value="PATCH"', false)
                 ->assertDontSee('name="status"', false);
         }
+    }
+
+    public function test_edit_offers_only_active_countries_plus_the_selected_inactive_country(): void
+    {
+        $selected = CountryReference::get('KR');
+        $otherInactive = CountryReference::get('DE');
+        $selected->update(['is_active' => false]);
+        $otherInactive->update(['is_active' => false]);
+        $brand = CentralBrand::factory()->create(['country_id' => $selected->id]);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('central.brands.edit', $brand))
+            ->assertOk()
+            ->assertSee('South Korea (KR) — Inactive')
+            ->assertDontSee('Germany (DE)');
     }
 
     public function test_edit_breadcrumb_and_cancel_return_to_brand_detail_while_create_cancel_returns_to_list(): void
@@ -305,7 +351,7 @@ final class CentralBrandFormTest extends TestCase
             'name' => 'Samsung',
             'slug' => 'samsung',
             'website_url' => 'https://samsung.com',
-            'country_code' => 'KR',
+            'country_id' => CountryReference::id('KR'),
         ]);
 
         $response = $this->actingAs(User::factory()->create())
@@ -313,7 +359,7 @@ final class CentralBrandFormTest extends TestCase
                 'name' => 'Samsung Electronics',
                 'slug' => 'samsung',
                 'website_url' => 'https://www.samsung.com',
-                'country_code' => 'us',
+                'country_id' => CountryReference::id('US'),
                 'status' => CentralBrandStatus::Archived->value,
                 'normalized_name' => 'attacker-controlled',
                 'normalized_name_hash' => str_repeat('0', 64),
@@ -328,7 +374,7 @@ final class CentralBrandFormTest extends TestCase
         $this->assertSame('Samsung Electronics', $brand->name);
         $this->assertSame('samsung', $brand->slug);
         $this->assertSame('https://www.samsung.com', $brand->website_url);
-        $this->assertSame('US', $brand->country_code);
+        $this->assertSame('US', $brand->country()->first()?->alpha2);
         $this->assertSame(CentralBrandStatus::Active, $brand->status);
         $this->assertSame('samsung electronics', $brand->normalized_name);
         $this->assertNotSame(str_repeat('0', 64), $brand->normalized_name_hash);
@@ -356,7 +402,7 @@ final class CentralBrandFormTest extends TestCase
                 'name' => $status->label().' Updated',
                 'slug' => $status->value.'-original',
                 'website_url' => '',
-                'country_code' => '',
+                'country_id' => '',
             ])->assertRedirect(route('central.brands.edit', $brand));
 
             $this->assertSame($status, $brand->fresh()->status);
@@ -370,7 +416,7 @@ final class CentralBrandFormTest extends TestCase
             'name' => 'Samsung',
             'slug' => 'samsung',
             'website_url' => 'https://www.samsung.com',
-            'country_code' => 'KR',
+            'country_id' => CountryReference::id('KR'),
         ]);
 
         $this->actingAs(User::factory()->create())
@@ -383,7 +429,7 @@ final class CentralBrandFormTest extends TestCase
         $brand->refresh();
         $this->assertSame('Samsung Electronics', $brand->name);
         $this->assertSame('https://www.samsung.com', $brand->website_url);
-        $this->assertSame('KR', $brand->country_code);
+        $this->assertSame('KR', $brand->country()->first()?->alpha2);
         $this->assertSame(CentralBrandStatus::Active, $brand->status);
     }
 
@@ -393,7 +439,7 @@ final class CentralBrandFormTest extends TestCase
             'name' => 'Samsung',
             'slug' => 'samsung',
             'website_url' => 'https://www.samsung.com',
-            'country_code' => 'KR',
+            'country_id' => CountryReference::id('KR'),
         ]);
 
         $this->actingAs(User::factory()->create())
@@ -401,13 +447,13 @@ final class CentralBrandFormTest extends TestCase
                 'name' => 'Samsung',
                 'slug' => 'samsung',
                 'website_url' => '',
-                'country_code' => '',
+                'country_id' => '',
             ])
             ->assertRedirect(route('central.brands.edit', $brand));
 
         $brand->refresh();
         $this->assertNull($brand->website_url);
-        $this->assertNull($brand->country_code);
+        $this->assertNull($brand->country_id);
         $this->assertSame(CentralBrandStatus::Active, $brand->status);
     }
 
@@ -417,7 +463,7 @@ final class CentralBrandFormTest extends TestCase
             'name' => 'Samsung',
             'slug' => 'samsung',
             'website_url' => 'https://samsung.com',
-            'country_code' => 'KR',
+            'country_id' => CountryReference::id('KR'),
         ]);
         $before = $brand->getAttributes();
 
@@ -427,11 +473,11 @@ final class CentralBrandFormTest extends TestCase
                 'name' => 'Samsung Electronics',
                 'slug' => 'samsung-electronics',
                 'website_url' => 'not-a-url',
-                'country_code' => 'K1',
+                'country_id' => CountryReference::id('JP'),
                 'status' => CentralBrandStatus::Active->value,
             ])
             ->assertRedirect(route('central.brands.edit', $brand))
-            ->assertSessionHasErrors(['website_url', 'country_code'])
+            ->assertSessionHasErrors(['website_url'])
             ->assertSessionHasInput('name', 'Samsung Electronics')
             ->assertSessionHasInput('website_url', 'not-a-url');
 

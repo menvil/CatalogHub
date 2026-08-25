@@ -3,12 +3,14 @@
 namespace App\Models\CentralCatalog;
 
 use App\Enums\CentralBrandStatus;
+use App\Models\Geography\Country;
 use App\Models\Translations\BrandTranslation;
 use Database\Factories\CentralBrandFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -16,9 +18,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $normalized_name
  * @property string $normalized_name_hash
  * @property string|null $website_url
- * @property string|null $country_code
+ * @property int|null $country_id
  */
-#[Fillable(['name', 'slug', 'status', 'website_url', 'country_code'])]
+#[Fillable(['name', 'slug', 'status', 'website_url', 'country_id'])]
 final class CentralBrand extends Model
 {
     /** @use HasFactory<CentralBrandFactory> */
@@ -65,6 +67,12 @@ final class CentralBrand extends Model
     public function products(): HasMany
     {
         return $this->hasMany(CentralProduct::class, 'central_brand_id');
+    }
+
+    /** @return BelongsTo<Country, $this> */
+    public function country(): BelongsTo
+    {
+        return $this->belongsTo(Country::class);
     }
 
     /**

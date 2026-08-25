@@ -27,7 +27,7 @@ class CentralBrandFactory extends Factory
             'slug' => $slug,
             'status' => CentralBrandStatus::default(),
             'website_url' => null,
-            'country_code' => null,
+            'country_id' => null,
         ];
     }
 

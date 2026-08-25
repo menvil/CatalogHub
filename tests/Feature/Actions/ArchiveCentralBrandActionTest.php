@@ -8,6 +8,7 @@ use App\Models\CentralCatalog\CentralBrand;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Support\CountryReference;
 use Tests\TestCase;
 
 class ArchiveCentralBrandActionTest extends TestCase
@@ -20,14 +21,14 @@ class ArchiveCentralBrandActionTest extends TestCase
         $brand = CentralBrand::factory()->create([
             'name' => 'Samsung',
             'status' => $status,
-            'country_code' => 'KR',
+            'country_id' => CountryReference::id('KR'),
         ]);
 
         $result = app(ArchiveCentralBrandAction::class)->handle(User::factory()->create(), $brand);
 
         $this->assertSame(CentralBrandStatus::Archived, $result->status);
         $this->assertSame('Samsung', $result->name);
-        $this->assertSame('KR', $result->country_code);
+        $this->assertSame('KR', $result->country()->first()?->alpha2);
     }
 
     /** @return iterable<string, array{CentralBrandStatus}> */

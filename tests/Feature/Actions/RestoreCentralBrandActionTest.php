@@ -12,6 +12,7 @@ use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Support\CountryReference;
 use Tests\TestCase;
 use Throwable;
 
@@ -23,14 +24,14 @@ class RestoreCentralBrandActionTest extends TestCase
     {
         $brand = CentralBrand::factory()->archived()->create([
             'name' => 'Samsung',
-            'country_code' => 'KR',
+            'country_id' => CountryReference::id('KR'),
         ]);
 
         $result = app(RestoreCentralBrandAction::class)->handle(User::factory()->create(), $brand);
 
         $this->assertSame(CentralBrandStatus::Draft, $result->status);
         $this->assertSame('Samsung', $result->name);
-        $this->assertSame('KR', $result->country_code);
+        $this->assertSame('KR', $result->country()->first()?->alpha2);
     }
 
     #[DataProvider('nonArchivedStatusProvider')]

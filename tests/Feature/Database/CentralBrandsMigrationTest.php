@@ -23,10 +23,11 @@ class CentralBrandsMigrationTest extends TestCase
             'slug',
             'status',
             'website_url',
-            'country_code',
+            'country_id',
             'created_at',
             'updated_at',
         ]));
+        $this->assertFalse(Schema::hasColumn('central_brands', 'country_code'));
     }
 
     public function test_central_brands_storage_indexes_match_the_domain_contract(): void

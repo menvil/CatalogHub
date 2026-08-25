@@ -15,6 +15,7 @@ use App\Queries\Translations\BrandTranslationEditorQuery;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
+use Tests\Support\CountryReference;
 use Tests\Support\DatabaseQueryCounter;
 use Tests\TestCase;
 
@@ -124,7 +125,7 @@ final class CentralBrandTranslationTest extends TestCase
             'slug' => 'samsung',
             'status' => CentralBrandStatus::Archived,
             'website_url' => 'https://www.samsung.com',
-            'country_code' => 'KR',
+            'country_id' => CountryReference::id('KR'),
         ]);
         $otherBrand = CentralBrand::factory()->create();
         $locale = Locale::factory()->create(['code' => 'de-DE']);
@@ -165,7 +166,7 @@ final class CentralBrandTranslationTest extends TestCase
         $this->assertSame('samsung', $brand->slug);
         $this->assertSame(CentralBrandStatus::Archived, $brand->status);
         $this->assertSame('https://www.samsung.com', $brand->website_url);
-        $this->assertSame('KR', $brand->country_code);
+        $this->assertSame('KR', $brand->country()->first()?->alpha2);
     }
 
     public function test_validation_requires_name_rejects_direct_approval_and_preserves_old_input(): void

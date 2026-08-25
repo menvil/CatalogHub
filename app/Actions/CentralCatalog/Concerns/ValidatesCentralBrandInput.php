@@ -16,7 +16,7 @@ use InvalidArgumentException;
 trait ValidatesCentralBrandInput
 {
     /**
-     * @return array{name: string, normalized_name: string, normalized_name_hash: string, slug: string, website_url: string|null, country_code: string|null}
+     * @return array{name: string, normalized_name: string, normalized_name_hash: string, slug: string, website_url: string|null, country_id: int|null}
      */
     private function validatedBrandInput(CentralBrandInput $input, ?CentralBrand $brand = null): array
     {
@@ -28,7 +28,7 @@ trait ValidatesCentralBrandInput
 
         $slug = $this->normalizedSlug($input->slug, $name, $brand);
         $websiteUrl = $this->normalizedWebsiteUrl($input, $brand);
-        $countryCode = $this->normalizedCountryCode($input, $brand);
+        $countryId = $this->normalizedCountryId($input, $brand);
 
         $slugRule = Rule::unique('central_brands', 'slug');
 
@@ -40,11 +40,11 @@ trait ValidatesCentralBrandInput
             'name' => $name,
             'slug' => $slug,
             'website_url' => $websiteUrl,
-            'country_code' => $countryCode,
+            'country_id' => $countryId,
         ], [
             'slug' => ['required', 'max:255', 'regex:/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/', $slugRule],
             'website_url' => ['nullable', 'max:255', 'url:http,https'],
-            'country_code' => ['nullable', 'regex:/\A[A-Z]{2}\z/'],
+            'country_id' => ['nullable', 'integer'],
         ]);
 
         $normalizedValidator->after(function ($validator) use ($name, $brand): void {
@@ -61,12 +61,12 @@ trait ValidatesCentralBrandInput
             'normalized_name_hash' => BrandInputNormalizer::nameIdentityHash($name),
             'slug' => (string) $normalized['slug'],
             'website_url' => isset($normalized['website_url']) ? (string) $normalized['website_url'] : null,
-            'country_code' => isset($normalized['country_code']) ? (string) $normalized['country_code'] : null,
+            'country_id' => isset($normalized['country_id']) ? (int) $normalized['country_id'] : null,
         ];
     }
 
     /**
-     * @param  array{name: string, normalized_name: string, normalized_name_hash: string, slug: string, website_url: string|null, country_code: string|null}  $validated
+     * @param  array{name: string, normalized_name: string, normalized_name_hash: string, slug: string, website_url: string|null, country_id: int|null}  $validated
      * @return array<string, string>
      */
     private function uniqueConstraintValidationErrors(array $validated, ?CentralBrand $brand = null): array
@@ -120,12 +120,12 @@ trait ValidatesCentralBrandInput
         return BrandInputNormalizer::nullableUrl($input->websiteUrl);
     }
 
-    private function normalizedCountryCode(CentralBrandInput $input, ?CentralBrand $brand): ?string
+    private function normalizedCountryId(CentralBrandInput $input, ?CentralBrand $brand): ?int
     {
-        if (! $input->hasCountryCode) {
-            return $brand?->country_code;
+        if (! $input->hasCountryId) {
+            return $brand?->country_id;
         }
 
-        return BrandInputNormalizer::countryCode($input->countryCode);
+        return $input->countryId;
     }
 }

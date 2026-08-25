@@ -1,0 +1,55 @@
+{
+    "dataset_version": "countries-v1",
+    "expected_country_count": 249,
+    "expected_translation_count": 498,
+    "reference_locales": [
+        "en",
+        "de"
+    ],
+    "sources": {
+        "un_m49": {
+            "snapshot_date": "2026-08-25",
+            "url": "https://unstats.un.org/unsd/methodology/m49/overview",
+            "sha256": "b9048114f6e7f2abda83bf03d4263c9d7cd1bd7230e3d0461025ee7839a7a1fb",
+            "usage": "M49 numeric, ISO alpha-2/alpha-3, region, subregion, and intermediate-region codes"
+        },
+        "iso_3166": {
+            "standard": "ISO 3166-1:2020 (reviewed and confirmed 2025)",
+            "url": "https://www.iso.org/iso-3166-country-codes.html",
+            "usage": "Current officially assigned alpha-2/alpha-3 identities; ISO permits free use of its country codes",
+            "supplement": {
+                "alpha2": "TW",
+                "alpha3": "TWN",
+                "numeric_code": "158",
+                "un_m49_reference": "https://unstats.un.org/unsd/publication/SeriesM/Series_M49_Rev4%281999%29_en.pdf",
+                "reason": "Current UNSD overview omits a separate row while ISO 3166-1 retains the identity"
+            }
+        },
+        "cldr": {
+            "version": "48.2",
+            "json_package_version": "48.2.0",
+            "release_date": "2026-03-17",
+            "repository_tag": "48.2.0",
+            "license": "Unicode-3.0",
+            "files": {
+                "en": {
+                    "sha256": "158c1d575308f7e46912edbeda435c8fe2ef5dad280798231f3a432e406b1807"
+                },
+                "de": {
+                    "sha256": "e5b7a831cd70afeaad10a56360c08e2d970e9fe79f254ee8d937a7dfa13686b7"
+                }
+            },
+            "usage": "Localized territory display names and canonical English display name"
+        }
+    },
+    "payloads": {
+        "countries": {
+            "file": "countries-v1.json",
+            "sha256": "9144b4adeebebbf03a2feda965ca2507f22b50ca0dda9c4fdf3a136398b46cd1"
+        },
+        "translations": {
+            "file": "country-translations-v1.json",
+            "sha256": "ba0b073ecd8be15c0246ab9064d714d46df60b9a3b0a06fdd4688c87bc674628"
+        }
+    }
+}

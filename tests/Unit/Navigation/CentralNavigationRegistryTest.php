@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Navigation;
 
+use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Navigation\CentralNavigationRegistry;
@@ -112,5 +113,15 @@ final class CentralNavigationRegistryTest extends TestCase
         $this->assertSame('/admin/central/brands', $brands->getUrl());
         $this->assertContains('brands', array_column($registry->visibleItemsFor($catalogEditor), 'id'));
         $this->assertNotContains('brands', array_column($registry->visibleItemsFor($translator), 'id'));
+
+        config()->set('cataloghub_permissions.roles.catalog_editor', [
+            Permission::CentralPanelAccess->value,
+            Permission::CatalogProductsManage->value,
+        ]);
+        $productOnlyItems = collect($registry->filamentNavigation($catalogEditor)->getNavigation()[0]->getItems());
+
+        $this->assertNotNull($productOnlyItems->first(static fn ($item): bool => $item->getLabel() === 'Catalog'));
+        $this->assertNull($productOnlyItems->first(static fn ($item): bool => $item->getLabel() === 'Brands'));
+        $this->assertNotContains('brands', array_column($registry->visibleItemsFor($catalogEditor), 'id'));
     }
 }

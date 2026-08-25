@@ -6,6 +6,7 @@ namespace Tests\Feature\Central;
 
 use App\Data\CentralCatalog\BrandListFiltersData;
 use App\Enums\CentralBrandStatus;
+use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\User;
@@ -253,6 +254,19 @@ final class CentralBrandListTest extends TestCase
         $translator = User::factory()->create(['role' => UserRole::Translator]);
 
         $this->actingAs($translator)
+            ->get(route('central.brands.index'))
+            ->assertForbidden();
+    }
+
+    public function test_product_management_permission_does_not_open_ca_011(): void
+    {
+        config()->set('cataloghub_permissions.roles.catalog_editor', [
+            Permission::CentralPanelAccess->value,
+            Permission::CatalogProductsManage->value,
+        ]);
+        $productManager = User::factory()->create(['role' => UserRole::CatalogEditor]);
+
+        $this->actingAs($productManager)
             ->get(route('central.brands.index'))
             ->assertForbidden();
     }

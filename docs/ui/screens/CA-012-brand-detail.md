@@ -9,7 +9,7 @@ fixture: brand-detail-v1
 regions: central-shell;breadcrumbs;page-header;status-context;brand-tabs;general-information;usage;record-metadata;lifecycle;confirmation-modal;flash-feedback
 actions: edit-brand;activate-brand;archive-brand;restore-brand;confirm;cancel
 states: draft;active;archived;status-action-error
-permissions: catalog.products.manage
+permissions: catalog.brands.manage
 responsive: Desktop uses the full Central Admin workspace with main content and a right aside; mobile stacks the detail-layout regions, keeps actions tappable, and prevents long slugs or URLs from causing page-level overflow.
 out_of_scope: translation-editing;product-list;site-projections;audit-history;granular-brand-permissions;delete;hard-delete;soft-delete
 reference_version: v1
@@ -31,7 +31,7 @@ The aside contains Record and Lifecycle cards. Record shows Status, deterministi
 
 Activate, Archive, and Restore delegate to `ActivateCentralBrandAction`, `ArchiveCentralBrandAction`, and `RestoreCentralBrandAction`. Successful commands redirect to the same detail route with the agreed flash message. A stale or malicious invalid transition preserves the action's `status` validation error, redirects to Detail, leaves persisted state unchanged, and presents the error inside Lifecycle.
 
-The temporary `catalog.products.manage` permission remains intentional until Phase 8 introduces Brand-specific permissions. There is no generic status endpoint or status payload.
+The dedicated `catalog.brands.manage` permission protects canonical Brand reads and lifecycle commands. There is no generic status endpoint or status payload.
 
 ## States
 

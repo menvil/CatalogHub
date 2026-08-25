@@ -1,6 +1,6 @@
 @php
     $brandTabs = [];
-    if (auth()->user()?->can('catalog.products.manage') === true) {
+    if (auth()->user()?->can('catalog.brands.manage') === true) {
         $brandTabs[] = ['key' => 'overview', 'label' => 'Overview', 'url' => route('central.brands.show', $brand, absolute: false)];
         $brandTabs[] = ['key' => 'media', 'label' => 'Media', 'url' => route('central.brands.media', $brand, absolute: false)];
     }

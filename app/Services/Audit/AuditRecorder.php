@@ -21,6 +21,14 @@ class AuditRecorder
         AuditAction::MembershipChanged->value => ['role', 'is_active'],
         AuditAction::UserDisabled->value => ['is_disabled'],
         AuditAction::UserEnabled->value => ['is_disabled'],
+        AuditAction::CatalogBrandCreated->value => ['name', 'slug', 'status', 'website_url', 'country_code'],
+        AuditAction::CatalogBrandUpdated->value => ['name', 'slug', 'website_url', 'country_code'],
+        AuditAction::CatalogBrandActivated->value => ['status'],
+        AuditAction::CatalogBrandArchived->value => ['status'],
+        AuditAction::CatalogBrandRestored->value => ['status'],
+        AuditAction::CatalogBrandLogoAssigned->value => ['media_asset_id'],
+        AuditAction::CatalogBrandLogoRemoved->value => ['media_asset_id'],
+        AuditAction::CatalogBrandTranslationSaved->value => ['translation_id', 'locale', 'status', 'changed_fields'],
     ];
 
     /**

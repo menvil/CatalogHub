@@ -10,6 +10,7 @@ use App\Enums\TranslationStatus;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\Locale;
 use App\Models\Translations\BrandTranslation;
+use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +29,7 @@ final class SaveBrandTranslationConcurrencyTest extends TestCase
 
         $brand = CentralBrand::factory()->create();
         $locale = Locale::factory()->create(['code' => 'de-DE']);
+        $actor = User::factory()->create();
         $coordinationDirectory = sys_get_temp_dir().'/cataloghub-brand-translation-'.bin2hex(random_bytes(8));
         self::assertTrue(mkdir($coordinationDirectory));
 
@@ -52,7 +54,7 @@ final class SaveBrandTranslationConcurrencyTest extends TestCase
             }
 
             try {
-                app(SaveBrandTranslationAction::class)->handle($brand, $locale, $this->input('Child translation'));
+                app(SaveBrandTranslationAction::class)->handle($actor, $brand, $locale, $this->input('Child translation'));
                 file_put_contents($childOutcome, 'saved');
             } catch (Throwable $exception) {
                 file_put_contents($childOutcome, 'error:'.$exception::class);
@@ -67,7 +69,7 @@ final class SaveBrandTranslationConcurrencyTest extends TestCase
             touch($parentReady);
             self::assertTrue($this->waitForFile($childReady, 5.0));
             touch($release);
-            app(SaveBrandTranslationAction::class)->handle($brand, $locale, $this->input('Parent translation'));
+            app(SaveBrandTranslationAction::class)->handle($actor, $brand, $locale, $this->input('Parent translation'));
         } catch (Throwable $exception) {
             $parentOutcome = 'error:'.$exception::class;
         } finally {

@@ -7,6 +7,7 @@ namespace Tests\Feature\Actions;
 use App\Actions\CentralCatalog\CreateCentralBrandAction;
 use App\Data\CentralCatalog\CentralBrandInput;
 use App\Models\CentralCatalog\CentralBrand;
+use App\Models\User;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
@@ -25,6 +26,7 @@ final class CreateCentralBrandConcurrencyTest extends TestCase
             $this->markTestSkipped('The coordinated two-connection duplicate-name test runs in the MariaDB and PostgreSQL matrix.');
         }
 
+        $actor = User::factory()->create();
         $coordinationDirectory = sys_get_temp_dir().'/cataloghub-brand-name-'.bin2hex(random_bytes(8));
         self::assertTrue(mkdir($coordinationDirectory));
 
@@ -70,7 +72,7 @@ final class CreateCentralBrandConcurrencyTest extends TestCase
             $this->waitForFile($parentValidated, 5.0);
 
             try {
-                app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(
+                app(CreateCentralBrandAction::class)->handle($actor, new CentralBrandInput(
                     name: 'électro',
                     slug: 'electro-child',
                 ));
@@ -85,7 +87,7 @@ final class CreateCentralBrandConcurrencyTest extends TestCase
         }
 
         try {
-            app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(
+            app(CreateCentralBrandAction::class)->handle($actor, new CentralBrandInput(
                 name: 'ÉLECTRO',
                 slug: 'electro-parent',
             ));

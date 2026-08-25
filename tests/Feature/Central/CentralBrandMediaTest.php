@@ -3,18 +3,21 @@
 namespace Tests\Feature\Central;
 
 use App\Actions\CentralCatalog\SetCentralBrandLogoAction;
+use App\Actions\CentralCatalog\UploadCentralBrandLogoAction;
 use App\Enums\UserRole;
 use App\Jobs\Media\GenerateMediaVariantsJob;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\MediaAsset;
 use App\Models\MediaAssignment;
 use App\Models\User;
+use App\Services\Audit\AuditRecorder;
 use App\Services\Media\MediaResolver;
 use App\Services\Media\MediaVariantProfile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 use Tests\TestCase;
 
 final class CentralBrandMediaTest extends TestCase
@@ -92,6 +95,32 @@ final class CentralBrandMediaTest extends TestCase
         Queue::assertNothingPushed();
     }
 
+    public function test_failed_logo_audit_removes_the_new_asset_and_stored_object(): void
+    {
+        Storage::fake('public');
+        Queue::fake();
+        $brand = CentralBrand::factory()->create();
+        $audit = $this->createMock(AuditRecorder::class);
+        $audit->method('record')->willThrowException(new RuntimeException('audit unavailable'));
+        $this->app->instance(AuditRecorder::class, $audit);
+
+        try {
+            app(UploadCentralBrandLogoAction::class)(
+                User::factory()->create(),
+                $brand,
+                UploadedFile::fake()->image('logo.png', 32, 16),
+            );
+            $this->fail('The audit exception must remain visible.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('audit unavailable', $exception->getMessage());
+        }
+
+        $this->assertSame(0, MediaAsset::query()->count());
+        $this->assertSame(0, MediaAssignment::query()->count());
+        $this->assertSame([], Storage::disk('public')->allFiles());
+        Queue::assertNothingPushed();
+    }
+
     public function test_guests_and_translators_cannot_upload_a_brand_logo(): void
     {
         Storage::fake('public');
@@ -118,7 +147,7 @@ final class CentralBrandMediaTest extends TestCase
         $brand = CentralBrand::factory()->create();
         $asset = MediaAsset::factory()->create(['disk' => 'public', 'original_path' => 'media/originals/assigned.png']);
         Storage::disk('public')->put($asset->original_path, 'assigned');
-        app(SetCentralBrandLogoAction::class)->execute($brand, $asset);
+        app(SetCentralBrandLogoAction::class)->execute(User::factory()->create(), $brand, $asset);
         $route = route('central.brands.media.logo.destroy', $brand);
 
         $this->delete($route)->assertRedirect(route('filament.central.auth.login'));
@@ -136,7 +165,7 @@ final class CentralBrandMediaTest extends TestCase
     {
         $brand = CentralBrand::factory()->create(['name' => 'Samsung']);
         $asset = MediaAsset::factory()->create(['disk' => 'public', 'original_path' => 'media/originals/missing.png']);
-        app(SetCentralBrandLogoAction::class)->execute($brand, $asset);
+        app(SetCentralBrandLogoAction::class)->execute(User::factory()->create(), $brand, $asset);
 
         $this->actingAs(User::factory()->centralAdmin()->create())
             ->get(route('central.brands.media', $brand))
@@ -153,7 +182,7 @@ final class CentralBrandMediaTest extends TestCase
         $user = User::factory()->centralAdmin()->create();
         $first = MediaAsset::factory()->create(['disk' => 'public', 'original_path' => 'media/originals/a.png']);
         Storage::disk('public')->put($first->original_path, 'first');
-        app(SetCentralBrandLogoAction::class)->execute($brand, $first);
+        app(SetCentralBrandLogoAction::class)->execute(User::factory()->create(), $brand, $first);
 
         $this->actingAs($user)->post(route('central.brands.media.logo.store', $brand), ['logo' => UploadedFile::fake()->image('second.png', 24, 12)])
             ->assertRedirect(route('central.brands.media', $brand));

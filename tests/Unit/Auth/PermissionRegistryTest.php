@@ -19,6 +19,7 @@ class PermissionRegistryTest extends TestCase
             'central.view',
             'central.manage',
             'catalog.products.manage',
+            'catalog.brands.manage',
             'catalog.categories.manage',
             'catalog.schema.manage',
             'imports.manage',

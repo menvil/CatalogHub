@@ -9,6 +9,7 @@ use App\Actions\CentralCatalog\UpdateCentralBrandAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CentralAdmin\CentralBrandFormRequest;
 use App\Models\CentralCatalog\CentralBrand;
+use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 
@@ -21,7 +22,9 @@ final class CentralBrandFormController extends Controller
 
     public function store(CentralBrandFormRequest $request, CreateCentralBrandAction $createBrand): RedirectResponse
     {
-        $createBrand->handle($request->brandInput());
+        $actor = $request->user();
+        assert($actor instanceof User);
+        $createBrand->handle($actor, $request->brandInput());
 
         return redirect()
             ->route('central.brands.index')
@@ -38,7 +41,9 @@ final class CentralBrandFormController extends Controller
         CentralBrand $brand,
         UpdateCentralBrandAction $updateBrand,
     ): RedirectResponse {
-        $updateBrand->handle($brand, $request->brandInput());
+        $actor = $request->user();
+        assert($actor instanceof User);
+        $updateBrand->handle($actor, $brand, $request->brandInput());
 
         return redirect()
             ->route('central.brands.edit', $brand)

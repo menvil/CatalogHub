@@ -10,15 +10,20 @@ use App\Actions\CentralCatalog\RestoreCentralBrandAction;
 use App\Enums\CentralBrandStatus;
 use App\Http\Controllers\Controller;
 use App\Models\CentralCatalog\CentralBrand;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 final class CentralBrandLifecycleController extends Controller
 {
-    public function activate(CentralBrand $brand, ActivateCentralBrandAction $activateBrand): RedirectResponse
+    public function activate(Request $request, CentralBrand $brand, ActivateCentralBrandAction $activateBrand): RedirectResponse
     {
+        $actor = $request->user();
+        assert($actor instanceof User);
+
         try {
-            $activateBrand->handle($brand);
+            $activateBrand->handle($actor, $brand);
         } catch (ValidationException $exception) {
             return redirect()
                 ->route('central.brands.show', $brand)
@@ -31,19 +36,24 @@ final class CentralBrandLifecycleController extends Controller
             ->with('success', 'Brand activated.');
     }
 
-    public function archive(CentralBrand $brand, ArchiveCentralBrandAction $archiveBrand): RedirectResponse
+    public function archive(Request $request, CentralBrand $brand, ArchiveCentralBrandAction $archiveBrand): RedirectResponse
     {
-        $archiveBrand->handle($brand);
+        $actor = $request->user();
+        assert($actor instanceof User);
+        $archiveBrand->handle($actor, $brand);
 
         return redirect()
             ->route('central.brands.show', $brand)
             ->with('success', 'Brand archived.');
     }
 
-    public function restore(CentralBrand $brand, RestoreCentralBrandAction $restoreBrand): RedirectResponse
+    public function restore(Request $request, CentralBrand $brand, RestoreCentralBrandAction $restoreBrand): RedirectResponse
     {
+        $actor = $request->user();
+        assert($actor instanceof User);
+
         try {
-            $restoredBrand = $restoreBrand->handle($brand);
+            $restoredBrand = $restoreBrand->handle($actor, $brand);
 
             if ($restoredBrand->status !== CentralBrandStatus::Draft) {
                 throw ValidationException::withMessages([

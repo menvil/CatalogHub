@@ -21,11 +21,13 @@
             @else
                 <p class="text-sm text-admin-muted">The assigned logo file is unavailable. You can replace it with a new logo.</p>
             @endif
+            @can('catalog.brands.manage')
             <form class="mt-6 space-y-3" method="POST" enctype="multipart/form-data" action="{{ route('central.brands.media.logo.store', $brand) }}">@csrf
                 <label class="block text-sm font-medium text-admin-text" for="logo">{{ $asset ? 'Replace logo' : 'Upload logo' }}</label><input id="logo" name="logo" type="file" accept="image/jpeg,image/png,image/webp" class="block w-full text-sm" required aria-describedby="logo-help logo-error"><p id="logo-help" class="text-sm text-admin-muted">JPEG, PNG or WebP. Maximum 20 MB.</p>@error('logo')<p id="logo-error" class="text-sm text-admin-danger" role="alert">{{ $message }}</p>@enderror
                 <x-ui.button type="submit">{{ $asset ? 'Replace logo' : 'Upload logo' }}</x-ui.button>
             </form>
             @if ($asset)<form id="remove-brand-logo" method="POST" action="{{ route('central.brands.media.logo.destroy', $brand) }}" class="mt-4">@csrf @method('DELETE')<x-ui.button variant="danger" aria-haspopup="dialog" aria-controls="remove-brand-logo-modal" data-admin-modal-open-target="remove-brand-logo-modal">Remove logo</x-ui.button></form><x-admin.confirmation-modal id="remove-brand-logo-modal" :title="'Remove this logo from '.$brand->name.'?'" message="The media asset will remain in the Media Library and can still be used elsewhere." confirm-label="Remove logo" confirm-form="remove-brand-logo" variant="danger" :open="false" />@endif
+            @endcan
         </x-admin.card>
     </div>
 @endsection

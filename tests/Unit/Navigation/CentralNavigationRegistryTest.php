@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Navigation;
 
+use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Navigation\CentralNavigationRegistry;
@@ -35,7 +36,7 @@ final class CentralNavigationRegistryTest extends TestCase
         ], array_column($items, 'id'));
         $this->assertCount(11, array_unique(array_column($items, 'id')));
         $this->assertCount(11, array_unique(array_column($items, 'route')));
-        $this->assertCount(10, array_unique(array_column($items, 'permission')));
+        $this->assertCount(11, array_unique(array_column($items, 'permission')));
     }
 
     public function test_unavailable_and_unauthorized_items_never_become_dead_links(): void
@@ -91,7 +92,7 @@ final class CentralNavigationRegistryTest extends TestCase
         $this->assertFalse($brands->isActive());
     }
 
-    public function test_brands_navigation_uses_catalog_permission_and_has_an_exclusive_active_state(): void
+    public function test_brands_navigation_uses_brand_permission_and_has_an_exclusive_active_state(): void
     {
         $registry = app(CentralNavigationRegistry::class);
         $catalogEditor = User::factory()->create(['role' => UserRole::CatalogEditor]);
@@ -112,5 +113,15 @@ final class CentralNavigationRegistryTest extends TestCase
         $this->assertSame('/admin/central/brands', $brands->getUrl());
         $this->assertContains('brands', array_column($registry->visibleItemsFor($catalogEditor), 'id'));
         $this->assertNotContains('brands', array_column($registry->visibleItemsFor($translator), 'id'));
+
+        config()->set('cataloghub_permissions.roles.catalog_editor', [
+            Permission::CentralPanelAccess->value,
+            Permission::CatalogProductsManage->value,
+        ]);
+        $productOnlyItems = collect($registry->filamentNavigation($catalogEditor)->getNavigation()[0]->getItems());
+
+        $this->assertNotNull($productOnlyItems->first(static fn ($item): bool => $item->getLabel() === 'Catalog'));
+        $this->assertNull($productOnlyItems->first(static fn ($item): bool => $item->getLabel() === 'Brands'));
+        $this->assertNotContains('brands', array_column($registry->visibleItemsFor($catalogEditor), 'id'));
     }
 }

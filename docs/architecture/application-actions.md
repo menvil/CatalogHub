@@ -10,3 +10,5 @@ Presentation code validates and translates HTTP input; it does not own persisten
 4. it returns the persisted model to the caller.
 
 Simple single-model CRUD need not gain an Action merely to follow a pattern. Controllers, pages, Blade views, policies, and query objects must not open transactions or perform mutation orchestration. Actions do not read request globals; their typed arguments make actor, subject, site, and requested state explicit.
+
+Audited Brand mutations follow the same boundary: the controller supplies an authenticated `User` actor and typed domain input, while the Action opens the transaction, applies the mutation, and writes an allowlisted Brand-centric audit entry before commit. A failed audit insert rolls back the Brand mutation. Cache invalidation and other non-database side effects happen after commit.

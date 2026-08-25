@@ -6,6 +6,7 @@ use App\Actions\CentralCatalog\CreateCentralBrandAction;
 use App\Data\CentralCatalog\CentralBrandInput;
 use App\Enums\CentralBrandStatus;
 use App\Models\CentralCatalog\CentralBrand;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -19,7 +20,7 @@ class CreateCentralBrandActionTest extends TestCase
 
     public function test_creates_a_draft_brand_with_minimal_valid_input_and_generated_slug(): void
     {
-        $brand = app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(
+        $brand = app(CreateCentralBrandAction::class)->handle(User::factory()->create(), new CentralBrandInput(
             name: 'Samsung Electronics',
         ));
 
@@ -36,7 +37,7 @@ class CreateCentralBrandActionTest extends TestCase
 
     public function test_normalizes_all_canonical_create_input(): void
     {
-        $brand = app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(
+        $brand = app(CreateCentralBrandAction::class)->handle(User::factory()->create(), new CentralBrandInput(
             name: '  Samsung   Electronics  ',
             slug: ' Samsung_Phones ',
             hasWebsiteUrl: true,
@@ -54,14 +55,14 @@ class CreateCentralBrandActionTest extends TestCase
 
     public function test_generated_slug_handles_ampersands(): void
     {
-        $brand = app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(name: 'Bang & Olufsen'));
+        $brand = app(CreateCentralBrandAction::class)->handle(User::factory()->create(), new CentralBrandInput(name: 'Bang & Olufsen'));
 
         $this->assertSame('bang-olufsen', $brand->slug);
     }
 
     public function test_preserves_unicode_and_canonical_name_case_when_an_ascii_slug_is_supplied(): void
     {
-        $brand = app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(
+        $brand = app(CreateCentralBrandAction::class)->handle(User::factory()->create(), new CentralBrandInput(
             name: '华为',
             slug: 'huawei',
         ));
@@ -72,7 +73,7 @@ class CreateCentralBrandActionTest extends TestCase
 
     public function test_blank_nullable_metadata_is_stored_as_null(): void
     {
-        $brand = app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(
+        $brand = app(CreateCentralBrandAction::class)->handle(User::factory()->create(), new CentralBrandInput(
             name: 'Logitech',
             hasWebsiteUrl: true,
             websiteUrl: '   ',
@@ -87,7 +88,7 @@ class CreateCentralBrandActionTest extends TestCase
     #[DataProvider('invalidNameProvider')]
     public function test_rejects_invalid_names(string $name): void
     {
-        $this->assertValidationError('name', fn () => app(CreateCentralBrandAction::class)->handle(
+        $this->assertValidationError('name', fn () => app(CreateCentralBrandAction::class)->handle(User::factory()->create(),
             new CentralBrandInput(name: $name),
         ));
 
@@ -104,7 +105,7 @@ class CreateCentralBrandActionTest extends TestCase
 
     public function test_rejects_an_invalid_explicit_slug_as_a_field_validation_error(): void
     {
-        $this->assertValidationError('slug', fn () => app(CreateCentralBrandAction::class)->handle(
+        $this->assertValidationError('slug', fn () => app(CreateCentralBrandAction::class)->handle(User::factory()->create(),
             new CentralBrandInput(name: 'Samsung', slug: 'Samsung!!!'),
         ));
 
@@ -113,7 +114,7 @@ class CreateCentralBrandActionTest extends TestCase
 
     public function test_rejects_a_name_that_cannot_generate_an_ascii_slug(): void
     {
-        $this->assertValidationError('slug', fn () => app(CreateCentralBrandAction::class)->handle(
+        $this->assertValidationError('slug', fn () => app(CreateCentralBrandAction::class)->handle(User::factory()->create(),
             new CentralBrandInput(name: '💻'),
         ));
 
@@ -124,7 +125,7 @@ class CreateCentralBrandActionTest extends TestCase
     {
         CentralBrand::factory()->create(['slug' => 'samsung']);
 
-        $this->assertValidationError('slug', fn () => app(CreateCentralBrandAction::class)->handle(
+        $this->assertValidationError('slug', fn () => app(CreateCentralBrandAction::class)->handle(User::factory()->create(),
             new CentralBrandInput(name: 'Samsung New', slug: 'samsung'),
         ));
 
@@ -136,7 +137,7 @@ class CreateCentralBrandActionTest extends TestCase
         CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
 
         try {
-            app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(
+            app(CreateCentralBrandAction::class)->handle(User::factory()->create(), new CentralBrandInput(
                 name: 'SAMSUNG',
                 slug: 'samsung',
             ));
@@ -154,7 +155,7 @@ class CreateCentralBrandActionTest extends TestCase
     {
         CentralBrand::factory()->create(['name' => $existing, 'slug' => 'existing-brand']);
 
-        $this->assertValidationError('name', fn () => app(CreateCentralBrandAction::class)->handle(
+        $this->assertValidationError('name', fn () => app(CreateCentralBrandAction::class)->handle(User::factory()->create(),
             new CentralBrandInput(name: $duplicate, slug: 'different-slug'),
         ));
 
@@ -175,8 +176,8 @@ class CreateCentralBrandActionTest extends TestCase
     {
         CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
 
-        app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(name: 'Samsung Electronics'));
-        app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(name: 'Samsung Display'));
+        app(CreateCentralBrandAction::class)->handle(User::factory()->create(), new CentralBrandInput(name: 'Samsung Electronics'));
+        app(CreateCentralBrandAction::class)->handle(User::factory()->create(), new CentralBrandInput(name: 'Samsung Display'));
 
         $this->assertDatabaseCount('central_brands', 3);
     }
@@ -188,7 +189,7 @@ class CreateCentralBrandActionTest extends TestCase
             'slug' => 'samsung-electronics',
         ]);
 
-        $this->assertValidationError('name', fn () => app(CreateCentralBrandAction::class)->handle(
+        $this->assertValidationError('name', fn () => app(CreateCentralBrandAction::class)->handle(User::factory()->create(),
             new CentralBrandInput(name: 'Samsung   Electronics', slug: 'different-slug'),
         ));
     }
@@ -197,7 +198,7 @@ class CreateCentralBrandActionTest extends TestCase
     {
         CentralBrand::factory()->create(['name' => 'ÉLECTRO', 'slug' => 'electro-accented']);
 
-        $brand = app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(
+        $brand = app(CreateCentralBrandAction::class)->handle(User::factory()->create(), new CentralBrandInput(
             name: 'Electro',
             slug: 'electro',
         ));
@@ -209,7 +210,7 @@ class CreateCentralBrandActionTest extends TestCase
     #[DataProvider('invalidWebsiteProvider')]
     public function test_rejects_invalid_or_non_http_website_urls(string $websiteUrl): void
     {
-        $this->assertValidationError('website_url', fn () => app(CreateCentralBrandAction::class)->handle(
+        $this->assertValidationError('website_url', fn () => app(CreateCentralBrandAction::class)->handle(User::factory()->create(),
             new CentralBrandInput(name: 'Sony', hasWebsiteUrl: true, websiteUrl: $websiteUrl),
         ));
 
@@ -230,7 +231,7 @@ class CreateCentralBrandActionTest extends TestCase
     #[DataProvider('invalidCountryCodeProvider')]
     public function test_rejects_structurally_invalid_country_codes(string $countryCode): void
     {
-        $this->assertValidationError('country_code', fn () => app(CreateCentralBrandAction::class)->handle(
+        $this->assertValidationError('country_code', fn () => app(CreateCentralBrandAction::class)->handle(User::factory()->create(),
             new CentralBrandInput(name: 'Sony', hasCountryCode: true, countryCode: $countryCode),
         ));
 

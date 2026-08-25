@@ -5,6 +5,7 @@ namespace Tests\Feature\Actions;
 use App\Actions\CentralCatalog\ArchiveCentralBrandAction;
 use App\Enums\CentralBrandStatus;
 use App\Models\CentralCatalog\CentralBrand;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -22,7 +23,7 @@ class ArchiveCentralBrandActionTest extends TestCase
             'country_code' => 'KR',
         ]);
 
-        $result = app(ArchiveCentralBrandAction::class)->handle($brand);
+        $result = app(ArchiveCentralBrandAction::class)->handle(User::factory()->create(), $brand);
 
         $this->assertSame(CentralBrandStatus::Archived, $result->status);
         $this->assertSame('Samsung', $result->name);
@@ -40,8 +41,8 @@ class ArchiveCentralBrandActionTest extends TestCase
     {
         $brand = CentralBrand::factory()->archived()->create();
 
-        app(ArchiveCentralBrandAction::class)->handle($brand);
-        $result = app(ArchiveCentralBrandAction::class)->handle($brand->refresh());
+        app(ArchiveCentralBrandAction::class)->handle(User::factory()->create(), $brand);
+        $result = app(ArchiveCentralBrandAction::class)->handle(User::factory()->create(), $brand->refresh());
 
         $this->assertSame(CentralBrandStatus::Archived, $result->status);
         $this->assertDatabaseCount('central_brands', 1);

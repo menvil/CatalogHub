@@ -9,7 +9,7 @@ fixture: brand-media-v1
 regions: central-shell;breadcrumbs;page-header;brand-tabs;logo-card;logo-preview;upload-form;confirmation-modal;flash-feedback
 actions: upload-logo;replace-logo;remove-logo;confirm;cancel
 states: no-logo;logo-ready;logo-processing;upload-error
-permissions: catalog.products.manage
+permissions: catalog.brands.manage
 responsive: Preview uses object-contain and metadata/action controls wrap without page-level horizontal overflow at 390px.
 out_of_scope: svg;multiple-roles;localized-media;site-media;asset-browser;orphan-purge;media-library-redesign
 reference_version: v1

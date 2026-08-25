@@ -27,7 +27,9 @@
                 <h1 class="text-foundation-heading font-semibold text-admin-text">Brands</h1>
                 <p class="max-w-3xl text-sm text-admin-muted">Manage brand profiles, product associations, media assets, and localization across your catalog.</p>
             </div>
-            <x-ui.button :href="route('central.brands.create', absolute: false)">Add Brand</x-ui.button>
+            @can('catalog.brands.manage')
+                <x-ui.button :href="route('central.brands.create', absolute: false)">Add Brand</x-ui.button>
+            @endcan
         </header>
 
         <section class="brand-list-surface" aria-label="Brands list">
@@ -114,10 +116,10 @@
                                             'label' => 'View',
                                             'url' => route('central.brands.show', $brand, absolute: false),
                                         ],
-                                        [
+                                        ...(auth()->user()?->can('catalog.brands.manage') === true ? [[
                                             'label' => 'Edit',
                                             'url' => route('central.brands.edit', $brand, absolute: false),
-                                        ],
+                                        ]] : []),
                                     ]"
                                 />
                             </td>
@@ -133,6 +135,7 @@
                                         :clear-url="route('central.brands.index', absolute: false)"
                                     />
                                 @else
+                                    @can('catalog.brands.manage')
                                     <x-ui.states.empty
                                         id="brands-empty"
                                         title="No brands yet"
@@ -140,6 +143,9 @@
                                         action-label="Add Brand"
                                         :action-url="route('central.brands.create', absolute: false)"
                                     />
+                                    @else
+                                        <x-ui.states.empty id="brands-empty" title="No brands yet" message="There are no canonical brands in the central catalog." />
+                                    @endcan
                                 @endif
                             </td>
                         </tr>

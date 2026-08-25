@@ -39,6 +39,7 @@ class AuditLogSchemaTest extends TestCase
             ['site_id', 'created_at'],
             ['action', 'created_at'],
             ['request_id'],
+            ['subject_type', 'subject_id', 'created_at'],
         ] as $columns) {
             $this->assertTrue($indexes->contains(
                 fn (array $index): bool => $index['unique'] === false && $index['columns'] === $columns,

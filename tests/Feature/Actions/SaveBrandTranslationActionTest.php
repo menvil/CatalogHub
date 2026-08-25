@@ -55,6 +55,30 @@ final class SaveBrandTranslationActionTest extends TestCase
         $this->assertSame(1, BrandTranslation::query()->count());
     }
 
+    public function test_source_hash_uses_the_locked_current_brand_instead_of_the_stale_argument(): void
+    {
+        $staleBrand = CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
+        $locale = Locale::factory()->create(['code' => 'de-DE']);
+        $hashService = app(TranslationSourceHashService::class);
+
+        CentralBrand::query()->findOrFail($staleBrand->id)->update([
+            'name' => 'Samsung Electronics',
+            'slug' => 'samsung-electronics',
+        ]);
+        $currentBrand = $staleBrand->fresh();
+
+        $this->assertNotSame($hashService->forBrand($staleBrand), $hashService->forBrand($currentBrand));
+
+        $saved = app(SaveBrandTranslationAction::class)->handle(
+            User::factory()->create(),
+            $staleBrand,
+            $locale,
+            $this->input(),
+        );
+
+        $this->assertSame($hashService->forBrand($staleBrand->fresh()), $saved->source_hash);
+    }
+
     public function test_save_invalidates_the_shared_translation_dashboard_cache(): void
     {
         Cache::put('translations.dashboard.stats', ['stale' => true], 60);

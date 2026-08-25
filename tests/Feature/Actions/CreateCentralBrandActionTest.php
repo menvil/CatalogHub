@@ -11,6 +11,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Concerns\AssertsValidationErrors;
+use Tests\Support\CountryReference;
 use Tests\TestCase;
 
 class CreateCentralBrandActionTest extends TestCase
@@ -31,25 +32,27 @@ class CreateCentralBrandActionTest extends TestCase
         $this->assertSame('samsung-electronics', $brand->slug);
         $this->assertSame(CentralBrandStatus::Draft, $brand->status);
         $this->assertNull($brand->website_url);
-        $this->assertNull($brand->country_code);
+        $this->assertNull($brand->country_id);
         $this->assertSame($brand->getKey(), $brand->fresh()->getKey());
     }
 
     public function test_normalizes_all_canonical_create_input(): void
     {
+        $country = CountryReference::get('KR');
         $brand = app(CreateCentralBrandAction::class)->handle(User::factory()->create(), new CentralBrandInput(
             name: '  Samsung   Electronics  ',
             slug: ' Samsung_Phones ',
             hasWebsiteUrl: true,
             websiteUrl: '  https://www.samsung.com/en-us/  ',
-            hasCountryCode: true,
-            countryCode: ' kr ',
+            hasCountryId: true,
+            countryId: $country->id,
         ));
 
         $this->assertSame('Samsung Electronics', $brand->name);
         $this->assertSame('samsung-phones', $brand->slug);
         $this->assertSame('https://www.samsung.com/en-us/', $brand->website_url);
-        $this->assertSame('KR', $brand->country_code);
+        $this->assertSame($country->id, $brand->country_id);
+        $this->assertSame('KR', $brand->country?->alpha2);
         $this->assertSame(CentralBrandStatus::Draft, $brand->status);
     }
 
@@ -77,12 +80,12 @@ class CreateCentralBrandActionTest extends TestCase
             name: 'Logitech',
             hasWebsiteUrl: true,
             websiteUrl: '   ',
-            hasCountryCode: true,
-            countryCode: '   ',
+            hasCountryId: true,
+            countryId: null,
         ));
 
         $this->assertNull($brand->website_url);
-        $this->assertNull($brand->country_code);
+        $this->assertNull($brand->country_id);
     }
 
     #[DataProvider('invalidNameProvider')]
@@ -228,24 +231,17 @@ class CreateCentralBrandActionTest extends TestCase
         yield 'longer than storage contract' => ['https://example.com/'.str_repeat('a', 237)];
     }
 
-    #[DataProvider('invalidCountryCodeProvider')]
-    public function test_rejects_structurally_invalid_country_codes(string $countryCode): void
+    public function test_rejects_inactive_and_unknown_country_assignments(): void
     {
-        $this->assertValidationError('country_code', fn () => app(CreateCentralBrandAction::class)->handle(User::factory()->create(),
-            new CentralBrandInput(name: 'Sony', hasCountryCode: true, countryCode: $countryCode),
-        ));
+        $inactive = CountryReference::get('JP');
+        $inactive->update(['is_active' => false]);
+
+        foreach ([$inactive->id, PHP_INT_MAX] as $countryId) {
+            $this->assertValidationError('country_id', fn () => app(CreateCentralBrandAction::class)->handle(User::factory()->create(),
+                new CentralBrandInput(name: 'Sony', hasCountryId: true, countryId: $countryId),
+            ));
+        }
 
         $this->assertDatabaseCount('central_brands', 0);
-    }
-
-    /** @return iterable<string, array{string}> */
-    public static function invalidCountryCodeProvider(): iterable
-    {
-        yield 'three letters' => ['KOR'];
-        yield 'one letter' => ['K'];
-        yield 'digits' => ['12'];
-        yield 'mixed letter and digit' => ['U1'];
-        yield 'country name' => ['ukraine'];
-        yield 'non ASCII' => ['БГ'];
     }
 }

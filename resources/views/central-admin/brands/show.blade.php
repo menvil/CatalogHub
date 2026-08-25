@@ -16,7 +16,7 @@
 @endsection
 
 @section('content')
-    <div class="space-y-admin-section" data-brand-detail-fixture="brand-detail-v1">
+    <div class="space-y-admin-section" data-brand-detail-fixture="brand-detail-v2">
         <x-admin.page-header
             screen-id="CA-012"
             :show-screen-id="false"
@@ -68,8 +68,10 @@
                             </dd>
                         </div>
                         <div class="grid gap-1 pt-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
-                            <dt class="text-sm font-medium text-admin-muted">Country code</dt>
-                            <dd class="min-w-0 break-words text-sm text-admin-text">{{ $brand->country_code ?? '—' }}</dd>
+                            <dt class="text-sm font-medium text-admin-muted">Country</dt>
+                            <dd class="min-w-0 break-words text-sm text-admin-text">
+                                {{ $countryName === null ? '—' : $countryName.' ('.$brand->country->alpha2.')' }}
+                            </dd>
                         </div>
                     </dl>
                 </x-admin.card>

@@ -10,7 +10,7 @@ use Carbon\CarbonImmutable;
 
 final class BrandFormFixture
 {
-    public const VERSION = 'brand-form-v1';
+    public const VERSION = 'brand-form-v2';
 
     public const BRAND_ID = 13013;
 
@@ -24,7 +24,7 @@ final class BrandFormFixture
             'slug' => 'samsung-form-fixture',
             'status' => CentralBrandStatus::Draft,
             'website_url' => 'https://www.samsung.com',
-            'country_code' => 'KR',
+            'country_id' => CountryReference::id('KR'),
             'created_at' => $timestamp,
             'updated_at' => $timestamp,
         ]);

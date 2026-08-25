@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Concerns\AssertsValidationErrors;
+use Tests\Support\CountryReference;
 use Tests\TestCase;
 
 class UpdateCentralBrandActionTest extends TestCase
@@ -19,6 +20,7 @@ class UpdateCentralBrandActionTest extends TestCase
 
     public function test_updates_and_normalizes_canonical_fields_and_returns_the_persisted_model(): void
     {
+        $country = CountryReference::get('CH');
         $brand = CentralBrand::factory()->draft()->create([
             'name' => 'Logitech',
             'slug' => 'logitech',
@@ -29,8 +31,8 @@ class UpdateCentralBrandActionTest extends TestCase
             slug: ' Logitech_International ',
             hasWebsiteUrl: true,
             websiteUrl: ' https://www.logitech.com/en-us/ ',
-            hasCountryCode: true,
-            countryCode: ' ch ',
+            hasCountryId: true,
+            countryId: $country->id,
         ));
 
         $this->assertTrue($result->is($brand));
@@ -39,7 +41,8 @@ class UpdateCentralBrandActionTest extends TestCase
         $this->assertSame(hash('sha256', 'logitech international'), $result->normalized_name_hash);
         $this->assertSame('logitech-international', $result->slug);
         $this->assertSame('https://www.logitech.com/en-us/', $result->website_url);
-        $this->assertSame('CH', $result->country_code);
+        $this->assertSame($country->id, $result->country_id);
+        $this->assertSame('CH', $result->country?->alpha2);
         $this->assertSame(CentralBrandStatus::Draft, $result->status);
         $this->assertSame('Logitech International', $brand->fresh()->name);
     }
@@ -79,33 +82,33 @@ class UpdateCentralBrandActionTest extends TestCase
         $blank = CentralBrand::factory()->create([
             'name' => 'Brand One',
             'website_url' => 'https://example.com',
-            'country_code' => 'US',
+            'country_id' => CountryReference::id('US'),
         ]);
         $null = CentralBrand::factory()->create([
             'name' => 'Brand Two',
             'website_url' => 'https://example.org',
-            'country_code' => 'DE',
+            'country_id' => CountryReference::id('DE'),
         ]);
 
         $blankResult = app(UpdateCentralBrandAction::class)->handle(User::factory()->create(), $blank, new CentralBrandInput(
             name: 'Brand One',
             hasWebsiteUrl: true,
             websiteUrl: '   ',
-            hasCountryCode: true,
-            countryCode: '   ',
+            hasCountryId: true,
+            countryId: null,
         ));
         $nullResult = app(UpdateCentralBrandAction::class)->handle(User::factory()->create(), $null, new CentralBrandInput(
             name: 'Brand Two',
             hasWebsiteUrl: true,
             websiteUrl: null,
-            hasCountryCode: true,
-            countryCode: null,
+            hasCountryId: true,
+            countryId: null,
         ));
 
         $this->assertNull($blankResult->website_url);
-        $this->assertNull($blankResult->country_code);
+        $this->assertNull($blankResult->country_id);
         $this->assertNull($nullResult->website_url);
-        $this->assertNull($nullResult->country_code);
+        $this->assertNull($nullResult->country_id);
     }
 
     public function test_rejects_a_slug_owned_by_another_brand(): void
@@ -229,23 +232,53 @@ class UpdateCentralBrandActionTest extends TestCase
         yield 'javascript' => ['javascript:alert(1)'];
     }
 
-    #[DataProvider('invalidCountryCodeProvider')]
-    public function test_rejects_invalid_country_codes(string $countryCode): void
+    public function test_rejects_inactive_and_unknown_country_assignments(): void
     {
         $brand = CentralBrand::factory()->create(['name' => 'Sony']);
+        $inactive = CountryReference::get('JP');
+        $inactive->update(['is_active' => false]);
 
-        $this->assertValidationError('country_code', fn () => app(UpdateCentralBrandAction::class)->handle(User::factory()->create(),
-            $brand,
-            new CentralBrandInput(name: 'Sony', hasCountryCode: true, countryCode: $countryCode),
-        ));
+        foreach ([$inactive->id, PHP_INT_MAX] as $countryId) {
+            $this->assertValidationError('country_id', fn () => app(UpdateCentralBrandAction::class)->handle(User::factory()->create(),
+                $brand,
+                new CentralBrandInput(name: 'Sony', hasCountryId: true, countryId: $countryId),
+            ));
+        }
     }
 
-    /** @return iterable<string, array{string}> */
-    public static function invalidCountryCodeProvider(): iterable
+    public function test_historical_inactive_country_is_preserved_when_omitted_or_reselected_and_can_change_to_active(): void
     {
-        yield 'long' => ['JPN'];
-        yield 'digit' => ['J1'];
-        yield 'non ASCII' => ['日本'];
+        $inactive = CountryReference::get('KR');
+        $inactive->update(['is_active' => false]);
+        $active = CountryReference::get('JP');
+        $brand = CentralBrand::factory()->create([
+            'name' => 'Samsung',
+            'website_url' => 'https://old.example',
+            'country_id' => $inactive->id,
+        ]);
+        $action = app(UpdateCentralBrandAction::class);
+        $actor = User::factory()->create();
+
+        $omitted = $action->handle($actor, $brand, new CentralBrandInput(
+            name: 'Samsung',
+            hasWebsiteUrl: true,
+            websiteUrl: 'https://new.example',
+        ));
+        $this->assertSame($inactive->id, $omitted->country_id);
+
+        $reselected = $action->handle($actor, $omitted, new CentralBrandInput(
+            name: 'Samsung',
+            hasCountryId: true,
+            countryId: $inactive->id,
+        ));
+        $this->assertSame($inactive->id, $reselected->country_id);
+
+        $changed = $action->handle($actor, $reselected, new CentralBrandInput(
+            name: 'Samsung',
+            hasCountryId: true,
+            countryId: $active->id,
+        ));
+        $this->assertSame($active->id, $changed->country_id);
     }
 
     public function test_validation_finishes_before_any_field_is_persisted(): void
@@ -253,7 +286,7 @@ class UpdateCentralBrandActionTest extends TestCase
         $brand = CentralBrand::factory()->create([
             'name' => 'Samsung',
             'website_url' => 'https://www.samsung.com',
-            'country_code' => 'KR',
+            'country_id' => CountryReference::id('KR'),
         ]);
 
         $this->assertValidationError('website_url', fn () => app(UpdateCentralBrandAction::class)->handle(User::factory()->create(),
@@ -262,15 +295,15 @@ class UpdateCentralBrandActionTest extends TestCase
                 name: 'Samsung Electronics',
                 hasWebsiteUrl: true,
                 websiteUrl: 'not-a-url',
-                hasCountryCode: true,
-                countryCode: 'US',
+                hasCountryId: true,
+                countryId: CountryReference::id('US'),
             ),
         ));
 
         $brand->refresh();
         $this->assertSame('Samsung', $brand->name);
         $this->assertSame('https://www.samsung.com', $brand->website_url);
-        $this->assertSame('KR', $brand->country_code);
+        $this->assertSame('KR', $brand->country()->first()?->alpha2);
     }
 
     #[DataProvider('statusProvider')]

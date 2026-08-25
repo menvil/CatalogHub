@@ -19,3 +19,5 @@ All Brand events use `CentralBrand` as the subject, `central` context for Centra
 No-op updates, idempotent lifecycle commands, unchanged logo assignment/removal, and identical translation saves produce no entry. The generic `(subject_type, subject_id, created_at)` index supports a future subject activity stream.
 
 Audit metadata is a mutation/activity trace, not full content version storage. Activity/Versions UI, diffs, rollback, and any dedicated version model are deferred until a concrete presentation or recovery use case requires them.
+
+Brand Country persistence is an intentional schema/event exception: `central_brands.country_id` is the relational FK, while Brand create/update snapshots retain `country_code` with the resolved Country alpha-2 value. Thus a move from South Korea to Japan is recorded as `KR` → `JP`, clearing as `KR` → `null`, and no event contains opaque Country IDs, translations, or geography metadata. This keeps pre- and post-Phase 9 Brand history coherent and human-readable.

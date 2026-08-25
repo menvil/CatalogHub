@@ -28,6 +28,7 @@ final readonly class CreateCentralBrandAction
             return DB::transaction(function () use ($actor, $validated): CentralBrand {
                 $brand = new CentralBrand;
                 $brand->forceFill([...$validated, 'status' => CentralBrandStatus::Draft])->saveOrFail();
+                $brand->load('country');
                 $this->audit->record(
                     AuditAction::CatalogBrandCreated,
                     AuditContext::Central,
@@ -40,7 +41,7 @@ final readonly class CreateCentralBrandAction
                         'slug' => $brand->slug,
                         'status' => $brand->status->value,
                         'website_url' => $brand->website_url,
-                        'country_code' => $brand->country_code,
+                        'country_code' => $brand->country?->alpha2,
                     ],
                 );
 

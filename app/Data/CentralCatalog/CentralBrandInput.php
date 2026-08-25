@@ -11,7 +11,7 @@ final readonly class CentralBrandInput
         public ?string $slug = null,
         public bool $hasWebsiteUrl = false,
         public ?string $websiteUrl = null,
-        public bool $hasCountryCode = false,
-        public ?string $countryCode = null,
+        public bool $hasCountryId = false,
+        public ?int $countryId = null,
     ) {}
 }

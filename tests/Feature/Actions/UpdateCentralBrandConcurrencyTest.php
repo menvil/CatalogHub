@@ -12,6 +12,7 @@ use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\CountryReference;
 use Tests\TestCase;
 use Throwable;
 
@@ -29,7 +30,7 @@ final class UpdateCentralBrandConcurrencyTest extends TestCase
             'name' => 'Samsung',
             'slug' => 'samsung',
             'website_url' => 'https://old.example',
-            'country_code' => 'KR',
+            'country_id' => CountryReference::id('KR'),
         ]);
         $actor = User::factory()->create();
         $coordinationDirectory = sys_get_temp_dir().'/cataloghub-brand-update-'.bin2hex(random_bytes(8));
@@ -86,8 +87,8 @@ final class UpdateCentralBrandConcurrencyTest extends TestCase
             try {
                 app(UpdateCentralBrandAction::class)->handle($actor, $brand, new CentralBrandInput(
                     name: 'Samsung',
-                    hasCountryCode: true,
-                    countryCode: 'DE',
+                    hasCountryId: true,
+                    countryId: CountryReference::id('DE'),
                 ));
                 file_put_contents($childOutcome, 'updated');
             } catch (Throwable $exception) {
@@ -111,7 +112,7 @@ final class UpdateCentralBrandConcurrencyTest extends TestCase
         self::assertSame('updated', file_get_contents($childOutcome));
         $brand->refresh();
         self::assertSame('https://new.example', $brand->website_url);
-        self::assertSame('DE', $brand->country_code);
+        self::assertSame('DE', $brand->country()->first()?->alpha2);
 
         $brand->delete();
 

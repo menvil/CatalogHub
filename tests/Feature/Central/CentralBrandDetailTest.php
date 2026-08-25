@@ -12,6 +12,7 @@ use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
+use Tests\Support\CountryReference;
 use Tests\TestCase;
 
 final class CentralBrandDetailTest extends TestCase
@@ -51,7 +52,7 @@ final class CentralBrandDetailTest extends TestCase
             'normalized_name_hash' => str_repeat('a', 64),
             'slug' => 'samsung',
             'website_url' => 'https://www.samsung.com/global',
-            'country_code' => 'KR',
+            'country_id' => CountryReference::id('KR'),
             'created_at' => CarbonImmutable::parse('2026-08-20 09:15:00 UTC'),
             'updated_at' => CarbonImmutable::parse('2026-08-24 13:30:00 UTC'),
         ]);
@@ -70,7 +71,7 @@ final class CentralBrandDetailTest extends TestCase
             ->assertSee('href="https://www.samsung.com/global"', false)
             ->assertSee('target="_blank"', false)
             ->assertSee('rel="noopener noreferrer"', false)
-            ->assertSee('KR')
+            ->assertSee('South Korea (KR)')
             ->assertSee('2026-08-20 09:15 UTC')
             ->assertSee('2026-08-24 13:30 UTC')
             ->assertSee((string) $brand->getKey())
@@ -91,13 +92,13 @@ final class CentralBrandDetailTest extends TestCase
         $brand = CentralBrand::factory()->create([
             'name' => 'Metadata Free Brand',
             'website_url' => null,
-            'country_code' => null,
+            'country_id' => null,
         ]);
 
         $this->actingAs(User::factory()->create())
             ->get(route('central.brands.show', $brand))
             ->assertOk()
-            ->assertSeeInOrder(['Website', '—', 'Country code', '—']);
+            ->assertSeeInOrder(['Website', '—', 'Country', '—']);
     }
 
     public function test_unsafe_legacy_website_is_plain_text_and_never_an_executable_link(): void

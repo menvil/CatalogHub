@@ -18,11 +18,13 @@ final class CoreSchemaSmokeTest extends TestCase
             'sites' => ['id', 'market_id', 'code', 'domain', 'status'],
             'users' => ['id', 'site_id', 'email', 'role'],
             'central_products' => ['id', 'central_brand_id', 'central_category_id', 'slug', 'status'],
-            'central_brands' => ['id', 'slug', 'status'],
+            'central_brands' => ['id', 'slug', 'status', 'country_id'],
             'central_categories' => ['id', 'parent_id', 'slug', 'status', 'schema_status'],
             'locales' => ['id', 'code', 'language_code', 'is_active', 'is_default'],
             'markets' => ['id', 'code', 'currency_code', 'default_locale', 'status'],
             'media_assets' => ['id', 'uuid', 'disk', 'original_path', 'status'],
+            'countries' => ['id', 'alpha2', 'alpha3', 'numeric_code', 'canonical_name', 'is_active'],
+            'country_translations' => ['id', 'country_id', 'locale', 'name'],
         ];
 
         foreach ($tables as $table => $columns) {

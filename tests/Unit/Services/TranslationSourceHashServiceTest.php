@@ -39,13 +39,13 @@ class TranslationSourceHashServiceTest extends TestCase
             'name' => 'Samsung Electronics',
             'slug' => 'samsung',
             'website_url' => 'https://example.test/old',
-            'country_code' => 'KR',
+            'country_id' => 1,
         ]);
         $service = app(TranslationSourceHashService::class);
         $initial = $service->forBrand($brand);
 
         $brand->website_url = 'https://example.test/new';
-        $brand->country_code = 'US';
+        $brand->country_id = 2;
         $this->assertSame($initial, $service->forBrand($brand));
 
         $brand->name = 'Samsung';

@@ -26,6 +26,7 @@ use App\Services\Audit\AuditRecorder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
+use Tests\Support\CountryReference;
 use Tests\TestCase;
 
 final class BrandAuditEventsTest extends TestCase
@@ -40,7 +41,7 @@ final class BrandAuditEventsTest extends TestCase
             'name' => 'Samsung',
             'slug' => 'samsung',
             'website_url' => 'https://www.samsung.com',
-            'country_code' => 'kr',
+            'country_id' => CountryReference::id('KR'),
         ])->assertRedirect(route('central.brands.index'));
 
         $brand = CentralBrand::query()->sole();
@@ -65,17 +66,45 @@ final class BrandAuditEventsTest extends TestCase
     public function test_update_records_changed_fields_only_and_no_op_is_silent(): void
     {
         $actor = User::factory()->create();
-        $brand = CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung', 'website_url' => 'https://old.example', 'country_code' => 'KR']);
+        $brand = CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung', 'website_url' => 'https://old.example', 'country_id' => CountryReference::id('KR')]);
         $action = app(UpdateCentralBrandAction::class);
 
-        $action->handle($actor, $brand, new CentralBrandInput('Samsung', 'samsung', true, 'https://new.example', true, 'KR'));
+        $action->handle($actor, $brand, new CentralBrandInput('Samsung', 'samsung', true, 'https://new.example', true, CountryReference::id('KR')));
         $entry = AuditLogEntry::query()->sole();
         $this->assertSame(['website_url' => 'https://old.example'], $entry->before_json);
         $this->assertSame(['website_url' => 'https://new.example'], $entry->after_json);
         $this->assertStringNotContainsString('normalized_name', json_encode([$entry->before_json, $entry->after_json], JSON_THROW_ON_ERROR));
 
-        $action->handle($actor, $brand->refresh(), new CentralBrandInput('Samsung', 'samsung', true, 'https://new.example', true, 'KR'));
+        $action->handle($actor, $brand->refresh(), new CentralBrandInput('Samsung', 'samsung', true, 'https://new.example', true, CountryReference::id('KR')));
         $this->assertSame(1, AuditLogEntry::query()->count());
+    }
+
+    public function test_country_audit_uses_semantic_alpha2_values_for_change_clear_and_no_op(): void
+    {
+        $actor = User::factory()->create();
+        $kr = CountryReference::get('KR');
+        $jp = CountryReference::get('JP');
+        $brand = CentralBrand::factory()->create([
+            'name' => 'Samsung',
+            'slug' => 'samsung',
+            'country_id' => $kr->id,
+        ]);
+        $action = app(UpdateCentralBrandAction::class);
+
+        $action->handle($actor, $brand, new CentralBrandInput('Samsung', 'samsung', false, null, true, $jp->id));
+        $first = AuditLogEntry::query()->sole();
+        $this->assertSame(['country_code' => 'KR'], $first->before_json);
+        $this->assertSame(['country_code' => 'JP'], $first->after_json);
+        $this->assertArrayNotHasKey('country_id', $first->before_json);
+
+        $action->handle($actor, $brand->refresh(), new CentralBrandInput('Samsung', 'samsung', false, null, true, $jp->id));
+        $this->assertSame(1, AuditLogEntry::query()->count());
+
+        $action->handle($actor, $brand->refresh(), new CentralBrandInput('Samsung', 'samsung', false, null, true, null));
+        $clear = AuditLogEntry::query()->latest('id')->firstOrFail();
+        $this->assertSame(['country_code' => 'JP'], $clear->before_json);
+        $this->assertSame(['country_code' => null], $clear->after_json);
+        $this->assertStringNotContainsString('country_id', json_encode([$clear->before_json, $clear->after_json], JSON_THROW_ON_ERROR));
     }
 
     public function test_lifecycle_events_capture_locked_status_changes_and_skip_no_ops_and_invalid_transition(): void

@@ -10,14 +10,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CentralAdmin\CentralBrandFormRequest;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\User;
+use App\Services\Geography\CountryOptionProvider;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 
 final class CentralBrandFormController extends Controller
 {
-    public function create(): View
+    public function create(CountryOptionProvider $countries): View
     {
-        return view('central-admin.brands.create');
+        return view('central-admin.brands.create', [
+            'countryOptions' => $countries->options(null, app()->getLocale()),
+        ]);
     }
 
     public function store(CentralBrandFormRequest $request, CreateCentralBrandAction $createBrand): RedirectResponse
@@ -31,9 +34,12 @@ final class CentralBrandFormController extends Controller
             ->with('success', 'Brand created.');
     }
 
-    public function edit(CentralBrand $brand): View
+    public function edit(CentralBrand $brand, CountryOptionProvider $countries): View
     {
-        return view('central-admin.brands.edit', ['brand' => $brand]);
+        return view('central-admin.brands.edit', [
+            'brand' => $brand,
+            'countryOptions' => $countries->options($brand->country_id, app()->getLocale()),
+        ]);
     }
 
     public function update(

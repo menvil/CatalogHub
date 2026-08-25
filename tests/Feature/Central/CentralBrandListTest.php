@@ -16,6 +16,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Tests\Support\BrandListFixture;
+use Tests\Support\CountryReference;
 use Tests\TestCase;
 
 final class CentralBrandListTest extends TestCase
@@ -46,7 +47,7 @@ final class CentralBrandListTest extends TestCase
         $brand = CentralBrand::factory()->active()->create([
             'name' => 'Samsung',
             'slug' => 'samsung',
-            'country_code' => 'KR',
+            'country_id' => CountryReference::id('KR'),
             'website_url' => 'https://www.samsung.com/global/long-path',
             'updated_at' => CarbonImmutable::parse('2026-08-13T09:00:00Z'),
         ]);

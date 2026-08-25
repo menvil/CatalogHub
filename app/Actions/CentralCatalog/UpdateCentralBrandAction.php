@@ -3,6 +3,7 @@
 namespace App\Actions\CentralCatalog;
 
 use App\Actions\CentralCatalog\Concerns\ValidatesCentralBrandInput;
+use App\Data\CentralCatalog\CentralBrandInput;
 use App\Models\CentralCatalog\CentralBrand;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Validation\ValidationException;
@@ -11,11 +12,10 @@ final class UpdateCentralBrandAction
 {
     use ValidatesCentralBrandInput;
 
-    /** @param array<string, mixed> $data */
-    public function handle(CentralBrand $brand, array $data): CentralBrand
+    public function handle(CentralBrand $brand, CentralBrandInput $input): CentralBrand
     {
         $brand->refresh();
-        $validated = $this->validatedBrandInput($data, $brand);
+        $validated = $this->validatedBrandInput($input, $brand);
 
         try {
             $brand->forceFill($validated)->saveOrFail();

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Actions;
 
 use App\Actions\CentralCatalog\UpdateCentralBrandAction;
+use App\Data\CentralCatalog\CentralBrandInput;
 use App\Enums\CentralBrandStatus;
 use App\Models\CentralCatalog\CentralBrand;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -22,12 +23,14 @@ class UpdateCentralBrandActionTest extends TestCase
             'slug' => 'logitech',
         ]);
 
-        $result = app(UpdateCentralBrandAction::class)->handle($brand, [
-            'name' => '  Logitech   International  ',
-            'slug' => ' Logitech_International ',
-            'website_url' => ' https://www.logitech.com/en-us/ ',
-            'country_code' => ' ch ',
-        ]);
+        $result = app(UpdateCentralBrandAction::class)->handle($brand, new CentralBrandInput(
+            name: '  Logitech   International  ',
+            slug: ' Logitech_International ',
+            hasWebsiteUrl: true,
+            websiteUrl: ' https://www.logitech.com/en-us/ ',
+            hasCountryCode: true,
+            countryCode: ' ch ',
+        ));
 
         $this->assertTrue($result->is($brand));
         $this->assertSame('Logitech International', $result->name);
@@ -44,9 +47,10 @@ class UpdateCentralBrandActionTest extends TestCase
     {
         $brand = CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
 
-        $result = app(UpdateCentralBrandAction::class)->handle($brand, [
-            'name' => 'Samsung Electronics',
-        ]);
+        $result = app(UpdateCentralBrandAction::class)->handle(
+            $brand,
+            new CentralBrandInput(name: 'Samsung Electronics'),
+        );
 
         $this->assertSame('Samsung Electronics', $result->name);
         $this->assertSame('samsung', $result->slug);
@@ -56,10 +60,16 @@ class UpdateCentralBrandActionTest extends TestCase
     {
         $brand = CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
 
-        $blankResult = app(UpdateCentralBrandAction::class)->handle($brand, ['name' => 'Samsung', 'slug' => '   ']);
+        $blankResult = app(UpdateCentralBrandAction::class)->handle(
+            $brand,
+            new CentralBrandInput(name: 'Samsung', slug: '   '),
+        );
         $this->assertSame('samsung', $blankResult->slug);
 
-        $nullResult = app(UpdateCentralBrandAction::class)->handle($brand, ['name' => 'Samsung', 'slug' => null]);
+        $nullResult = app(UpdateCentralBrandAction::class)->handle(
+            $brand,
+            new CentralBrandInput(name: 'Samsung', slug: null),
+        );
         $this->assertSame('samsung', $nullResult->slug);
     }
 
@@ -76,16 +86,20 @@ class UpdateCentralBrandActionTest extends TestCase
             'country_code' => 'DE',
         ]);
 
-        $blankResult = app(UpdateCentralBrandAction::class)->handle($blank, [
-            'name' => 'Brand One',
-            'website_url' => '   ',
-            'country_code' => '   ',
-        ]);
-        $nullResult = app(UpdateCentralBrandAction::class)->handle($null, [
-            'name' => 'Brand Two',
-            'website_url' => null,
-            'country_code' => null,
-        ]);
+        $blankResult = app(UpdateCentralBrandAction::class)->handle($blank, new CentralBrandInput(
+            name: 'Brand One',
+            hasWebsiteUrl: true,
+            websiteUrl: '   ',
+            hasCountryCode: true,
+            countryCode: '   ',
+        ));
+        $nullResult = app(UpdateCentralBrandAction::class)->handle($null, new CentralBrandInput(
+            name: 'Brand Two',
+            hasWebsiteUrl: true,
+            websiteUrl: null,
+            hasCountryCode: true,
+            countryCode: null,
+        ));
 
         $this->assertNull($blankResult->website_url);
         $this->assertNull($blankResult->country_code);
@@ -98,10 +112,10 @@ class UpdateCentralBrandActionTest extends TestCase
         CentralBrand::factory()->create(['slug' => 'samsung']);
         $brand = CentralBrand::factory()->create(['name' => 'LG', 'slug' => 'lg']);
 
-        $this->assertValidationError('slug', fn () => app(UpdateCentralBrandAction::class)->handle($brand, [
-            'name' => 'LG',
-            'slug' => 'samsung',
-        ]));
+        $this->assertValidationError('slug', fn () => app(UpdateCentralBrandAction::class)->handle(
+            $brand,
+            new CentralBrandInput(name: 'LG', slug: 'samsung'),
+        ));
 
         $this->assertSame('lg', $brand->fresh()->slug);
     }
@@ -110,10 +124,10 @@ class UpdateCentralBrandActionTest extends TestCase
     {
         $brand = CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
 
-        $result = app(UpdateCentralBrandAction::class)->handle($brand, [
-            'name' => 'Samsung',
-            'slug' => ' Samsung ',
-        ]);
+        $result = app(UpdateCentralBrandAction::class)->handle(
+            $brand,
+            new CentralBrandInput(name: 'Samsung', slug: ' Samsung '),
+        );
 
         $this->assertSame('samsung', $result->slug);
     }
@@ -122,10 +136,10 @@ class UpdateCentralBrandActionTest extends TestCase
     {
         $brand = CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
 
-        $this->assertValidationError('slug', fn () => app(UpdateCentralBrandAction::class)->handle($brand, [
-            'name' => 'Samsung',
-            'slug' => 'Samsung!!!',
-        ]));
+        $this->assertValidationError('slug', fn () => app(UpdateCentralBrandAction::class)->handle(
+            $brand,
+            new CentralBrandInput(name: 'Samsung', slug: 'Samsung!!!'),
+        ));
 
         $this->assertSame('samsung', $brand->fresh()->slug);
     }
@@ -136,9 +150,10 @@ class UpdateCentralBrandActionTest extends TestCase
         CentralBrand::factory()->create(['name' => $existing, 'slug' => 'existing-brand']);
         $brand = CentralBrand::factory()->create(['name' => 'LG', 'slug' => 'lg']);
 
-        $this->assertValidationError('name', fn () => app(UpdateCentralBrandAction::class)->handle($brand, [
-            'name' => $duplicate,
-        ]));
+        $this->assertValidationError('name', fn () => app(UpdateCentralBrandAction::class)->handle(
+            $brand,
+            new CentralBrandInput(name: $duplicate),
+        ));
 
         $this->assertSame('LG', $brand->fresh()->name);
     }
@@ -158,8 +173,11 @@ class UpdateCentralBrandActionTest extends TestCase
         $brand = CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
         CentralBrand::factory()->create(['name' => 'Samsung Electronics', 'slug' => 'samsung-electronics']);
 
-        app(UpdateCentralBrandAction::class)->handle($brand, ['name' => ' Samsung ']);
-        $result = app(UpdateCentralBrandAction::class)->handle($brand, ['name' => 'Samsung Display']);
+        app(UpdateCentralBrandAction::class)->handle($brand, new CentralBrandInput(name: ' Samsung '));
+        $result = app(UpdateCentralBrandAction::class)->handle(
+            $brand,
+            new CentralBrandInput(name: 'Samsung Display'),
+        );
 
         $this->assertSame('Samsung Display', $result->name);
         $this->assertSame('samsung', $result->slug);
@@ -169,7 +187,10 @@ class UpdateCentralBrandActionTest extends TestCase
     {
         $brand = CentralBrand::factory()->create(['name' => 'ÉLECTRO', 'slug' => 'electro']);
 
-        $result = app(UpdateCentralBrandAction::class)->handle($brand, ['name' => 'électro']);
+        $result = app(UpdateCentralBrandAction::class)->handle(
+            $brand,
+            new CentralBrandInput(name: 'électro'),
+        );
 
         $this->assertSame('électro', $result->name);
         $this->assertSame($brand->getKey(), $result->getKey());
@@ -180,7 +201,10 @@ class UpdateCentralBrandActionTest extends TestCase
         CentralBrand::factory()->create(['name' => 'ÉLECTRO', 'slug' => 'electro-accented']);
         $brand = CentralBrand::factory()->create(['name' => 'Other', 'slug' => 'other']);
 
-        $result = app(UpdateCentralBrandAction::class)->handle($brand, ['name' => 'Electro']);
+        $result = app(UpdateCentralBrandAction::class)->handle(
+            $brand,
+            new CentralBrandInput(name: 'Electro'),
+        );
 
         $this->assertSame('Electro', $result->name);
     }
@@ -190,10 +214,10 @@ class UpdateCentralBrandActionTest extends TestCase
     {
         $brand = CentralBrand::factory()->create(['name' => 'Sony']);
 
-        $this->assertValidationError('website_url', fn () => app(UpdateCentralBrandAction::class)->handle($brand, [
-            'name' => 'Sony',
-            'website_url' => $websiteUrl,
-        ]));
+        $this->assertValidationError('website_url', fn () => app(UpdateCentralBrandAction::class)->handle(
+            $brand,
+            new CentralBrandInput(name: 'Sony', hasWebsiteUrl: true, websiteUrl: $websiteUrl),
+        ));
     }
 
     /** @return iterable<string, array{string}> */
@@ -209,10 +233,10 @@ class UpdateCentralBrandActionTest extends TestCase
     {
         $brand = CentralBrand::factory()->create(['name' => 'Sony']);
 
-        $this->assertValidationError('country_code', fn () => app(UpdateCentralBrandAction::class)->handle($brand, [
-            'name' => 'Sony',
-            'country_code' => $countryCode,
-        ]));
+        $this->assertValidationError('country_code', fn () => app(UpdateCentralBrandAction::class)->handle(
+            $brand,
+            new CentralBrandInput(name: 'Sony', hasCountryCode: true, countryCode: $countryCode),
+        ));
     }
 
     /** @return iterable<string, array{string}> */
@@ -223,20 +247,6 @@ class UpdateCentralBrandActionTest extends TestCase
         yield 'non ASCII' => ['日本'];
     }
 
-    public function test_rejects_status_without_mutating_the_brand(): void
-    {
-        $brand = CentralBrand::factory()->draft()->create(['name' => 'Samsung']);
-
-        $this->assertValidationError('status', fn () => app(UpdateCentralBrandAction::class)->handle($brand, [
-            'name' => 'Changed Name',
-            'status' => CentralBrandStatus::Active->value,
-        ]));
-
-        $brand->refresh();
-        $this->assertSame('Samsung', $brand->name);
-        $this->assertSame(CentralBrandStatus::Draft, $brand->status);
-    }
-
     public function test_validation_finishes_before_any_field_is_persisted(): void
     {
         $brand = CentralBrand::factory()->create([
@@ -245,11 +255,16 @@ class UpdateCentralBrandActionTest extends TestCase
             'country_code' => 'KR',
         ]);
 
-        $this->assertValidationError('website_url', fn () => app(UpdateCentralBrandAction::class)->handle($brand, [
-            'name' => 'Samsung Electronics',
-            'website_url' => 'not-a-url',
-            'country_code' => 'US',
-        ]));
+        $this->assertValidationError('website_url', fn () => app(UpdateCentralBrandAction::class)->handle(
+            $brand,
+            new CentralBrandInput(
+                name: 'Samsung Electronics',
+                hasWebsiteUrl: true,
+                websiteUrl: 'not-a-url',
+                hasCountryCode: true,
+                countryCode: 'US',
+            ),
+        ));
 
         $brand->refresh();
         $this->assertSame('Samsung', $brand->name);
@@ -262,7 +277,10 @@ class UpdateCentralBrandActionTest extends TestCase
     {
         $brand = CentralBrand::factory()->create(['name' => 'Sony', 'status' => $status]);
 
-        $result = app(UpdateCentralBrandAction::class)->handle($brand, ['name' => 'Sony Corporation']);
+        $result = app(UpdateCentralBrandAction::class)->handle(
+            $brand,
+            new CentralBrandInput(name: 'Sony Corporation'),
+        );
 
         $this->assertSame('Sony Corporation', $result->name);
         $this->assertSame($status, $result->status);
@@ -274,14 +292,5 @@ class UpdateCentralBrandActionTest extends TestCase
         yield 'draft' => [CentralBrandStatus::Draft];
         yield 'active' => [CentralBrandStatus::Active];
         yield 'archived' => [CentralBrandStatus::Archived];
-    }
-
-    public function test_requires_name_for_a_canonical_update(): void
-    {
-        $brand = CentralBrand::factory()->create();
-
-        $this->assertValidationError('name', fn () => app(UpdateCentralBrandAction::class)->handle($brand, [
-            'website_url' => 'https://example.com',
-        ]));
     }
 }

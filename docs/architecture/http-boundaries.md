@@ -40,6 +40,11 @@ URL remains available to transport code. Resource authorization remains explicit
 Requests return `true` from `authorize()` unless a use case deliberately adopts
 a documented alternative convention.
 
+A data object is not required for every Form Request: simple commands may pass
+typed arguments directly. Data objects are useful for cohesive multi-field input
+and PATCH presence semantics. Avoid converting them back to untyped arrays before
+invoking an Action, and keep Actions independent of HTTP Request classes.
+
 Livewire and Filament component validation is outside this controller rule
 because those frameworks own a different request lifecycle. Reusable validation
 rules should still be extracted when they are shared or non-trivial.

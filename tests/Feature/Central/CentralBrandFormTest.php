@@ -173,11 +173,10 @@ final class CentralBrandFormTest extends TestCase
         $this->assertInstanceOf(CentralBrandInput::class, $input);
         $this->assertTrue($input->hasWebsiteUrl);
         $this->assertFalse($input->hasCountryCode);
-        $this->assertSame([
-            'name' => 'Samsung',
-            'slug' => null,
-            'website_url' => null,
-        ], $input->actionPayload());
+        $this->assertSame('Samsung', $input->name);
+        $this->assertNull($input->slug);
+        $this->assertNull($input->websiteUrl);
+        $this->assertNull($input->countryCode);
     }
 
     #[DataProvider('invalidCreatePayloadProvider')]

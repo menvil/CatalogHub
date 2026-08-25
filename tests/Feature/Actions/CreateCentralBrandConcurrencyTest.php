@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Actions;
 
 use App\Actions\CentralCatalog\CreateCentralBrandAction;
+use App\Data\CentralCatalog\CentralBrandInput;
 use App\Models\CentralCatalog\CentralBrand;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
@@ -69,10 +70,10 @@ final class CreateCentralBrandConcurrencyTest extends TestCase
             $this->waitForFile($parentValidated, 5.0);
 
             try {
-                app(CreateCentralBrandAction::class)->handle([
-                    'name' => 'électro',
-                    'slug' => 'electro-child',
-                ]);
+                app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(
+                    name: 'électro',
+                    slug: 'electro-child',
+                ));
                 file_put_contents($outcome, 'created');
             } catch (ValidationException $exception) {
                 file_put_contents($outcome, isset($exception->errors()['name']) ? 'name-error' : 'other-validation-error');
@@ -84,10 +85,10 @@ final class CreateCentralBrandConcurrencyTest extends TestCase
         }
 
         try {
-            app(CreateCentralBrandAction::class)->handle([
-                'name' => 'ÉLECTRO',
-                'slug' => 'electro-parent',
-            ]);
+            app(CreateCentralBrandAction::class)->handle(new CentralBrandInput(
+                name: 'ÉLECTRO',
+                slug: 'electro-parent',
+            ));
         } finally {
             touch($parentCommitted);
             pcntl_waitpid($childPid, $status);

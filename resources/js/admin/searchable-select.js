@@ -40,7 +40,10 @@ function close(root, restoreLabel = true) {
     input.setAttribute('aria-expanded', 'false')
     root.querySelector('[data-ui-searchable-select-chevron]')?.classList.remove('rotate-180')
     setActive(root, null)
-    if (restoreLabel) input.value = root.dataset.selectedLabel ?? ''
+    if (restoreLabel) {
+        filter(root, '')
+        input.value = root.dataset.selectedLabel ?? ''
+    }
 }
 
 function filter(root, query) {

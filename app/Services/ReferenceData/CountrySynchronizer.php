@@ -27,6 +27,11 @@ final readonly class CountrySynchronizer
 
             /** @var array<string, Country> $countriesByCode */
             $countriesByCode = Country::query()->get()->keyBy('alpha2')->all();
+            /** @var array<string, CountryTranslation> $translationsByCountryAndLocale */
+            $translationsByCountryAndLocale = CountryTranslation::query()
+                ->get()
+                ->keyBy(static fn (CountryTranslation $translation): string => $translation->country_id."\0".$translation->locale)
+                ->all();
 
             foreach ($dataset['countries'] as $record) {
                 $sourceCodes[] = $record['alpha2'];
@@ -76,19 +81,18 @@ final readonly class CountrySynchronizer
                     throw new \LogicException("Country {$record['alpha2']} was not persisted before its translations.");
                 }
 
-                $translation = CountryTranslation::query()
-                    ->where('country_id', $country->getKey())
-                    ->where('locale', $record['locale'])
-                    ->first();
+                $translationKey = $country->getKey()."\0".$record['locale'];
+                $translation = $translationsByCountryAndLocale[$translationKey] ?? null;
 
                 if ($translation === null) {
                     $translationsCreated++;
                     if (! $dryRun) {
-                        CountryTranslation::query()->create([
+                        $translation = CountryTranslation::query()->create([
                             'country_id' => $country->getKey(),
                             'locale' => $record['locale'],
                             'name' => $record['name'],
                         ]);
+                        $translationsByCountryAndLocale[$translationKey] = $translation;
                     }
                 } elseif ($translation->name !== $record['name']) {
                     $translationsUpdated++;

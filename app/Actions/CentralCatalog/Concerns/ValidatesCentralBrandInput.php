@@ -4,7 +4,6 @@ namespace App\Actions\CentralCatalog\Concerns;
 
 use App\Data\CentralCatalog\CentralBrandInput;
 use App\Models\CentralCatalog\CentralBrand;
-use App\Models\Geography\Country;
 use App\Queries\CentralCatalog\DuplicateCentralBrandNameQuery;
 use App\Support\Normalization\BrandInputNormalizer;
 use App\Support\Normalization\SlugNormalizer;
@@ -29,7 +28,7 @@ trait ValidatesCentralBrandInput
 
         $slug = $this->normalizedSlug($input->slug, $name, $brand);
         $websiteUrl = $this->normalizedWebsiteUrl($input, $brand);
-        $countryId = $this->validatedCountryId($input, $brand);
+        $countryId = $this->normalizedCountryId($input, $brand);
 
         $slugRule = Rule::unique('central_brands', 'slug');
 
@@ -121,25 +120,10 @@ trait ValidatesCentralBrandInput
         return BrandInputNormalizer::nullableUrl($input->websiteUrl);
     }
 
-    private function validatedCountryId(CentralBrandInput $input, ?CentralBrand $brand): ?int
+    private function normalizedCountryId(CentralBrandInput $input, ?CentralBrand $brand): ?int
     {
         if (! $input->hasCountryId) {
             return $brand?->country_id;
-        }
-
-        if ($input->countryId === null || $input->countryId === $brand?->country_id) {
-            return $input->countryId;
-        }
-
-        $activeCountryExists = Country::query()
-            ->active()
-            ->whereKey($input->countryId)
-            ->exists();
-
-        if (! $activeCountryExists) {
-            throw ValidationException::withMessages([
-                'country_id' => 'The selected Country is not available for new assignments.',
-            ]);
         }
 
         return $input->countryId;

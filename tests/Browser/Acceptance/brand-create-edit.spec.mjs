@@ -63,6 +63,13 @@ test('CA-013 supports keyboard Country selection, Escape, change, and clear', as
     await country.press('Escape')
     await expect(country).toHaveValue('South Korea (KR)')
     await expect(page.locator('#brand-country-listbox')).toBeHidden()
+    await country.focus()
+    await expect(page.getByRole('option', { name: 'Afghanistan (AF)', exact: true })).toBeVisible()
+    await country.fill('Germany')
+    await page.getByRole('heading', { name: 'Edit Brand', exact: true }).click()
+    await expect(page.locator('#brand-country-listbox')).toBeHidden()
+    await country.focus()
+    await expect(page.getByRole('option', { name: 'Afghanistan (AF)', exact: true })).toBeVisible()
 
     await country.fill('Japan')
     await country.press('ArrowDown')

@@ -9,8 +9,10 @@ use App\Models\Geography\Country;
 use App\Models\Geography\CountryTranslation;
 use App\Services\ReferenceData\CountryDatasetLoader;
 use App\Services\ReferenceData\CountrySynchronizer;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use RuntimeException;
 use Tests\TestCase;
@@ -95,6 +97,22 @@ final class CountrySynchronizerTest extends TestCase
         ] as $metric) {
             $this->assertStringContainsString($metric, $output);
         }
+    }
+
+    public function test_translation_query_count_does_not_scale_with_translation_records(): void
+    {
+        $translationQueries = 0;
+        DB::listen(static function (QueryExecuted $query) use (&$translationQueries): void {
+            if (str_contains(strtolower($query->sql), 'country_translations')) {
+                $translationQueries++;
+            }
+        });
+
+        $manifest = app(CountryDatasetLoader::class)->load()['manifest'];
+        app(CountrySynchronizer::class)->sync();
+
+        $this->assertGreaterThan(400, $manifest['expected_translation_count']);
+        $this->assertSame(1, $translationQueries);
     }
 
     public function test_invalid_dataset_fails_before_database_mutation(): void

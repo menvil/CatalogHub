@@ -10,6 +10,12 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (app()->environment('production') && ! app()->isDownForMaintenance()) {
+            throw new RuntimeException(
+                'The Brand Country cutover requires production maintenance mode and suspended Brand-mutating workers.',
+            );
+        }
+
         $backfill = app(LegacyBrandCountryBackfill::class);
         $backfill->validate();
 

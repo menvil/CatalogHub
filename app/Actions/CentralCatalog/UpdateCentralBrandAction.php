@@ -9,6 +9,7 @@ use App\Enums\AuditContext;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\User;
 use App\Services\Audit\AuditRecorder;
+use App\Services\Geography\CountryAssignmentValidator;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -17,7 +18,10 @@ final readonly class UpdateCentralBrandAction
 {
     use ValidatesCentralBrandInput;
 
-    public function __construct(private AuditRecorder $audit) {}
+    public function __construct(
+        private AuditRecorder $audit,
+        private CountryAssignmentValidator $countryAssignments,
+    ) {}
 
     public function handle(User $actor, CentralBrand $brand, CentralBrandInput $input): CentralBrand
     {
@@ -28,6 +32,11 @@ final readonly class UpdateCentralBrandAction
             return DB::transaction(function () use ($actor, $brand, $input, &$validated): CentralBrand {
                 $lockedBrand = CentralBrand::query()->lockForUpdate()->findOrFail($brand->getKey());
                 $validated = $this->validatedBrandInput($input, $lockedBrand);
+
+                if ($validated['country_id'] !== null && $validated['country_id'] !== $lockedBrand->country_id) {
+                    $this->countryAssignments->lockActive($validated['country_id']);
+                }
+
                 $lockedBrand->load('country');
                 $before = $this->auditSnapshot($lockedBrand);
                 $lockedBrand->forceFill($validated)->saveOrFail();

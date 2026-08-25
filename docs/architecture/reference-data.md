@@ -46,6 +46,8 @@ The loader validates the complete dataset and payload hashes before any write: m
 
 The Phase 9 migration prevalidates every non-null legacy `central_brands.country_code`, normalizing whitespace and case for lookup against `countries.alpha2`. An unknown or blank legacy value aborts with the affected Brand ID before schema mutation; it is never converted to null. Once validation succeeds, the migration adds nullable `country_id`, backfills in deterministic chunks, verifies every legacy value mapped, and removes `country_code`. The FK is indexed and restricts Country deletion, so existing Brands remain intact. Brand audit remains intentionally semantic: snapshots continue to use the resolved alpha-2 `country_code`, never the internal FK.
 
+This contract migration is not a zero-downtime expand/contract deployment. In production it refuses to run unless Laravel maintenance mode is active; the deployment operator must also suspend workers capable of mutating Brands until migration and code switch complete. This prevents a previous release from writing only `country_code` between backfill and column removal. Traffic and Brand-mutating workers resume only after all processes use the Phase 9 release.
+
 ## Updating the dataset
 
 Upstream access occurs only during deliberate developer regeneration:

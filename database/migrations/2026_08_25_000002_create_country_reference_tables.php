@@ -9,6 +9,11 @@ return new class extends Migration
 {
     public function up(): void
     {
+        $this->provision(database_path('reference-data/countries'), 'manifest-v1.json');
+    }
+
+    public function provision(string $directory, string $manifestFilename): void
+    {
         Schema::create('countries', function (Blueprint $table): void {
             $table->id();
             $table->string('alpha2', 2)->unique();
@@ -32,10 +37,19 @@ return new class extends Migration
             $table->index(['locale', 'name']);
         });
 
-        app(CountrySynchronizer::class)->sync(
-            database_path('reference-data/countries'),
-            manifestFilename: 'manifest-v1.json',
-        );
+        try {
+            app(CountrySynchronizer::class)->sync($directory, manifestFilename: $manifestFilename);
+        } catch (Throwable $exception) {
+            foreach (['country_translations', 'countries'] as $table) {
+                try {
+                    Schema::dropIfExists($table);
+                } catch (Throwable) {
+                    // Preserve the provisioning failure that triggered cleanup.
+                }
+            }
+
+            throw $exception;
+        }
     }
 
     public function down(): void

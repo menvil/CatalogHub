@@ -247,5 +247,4 @@ class CreateCentralBrandActionTest extends TestCase
         yield 'country name' => ['ukraine'];
         yield 'non ASCII' => ['БГ'];
     }
-
 }

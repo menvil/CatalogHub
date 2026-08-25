@@ -293,5 +293,4 @@ class UpdateCentralBrandActionTest extends TestCase
         yield 'active' => [CentralBrandStatus::Active];
         yield 'archived' => [CentralBrandStatus::Archived];
     }
-
 }

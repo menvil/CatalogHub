@@ -40,6 +40,12 @@ The nullable `users.site_id` column remains only as a compatibility preference f
 
 Role assignment, membership changes, and user enable/disable write the mutation and audit row in one transaction. An audit write failure therefore rolls back the administrative mutation. Login and logout are framework events; their listener reports audit storage errors without blocking authentication. The recorder accepts action-specific fields only and drops password, token, and other unapproved data.
 
+## Brand module permissions
+
+Canonical Brand list, detail, create/update, lifecycle, and logo assignment routes require `catalog.brands.manage`. Super Admin keeps wildcard access; Central Admin and Catalog Editor receive the permission. Translator, Site Admin, and Moderator do not. `catalog.products.manage` no longer authorizes Brand routes, and `catalog.brands.manage` does not authorize Product administration or the global Media Library (`media.manage`).
+
+Brand translation routes remain independently protected by `translations.manage`. A Translator may use CA-015 and create attributed audit entries without canonical Brand mutation access. Brand Overview and Media tabs use `catalog.brands.manage`; the Translations tab uses `translations.manage`.
+
 ## Executable coverage
 
 `tests/Feature/Auth/AuthorizationMatrixTest.php` covers all six roles, two independent sites, unassigned users, disabled users, query tampering, and a forbidden cross-site mutation with no database side effect. Focused policy, middleware, membership, disabled-user, and audit suites cover the underlying contracts.

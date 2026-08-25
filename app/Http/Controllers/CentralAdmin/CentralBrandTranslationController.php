@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CentralAdmin\Translations\SaveBrandTranslationRequest;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\Locale;
+use App\Models\User;
 use App\Queries\Translations\BrandTranslationEditorQuery;
 use App\Services\Translations\AllowedTranslationStatuses;
 use Illuminate\Http\RedirectResponse;
@@ -50,7 +51,9 @@ final class CentralBrandTranslationController extends Controller
         SaveBrandTranslationAction $action,
     ): RedirectResponse {
         abort_unless($locale->is_active, 404);
-        $action->handle($brand, $locale, $request->brandTranslationInput());
+        $actor = $request->user();
+        assert($actor instanceof User);
+        $action->handle($actor, $brand, $locale, $request->brandTranslationInput());
 
         return redirect()
             ->route('central.brands.translations.edit', [$brand, $locale->code])

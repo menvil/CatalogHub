@@ -36,7 +36,8 @@ final class CentralBrandFormTest extends TestCase
             $this->assertNotNull($route);
             $this->assertContains($method, $route->methods());
             $this->assertSame($uri, $route->uri());
-            $this->assertContains('can:catalog.products.manage', $route->gatherMiddleware());
+            $this->assertContains('can:catalog.brands.manage', $route->gatherMiddleware());
+            $this->assertNotContains('can:catalog.products.manage', $route->gatherMiddleware());
         }
 
         $this->assertSame('central.brands.create', Route::getRoutes()->match(

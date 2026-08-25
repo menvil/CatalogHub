@@ -35,7 +35,7 @@ final class CentralNavigationRegistryTest extends TestCase
         ], array_column($items, 'id'));
         $this->assertCount(11, array_unique(array_column($items, 'id')));
         $this->assertCount(11, array_unique(array_column($items, 'route')));
-        $this->assertCount(10, array_unique(array_column($items, 'permission')));
+        $this->assertCount(11, array_unique(array_column($items, 'permission')));
     }
 
     public function test_unavailable_and_unauthorized_items_never_become_dead_links(): void
@@ -91,7 +91,7 @@ final class CentralNavigationRegistryTest extends TestCase
         $this->assertFalse($brands->isActive());
     }
 
-    public function test_brands_navigation_uses_catalog_permission_and_has_an_exclusive_active_state(): void
+    public function test_brands_navigation_uses_brand_permission_and_has_an_exclusive_active_state(): void
     {
         $registry = app(CentralNavigationRegistry::class);
         $catalogEditor = User::factory()->create(['role' => UserRole::CatalogEditor]);

@@ -31,7 +31,9 @@
                 <div data-screen-region="status-context">
                     <x-admin.status-badge :label="$brand->status->label()" :variant="$statusVariant" />
                 </div>
-                <x-ui.button variant="secondary" :href="route('central.brands.edit', $brand, absolute: false)">Edit Brand</x-ui.button>
+                @can('catalog.brands.manage')
+                    <x-ui.button variant="secondary" :href="route('central.brands.edit', $brand, absolute: false)">Edit Brand</x-ui.button>
+                @endcan
             </x-slot:actions>
         </x-admin.page-header>
 
@@ -118,6 +120,7 @@
                         </p>
                     @endif
 
+                    @can('catalog.brands.manage')
                     @switch($brand->status)
                         @case(\App\Enums\CentralBrandStatus::Draft)
                             <p class="text-sm text-admin-muted">Draft brands are not yet ready for normal catalog use.</p>
@@ -142,10 +145,12 @@
                             </div>
                             @break
                     @endswitch
+                    @endcan
                 </x-admin.card>
             </x-slot:aside>
         </x-admin.detail-layout>
 
+        @can('catalog.brands.manage')
         @if ($brand->status === \App\Enums\CentralBrandStatus::Draft)
             <form id="activate-brand-form" method="POST" action="{{ route('central.brands.activate', $brand, absolute: false) }}" class="hidden">@csrf</form>
             <x-admin.confirmation-modal
@@ -182,5 +187,6 @@
                 :open="false"
             />
         @endif
+        @endcan
     </div>
 @endsection

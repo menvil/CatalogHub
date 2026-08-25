@@ -118,7 +118,7 @@ final class CentralBrandMediaTest extends TestCase
         $brand = CentralBrand::factory()->create();
         $asset = MediaAsset::factory()->create(['disk' => 'public', 'original_path' => 'media/originals/assigned.png']);
         Storage::disk('public')->put($asset->original_path, 'assigned');
-        app(SetCentralBrandLogoAction::class)->execute($brand, $asset);
+        app(SetCentralBrandLogoAction::class)->execute(User::factory()->create(), $brand, $asset);
         $route = route('central.brands.media.logo.destroy', $brand);
 
         $this->delete($route)->assertRedirect(route('filament.central.auth.login'));
@@ -136,7 +136,7 @@ final class CentralBrandMediaTest extends TestCase
     {
         $brand = CentralBrand::factory()->create(['name' => 'Samsung']);
         $asset = MediaAsset::factory()->create(['disk' => 'public', 'original_path' => 'media/originals/missing.png']);
-        app(SetCentralBrandLogoAction::class)->execute($brand, $asset);
+        app(SetCentralBrandLogoAction::class)->execute(User::factory()->create(), $brand, $asset);
 
         $this->actingAs(User::factory()->centralAdmin()->create())
             ->get(route('central.brands.media', $brand))
@@ -153,7 +153,7 @@ final class CentralBrandMediaTest extends TestCase
         $user = User::factory()->centralAdmin()->create();
         $first = MediaAsset::factory()->create(['disk' => 'public', 'original_path' => 'media/originals/a.png']);
         Storage::disk('public')->put($first->original_path, 'first');
-        app(SetCentralBrandLogoAction::class)->execute($brand, $first);
+        app(SetCentralBrandLogoAction::class)->execute(User::factory()->create(), $brand, $first);
 
         $this->actingAs($user)->post(route('central.brands.media.logo.store', $brand), ['logo' => UploadedFile::fake()->image('second.png', 24, 12)])
             ->assertRedirect(route('central.brands.media', $brand));

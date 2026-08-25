@@ -6,6 +6,7 @@ use App\Actions\CentralCatalog\ActivateCentralBrandAction;
 use App\Actions\CentralCatalog\ArchiveCentralBrandAction;
 use App\Enums\CentralBrandStatus;
 use App\Models\CentralCatalog\CentralBrand;
+use App\Models\User;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
@@ -25,7 +26,7 @@ class ActivateCentralBrandActionTest extends TestCase
             'website_url' => 'https://www.samsung.com',
         ]);
 
-        $result = app(ActivateCentralBrandAction::class)->handle($brand);
+        $result = app(ActivateCentralBrandAction::class)->handle(User::factory()->create(), $brand);
 
         $this->assertSame(CentralBrandStatus::Active, $result->status);
         $this->assertSame('Samsung', $result->name);
@@ -36,8 +37,8 @@ class ActivateCentralBrandActionTest extends TestCase
     {
         $brand = CentralBrand::factory()->active()->create();
 
-        app(ActivateCentralBrandAction::class)->handle($brand);
-        $result = app(ActivateCentralBrandAction::class)->handle($brand->refresh());
+        app(ActivateCentralBrandAction::class)->handle(User::factory()->create(), $brand);
+        $result = app(ActivateCentralBrandAction::class)->handle(User::factory()->create(), $brand->refresh());
 
         $this->assertSame(CentralBrandStatus::Active, $result->status);
         $this->assertDatabaseCount('central_brands', 1);
@@ -48,7 +49,7 @@ class ActivateCentralBrandActionTest extends TestCase
         $brand = CentralBrand::factory()->archived()->create(['name' => 'Archived Brand']);
 
         try {
-            app(ActivateCentralBrandAction::class)->handle($brand);
+            app(ActivateCentralBrandAction::class)->handle(User::factory()->create(), $brand);
             $this->fail('An archived Brand was activated directly.');
         } catch (ValidationException $exception) {
             $this->assertSame(
@@ -69,6 +70,7 @@ class ActivateCentralBrandActionTest extends TestCase
         }
 
         $brand = CentralBrand::factory()->draft()->create();
+        $actor = User::factory()->create();
         $coordinationDirectory = sys_get_temp_dir().'/cataloghub-brand-lifecycle-'.bin2hex(random_bytes(8));
         $this->assertTrue(mkdir($coordinationDirectory));
 
@@ -114,7 +116,7 @@ class ActivateCentralBrandActionTest extends TestCase
             $this->waitForFile($archiveRead, 5.0);
 
             try {
-                $result = app(ActivateCentralBrandAction::class)->handle($brand);
+                $result = app(ActivateCentralBrandAction::class)->handle($actor, $brand);
                 file_put_contents($outcome, $result->status->value);
             } catch (ValidationException) {
                 file_put_contents($outcome, 'rejected');
@@ -126,7 +128,7 @@ class ActivateCentralBrandActionTest extends TestCase
         }
 
         try {
-            app(ArchiveCentralBrandAction::class)->handle($brand);
+            app(ArchiveCentralBrandAction::class)->handle($actor, $brand);
         } finally {
             touch($archiveCommitted);
             pcntl_waitpid($childPid, $status);

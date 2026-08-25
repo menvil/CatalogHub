@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', EnsureCentralAdminAccess::class])
     ->prefix('admin/central')
     ->group(function (): void {
-        Route::middleware('can:catalog.products.manage')->group(function (): void {
+        Route::middleware('can:catalog.brands.manage')->group(function (): void {
             Route::get('/brands', CentralBrandListController::class)
                 ->name('central.brands.index');
             Route::get('/brands/create', [CentralBrandFormController::class, 'create'])

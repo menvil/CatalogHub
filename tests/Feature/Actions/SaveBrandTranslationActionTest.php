@@ -10,6 +10,7 @@ use App\Enums\TranslationStatus;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\Locale;
 use App\Models\Translations\BrandTranslation;
+use App\Models\User;
 use App\Queries\Translations\BrandTranslationEditorQuery;
 use App\Services\Translations\TranslationSourceHashService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,7 +27,7 @@ final class SaveBrandTranslationActionTest extends TestCase
         $locale = Locale::factory()->create(['code' => 'de-DE']);
         $action = app(SaveBrandTranslationAction::class);
 
-        $created = $action->handle($brand, $locale, $this->input(
+        $created = $action->handle(User::factory()->create(), $brand, $locale, $this->input(
             name: 'Samsung',
             tagline: 'Technologie für jeden',
         ));
@@ -38,7 +39,7 @@ final class SaveBrandTranslationActionTest extends TestCase
         $this->assertSame(app(TranslationSourceHashService::class)->forBrand($brand), $created->source_hash);
 
         $brand->update(['name' => 'Samsung Electronics Co.']);
-        $updated = $action->handle($brand, $locale, $this->input(
+        $updated = $action->handle(User::factory()->create(), $brand, $locale, $this->input(
             name: 'Samsung Deutschland',
             tagline: null,
             seoDescription: null,
@@ -58,7 +59,7 @@ final class SaveBrandTranslationActionTest extends TestCase
     {
         Cache::put('translations.dashboard.stats', ['stale' => true], 60);
 
-        app(SaveBrandTranslationAction::class)->handle(
+        app(SaveBrandTranslationAction::class)->handle(User::factory()->create(),
             CentralBrand::factory()->create(),
             Locale::factory()->create(),
             $this->input(),
@@ -72,7 +73,7 @@ final class SaveBrandTranslationActionTest extends TestCase
         $brand = CentralBrand::factory()->create();
         $locale = Locale::factory()->create(['code' => 'de-DE']);
         $action = app(SaveBrandTranslationAction::class);
-        $created = $action->handle($brand, $locale, $this->input(name: 'Samsung Deutschland'));
+        $created = $action->handle(User::factory()->create(), $brand, $locale, $this->input(name: 'Samsung Deutschland'));
 
         $locale->update(['code' => 'de-AT']);
         $locale->refresh();
@@ -80,7 +81,7 @@ final class SaveBrandTranslationActionTest extends TestCase
         $editor = app(BrandTranslationEditorQuery::class)->forBrand($brand, $locale);
         $this->assertTrue($created->is($editor->translation));
 
-        $updated = $action->handle($brand, $locale, $this->input(name: 'Samsung Österreich'));
+        $updated = $action->handle(User::factory()->create(), $brand, $locale, $this->input(name: 'Samsung Österreich'));
 
         $this->assertTrue($created->is($updated));
         $this->assertSame($locale->id, $updated->locale_id);

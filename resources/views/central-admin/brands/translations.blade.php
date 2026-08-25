@@ -3,7 +3,7 @@
 @section('breadcrumbs')
     <a href="{{ route('filament.central.pages.home', absolute: false) }}" class="font-medium hover:text-admin-text">Central Admin</a><span aria-hidden="true">/</span>
     <a href="{{ route('central.translations.dashboard', absolute: false) }}" class="font-medium hover:text-admin-text">Translations</a><span aria-hidden="true">/</span>
-    @can('catalog.products.manage')
+    @can('catalog.brands.manage')
         <a href="{{ route('central.brands.show', $brand, absolute: false) }}" class="font-medium hover:text-admin-text">{{ $brand->name }}</a>
     @else
         <span>{{ $brand->name }}</span>

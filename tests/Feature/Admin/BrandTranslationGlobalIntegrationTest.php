@@ -43,7 +43,7 @@ final class BrandTranslationGlobalIntegrationTest extends TestCase
         $this->assertSame('de-DE', $item['locale']);
         $this->assertSame(route('central.brands.translations.edit', [$brand, $locale->code]), $item['editor_url']);
 
-        app(SaveBrandTranslationAction::class)->handle($brand, $locale, $this->input());
+        app(SaveBrandTranslationAction::class)->handle(User::factory()->create(), $brand, $locale, $this->input());
 
         $remaining = app(MissingTranslationsQuery::class)->get(locale: $locale->code, entityType: 'brand');
         $this->assertNull(collect($remaining)->firstWhere('entity_id', $brand->id));

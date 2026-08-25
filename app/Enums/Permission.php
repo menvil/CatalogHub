@@ -13,6 +13,7 @@ enum Permission: string
     case CentralView = 'central.view';
     case CentralManage = 'central.manage';
     case CatalogProductsManage = 'catalog.products.manage';
+    case CatalogBrandsManage = 'catalog.brands.manage';
     case CatalogCategoriesManage = 'catalog.categories.manage';
     case CatalogSchemaManage = 'catalog.schema.manage';
     case ImportsManage = 'imports.manage';

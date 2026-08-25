@@ -9,7 +9,7 @@ fixture: brand-form-v1
 regions: central-shell;header-breadcrumbs;page-header;status-context;general-form-card;form-fields;form-actions;validation-errors;flash-feedback
 actions: cancel-to-list;cancel-to-detail;create-brand;save-changes
 states: create-default;create-validation-error;edit-draft;edit-active;edit-archived;edit-validation-error;save-progress;save-success-via-redirect-flash
-permissions: catalog.products.manage
+permissions: catalog.brands.manage
 responsive: The Central Admin workspace remains full width while the form card is locally capped at a readable max width; fields and actions stack without page-level horizontal overflow on mobile.
 out_of_scope: status-lifecycle-control;media;translations;product-usage;activity-log;delete;audit
 reference_version: v1

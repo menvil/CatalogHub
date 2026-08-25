@@ -6,6 +6,7 @@ use App\Actions\CentralCatalog\ArchiveCentralBrandAction;
 use App\Actions\CentralCatalog\RestoreCentralBrandAction;
 use App\Enums\CentralBrandStatus;
 use App\Models\CentralCatalog\CentralBrand;
+use App\Models\User;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
@@ -25,7 +26,7 @@ class RestoreCentralBrandActionTest extends TestCase
             'country_code' => 'KR',
         ]);
 
-        $result = app(RestoreCentralBrandAction::class)->handle($brand);
+        $result = app(RestoreCentralBrandAction::class)->handle(User::factory()->create(), $brand);
 
         $this->assertSame(CentralBrandStatus::Draft, $result->status);
         $this->assertSame('Samsung', $result->name);
@@ -37,7 +38,7 @@ class RestoreCentralBrandActionTest extends TestCase
     {
         $brand = CentralBrand::factory()->create(['status' => $status]);
 
-        $result = app(RestoreCentralBrandAction::class)->handle($brand);
+        $result = app(RestoreCentralBrandAction::class)->handle(User::factory()->create(), $brand);
 
         $this->assertSame($status, $result->status);
     }
@@ -53,8 +54,8 @@ class RestoreCentralBrandActionTest extends TestCase
     {
         $brand = CentralBrand::factory()->archived()->create();
 
-        app(RestoreCentralBrandAction::class)->handle($brand);
-        $result = app(RestoreCentralBrandAction::class)->handle($brand->refresh());
+        app(RestoreCentralBrandAction::class)->handle(User::factory()->create(), $brand);
+        $result = app(RestoreCentralBrandAction::class)->handle(User::factory()->create(), $brand->refresh());
 
         $this->assertSame(CentralBrandStatus::Draft, $result->status);
         $this->assertDatabaseCount('central_brands', 1);
@@ -67,6 +68,7 @@ class RestoreCentralBrandActionTest extends TestCase
         }
 
         $brand = CentralBrand::factory()->draft()->create();
+        $actor = User::factory()->create();
         $coordinationDirectory = sys_get_temp_dir().'/cataloghub-brand-restore-'.bin2hex(random_bytes(8));
         $this->assertTrue(mkdir($coordinationDirectory));
 
@@ -112,7 +114,7 @@ class RestoreCentralBrandActionTest extends TestCase
             $this->waitForFile($archiveRead, 5.0);
 
             try {
-                $result = app(RestoreCentralBrandAction::class)->handle($brand);
+                $result = app(RestoreCentralBrandAction::class)->handle($actor, $brand);
                 file_put_contents($outcome, $result->status->value);
             } catch (Throwable $exception) {
                 file_put_contents($outcome, 'error:'.$exception::class);
@@ -122,7 +124,7 @@ class RestoreCentralBrandActionTest extends TestCase
         }
 
         try {
-            app(ArchiveCentralBrandAction::class)->handle($brand);
+            app(ArchiveCentralBrandAction::class)->handle($actor, $brand);
         } finally {
             touch($archiveCommitted);
             pcntl_waitpid($childPid, $status);

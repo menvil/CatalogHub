@@ -22,4 +22,8 @@ Localized names, descriptions, and SEO data are not stored on `CentralBrand`. Lo
 
 A Brand may have many `CentralProduct` records through the existing `products` relationship.
 
-Authorization, audit logging, media, translations, and site-specific configuration are outside this write contract.
+Canonical Brand administration requires `catalog.brands.manage`; Product and global Media Library permissions are independent. Brand translation authoring remains under `translations.manage`.
+
+Create, meaningful canonical update, lifecycle transitions, logo assignment/removal, and meaningful translation saves record transactional, append-only audit events with `CentralBrand` as their common subject. Canonical snapshots exclude normalized identity fields; logo snapshots contain only media asset IDs; translation snapshots contain identifiers, locale, status, and changed field names rather than translated content. Audit is an activity trace, not content version storage.
+
+Site-specific configuration remains outside this write contract.

@@ -69,4 +69,10 @@ final class ImportSource extends Model
     {
         return $this->hasMany(ImportBatch::class);
     }
+
+    /** @return HasMany<CentralBrandExternalIdentity, $this> */
+    public function brandExternalIdentities(): HasMany
+    {
+        return $this->hasMany(CentralBrandExternalIdentity::class);
+    }
 }

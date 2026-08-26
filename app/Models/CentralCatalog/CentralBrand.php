@@ -4,6 +4,7 @@ namespace App\Models\CentralCatalog;
 
 use App\Enums\CentralBrandStatus;
 use App\Models\Geography\Country;
+use App\Models\Imports\CentralBrandExternalIdentity;
 use App\Models\Translations\BrandTranslation;
 use Database\Factories\CentralBrandFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -81,6 +82,12 @@ final class CentralBrand extends Model
         return $this->belongsToMany(CatalogTag::class, 'central_brand_tag')
             ->orderBy('catalog_tags.normalized_name')
             ->orderBy('catalog_tags.id');
+    }
+
+    /** @return HasMany<CentralBrandExternalIdentity, $this> */
+    public function externalIdentities(): HasMany
+    {
+        return $this->hasMany(CentralBrandExternalIdentity::class, 'central_brand_id');
     }
 
     /** @return BelongsTo<Country, $this> */

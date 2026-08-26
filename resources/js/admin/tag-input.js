@@ -81,7 +81,7 @@ export function bootTagInputs() {
 
         addButton?.addEventListener('click', add);
         input.addEventListener('keydown', (event) => {
-            if (event.key !== 'Enter') return;
+            if (event.isComposing || event.key !== 'Enter') return;
             event.preventDefault();
             add();
         });

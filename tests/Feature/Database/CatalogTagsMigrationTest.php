@@ -36,6 +36,25 @@ final class CatalogTagsMigrationTest extends TestCase
 
         $pivotIndexes = collect(Schema::getIndexes('central_brand_tag'))->pluck('columns')->all();
         self::assertContains(['central_brand_id', 'catalog_tag_id'], $pivotIndexes);
+
+        $brand = CentralBrand::factory()->create();
+        $tag = CatalogTag::factory()->create();
+        DB::table('central_brand_tag')->insert([
+            'central_brand_id' => $brand->id,
+            'catalog_tag_id' => $tag->id,
+        ]);
+
+        try {
+            DB::transaction(static function () use ($brand, $tag): void {
+                DB::table('central_brand_tag')->insert([
+                    'central_brand_id' => $brand->id,
+                    'catalog_tag_id' => $tag->id,
+                ]);
+            });
+            self::fail('Expected Brand tag pivot uniqueness failure.');
+        } catch (QueryException) {
+            self::assertDatabaseCount('central_brand_tag', 1);
+        }
     }
 
     public function test_database_enforces_tag_identity_and_pivot_uniqueness_and_cascades_pivot_deletes(): void

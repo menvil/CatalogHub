@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Console;
 
+use App\Models\CentralCatalog\CatalogTag;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Site;
@@ -33,6 +34,7 @@ final class FoundationBootstrapTest extends TestCase
         )->count());
         self::assertSame(6, SiteMembership::query()->count());
         self::assertSame(0, CentralBrand::query()->count());
+        self::assertSame(0, CatalogTag::query()->count());
         self::assertSame(0, CentralProduct::query()->count());
 
         $this->artisan('foundation:verify')->assertExitCode(0);

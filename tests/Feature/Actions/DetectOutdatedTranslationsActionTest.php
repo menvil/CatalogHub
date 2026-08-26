@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Actions;
 
+use App\Actions\CentralCatalog\SyncCentralBrandTagsAction;
 use App\Actions\Translations\DetectOutdatedTranslationsAction;
 use App\Enums\TranslationStatus;
 use App\Models\CentralCatalog\AttributeDefinition;
@@ -19,6 +20,7 @@ use App\Models\Translations\BrandTranslation;
 use App\Models\Translations\CategoryTranslation;
 use App\Models\Translations\ProductTranslation;
 use App\Models\Translations\UnitTranslation;
+use App\Models\User;
 use App\Services\Translations\TranslationSourceHashService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -114,6 +116,27 @@ class DetectOutdatedTranslationsActionTest extends TestCase
         $brand->update(['name' => 'Samsung Electronics']);
         $this->assertSame(1, app(DetectOutdatedTranslationsAction::class)->handle($brand));
         $this->assertSame(TranslationStatus::Outdated, $translation->fresh()->status);
+    }
+
+    public function test_brand_tag_changes_do_not_participate_in_translation_source_hash(): void
+    {
+        $hashService = app(TranslationSourceHashService::class);
+        $brand = CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
+        $locale = Locale::factory()->create(['code' => 'de-DE']);
+        $translation = BrandTranslation::factory()->create([
+            'brand_id' => $brand->id,
+            'locale_id' => $locale->id,
+            'locale' => $locale->code,
+            'source_hash' => $hashService->forBrand($brand),
+            'status' => TranslationStatus::Approved,
+        ]);
+        $beforeHash = $hashService->forBrand($brand);
+
+        app(SyncCentralBrandTagsAction::class)->handle(User::factory()->create(), $brand, ['Premium']);
+
+        self::assertSame($beforeHash, $hashService->forBrand($brand->refresh()));
+        self::assertSame(0, app(DetectOutdatedTranslationsAction::class)->handle($brand));
+        self::assertSame(TranslationStatus::Approved, $translation->fresh()->status);
     }
 
     private function assertBrandOutdatedDetection(bool $mutate): void

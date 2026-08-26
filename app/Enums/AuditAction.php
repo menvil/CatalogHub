@@ -12,6 +12,7 @@ enum AuditAction: string
     case UserEnabled = 'security.user.enabled';
     case CatalogBrandCreated = 'catalog.brand.created';
     case CatalogBrandUpdated = 'catalog.brand.updated';
+    case CatalogBrandTagsUpdated = 'catalog.brand.tags.updated';
     case CatalogBrandActivated = 'catalog.brand.activated';
     case CatalogBrandArchived = 'catalog.brand.archived';
     case CatalogBrandRestored = 'catalog.brand.restored';

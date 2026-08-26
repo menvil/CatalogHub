@@ -6,13 +6,14 @@ namespace Tests\Support;
 
 use App\Enums\CentralProductStatus;
 use App\Models\CentralCatalog\CentralBrand;
+use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use Carbon\CarbonImmutable;
 use RuntimeException;
 
 final class BrandDetailFixture
 {
-    public const VERSION = 'brand-detail-v2';
+    public const VERSION = 'brand-detail-v3';
 
     public const ACTIVE_BRAND_ID = 20;
 
@@ -43,20 +44,47 @@ final class BrandDetailFixture
             'primary_color' => '#1428A0',
         ])->saveOrFail();
 
-        foreach ([
-            [1201201, 'Samsung Galaxy S26', 'SM-S942', 'samsung-galaxy-s26'],
-            [1201202, 'Samsung Galaxy Tab S12', 'SM-X940', 'samsung-galaxy-tab-s12'],
-            [1201203, 'Samsung Odyssey G9', 'LS49CG', 'samsung-odyssey-g9'],
-        ] as [$id, $name, $model, $slug]) {
+        $categories = collect([
+            [120121, 'Smartphones', 'smartphones'],
+            [120122, 'Televisions', 'televisions'],
+            [120123, 'Tablets', 'tablets'],
+            [120124, 'Laptops', 'laptops'],
+        ])->mapWithKeys(function (array $record): array {
+            [$id, $name, $slug] = $record;
+            $category = CentralCategory::factory()->create(['id' => $id, 'name' => $name, 'slug' => $slug]);
+
+            return [$slug => $category];
+        });
+
+        $products = [
+            ['Samsung Galaxy S26', 'SM-S942', 'samsung-galaxy-s26', 'smartphones', CentralProductStatus::Active],
+            ['Samsung Galaxy Tab S12', 'SM-X940', 'samsung-galaxy-tab-s12', 'tablets', CentralProductStatus::Active],
+            ['Samsung Neo QLED TV', 'QN90F', 'samsung-neo-qled-tv', 'televisions', CentralProductStatus::Draft],
+            ['Samsung Legacy Laptop', 'NP-OLD', 'samsung-legacy-laptop', 'laptops', CentralProductStatus::Archived],
+        ];
+
+        foreach ([['smartphones', 23], ['televisions', 11], ['tablets', 5]] as [$slug, $additional]) {
+            for ($index = 1; $index <= $additional; $index++) {
+                $products[] = [
+                    "Samsung {$slug} fixture {$index}",
+                    strtoupper(substr($slug, 0, 3)).'-'.$index,
+                    "samsung-{$slug}-fixture-{$index}",
+                    $slug,
+                    CentralProductStatus::Active,
+                ];
+            }
+        }
+
+        foreach ($products as $offset => [$name, $model, $slug, $categorySlug, $status]) {
             $product = new CentralProduct;
             $product->forceFill([
-                'id' => $id,
+                'id' => 1201201 + $offset,
                 'central_brand_id' => $activeBrand->getKey(),
-                'central_category_id' => null,
+                'central_category_id' => $categories->get($categorySlug)?->getKey(),
                 'name' => $name,
                 'model' => $model,
                 'slug' => $slug,
-                'status' => CentralProductStatus::Draft,
+                'status' => $status,
                 'version' => 1,
                 'created_at' => CarbonImmutable::parse('2026-08-09T10:00:00Z'),
                 'updated_at' => CarbonImmutable::parse('2026-08-09T10:00:00Z'),

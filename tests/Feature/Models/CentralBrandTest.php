@@ -3,6 +3,7 @@
 namespace Tests\Feature\Models;
 
 use App\Enums\CentralBrandStatus;
+use App\Models\CentralCatalog\CatalogTag;
 use App\Models\CentralCatalog\CentralBrand;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -12,6 +13,19 @@ use Tests\TestCase;
 class CentralBrandTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_brand_has_explicit_sorted_catalog_tag_relation(): void
+    {
+        $brand = CentralBrand::factory()->create();
+        $premium = CatalogTag::factory()->create(['name' => 'Premium']);
+        $gaming = CatalogTag::factory()->create(['name' => 'Gaming']);
+        $brand->tags()->attach([$premium->id, $gaming->id]);
+
+        self::assertSame(['Gaming', 'Premium'], $brand->fresh()->tags->pluck('name')->all());
+        self::assertSame([$brand->id], $premium->brands()->pluck('central_brands.id')->all());
+        self::assertArrayNotHasKey('normalized_name', $premium->toArray());
+        self::assertArrayNotHasKey('normalized_name_hash', $premium->toArray());
+    }
 
     public function test_can_create_central_brand(): void
     {

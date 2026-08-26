@@ -118,6 +118,14 @@ parameters:
                 bindings: literal_only
                 behaviorTests: [tests/Unit/Services/TranslationCompletenessServiceTest.php]
                 status: approved
+            -
+                class: App\Queries\CentralCatalog\CentralBrandCategoryCoverageQuery
+                ownerMethods: [forBrand]
+                methods: [selectRaw]
+                reason: 'Derived Brand coverage requires one portable grouped product count over direct Category assignments.'
+                bindings: literal_only
+                behaviorTests: [tests/Feature/Queries/CentralBrandCategoryCoverageQueryTest.php]
+                status: approved
         paginationBoundaries:
             -
                 class: App\Queries\CentralCatalog\CentralBrandListQuery

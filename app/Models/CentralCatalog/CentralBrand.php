@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -72,6 +73,14 @@ final class CentralBrand extends Model
     public function products(): HasMany
     {
         return $this->hasMany(CentralProduct::class, 'central_brand_id');
+    }
+
+    /** @return BelongsToMany<CatalogTag, $this> */
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(CatalogTag::class, 'central_brand_tag')
+            ->orderBy('catalog_tags.normalized_name')
+            ->orderBy('catalog_tags.id');
     }
 
     /** @return BelongsTo<Country, $this> */

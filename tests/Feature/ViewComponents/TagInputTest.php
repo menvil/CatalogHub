@@ -17,6 +17,7 @@ final class TagInputTest extends TestCase
                 name="tags"
                 label="Brand tags"
                 :values="['Premium', 'C++']"
+                :reset-values="['Persisted']"
                 help="Maximum 20 tags."
                 error="Invalid tag."
                 form="tag-form"
@@ -31,6 +32,7 @@ final class TagInputTest extends TestCase
         self::assertStringContainsString('aria-label="Remove C++"', $html);
         self::assertStringContainsString('aria-describedby="brand-tags-help brand-tags-error brand-tags-client-error"', $html);
         self::assertStringContainsString('aria-invalid="true"', $html);
+        self::assertStringContainsString('data-ui-tag-input-reset-value data-tag-name="Persisted"', $html);
     }
 
     public function test_empty_and_disabled_states_render_without_fake_values_and_disable_controls(): void

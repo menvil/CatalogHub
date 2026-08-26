@@ -54,6 +54,7 @@ export function bootAdminModals() {
         previousFocusByModal.delete(modal);
         previousFocus?.focus?.({ preventScroll: true });
         syncBody();
+        modal.dispatchEvent(new CustomEvent('admin:modal-closed', { bubbles: true }));
     };
 
     document.addEventListener('click', (event) => {

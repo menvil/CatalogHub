@@ -15,6 +15,7 @@ export function bootTagInputs() {
         const addButton = root.querySelector('[data-ui-tag-input-add]');
         const chips = root.querySelector('[data-ui-tag-input-chips]');
         const error = root.querySelector('[data-ui-tag-input-error]');
+        const resetTemplate = root.querySelector('[data-ui-tag-input-reset-values]');
         const max = Number.parseInt(root.dataset.uiTagInputMax ?? '20', 10);
         const disabled = root.dataset.uiTagInputDisabled === 'true';
 
@@ -52,6 +53,17 @@ export function bootTagInputs() {
 
             chip.append(label, hidden, remove);
             chips.append(chip);
+        };
+        const resetValues = resetTemplate instanceof HTMLTemplateElement
+            ? Array.from(resetTemplate.content.querySelectorAll('[data-ui-tag-input-reset-value]'))
+                .map((value) => value.dataset.tagName ?? '')
+            : currentChips().map((chip) => chip.dataset.tagName ?? '');
+        const reset = () => {
+            currentChips().forEach((chip) => chip.remove());
+            resetValues.forEach(createChip);
+            input.value = '';
+            showError('');
+            input.dispatchEvent(new Event('input', { bubbles: true }));
         };
         const add = () => {
             const name = input.value.replace(/[\p{Z}\u0009-\u000d\u0085]+/gu, ' ').trim().normalize('NFC');
@@ -93,6 +105,10 @@ export function bootTagInputs() {
             remove.closest('[data-ui-tag-input-chip]')?.remove();
             showError('');
             input.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+        document.addEventListener('admin:modal-closed', (event) => {
+            if (! (event.target instanceof Element) || ! event.target.contains(root)) return;
+            reset();
         });
     });
 }

@@ -113,6 +113,24 @@ test('CA-012 manages normalized Brand tags and shows direct current category cov
     await expect(classification.locator('[data-brand-tags]')).toContainText('Premium')
 
     await classification.getByRole('button', { name: 'Manage tags' }).click()
+    await input.fill('Temporary')
+    await input.press('Enter')
+    await expect(dialog.getByRole('button', { name: 'Remove Temporary' })).toHaveCount(1)
+    await input.fill('unfinished tag')
+    await dialog.getByRole('button', { name: 'Cancel' }).click()
+
+    await classification.getByRole('button', { name: 'Manage tags' }).click()
+    await expect(dialog.getByRole('button', { name: 'Remove Temporary' })).toHaveCount(0)
+    await expect(dialog.getByRole('button', { name: 'Remove Premium' })).toHaveCount(1)
+    await expect(input).toHaveValue('')
+    await dialog.getByRole('button', { name: 'Remove Premium' }).focus()
+    await dialog.getByRole('button', { name: 'Remove Premium' }).press('Enter')
+    await expect(dialog.getByRole('button', { name: 'Remove Premium' })).toHaveCount(0)
+    await page.keyboard.press('Escape')
+    await expect(dialog).toBeHidden()
+
+    await classification.getByRole('button', { name: 'Manage tags' }).click()
+    await expect(dialog.getByRole('button', { name: 'Remove Premium' })).toHaveCount(1)
     await input.fill('premium')
     await input.press('Enter')
     await expect(dialog).toContainText('That tag is already added.')
@@ -120,6 +138,8 @@ test('CA-012 manages normalized Brand tags and shows direct current category cov
     await dialog.getByRole('button', { name: 'Cancel' }).click()
 
     await classification.getByRole('button', { name: 'Manage tags' }).click()
+    await expect(dialog.locator('[data-ui-tag-input-error]')).toBeHidden()
+    await expect(input).toHaveValue('')
     const removePremium = dialog.getByRole('button', { name: 'Remove Premium' })
     await removePremium.focus()
     await removePremium.press('Enter')

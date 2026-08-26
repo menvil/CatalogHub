@@ -127,6 +127,8 @@ final class CentralBrandClassificationTest extends TestCase
     public function test_invalid_and_unauthorized_requests_make_no_changes_or_audit_rows(): void
     {
         $brand = CentralBrand::factory()->create();
+        $persistedTag = CatalogTag::factory()->create(['name' => 'Premium']);
+        $brand->tags()->attach($persistedTag);
         $translator = User::factory()->create(['role' => UserRole::Translator]);
 
         $this->actingAs($translator)
@@ -145,6 +147,7 @@ final class CentralBrandClassificationTest extends TestCase
             ->assertOk()
             ->assertSee('data-admin-modal="manage-brand-tags-modal"', false)
             ->assertSee('data-admin-modal-open="true"', false)
+            ->assertSee('data-ui-tag-input-reset-value data-tag-name="Premium"', false)
             ->assertSee('contain no control characters or newlines.');
 
         $this->actingAs($manager)
@@ -153,8 +156,8 @@ final class CentralBrandClassificationTest extends TestCase
             ])
             ->assertSessionHasErrors('tags');
 
-        self::assertDatabaseCount('catalog_tags', 0);
-        self::assertDatabaseCount('central_brand_tag', 0);
+        self::assertDatabaseCount('catalog_tags', 1);
+        self::assertDatabaseCount('central_brand_tag', 1);
         self::assertDatabaseCount('audit_log_entries', 0);
 
     }

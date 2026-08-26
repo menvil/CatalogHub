@@ -1,13 +1,15 @@
 @props([
     'id', 'name' => 'tags', 'label' => 'Tags', 'values' => [], 'help' => null, 'error' => null,
-    'disabled' => false, 'max' => 20, 'form' => null,
+    'disabled' => false, 'max' => 20, 'form' => null, 'resetValues' => null,
 ])
 @php
     throw_if(trim((string) $id) === '', \InvalidArgumentException::class, 'Tag input IDs cannot be empty.');
-    $tagValues = array_values(array_filter(
-        is_array($values) ? $values : [],
+    $filterTagValues = static fn (mixed $items): array => array_values(array_filter(
+        is_array($items) ? $items : [],
         static fn (mixed $value): bool => is_string($value),
     ));
+    $tagValues = $filterTagValues($values);
+    $resetTagValues = $resetValues === null ? $tagValues : $filterTagValues($resetValues);
     $inputName = str_ends_with((string) $name, '[]') ? (string) $name : $name.'[]';
     $describedBy = collect([
         filled($help) ? "{$id}-help" : null,
@@ -34,6 +36,11 @@
                 </span>
             @endforeach
         </div>
+        <template data-ui-tag-input-reset-values>
+            @foreach ($resetTagValues as $tag)
+                <span data-ui-tag-input-reset-value data-tag-name="{{ $tag }}"></span>
+            @endforeach
+        </template>
         <div class="mt-2 flex min-w-0 flex-col gap-2 sm:flex-row">
             <input
                 id="{{ $id }}-input"

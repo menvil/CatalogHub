@@ -19,7 +19,8 @@
     if ($tagError === '' && $oldTagEditorValues !== null) {
         $tagError = 'Review the submitted tags. Tags must be nonblank, at most 80 characters, and contain no control characters or newlines.';
     }
-    $tagEditorValues = $oldTagEditorValues ?? $brand->tags->pluck('name')->all();
+    $persistedTagEditorValues = $brand->tags->pluck('name')->all();
+    $tagEditorValues = $oldTagEditorValues ?? $persistedTagEditorValues;
     $tagEditorValues = is_array($tagEditorValues) ? array_values($tagEditorValues) : [];
     $tagEditorOpen = $tagError !== '' || $oldTagEditorValues !== null;
 @endphp
@@ -284,6 +285,7 @@
                 name="tags"
                 label="Brand tags"
                 :values="$tagEditorValues"
+                :reset-values="$persistedTagEditorValues"
                 help="Press Enter or use Add tag. Maximum 20 tags; names may be up to 80 characters."
                 :error="$tagError"
                 form="manage-brand-tags-form"

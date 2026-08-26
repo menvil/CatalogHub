@@ -15,7 +15,7 @@ for (const state of states) {
         await signIn(page, 'central', foundationDemo.centralAdmin)
         await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
         await page.goto(state.url)
-        await expect(page.locator('[data-brand-detail-fixture="brand-detail-v3"]')).toBeVisible()
+        await expect(page.locator('[data-brand-detail-fixture="brand-detail-v4"]')).toBeVisible()
         if (state.state === 'active' && await page.locator('[data-brand-tags]').count() === 0) {
             await page.locator('[data-screen-region="classification"]').getByRole('button', { name: 'Manage tags' }).click()
             const dialog = page.getByRole('dialog', { name: 'Manage tags' })

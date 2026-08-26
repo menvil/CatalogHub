@@ -1,18 +1,18 @@
 ---
 screen_id: CA-012
 context: central-admin
-purpose: Inspect a canonical Brand, its current lifecycle state, editorial Tags, derived Category coverage, metadata and usage.
+purpose: Inspect a canonical Brand, its lifecycle, classification, external provenance, metadata and usage.
 roles: authorized Central Admin catalog user
-route: /admin/central/brands/{brand} (GET); /admin/central/brands/{brand}/tags (PATCH); /admin/central/brands/{brand}/activate (POST); /admin/central/brands/{brand}/archive (POST); /admin/central/brands/{brand}/restore (POST)
+route: /admin/central/brands/{brand} (GET); /admin/central/brands/{brand}/tags (PATCH); /admin/central/brands/{brand}/external-identities (POST); /admin/central/brands/{brand}/external-identities/{identity} (PATCH, DELETE); /admin/central/brands/{brand}/activate (POST); /admin/central/brands/{brand}/archive (POST); /admin/central/brands/{brand}/restore (POST)
 viewports: desktop=1440x1000;mobile=390x844
-fixture: brand-detail-v3
-regions: central-shell;breadcrumbs;page-header;status-context;brand-tabs;general-information;online-presence;brand-identity;classification;tags;category-coverage;usage;record-metadata;lifecycle;tag-modal;confirmation-modal;flash-feedback
-actions: edit-brand;manage-tags;save-tags;cancel-tags;activate-brand;archive-brand;restore-brand;confirm;cancel
-states: draft;active;archived;tag-empty;coverage-empty;tag-validation-error;status-action-error
+fixture: brand-detail-v4
+regions: central-shell;breadcrumbs;page-header;status-context;brand-tabs;general-information;online-presence;brand-identity;classification;tags;category-coverage;external-identities;usage;record-metadata;lifecycle;tag-modal;external-identity-modal;confirmation-modal;flash-feedback
+actions: edit-brand;manage-tags;save-tags;cancel-tags;add-identity;edit-identity;remove-identity;activate-brand;archive-brand;restore-brand;confirm;cancel
+states: draft;active;archived;tag-empty;coverage-empty;provenance-empty;no-active-import-sources;inactive-source;validation-error;status-action-error
 permissions: catalog.brands.manage
-responsive: Desktop uses the full Central Admin workspace with main content and a right aside; mobile stacks regions, wraps Tags, keeps the tag dialog inside 390×844, keeps category names/counts readable, and prevents page-level overflow.
-out_of_scope: manual-brand-category-editing;translation-editing;product-list;site-projections;audit-history;global-tag-management;granular-brand-permissions;delete;hard-delete;soft-delete
-reference_version: v3
+responsive: Desktop uses the full Central Admin workspace with main content and a right aside; mobile stacks regions, wraps Tags, keeps dialogs inside 390×844, wraps long external IDs, keeps category names/counts readable, and prevents page-level overflow.
+out_of_scope: manual-brand-category-editing;field-level-provenance;source-management;translation-editing;product-list;site-projections;audit-history;global-tag-management;granular-brand-permissions;delete;hard-delete;soft-delete
+reference_version: v4
 ---
 
 # CA-012 — Brand Detail
@@ -28,6 +28,14 @@ The `x-admin.detail-layout` main column contains General Information, Online pre
 Classification groups two intentionally different concepts. Tags are explicit editorial state, displayed as neutral wrapping chips. `Manage tags` opens the shared modal with generic `x-ui.form.tag-input`: Enter/Add creates a chip, keyboard-operable `Remove {Tag}` controls remove one, hidden `tags[]` values submit, and Save is immediate explicit intent. Cancel or Escape closes without a native confirmation and restores the persisted reset snapshot, discarding unsaved chips, unfinished text, and client validation errors. Client normalization suppresses obvious duplicates and reports the 20-Tag limit; the server remains authoritative. PATCH success redirects to the same Detail `#classification` anchor with `Brand tags updated.`. Validation redirects back with old values, an immediately open dialog, and visible error; its reset snapshot remains the persisted Brand tags. Draft, Active, and Archived Brands are all manageable under `catalog.brands.manage`.
 
 Current Category coverage is read-only and states that it is derived automatically from direct Category assignments of current Brand Products. A single grouped query includes Draft and Active Products, excludes Archived Products, preserves the referenced Category status badge, counts exact Category assignments, and sorts count descending/name/ID. It offers no add/remove/checkbox/category assignment control. Tag empty copy is `No tags have been assigned to this Brand.`; coverage empty copy is `No category coverage yet.` plus the derived explanation.
+
+## External identities
+
+External identities connect the canonical Brand to source-side records in configured `ImportSource` namespaces. The bounded eager-loaded list sorts by source name, source code, and opaque external ID. Each row shows the source name/code, active or inactive status, the external ID, and a safely presented `Open record` HTTP(S) link when one exists. Neither source configuration nor credentials are selected for the view or rendered. Existing inactive-source links remain visible and editable; only active sources are available for a new link.
+
+Authorized Brand managers can add, edit, or unlink an identity. Add accepts an active Source, required external ID, and optional external record URL. Edit keeps Source read-only because Source and external ID jointly define the namespace. Remove uses the shared confirmation modal and makes clear that only the linkage is deleted. Cancel, Escape, and modal backdrop close restore persisted/default controls, clear unfinished edits, and clear client error state through the generic modal lifecycle. Server validation reopens only the relevant add/edit dialog with submitted values and visible errors; a later Cancel restores persisted state. Nested scoped binding and action ownership checks prevent cross-Brand mutation. Success returns to `#external-identities`.
+
+With no links, the card says `No external identities are linked to this Brand.`. If active sources exist it offers Add identity; otherwise it also explains `No active import sources are available.` and does not offer source creation. Source management, automatic canonical updates, matching confidence, observation history, and field-level lineage are absent.
 
 The aside contains Record and Lifecycle cards. Record shows Status, deterministic absolute Created/Updated UTC timestamps, and Record ID. Lifecycle exposes only valid current-state intents through explicit CSRF POST forms and `x-admin.confirmation-modal`:
 
@@ -48,14 +56,17 @@ The dedicated `catalog.brands.manage` permission protects canonical Brand reads 
 - `tag-empty`: explanatory copy and Manage tags remain visible.
 - `coverage-empty`: explanatory derived copy appears without an assignment CTA.
 - `tag-validation-error`: the editor reopens with old chip input and an associated error.
+- `provenance-empty`: explanatory copy appears and Add identity is available only when an active source exists.
+- `inactive-source`: the existing link remains visible, editable, and removable with an Inactive badge.
+- `validation-error`: only the submitted external-identity dialog reopens with old values and associated errors; Cancel restores persisted values.
 
 ## Visual reference
 
-The active desktop/mobile and archived desktop `CA-012` entries in `docs/ui/visual-references.json` use `brand-detail-v3`. The deterministic active Samsung fixture derives Smartphones 24, Televisions 12, and Tablets 6 from real Products while archived-only Laptops remains absent; visual setup assigns Consumer Electronics, Premium, and Gaming through the real Tag mutation UI. Phase 11 moves toward the richer original Brand Detail hierarchy without claiming final Phase 17 convergence. Confirmation dialogs, feedback, and full mutation sequences remain browser acceptance rather than extra baselines.
+The active desktop/mobile and archived desktop `CA-012` entries in `docs/ui/visual-references.json` use `brand-detail-v4`. The deterministic active Samsung fixture derives Smartphones 24, Televisions 12, and Tablets 6 from real Products while archived-only Laptops remains absent; it assigns Consumer Electronics, Premium, and Gaming through real Tag storage and renders actual active/inactive ImportSource identity rows. Phase 12 moves toward the richer original Brand Detail hierarchy without claiming final Phase 17 convergence. Confirmation dialogs, feedback, and full mutation sequences remain browser acceptance rather than extra baselines.
 
 ## Explicit non-goals
 
-No media or translation mutation, Product list/filtering, site projections, audit history, granular Brand permissions, deletion, hard deletion, soft deletion, or migration is introduced on CA-012.
+No source CRUD/configuration, field-level provenance, source observation history, media or translation mutation, Product list/filtering, site projections, audit history, granular Brand permissions, Brand deletion, or soft deletion is introduced on CA-012.
 
 ## Brand logo and navigation
 

@@ -8,12 +8,15 @@ use App\Enums\CentralProductStatus;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
+use App\Models\Imports\CentralBrandExternalIdentity;
+use App\Models\Imports\ImportSource;
+use App\Support\Imports\ExternalIdentityNormalizer;
 use Carbon\CarbonImmutable;
 use RuntimeException;
 
 final class BrandDetailFixture
 {
-    public const VERSION = 'brand-detail-v3';
+    public const VERSION = 'brand-detail-v4';
 
     public const ACTIVE_BRAND_ID = 20;
 
@@ -43,6 +46,45 @@ final class BrandDetailFixture
             'contact_email' => 'support@example.com',
             'primary_color' => '#1428A0',
         ])->saveOrFail();
+
+        $manufacturerApi = new ImportSource;
+        $manufacturerApi->forceFill([
+            'id' => 120101,
+            'code' => 'manufacturer_api',
+            'name' => 'Manufacturer API',
+            'type' => ImportSource::TYPE_API,
+            'status' => 'active',
+            'config_json' => ['token' => 'fixture-secret-must-never-render'],
+            'description' => 'Deterministic Brand provenance fixture.',
+        ])->saveOrFail();
+
+        $legacyFeed = new ImportSource;
+        $legacyFeed->forceFill([
+            'id' => 120102,
+            'code' => 'legacy_feed',
+            'name' => 'Legacy Feed',
+            'type' => ImportSource::TYPE_CSV,
+            'status' => 'inactive',
+            'config_json' => ['password' => 'fixture-secret-must-never-render'],
+            'description' => 'Deterministic inactive provenance fixture.',
+        ])->saveOrFail();
+
+        foreach ([
+            [120103, $manufacturerApi, 'brand-00142', 'https://example.test/brands/brand-00142'],
+            [120104, $legacyFeed, 'SAMSUNG', null],
+        ] as [$id, $source, $externalId, $externalUrl]) {
+            $identity = new CentralBrandExternalIdentity;
+            $identity->forceFill([
+                'id' => $id,
+                'central_brand_id' => $activeBrand->getKey(),
+                'import_source_id' => $source->getKey(),
+                'external_id' => $externalId,
+                'external_id_hash' => ExternalIdentityNormalizer::hash($externalId),
+                'external_url' => $externalUrl,
+                'created_at' => CarbonImmutable::parse('2026-08-12T10:00:00Z'),
+                'updated_at' => CarbonImmutable::parse('2026-08-12T10:00:00Z'),
+            ])->saveOrFail();
+        }
 
         $categories = collect([
             [120121, 'Smartphones', 'smartphones'],

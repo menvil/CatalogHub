@@ -48,6 +48,10 @@ manual file, or serialized PHP source export.
 5. Map raw fields.
    - Connect source fields to canonical product identity, brand, category, and
      category attributes.
+   - When a source actually supplies a stable external Brand identifier, resolve
+     it exactly through `CentralBrandExternalIdentityResolver` within that
+     `ImportSource` namespace. A free-form `raw_brand` name is not an external
+     identity and must not create a mapping implicitly.
 6. Normalize attributes.
    - Convert source values into canonical values, enums, booleans, and text.
 7. Parse units.
@@ -115,6 +119,19 @@ Adapter must not:
 - Reviewed normalized drafts.
 - Approved Central products or rejected drafts.
 - Sync/projection rebuild trigger for affected sites.
+
+## Brand identity boundary
+
+`ImportSource` is the existing registry for imported catalog data. Its stable
+Brand record mappings are stored as `CentralBrandExternalIdentity` links and
+resolved using the trimmed, otherwise opaque and case-sensitive external ID.
+The link is entity-level provenance only: it does not overwrite canonical Brand
+fields, retain raw payloads, or describe which source supplied an individual
+field. Unknown identities do not create or merge Brands automatically.
+
+This is distinct from `ExternalProductMapping`, which belongs to the
+`PriceSource` merchant/offer matching domain and may have candidate-confidence
+workflow. Import-source Brand provenance must not use that table or registry.
 
 ## Future Phase Dependencies
 

@@ -41,6 +41,39 @@ trait ValidatesCentralBrandInput
             $slugRule->ignore($brand->getKey(), $brand->getKeyName());
         }
 
+        $normalizedRules = [
+            'slug' => ['required', 'max:255', 'regex:/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/', $slugRule],
+        ];
+
+        if ($brand === null || $input->hasWebsiteUrl) {
+            $normalizedRules['website_url'] = ['nullable', 'max:255', 'url:http,https'];
+        }
+
+        if ($brand === null || $input->hasCountryId) {
+            $normalizedRules['country_id'] = ['nullable', 'integer'];
+        }
+
+        if ($brand === null || $input->hasFoundedYear) {
+            $normalizedRules['founded_year'] = [
+                'nullable',
+                'integer',
+                'min:'.CentralBrandProfileConstraints::MIN_FOUNDED_YEAR,
+                'max:'.CentralBrandProfileConstraints::maximumFoundedYear(),
+            ];
+        }
+
+        if ($brand === null || $input->hasSupportUrl) {
+            $normalizedRules['support_url'] = ['nullable', 'max:'.CentralBrandProfileConstraints::URL_MAX_LENGTH, 'url:http,https'];
+        }
+
+        if ($brand === null || $input->hasContactEmail) {
+            $normalizedRules['contact_email'] = ['nullable', 'max:'.CentralBrandProfileConstraints::EMAIL_MAX_LENGTH, 'email'];
+        }
+
+        if ($brand === null || $input->hasPrimaryColor) {
+            $normalizedRules['primary_color'] = ['nullable', 'regex:'.CentralBrandProfileConstraints::HEX_COLOR_PATTERN];
+        }
+
         $normalizedValidator = Validator::make([
             'name' => $name,
             'slug' => $slug,
@@ -50,20 +83,7 @@ trait ValidatesCentralBrandInput
             'support_url' => $supportUrl,
             'contact_email' => $contactEmail,
             'primary_color' => $primaryColor,
-        ], [
-            'slug' => ['required', 'max:255', 'regex:/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/', $slugRule],
-            'website_url' => ['nullable', 'max:255', 'url:http,https'],
-            'country_id' => ['nullable', 'integer'],
-            'founded_year' => [
-                'nullable',
-                'integer',
-                'min:'.CentralBrandProfileConstraints::MIN_FOUNDED_YEAR,
-                'max:'.CentralBrandProfileConstraints::maximumFoundedYear(),
-            ],
-            'support_url' => ['nullable', 'max:'.CentralBrandProfileConstraints::URL_MAX_LENGTH, 'url:http,https'],
-            'contact_email' => ['nullable', 'max:'.CentralBrandProfileConstraints::EMAIL_MAX_LENGTH, 'email'],
-            'primary_color' => ['nullable', 'regex:'.CentralBrandProfileConstraints::HEX_COLOR_PATTERN],
-        ]);
+        ], $normalizedRules);
 
         $normalizedValidator->after(function ($validator) use ($name, $brand): void {
             if (! $validator->errors()->has('name') && (new DuplicateCentralBrandNameQuery)->exists($name, $brand)) {
@@ -71,19 +91,19 @@ trait ValidatesCentralBrandInput
             }
         });
 
-        $normalized = $normalizedValidator->validate();
+        $normalizedValidator->validate();
 
         return [
             'name' => $name,
             'normalized_name' => BrandInputNormalizer::nameIdentity($name),
             'normalized_name_hash' => BrandInputNormalizer::nameIdentityHash($name),
-            'slug' => (string) $normalized['slug'],
-            'website_url' => isset($normalized['website_url']) ? (string) $normalized['website_url'] : null,
-            'country_id' => isset($normalized['country_id']) ? (int) $normalized['country_id'] : null,
-            'founded_year' => isset($normalized['founded_year']) ? (int) $normalized['founded_year'] : null,
-            'support_url' => isset($normalized['support_url']) ? (string) $normalized['support_url'] : null,
-            'contact_email' => isset($normalized['contact_email']) ? (string) $normalized['contact_email'] : null,
-            'primary_color' => isset($normalized['primary_color']) ? (string) $normalized['primary_color'] : null,
+            'slug' => $slug,
+            'website_url' => $websiteUrl,
+            'country_id' => $countryId,
+            'founded_year' => $foundedYear,
+            'support_url' => $supportUrl,
+            'contact_email' => $contactEmail,
+            'primary_color' => $primaryColor,
         ];
     }
 

@@ -159,11 +159,40 @@ final class CentralBrandProfileActionTest extends TestCase
         }
         $entry = AuditLogEntry::query()->sole();
         $this->assertSame([
+            'founded_year' => 1938,
+            'support_url' => 'https://example.com/support',
+            'contact_email' => 'support@example.com',
+            'primary_color' => '#1428A0',
+        ], $entry->before_json);
+        $this->assertSame([
             'founded_year' => null,
             'support_url' => null,
             'contact_email' => null,
             'primary_color' => null,
         ], $entry->after_json);
+    }
+
+    public function test_unrelated_update_preserves_omitted_legacy_profile_values_without_revalidating_them(): void
+    {
+        $brand = CentralBrand::factory()->create([
+            'name' => 'Legacy Brand',
+            'slug' => 'legacy-brand',
+            'support_url' => 'javascript:alert(1)',
+            'primary_color' => 'red',
+        ]);
+
+        $updated = app(UpdateCentralBrandAction::class)->handle(User::factory()->create(), $brand, new CentralBrandInput(
+            name: 'Legacy Brand Updated',
+            slug: 'legacy-brand',
+        ));
+
+        $this->assertSame('Legacy Brand Updated', $updated->name);
+        $this->assertSame('javascript:alert(1)', $updated->support_url);
+        $this->assertSame('red', $updated->primary_color);
+
+        $entry = AuditLogEntry::query()->sole();
+        $this->assertSame(['name' => 'Legacy Brand'], $entry->before_json);
+        $this->assertSame(['name' => 'Legacy Brand Updated'], $entry->after_json);
     }
 
     public function test_canonical_equivalent_profile_update_is_a_no_op(): void

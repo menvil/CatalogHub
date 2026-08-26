@@ -10,7 +10,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CentralAdmin\CentralBrandFormRequest;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\User;
+use App\Queries\CentralCatalog\CentralBrandMediaQuery;
 use App\Services\Geography\CountryOptionProvider;
+use App\Services\Media\BrandLogoPresenter;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 
@@ -34,11 +36,16 @@ final class CentralBrandFormController extends Controller
             ->with('success', 'Brand created.');
     }
 
-    public function edit(CentralBrand $brand, CountryOptionProvider $countries): View
-    {
+    public function edit(
+        CentralBrand $brand,
+        CountryOptionProvider $countries,
+        CentralBrandMediaQuery $media,
+        BrandLogoPresenter $logos,
+    ): View {
         return view('central-admin.brands.edit', [
             'brand' => $brand,
             'countryOptions' => $countries->options($brand->country_id, app()->getLocale()),
+            'logo' => $logos->forDetail($media->logoFor($brand)),
         ]);
     }
 

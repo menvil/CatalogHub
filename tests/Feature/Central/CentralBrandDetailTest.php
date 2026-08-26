@@ -53,6 +53,10 @@ final class CentralBrandDetailTest extends TestCase
             'slug' => 'samsung',
             'website_url' => 'https://www.samsung.com/global',
             'country_id' => CountryReference::id('KR'),
+            'founded_year' => 1938,
+            'support_url' => 'https://www.samsung.com/support/',
+            'contact_email' => 'support@example.com',
+            'primary_color' => '#1428A0',
             'created_at' => CarbonImmutable::parse('2026-08-20 09:15:00 UTC'),
             'updated_at' => CarbonImmutable::parse('2026-08-24 13:30:00 UTC'),
         ]);
@@ -72,6 +76,10 @@ final class CentralBrandDetailTest extends TestCase
             ->assertSee('target="_blank"', false)
             ->assertSee('rel="noopener noreferrer"', false)
             ->assertSee('South Korea (KR)')
+            ->assertSee('1938')
+            ->assertSee('href="https://www.samsung.com/support/"', false)
+            ->assertSee('support@example.com')
+            ->assertSee('#1428A0')
             ->assertSee('2026-08-20 09:15 UTC')
             ->assertSee('2026-08-24 13:30 UTC')
             ->assertSee((string) $brand->getKey())
@@ -98,7 +106,7 @@ final class CentralBrandDetailTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->get(route('central.brands.show', $brand))
             ->assertOk()
-            ->assertSeeInOrder(['Website', '—', 'Country', '—']);
+            ->assertSeeInOrder(['Country', '—', 'Founded', '—', 'Website', '—', 'Support URL', '—', 'Contact email', '—', 'Primary color', '—']);
     }
 
     public function test_unsafe_legacy_website_is_plain_text_and_never_an_executable_link(): void
@@ -113,6 +121,23 @@ final class CentralBrandDetailTest extends TestCase
             ->assertOk()
             ->assertSee('javascript:alert(1)')
             ->assertDontSee('href="javascript:alert(1)"', false);
+    }
+
+    public function test_unsafe_legacy_support_url_is_plain_text_and_primary_color_requires_canonical_shape_for_swatch(): void
+    {
+        $brand = CentralBrand::factory()->create([
+            'name' => 'Legacy Profile Brand',
+            'support_url' => 'javascript:alert(1)',
+            'primary_color' => 'red',
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('central.brands.show', $brand))
+            ->assertOk()
+            ->assertSee('javascript:alert(1)')
+            ->assertDontSee('href="javascript:alert(1)"', false)
+            ->assertSee('red')
+            ->assertDontSee('background-color: red', false);
     }
 
     public function test_usage_count_includes_only_products_referencing_the_current_brand(): void

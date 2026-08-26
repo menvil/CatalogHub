@@ -3,6 +3,9 @@
 @php
     $statusVariant = $brand->status->color() === 'gray' ? 'neutral' : $brand->status->color();
     $websiteIsSafe = \App\Support\Presentation\SafePresentationUrl::allows($brand->website_url);
+    $supportUrlIsSafe = \App\Support\Presentation\SafePresentationUrl::allows($brand->support_url);
+    $primaryColorIsSafe = is_string($brand->primary_color)
+        && preg_match('/\A#[0-9A-F]{6}\z/', $brand->primary_color) === 1;
     $productsCount = (int) $brand->products_count;
     $lifecycleError = $errors->first('status') ?: session('lifecycle_error');
 @endphp
@@ -56,6 +59,21 @@
                             <dd class="text-sm text-admin-text">{{ $brand->status->label() }}</dd>
                         </div>
                         <div class="grid gap-1 py-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
+                            <dt class="text-sm font-medium text-admin-muted">Country</dt>
+                            <dd class="min-w-0 break-words text-sm text-admin-text">
+                                {{ $countryName === null ? '—' : $countryName.' ('.$brand->country->alpha2.')' }}
+                            </dd>
+                        </div>
+                        <div class="grid gap-1 pt-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
+                            <dt class="text-sm font-medium text-admin-muted">Founded</dt>
+                            <dd class="text-sm text-admin-text">{{ $brand->founded_year ?? '—' }}</dd>
+                        </div>
+                    </dl>
+                </x-admin.card>
+
+                <x-admin.card title="Online presence" data-screen-region="online-presence">
+                    <dl class="divide-y divide-admin-border">
+                        <div class="grid gap-1 py-3 first:pt-0 sm:grid-cols-[10rem_minmax(0,1fr)]">
                             <dt class="text-sm font-medium text-admin-muted">Website</dt>
                             <dd class="min-w-0 break-all text-sm text-admin-text">
                                 @if ($brand->website_url === null)
@@ -67,13 +85,39 @@
                                 @endif
                             </dd>
                         </div>
-                        <div class="grid gap-1 pt-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
-                            <dt class="text-sm font-medium text-admin-muted">Country</dt>
-                            <dd class="min-w-0 break-words text-sm text-admin-text">
-                                {{ $countryName === null ? '—' : $countryName.' ('.$brand->country->alpha2.')' }}
+                        <div class="grid gap-1 py-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
+                            <dt class="text-sm font-medium text-admin-muted">Support URL</dt>
+                            <dd class="min-w-0 break-all text-sm text-admin-text">
+                                @if ($brand->support_url === null)
+                                    —
+                                @elseif ($supportUrlIsSafe)
+                                    <a href="{{ $brand->support_url }}" target="_blank" rel="noopener noreferrer" class="font-medium text-admin-primary underline decoration-admin-primary/30 underline-offset-2">{{ $brand->support_url }}</a>
+                                @else
+                                    {{ $brand->support_url }}
+                                @endif
                             </dd>
                         </div>
+                        <div class="grid gap-1 pt-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
+                            <dt class="text-sm font-medium text-admin-muted">Contact email</dt>
+                            <dd class="min-w-0 break-all text-sm text-admin-text">{{ $brand->contact_email ?? '—' }}</dd>
+                        </div>
                     </dl>
+                </x-admin.card>
+
+                <x-admin.card title="Brand identity" data-screen-region="brand-identity">
+                    <div class="flex items-center justify-between gap-admin-field">
+                        <span class="text-sm font-medium text-admin-muted">Primary color</span>
+                        @if ($brand->primary_color === null)
+                            <span class="text-sm text-admin-text">—</span>
+                        @else
+                            <span class="flex items-center gap-2 font-foundation-mono text-sm text-admin-text">
+                                @if ($primaryColorIsSafe)
+                                    <span class="h-6 w-6 rounded-admin-input border border-admin-border" style="background-color: {{ $brand->primary_color }}" aria-hidden="true"></span>
+                                @endif
+                                {{ $brand->primary_color }}
+                            </span>
+                        @endif
+                    </div>
                 </x-admin.card>
 
                 <x-admin.card title="Usage" data-screen-region="usage">

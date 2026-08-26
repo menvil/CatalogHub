@@ -9,7 +9,7 @@
 @endsection
 
 @section('content')
-    <div class="space-y-admin-section" data-brand-form-fixture="brand-form-v2" data-brand-form-mode="create">
+    <div class="space-y-admin-section" data-brand-form-fixture="brand-form-v3" data-brand-form-mode="create">
         <x-admin.page-header
             screen-id="CA-013"
             :show-screen-id="false"
@@ -18,7 +18,7 @@
             :breadcrumbs="[]"
         />
 
-        <div class="max-w-4xl" data-screen-region="general-form-card">
+        <div class="min-w-0" data-screen-region="brand-profile-workspace">
             @include('central-admin.brands._form', [
                 'mode' => 'create',
                 'brand' => null,

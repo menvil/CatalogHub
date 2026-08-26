@@ -55,6 +55,9 @@
                 <x-ui.form.slug-input id="gallery-slug" name="slug" label="Slug" prefix="catalog.test/brands/" value="acme-displays" />
                 <x-ui.form.textarea id="gallery-description" name="description" label="Description" value="A deterministic fixture." :rows="3" optional />
                 <x-ui.form.input id="gallery-error" name="external_id" label="External ID" value="duplicate" error="This identifier is already used." />
+                <x-ui.form.color-input id="gallery-color" name="primary_color" label="Primary color" value="#1428A0" help="Canonical hexadecimal color." />
+                <x-ui.form.color-input id="gallery-color-error" name="invalid_color" label="Color with error" value="#123" error="Use a six-digit hexadecimal color such as #1428A0." />
+                <x-ui.form.color-input id="gallery-color-disabled" name="disabled_color" label="Disabled color" value="#64748B" disabled />
                 <x-ui.form.select id="gallery-status" name="status" label="Status" :options="$adminComponentFixture['options']" selected="active" />
                 <x-ui.form.multi-select id="gallery-markets" name="locales" label="Locales — compact multi-select" :options="['de-DE' => 'German (Germany)', 'en-DE' => 'English (Germany)']" :selected="['de-DE']" help="Compact native variant for short lists." />
                 <x-ui.form.checkbox-list id="gallery-market-checkboxes" name="markets" label="Markets — Checkbox list" :options="['de' => 'Germany', 'at' => 'Austria', 'ch' => 'Switzerland']" :selected="['de', 'at']" help="Preferred when all choices should remain visible." />

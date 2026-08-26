@@ -40,6 +40,19 @@ function selectOption(option) {
     closeSelect(select, true);
 }
 
+function syncNativeSelect(nativeSelect) {
+    const select = nativeSelect.closest('[data-ui-select]');
+    const value = select?.querySelector('[data-ui-select-value]');
+    if (! select || ! value) return;
+
+    const selectedOption = Array.from(select.querySelectorAll('[data-ui-select-option]'))
+        .find((option) => option.dataset.value === nativeSelect.value);
+    select.querySelectorAll('[data-ui-select-option]').forEach((option) => {
+        option.setAttribute('aria-selected', option === selectedOption ? 'true' : 'false');
+    });
+    value.textContent = selectedOption?.textContent.trim() ?? 'Select an option';
+}
+
 function syncRequiredCheckboxGroup(input) {
     const group = input.closest('[data-ui-scrollable-checkbox-list]');
     if (! group) return;
@@ -107,6 +120,10 @@ export function bootAdminSelects() {
     });
 
     document.addEventListener('change', (event) => {
+        if (event.target instanceof HTMLSelectElement && event.target.matches('[data-ui-select-native]')) {
+            syncNativeSelect(event.target);
+            return;
+        }
         if (! (event.target instanceof HTMLInputElement) || event.target.type !== 'checkbox') return;
         if (event.target.matches('[data-ui-checkbox-group-required]')) syncRequiredCheckboxGroup(event.target);
         const dropdown = event.target.closest('[data-ui-checkbox-dropdown]');

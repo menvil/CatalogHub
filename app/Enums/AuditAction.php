@@ -13,6 +13,9 @@ enum AuditAction: string
     case CatalogBrandCreated = 'catalog.brand.created';
     case CatalogBrandUpdated = 'catalog.brand.updated';
     case CatalogBrandTagsUpdated = 'catalog.brand.tags.updated';
+    case CatalogBrandExternalIdentityLinked = 'catalog.brand.external_identity.linked';
+    case CatalogBrandExternalIdentityUpdated = 'catalog.brand.external_identity.updated';
+    case CatalogBrandExternalIdentityUnlinked = 'catalog.brand.external_identity.unlinked';
     case CatalogBrandActivated = 'catalog.brand.activated';
     case CatalogBrandArchived = 'catalog.brand.archived';
     case CatalogBrandRestored = 'catalog.brand.restored';

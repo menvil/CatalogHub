@@ -23,6 +23,20 @@
     $tagEditorValues = $oldTagEditorValues ?? $persistedTagEditorValues;
     $tagEditorValues = is_array($tagEditorValues) ? array_values($tagEditorValues) : [];
     $tagEditorOpen = $tagError !== '' || $oldTagEditorValues !== null;
+    $externalIdentityModal = session('external_identity_modal');
+    $externalIdentityErrors = session('external_identity_errors', []);
+    $externalIdentityErrors = is_array($externalIdentityErrors) ? $externalIdentityErrors : [];
+    $externalIdentityError = static fn (string $field): ?string => isset($externalIdentityErrors[$field][0])
+        && is_string($externalIdentityErrors[$field][0])
+            ? $externalIdentityErrors[$field][0]
+            : null;
+    $externalIdentityAddOpen = $externalIdentityModal === 'add';
+    $externalIdentityEditId = is_string($externalIdentityModal) && ctype_digit($externalIdentityModal)
+        ? (int) $externalIdentityModal
+        : null;
+    $activeSourceOptions = $activeImportSources->mapWithKeys(
+        static fn ($source): array => [$source->getKey() => $source->name.' ('.$source->code.')'],
+    )->all();
 @endphp
 
 @section('breadcrumbs')
@@ -34,7 +48,7 @@
 @endsection
 
 @section('content')
-    <div class="space-y-admin-section" data-brand-detail-fixture="brand-detail-v3">
+    <div class="space-y-admin-section" data-brand-detail-fixture="brand-detail-v4">
         <x-admin.page-header
             screen-id="CA-012"
             :show-screen-id="false"
@@ -180,7 +194,11 @@
                             @else
                                 <ul class="mt-3 divide-y divide-admin-border" data-brand-category-coverage>
                                     @foreach ($categoryCoverage as $coverage)
-                                        @php($categoryStatusVariant = $coverage->status->color() === 'gray' ? 'neutral' : $coverage->status->color())
+                                        @php
+                                            $categoryStatusVariant = $coverage->status->color() === 'gray'
+                                                ? 'neutral'
+                                                : $coverage->status->color();
+                                        @endphp
                                         <li class="flex min-w-0 flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0" data-category-id="{{ $coverage->categoryId }}">
                                             <div class="flex min-w-0 flex-wrap items-center gap-2">
                                                 <span class="min-w-0 break-words text-sm font-medium text-admin-text">{{ $coverage->name }}</span>
@@ -197,6 +215,8 @@
                         </section>
                     </div>
                 </x-admin.card>
+
+                @include('central-admin.brands.partials.external-identities-card')
 
                 <x-admin.card title="Usage" data-screen-region="usage">
                     <div class="flex items-baseline justify-between gap-admin-field">
@@ -298,6 +318,121 @@
                 </div>
             </x-slot:footer>
         </x-ui.modal>
+
+        @if ($activeImportSources->isNotEmpty())
+            <x-ui.modal id="add-brand-external-identity-modal" title="Add external identity" :open="$externalIdentityAddOpen">
+                <form id="add-brand-external-identity-form" method="POST" action="{{ route('central.brands.external-identities.store', $brand, absolute: false) }}" class="space-y-admin-card">
+                    @csrf
+                    <input type="hidden" name="_external_identity_operation" value="add">
+                    <x-ui.form.select
+                        id="add-external-identity-source"
+                        name="import_source_id"
+                        label="Source"
+                        :options="$activeSourceOptions"
+                        :selected="$externalIdentityAddOpen ? old('import_source_id') : null"
+                        placeholder="Select an active import source"
+                        :error="$externalIdentityAddOpen ? $externalIdentityError('import_source_id') : null"
+                        required
+                        data-admin-modal-reset-value=""
+                    />
+                    <x-ui.form.input
+                        id="add-external-identity-id"
+                        name="external_id"
+                        label="External ID"
+                        :value="$externalIdentityAddOpen ? old('external_id') : ''"
+                        :error="$externalIdentityAddOpen ? $externalIdentityError('external_id') : null"
+                        help="Opaque, case-sensitive identifier from the selected source."
+                        required
+                        maxlength="255"
+                        autocomplete="off"
+                        data-admin-modal-reset-value=""
+                    />
+                    <x-ui.form.input
+                        id="add-external-identity-url"
+                        name="external_url"
+                        type="url"
+                        label="External record URL"
+                        :value="$externalIdentityAddOpen ? old('external_url') : ''"
+                        :error="$externalIdentityAddOpen ? $externalIdentityError('external_url') : null"
+                        help="Optional public HTTP or HTTPS record URL."
+                        optional
+                        maxlength="2048"
+                        data-admin-modal-reset-value=""
+                    />
+                </form>
+                <x-slot:footer>
+                    <div class="flex flex-wrap justify-end gap-admin-field">
+                        <x-ui.button variant="secondary" data-admin-modal-close>Cancel</x-ui.button>
+                        <x-ui.button type="submit" form="add-brand-external-identity-form">Add identity</x-ui.button>
+                    </div>
+                </x-slot:footer>
+            </x-ui.modal>
+        @endif
+
+        @foreach ($brand->externalIdentities as $identity)
+            @php
+                $editModalOpen = $externalIdentityEditId === (int) $identity->getKey();
+                $editExternalId = $editModalOpen ? old('external_id') : $identity->external_id;
+                $editExternalUrl = $editModalOpen ? old('external_url') : $identity->external_url;
+            @endphp
+            <x-ui.modal id="edit-brand-external-identity-{{ $identity->getKey() }}-modal" title="Edit external identity" :open="$editModalOpen">
+                <form id="edit-brand-external-identity-{{ $identity->getKey() }}-form" method="POST" action="{{ route('central.brands.external-identities.update', [$brand, $identity], absolute: false) }}" class="space-y-admin-card">
+                    @csrf
+                    @method('PATCH')
+                    <input type="hidden" name="_external_identity_id" value="{{ $identity->getKey() }}">
+                    <div class="rounded-admin-input border border-admin-border bg-admin-surface-muted px-3 py-2">
+                        <p class="text-xs font-medium text-admin-muted">Source</p>
+                        <p class="mt-1 text-sm font-semibold text-admin-text">{{ $identity->source->name }}</p>
+                        <p class="mt-1 break-all font-foundation-mono text-xs text-admin-muted">{{ $identity->source->code }}</p>
+                    </div>
+                    <x-ui.form.input
+                        id="edit-external-identity-{{ $identity->getKey() }}-id"
+                        name="external_id"
+                        label="External ID"
+                        :value="$editExternalId"
+                        :error="$editModalOpen ? $externalIdentityError('external_id') : null"
+                        required
+                        maxlength="255"
+                        autocomplete="off"
+                        :data-admin-modal-reset-value="$identity->external_id"
+                    />
+                    <x-ui.form.input
+                        id="edit-external-identity-{{ $identity->getKey() }}-url"
+                        name="external_url"
+                        type="url"
+                        label="External record URL"
+                        :value="$editExternalUrl"
+                        :error="$editModalOpen ? $externalIdentityError('external_url') : null"
+                        optional
+                        maxlength="2048"
+                        :data-admin-modal-reset-value="$identity->external_url ?? ''"
+                    />
+                </form>
+                <x-slot:footer>
+                    <div class="flex flex-wrap justify-end gap-admin-field">
+                        <x-ui.button variant="secondary" data-admin-modal-close>Cancel</x-ui.button>
+                        <x-ui.button type="submit" form="edit-brand-external-identity-{{ $identity->getKey() }}-form">Save identity</x-ui.button>
+                    </div>
+                </x-slot:footer>
+            </x-ui.modal>
+
+            <form id="remove-brand-external-identity-{{ $identity->getKey() }}-form" method="POST" action="{{ route('central.brands.external-identities.destroy', [$brand, $identity], absolute: false) }}" class="hidden">
+                @csrf
+                @method('DELETE')
+            </form>
+            <x-admin.confirmation-modal
+                id="remove-brand-external-identity-{{ $identity->getKey() }}-modal"
+                title="Remove external identity?"
+                message="This removes only the Brand linkage. It does not delete the ImportSource."
+                confirm-label="Remove identity"
+                confirm-form="remove-brand-external-identity-{{ $identity->getKey() }}-form"
+                variant="danger"
+                :open="false"
+            >
+                <p class="font-semibold">{{ $identity->source->name }}</p>
+                <p class="mt-1 break-all font-foundation-mono">{{ $identity->external_id }}</p>
+            </x-admin.confirmation-modal>
+        @endforeach
 
         @if ($brand->status === \App\Enums\CentralBrandStatus::Draft)
             <form id="activate-brand-form" method="POST" action="{{ route('central.brands.activate', $brand, absolute: false) }}" class="hidden">@csrf</form>

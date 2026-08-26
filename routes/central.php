@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CentralAdmin\Backup\SnapshotDownloadController;
 use App\Http\Controllers\CentralAdmin\CentralBrandDetailController;
+use App\Http\Controllers\CentralAdmin\CentralBrandExternalIdentityController;
 use App\Http\Controllers\CentralAdmin\CentralBrandFormController;
 use App\Http\Controllers\CentralAdmin\CentralBrandLifecycleController;
 use App\Http\Controllers\CentralAdmin\CentralBrandListController;
@@ -35,6 +36,14 @@ Route::middleware(['auth', EnsureCentralAdminAccess::class])
             Route::delete('/brands/{brand}/media/logo', [CentralBrandMediaController::class, 'destroyLogo'])->name('central.brands.media.logo.destroy');
             Route::patch('/brands/{brand}/tags', [CentralBrandTagsController::class, 'update'])
                 ->name('central.brands.tags.update');
+            Route::post('/brands/{brand}/external-identities', [CentralBrandExternalIdentityController::class, 'store'])
+                ->name('central.brands.external-identities.store');
+            Route::patch('/brands/{brand}/external-identities/{externalIdentity}', [CentralBrandExternalIdentityController::class, 'update'])
+                ->scopeBindings()
+                ->name('central.brands.external-identities.update');
+            Route::delete('/brands/{brand}/external-identities/{externalIdentity}', [CentralBrandExternalIdentityController::class, 'destroy'])
+                ->scopeBindings()
+                ->name('central.brands.external-identities.destroy');
             Route::get('/brands/{brand}', CentralBrandDetailController::class)
                 ->name('central.brands.show');
             Route::get('/brands/{brand}/edit', [CentralBrandFormController::class, 'edit'])

@@ -26,7 +26,7 @@ final readonly class CreateCentralBrandAction
 
     public function handle(User $actor, CentralBrandInput $input): CentralBrand
     {
-        /** @var array{name: string, normalized_name: string, normalized_name_hash: string, slug: string, website_url: string|null, country_id: int|null}|null $validated */
+        /** @var array{name: string, normalized_name: string, normalized_name_hash: string, slug: string, website_url: string|null, country_id: int|null, founded_year: int|null, support_url: string|null, contact_email: string|null, primary_color: string|null}|null $validated */
         $validated = null;
 
         try {
@@ -53,6 +53,10 @@ final readonly class CreateCentralBrandAction
                         'status' => $brand->status->value,
                         'website_url' => $brand->website_url,
                         'country_code' => $brand->country?->alpha2,
+                        'founded_year' => $brand->founded_year,
+                        'support_url' => $brand->support_url,
+                        'contact_email' => $brand->contact_email,
+                        'primary_color' => $brand->primary_color,
                     ],
                 );
 

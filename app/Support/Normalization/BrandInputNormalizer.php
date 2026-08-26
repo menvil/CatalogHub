@@ -30,6 +30,18 @@ final class BrandInputNormalizer
         return self::nullableText($value);
     }
 
+    public static function nullableEmail(?string $value): ?string
+    {
+        return self::nullableText($value);
+    }
+
+    public static function nullableHexColor(?string $value): ?string
+    {
+        $normalized = self::nullableText($value);
+
+        return $normalized === null ? null : strtoupper($normalized);
+    }
+
     private static function nullableText(?string $value): ?string
     {
         $normalized = $value === null ? null : trim($value);

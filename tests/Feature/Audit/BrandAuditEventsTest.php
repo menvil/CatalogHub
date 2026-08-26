@@ -59,6 +59,10 @@ final class BrandAuditEventsTest extends TestCase
             'status' => 'draft',
             'website_url' => 'https://www.samsung.com',
             'country_code' => 'KR',
+            'founded_year' => null,
+            'support_url' => null,
+            'contact_email' => null,
+            'primary_color' => null,
         ], $entry->after_json);
         $this->assertSame('brand-create-request', $entry->request_id);
     }

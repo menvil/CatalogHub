@@ -88,6 +88,34 @@ class DetectOutdatedTranslationsActionTest extends TestCase
         $this->assertUnitOutdatedDetection(false);
     }
 
+    public function test_brand_profile_only_changes_do_not_mark_translation_outdated_but_name_still_does(): void
+    {
+        $hashService = app(TranslationSourceHashService::class);
+        $brand = CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
+        $locale = Locale::factory()->create(['code' => 'de-DE']);
+        $translation = BrandTranslation::factory()->create([
+            'brand_id' => $brand->id,
+            'locale_id' => $locale->id,
+            'locale' => $locale->code,
+            'source_hash' => $hashService->forBrand($brand),
+            'status' => TranslationStatus::Approved,
+        ]);
+
+        $brand->update([
+            'founded_year' => 1938,
+            'support_url' => 'https://www.samsung.com/support/',
+            'contact_email' => 'support@example.com',
+            'primary_color' => '#1428A0',
+        ]);
+
+        $this->assertSame(0, app(DetectOutdatedTranslationsAction::class)->handle($brand));
+        $this->assertSame(TranslationStatus::Approved, $translation->fresh()->status);
+
+        $brand->update(['name' => 'Samsung Electronics']);
+        $this->assertSame(1, app(DetectOutdatedTranslationsAction::class)->handle($brand));
+        $this->assertSame(TranslationStatus::Outdated, $translation->fresh()->status);
+    }
+
     private function assertBrandOutdatedDetection(bool $mutate): void
     {
         $hashService = app(TranslationSourceHashService::class);

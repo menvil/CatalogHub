@@ -10,8 +10,8 @@ Administrative mutations write their domain state and audit entry in one databas
 
 All Brand events use `CentralBrand` as the subject, `central` context for Central Admin requests, and a null site. The registry is:
 
-- `catalog.brand.created`: canonical create fields;
-- `catalog.brand.updated`: changed canonical fields only;
+- `catalog.brand.created`: `name`, `slug`, `status`, `website_url`, semantic `country_code`, `founded_year`, `support_url`, `contact_email`, and `primary_color`;
+- `catalog.brand.updated`: changed values only from `name`, `slug`, `website_url`, semantic `country_code`, `founded_year`, `support_url`, `contact_email`, and `primary_color`;
 - `catalog.brand.activated`, `catalog.brand.archived`, `catalog.brand.restored`: status only;
 - `catalog.brand.logo.assigned`, `catalog.brand.logo.removed`: media asset ID only;
 - `catalog.brand.translation.saved`: translation ID, locale, status, and changed field names only.
@@ -19,5 +19,7 @@ All Brand events use `CentralBrand` as the subject, `central` context for Centra
 No-op updates, idempotent lifecycle commands, unchanged logo assignment/removal, and identical translation saves produce no entry. The generic `(subject_type, subject_id, created_at)` index supports a future subject activity stream.
 
 Audit metadata is a mutation/activity trace, not full content version storage. Activity/Versions UI, diffs, rollback, and any dedicated version model are deferred until a concrete presentation or recovery use case requires them.
+
+Brand `support_url` and `contact_email` are public canonical profile metadata and are permitted in the existing Brand snapshot allowlist. They are not user identities, notification destinations, credentials, or secrets. Normalized name/hash fields, Country models/translations, Media, BrandTranslation content, derived counts, and quality values remain excluded.
 
 Brand Country persistence is an intentional schema/event exception: `central_brands.country_id` is the relational FK, while Brand create/update snapshots retain `country_code` with the resolved Country alpha-2 value. Thus a move from South Korea to Japan is recorded as `KR` → `JP`, clearing as `KR` → `null`, and no event contains opaque Country IDs, translations, or geography metadata. This keeps pre- and post-Phase 9 Brand history coherent and human-readable.

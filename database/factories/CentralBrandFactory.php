@@ -28,6 +28,10 @@ class CentralBrandFactory extends Factory
             'status' => CentralBrandStatus::default(),
             'website_url' => null,
             'country_id' => null,
+            'founded_year' => null,
+            'support_url' => null,
+            'contact_email' => null,
+            'primary_color' => null,
         ];
     }
 

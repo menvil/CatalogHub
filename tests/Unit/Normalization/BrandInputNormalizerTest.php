@@ -28,6 +28,14 @@ final class BrandInputNormalizerTest extends TestCase
         self::assertNull(BrandInputNormalizer::nullableUrl(null));
     }
 
+    public function test_contact_email_and_hex_color_normalization_is_non_destructive_and_canonical(): void
+    {
+        self::assertSame('Support+EU@Example.com', BrandInputNormalizer::nullableEmail('  Support+EU@Example.com  '));
+        self::assertNull(BrandInputNormalizer::nullableEmail('   '));
+        self::assertSame('#1428A0', BrandInputNormalizer::nullableHexColor('  #1428a0  '));
+        self::assertNull(BrandInputNormalizer::nullableHexColor(null));
+    }
+
     public function test_name_identity_uses_unicode_case_folding_and_canonical_composition(): void
     {
         self::assertSame('électro', BrandInputNormalizer::nameIdentity('ÉLECTRO'));

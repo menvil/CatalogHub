@@ -40,12 +40,20 @@ class TranslationSourceHashServiceTest extends TestCase
             'slug' => 'samsung',
             'website_url' => 'https://example.test/old',
             'country_id' => 1,
+            'founded_year' => 1938,
+            'support_url' => 'https://example.test/support',
+            'contact_email' => 'support@example.test',
+            'primary_color' => '#1428A0',
         ]);
         $service = app(TranslationSourceHashService::class);
         $initial = $service->forBrand($brand);
 
         $brand->website_url = 'https://example.test/new';
         $brand->country_id = 2;
+        $brand->founded_year = 1969;
+        $brand->support_url = 'https://example.test/help';
+        $brand->contact_email = 'help@example.test';
+        $brand->primary_color = '#FF0000';
         $this->assertSame($initial, $service->forBrand($brand));
 
         $brand->name = 'Samsung';

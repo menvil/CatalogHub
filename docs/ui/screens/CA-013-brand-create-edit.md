@@ -1,45 +1,54 @@
 ---
 screen_id: CA-013
 context: central-admin
-purpose: Create a canonical Brand or edit canonical fields on an existing Brand.
+purpose: Create or edit the canonical, language-neutral Brand profile.
 roles: authorized Central Admin catalog user
 route: /admin/central/brands/create (GET); /admin/central/brands (POST); /admin/central/brands/{brand}/edit (GET); /admin/central/brands/{brand} (PATCH)
 viewports: desktop=1440x1000;mobile=390x844
-fixture: brand-form-v2
-regions: central-shell;header-breadcrumbs;page-header;status-context;general-form-card;form-fields;form-actions;validation-errors;flash-feedback
-actions: cancel-to-list;cancel-to-detail;create-brand;save-changes
-states: create-default;create-validation-error;edit-draft;edit-active;edit-archived;edit-validation-error;save-progress;save-success-via-redirect-flash
+fixture: brand-form-v3
+regions: central-shell;header-breadcrumbs;page-header;profile-editor;general-information;online-presence;brand-identity-fields;profile-sidebar;status-context;logo-context;form-actions;validation-errors;flash-feedback
+actions: cancel-to-list;cancel-to-detail;back-to-overview;manage-media;create-brand;save-changes
+states: create-default;create-validation-error;edit-draft;edit-active;edit-archived;edit-logo;edit-logo-empty;edit-validation-error;save-progress;save-success-via-redirect-flash
 permissions: catalog.brands.manage
-responsive: The Central Admin workspace remains full width while the form card is locally capped at a readable max width; fields and actions stack without page-level horizontal overflow on mobile.
-out_of_scope: status-lifecycle-control;media;translations;product-usage;activity-log;delete;audit
+responsive: Desktop uses the full Central Admin workspace with a readable main column and right sidebar. Mobile places real persisted context before the field cards, stacks all controls, and has no page-level horizontal overflow.
+out_of_scope: status-lifecycle-control;logo-mutation;translations;product-usage;activity-log;delete;parent-company;tags;social-links;site-publication;quality-completeness
 reference_version: v2
 ---
 
-# CA-013 — Brand Create / Edit
+# CA-013 — Brand Create / Edit v2
 
 ## Contract
 
-Create and Edit are two states of one Brand-specific form contract in the Central Admin Blade stack. The accepted presentation payload is limited to `name`, `slug`, `website_url`, and `country_id`; arbitrary `country_code` input is ignored. Business validation and normalization remain owned by `CreateCentralBrandAction` and `UpdateCentralBrandAction`; validation exceptions follow Laravel's normal redirect, error bag, and old-input flow.
+Create and Edit share one Brand Profile form and the established `FormRequest → CentralBrandInput → Action` write boundary. The accepted canonical fields are `name`, `slug`, `website_url`, `country_id`, `founded_year`, `support_url`, `contact_email`, and `primary_color`. Localized names, tagline, descriptions, and SEO remain on `BrandTranslation` and never appear in this form.
 
-Create accepts an optional slug and optional Country. A blank slug is generated from the canonical name by the backend, the new Brand is always Draft, and success keeps the established redirect to Brands List with `Brand created.` feedback. If generation cannot produce a canonical ASCII slug, the Slug field asks the user to enter one manually.
+Create always produces Draft, ignores lifecycle/internal payload fields, redirects to Brands List, and flashes `Brand created.`. Edit supports Draft, Active, and Archived Brands, redirects back to Edit, and flashes `Brand updated.`. Lifecycle status is read-only; activation, archive, and restore remain on CA-012. A blank optional value clears it, an omitted optional value retains the locked current value, and validation failure preserves submitted values without partial mutation.
 
-Edit loads the Brand through route model binding. Its existing slug remains stable when the name changes unless the user explicitly edits the slug. Draft, Active, and Archived Brands may all update canonical fields, while lifecycle status is rendered only as a semantic `x-admin.status-badge`. Status is never a form input and `Brand updated.` feedback is delivered through the shared one-time flash region.
+## Information architecture
 
-The shared form uses `x-ui.form.form-state`, `x-ui.form.input`, `x-ui.form.slug-input`, generic `x-ui.form.searchable-select`, `x-admin.card`, and the standard button primitives. Country options include active Countries sorted by localized name then alpha-2 identity, display `Name (AA)`, and search client-side by localized name, canonical English name, alpha-2, and alpha-3. The combobox supports pointer selection, Arrow Up/Down, Enter, Escape, clear, old input, validation state, and mobile-width containment. An existing selected inactive Country appears as `— Inactive`; other inactive Countries are excluded. This supplies CSRF, PATCH method spoofing, submitting/double-submit state, adjacent field errors, `role=alert`, `aria-invalid`, and `aria-describedby`, with leave warning intentionally disabled for CA-013. Create Cancel returns to `central.brands.index`. Edit links the Brand breadcrumb to `central.brands.show`, and Edit Cancel returns to that Detail screen as the natural parent.
+The desktop workspace is a main-plus-sidebar composition rather than one vertically undifferentiated CRUD card:
 
-## State details
+- General Information: Name, Slug, searchable Country, and Founded year.
+- Online Presence: Website, Support URL, and Contact email.
+- Brand Identity: Primary color through the generic `x-ui.form.color-input`, with a synchronized native picker and visible `#RRGGBB` text.
+- Brand Status sidebar: read-only lifecycle badge and concise lifecycle ownership guidance.
+- Edit-only Brand Identity sidebar: current logo through `BrandLogoPresenter`, an honest empty state when absent, and `Manage Media` linking to CA-014. CA-013 has no upload, replace, or remove controls.
 
-- `create-default`: empty canonical fields and the read-only explanation “New brands are created as Draft.”
-- `create-validation-error`: submitted values take priority and errors remain adjacent to their fields.
-- `edit-draft`, `edit-active`, `edit-archived`: persisted values with a text-and-color lifecycle badge; lifecycle is unchanged by save.
-- `edit-validation-error`: submitted values take priority and validation-before-write leaves the whole Brand unchanged.
-- `save-progress`: the shared form-state primitive marks submission and disables submit controls to prevent double submit.
-- `save-success-via-redirect-flash`: Create redirects to Brands List; Update redirects back to Edit; feedback appears once through the Central Admin flash region.
+Create has no persisted Brand and therefore shows only the Draft status context. Edit also provides `Back to Overview`. Cancel returns Create to CA-011 and Edit to CA-012. The sticky action bar keeps Cancel and the primary submit action reachable without enabling the shared leave-warning dialog.
 
-## Visual references
+Country retains the Phase 9 searchable selector contract: active Countries are searchable by localized/English name and alpha codes, the selected inactive Country may be retained or cleared, and no `country_code` HTTP field exists.
 
-The `CA-013` Create and Edit desktop/mobile entries in `docs/ui/visual-references.json` use `brand-form-v2`. The intentional Phase 9 change is `Country code [KR]` becoming the searchable `Country [South Korea (KR)]` selector. Closed states are baselined; search/dropdown interaction remains functional browser coverage.
+## Responsive behavior
 
-## Explicit non-goals
+At 390×844 the header, status/identity context, General Information, Online Presence, Brand Identity, and actions form a single bounded column. The logo preview becomes shorter, the Country selector and color controls fit the viewport, long URLs/email values remain contained, and the action bar remains reachable. Browser coverage verifies both create and edit without horizontal overflow.
 
-There is no lifecycle mutation control on the form, media/logo management, translation UI, product usage, activity log, delete action, audit implementation, or Brand-specific permission expansion in CA-013.
+## Visual direction and references
+
+The long-term design reference is `pictures/1. Central Admin/1.3. Brands/CA-013 — Brand Create:Edit.png`. It directs hierarchy, card grouping, compact paired fields, broad desktop proportions, sidebar treatment, and action prominence. It is not an executable baseline and must not be overwritten.
+
+The Phase 10 executable references in `docs/ui/visual-references.json` use `brand-form-v3`: Create desktop/mobile and rich Edit desktop/mobile. The rich Edit fixture contains South Korea, 1938, official/support URLs, contact email, `#1428A0`, and a deterministic local logo. Screenshots were reviewed against the long-term reference before their checksums were approved.
+
+## Intentional gaps
+
+The target design's Parent Company is deliberately omitted. A legal/company owner is not equivalent to another Brand, and a free-text `parent_company` column would create duplicate, unstructured identity. Ownership requires a future organization/ownership relation.
+
+Also deferred are descriptions and SEO (already localized), tags/classification, external identities/provenance/social links, site visibility/publication, category assignments, publish controls, richer media, translation workflow, validation summary, and quality/completeness indicators. Unsupported values are not shown as disabled placeholders or fake counters.

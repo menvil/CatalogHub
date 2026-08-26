@@ -58,6 +58,6 @@ final class BrandFormVisualTest extends TestCase
             'edit@1440x1000',
             'edit@390x844',
         ], $stateViewports);
-        self::assertSame(array_fill(0, 4, 'brand-form-v2'), array_column($references, 'fixture'));
+        self::assertSame(array_fill(0, 4, 'brand-form-v3'), array_column($references, 'fixture'));
     }
 }

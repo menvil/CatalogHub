@@ -19,8 +19,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $normalized_name_hash
  * @property string|null $website_url
  * @property int|null $country_id
+ * @property int|null $founded_year
+ * @property string|null $support_url
+ * @property string|null $contact_email
+ * @property string|null $primary_color
  */
-#[Fillable(['name', 'slug', 'status', 'website_url', 'country_id'])]
+#[Fillable(['name', 'slug', 'status', 'website_url', 'country_id', 'founded_year', 'support_url', 'contact_email', 'primary_color'])]
 final class CentralBrand extends Model
 {
     /** @use HasFactory<CentralBrandFactory> */
@@ -40,6 +44,7 @@ final class CentralBrand extends Model
     {
         return [
             'status' => CentralBrandStatus::class,
+            'founded_year' => 'integer',
         ];
     }
 

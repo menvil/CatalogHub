@@ -108,12 +108,20 @@ class CentralBrandTest extends TestCase
             'status' => CentralBrandStatus::Active,
             'website_url' => 'https://www.logitech.com',
             'country_id' => CountryReference::id('CH'),
+            'founded_year' => 1981,
+            'support_url' => 'https://support.logi.com/',
+            'contact_email' => 'support@example.com',
+            'primary_color' => '#00B8FC',
         ]);
 
         $brand->refresh();
 
         $this->assertSame('https://www.logitech.com', $brand->website_url);
         $this->assertSame('CH', $brand->country()->first()?->alpha2);
+        $this->assertSame(1981, $brand->founded_year);
+        $this->assertSame('https://support.logi.com/', $brand->support_url);
+        $this->assertSame('support@example.com', $brand->contact_email);
+        $this->assertSame('#00B8FC', $brand->primary_color);
     }
 
     public function test_canonical_metadata_is_nullable(): void
@@ -122,5 +130,9 @@ class CentralBrandTest extends TestCase
 
         $this->assertNull($brand->website_url);
         $this->assertNull($brand->country_id);
+        $this->assertNull($brand->founded_year);
+        $this->assertNull($brand->support_url);
+        $this->assertNull($brand->contact_email);
+        $this->assertNull($brand->primary_color);
     }
 }

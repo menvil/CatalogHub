@@ -18,6 +18,7 @@ for (const state of states) {
         await page.goto(state.url)
         await expect(page.locator(`[data-brand-form-mode="${state.mode}"]`)).toBeVisible()
         await page.evaluate(() => document.fonts.ready)
+        await page.evaluate(() => window.scrollTo(0, 0))
         await page.addStyleTag({
             content: `
                 *, *::before, *::after {

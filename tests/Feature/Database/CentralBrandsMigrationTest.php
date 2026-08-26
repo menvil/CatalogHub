@@ -24,6 +24,10 @@ class CentralBrandsMigrationTest extends TestCase
             'status',
             'website_url',
             'country_id',
+            'founded_year',
+            'support_url',
+            'contact_email',
+            'primary_color',
             'created_at',
             'updated_at',
         ]));
@@ -37,6 +41,10 @@ class CentralBrandsMigrationTest extends TestCase
 
         $this->assertFalse($columns['normalized_name']['nullable']);
         $this->assertFalse($columns['normalized_name_hash']['nullable']);
+        $this->assertTrue($columns['founded_year']['nullable']);
+        $this->assertTrue($columns['support_url']['nullable']);
+        $this->assertTrue($columns['contact_email']['nullable']);
+        $this->assertTrue($columns['primary_color']['nullable']);
 
         $this->assertTrue($indexes->contains(
             fn (array $index): bool => $index['unique'] === true && $index['columns'] === ['slug']

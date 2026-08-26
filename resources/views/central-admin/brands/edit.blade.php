@@ -1,9 +1,5 @@
 @extends('layouts.central-admin', ['activeNav' => 'brands', 'pageTitle' => 'Edit Brand'])
 
-@php
-    $statusVariant = $brand->status->color() === 'gray' ? 'neutral' : $brand->status->color();
-@endphp
-
 @section('breadcrumbs')
     <a href="{{ route('filament.central.pages.home', absolute: false) }}" class="font-medium hover:text-admin-text">Dashboard</a>
     <span aria-hidden="true">/</span>
@@ -15,21 +11,20 @@
 @endsection
 
 @section('content')
-    <div class="space-y-admin-section" data-brand-form-fixture="brand-form-v2" data-brand-form-mode="edit">
+    <div class="space-y-admin-section" data-brand-form-fixture="brand-form-v3" data-brand-form-mode="edit">
         <x-admin.page-header
             screen-id="CA-013"
             :show-screen-id="false"
             title="Edit Brand"
             :description="'Update canonical information for '.$brand->name.'.'"
             :breadcrumbs="[]"
-        />
+        >
+            <x-slot:actions>
+                <x-ui.button variant="secondary" :href="route('central.brands.show', $brand, absolute: false)">Back to Overview</x-ui.button>
+            </x-slot:actions>
+        </x-admin.page-header>
 
-        <div class="flex flex-wrap items-center gap-2" data-screen-region="status-context">
-            <span class="text-sm font-medium text-admin-muted">Current status</span>
-            <x-admin.status-badge :label="$brand->status->label()" :variant="$statusVariant" />
-        </div>
-
-        <div class="max-w-4xl" data-screen-region="general-form-card">
+        <div class="min-w-0" data-screen-region="brand-profile-workspace">
             @include('central-admin.brands._form', [
                 'mode' => 'edit',
                 'brand' => $brand,

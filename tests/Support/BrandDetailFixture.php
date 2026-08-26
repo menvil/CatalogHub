@@ -34,6 +34,15 @@ final class BrandDetailFixture
             throw new RuntimeException('BrandDetailFixture requires the deterministic Samsung, Sony, and Zotac BrandListFixture records.');
         }
 
+        $activeBrand->forceFill([
+            'website_url' => 'https://www.samsung.com/',
+            'country_id' => CountryReference::id('KR'),
+            'founded_year' => 1938,
+            'support_url' => 'https://www.samsung.com/support/',
+            'contact_email' => 'support@example.com',
+            'primary_color' => '#1428A0',
+        ])->saveOrFail();
+
         foreach ([
             [1201201, 'Samsung Galaxy S26', 'SM-S942', 'samsung-galaxy-s26'],
             [1201202, 'Samsung Galaxy Tab S12', 'SM-X940', 'samsung-galaxy-tab-s12'],

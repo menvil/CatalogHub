@@ -19,6 +19,8 @@ final class CoreSchemaSmokeTest extends TestCase
             'users' => ['id', 'site_id', 'email', 'role'],
             'central_products' => ['id', 'central_brand_id', 'central_category_id', 'slug', 'status'],
             'central_brands' => ['id', 'slug', 'status', 'country_id', 'founded_year', 'support_url', 'contact_email', 'primary_color'],
+            'catalog_tags' => ['id', 'name', 'normalized_name', 'normalized_name_hash'],
+            'central_brand_tag' => ['central_brand_id', 'catalog_tag_id'],
             'central_categories' => ['id', 'parent_id', 'slug', 'status', 'schema_status'],
             'locales' => ['id', 'code', 'language_code', 'is_active', 'is_default'],
             'markets' => ['id', 'code', 'currency_code', 'default_locale', 'status'],

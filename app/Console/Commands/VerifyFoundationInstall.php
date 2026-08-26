@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Models\CentralCatalog\CatalogTag;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Site;
@@ -45,6 +46,7 @@ final class VerifyFoundationInstall extends Command
         }
 
         $catalogRecords = CentralBrand::query()->count()
+            + CatalogTag::query()->count()
             + CentralProduct::query()->count()
             + Site::query()->whereKey($siteIds)->withCount(['categories', 'products', 'homeBlocks'])->get()
                 ->sum(fn (Site $site): int => $site->categories_count + $site->products_count + $site->home_blocks_count);

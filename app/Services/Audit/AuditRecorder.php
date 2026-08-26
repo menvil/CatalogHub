@@ -23,6 +23,7 @@ class AuditRecorder
         AuditAction::UserEnabled->value => ['is_disabled'],
         AuditAction::CatalogBrandCreated->value => ['name', 'slug', 'status', 'website_url', 'country_code', 'founded_year', 'support_url', 'contact_email', 'primary_color'],
         AuditAction::CatalogBrandUpdated->value => ['name', 'slug', 'website_url', 'country_code', 'founded_year', 'support_url', 'contact_email', 'primary_color'],
+        AuditAction::CatalogBrandTagsUpdated->value => ['tags'],
         AuditAction::CatalogBrandActivated->value => ['status'],
         AuditAction::CatalogBrandArchived->value => ['status'],
         AuditAction::CatalogBrandRestored->value => ['status'],

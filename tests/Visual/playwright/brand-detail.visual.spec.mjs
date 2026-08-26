@@ -15,7 +15,18 @@ for (const state of states) {
         await signIn(page, 'central', foundationDemo.centralAdmin)
         await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
         await page.goto(state.url)
-        await expect(page.locator('[data-brand-detail-fixture="brand-detail-v2"]')).toBeVisible()
+        await expect(page.locator('[data-brand-detail-fixture="brand-detail-v3"]')).toBeVisible()
+        if (state.state === 'active' && await page.locator('[data-brand-tags]').count() === 0) {
+            await page.locator('[data-screen-region="classification"]').getByRole('button', { name: 'Manage tags' }).click()
+            const dialog = page.getByRole('dialog', { name: 'Manage tags' })
+            const input = dialog.getByLabel('Brand tags')
+            for (const tag of ['Consumer Electronics', 'Premium', 'Gaming']) {
+                await input.fill(tag)
+                await input.press('Enter')
+            }
+            await dialog.getByRole('button', { name: 'Save tags' }).click()
+            await expect(page.locator('[data-brand-tags]')).toContainText('Consumer Electronics')
+        }
         await page.evaluate(() => document.fonts.ready)
         await page.addStyleTag({
             content: `

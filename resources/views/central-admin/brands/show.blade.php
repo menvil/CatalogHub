@@ -8,6 +8,20 @@
         && preg_match('/\A#[0-9A-F]{6}\z/', $brand->primary_color) === 1;
     $productsCount = (int) $brand->products_count;
     $lifecycleError = $errors->first('status') ?: session('lifecycle_error');
+    $tagError = $errors->first('tags');
+    if ($tagError === '') {
+        $tagError = collect($errors->getBag('default')->getMessages())
+            ->filter(static fn (array $messages, string $key): bool => str_starts_with($key, 'tags.'))
+            ->flatten()
+            ->first() ?? '';
+    }
+    $oldTagEditorValues = old('tags');
+    if ($tagError === '' && $oldTagEditorValues !== null) {
+        $tagError = 'Review the submitted tags. Tags must be nonblank, at most 80 characters, and contain no control characters or newlines.';
+    }
+    $tagEditorValues = $oldTagEditorValues ?? $brand->tags->pluck('name')->all();
+    $tagEditorValues = is_array($tagEditorValues) ? array_values($tagEditorValues) : [];
+    $tagEditorOpen = $tagError !== '' || $oldTagEditorValues !== null;
 @endphp
 
 @section('breadcrumbs')
@@ -19,7 +33,7 @@
 @endsection
 
 @section('content')
-    <div class="space-y-admin-section" data-brand-detail-fixture="brand-detail-v2">
+    <div class="space-y-admin-section" data-brand-detail-fixture="brand-detail-v3">
         <x-admin.page-header
             screen-id="CA-012"
             :show-screen-id="false"
@@ -120,6 +134,69 @@
                     </div>
                 </x-admin.card>
 
+                <x-admin.card
+                    id="classification"
+                    title="Classification"
+                    description="Editorial tags and current product catalogue coverage."
+                    data-screen-region="classification"
+                >
+                    <x-slot:actions>
+                        @can('catalog.brands.manage')
+                            <x-ui.button
+                                variant="secondary"
+                                aria-haspopup="dialog"
+                                aria-controls="manage-brand-tags-modal"
+                                data-admin-modal-open-target="manage-brand-tags-modal"
+                            >Manage tags</x-ui.button>
+                        @endcan
+                    </x-slot:actions>
+
+                    <div class="space-y-admin-section">
+                        <section aria-labelledby="brand-tags-heading">
+                            <h3 id="brand-tags-heading" class="text-sm font-semibold text-admin-text">Tags</h3>
+                            @if ($brand->tags->isEmpty())
+                                <p class="mt-2 text-sm text-admin-muted">No tags have been assigned to this Brand.</p>
+                            @else
+                                <div class="mt-3 flex flex-wrap gap-2" data-brand-tags>
+                                    @foreach ($brand->tags as $tag)
+                                        <span class="inline-flex max-w-full rounded-admin-badge bg-admin-surface-muted px-3 py-1 text-sm font-medium text-admin-text ring-1 ring-inset ring-admin-border">{{ $tag->name }}</span>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </section>
+
+                        <section class="border-t border-admin-border pt-admin-card" aria-labelledby="brand-category-coverage-heading">
+                            <div>
+                                <h3 id="brand-category-coverage-heading" class="text-sm font-semibold text-admin-text">Current category coverage</h3>
+                                <p class="mt-1 text-sm text-admin-muted">Derived automatically from direct Category assignments of current Brand products.</p>
+                            </div>
+
+                            @if ($categoryCoverage->isEmpty())
+                                <div class="mt-3 rounded-admin-input border border-dashed border-admin-border bg-admin-surface-muted p-admin-card">
+                                    <p class="text-sm font-medium text-admin-text">No category coverage yet.</p>
+                                    <p class="mt-1 text-sm text-admin-muted">Category coverage is derived automatically from Brand products.</p>
+                                </div>
+                            @else
+                                <ul class="mt-3 divide-y divide-admin-border" data-brand-category-coverage>
+                                    @foreach ($categoryCoverage as $coverage)
+                                        @php($categoryStatusVariant = $coverage->status->color() === 'gray' ? 'neutral' : $coverage->status->color())
+                                        <li class="flex min-w-0 flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0" data-category-id="{{ $coverage->categoryId }}">
+                                            <div class="flex min-w-0 flex-wrap items-center gap-2">
+                                                <span class="min-w-0 break-words text-sm font-medium text-admin-text">{{ $coverage->name }}</span>
+                                                <x-admin.status-badge :label="$coverage->status->label()" :variant="$categoryStatusVariant" size="sm" />
+                                            </div>
+                                            <span class="shrink-0 text-sm text-admin-muted">
+                                                <strong class="font-semibold text-admin-text">{{ number_format($coverage->productsCount) }}</strong>
+                                                {{ $coverage->productsCount === 1 ? 'product' : 'products' }}
+                                            </span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endif
+                        </section>
+                    </div>
+                </x-admin.card>
+
                 <x-admin.card title="Usage" data-screen-region="usage">
                     <div class="flex items-baseline justify-between gap-admin-field">
                         <span class="text-sm font-medium text-admin-muted">Products</span>
@@ -197,6 +274,29 @@
         </x-admin.detail-layout>
 
         @can('catalog.brands.manage')
+        <form id="manage-brand-tags-form" method="POST" action="{{ route('central.brands.tags.update', $brand, absolute: false) }}">
+            @csrf
+            @method('PATCH')
+        </form>
+        <x-ui.modal id="manage-brand-tags-modal" title="Manage tags" :open="$tagEditorOpen">
+            <x-ui.form.tag-input
+                id="brand-tags-input"
+                name="tags"
+                label="Brand tags"
+                :values="$tagEditorValues"
+                help="Press Enter or use Add tag. Maximum 20 tags; names may be up to 80 characters."
+                :error="$tagError"
+                form="manage-brand-tags-form"
+            />
+            <p class="mt-3 text-xs text-admin-muted">Tags are global catalog labels. Matching names reuse the existing label regardless of casing.</p>
+            <x-slot:footer>
+                <div class="flex flex-wrap justify-end gap-admin-field">
+                    <x-ui.button variant="secondary" data-admin-modal-close>Cancel</x-ui.button>
+                    <x-ui.button type="submit" form="manage-brand-tags-form">Save tags</x-ui.button>
+                </div>
+            </x-slot:footer>
+        </x-ui.modal>
+
         @if ($brand->status === \App\Enums\CentralBrandStatus::Draft)
             <form id="activate-brand-form" method="POST" action="{{ route('central.brands.activate', $brand, absolute: false) }}" class="hidden">@csrf</form>
             <x-admin.confirmation-modal

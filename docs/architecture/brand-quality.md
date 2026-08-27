@@ -39,6 +39,6 @@ Translation codes may occur once per affected active Locale; each check also car
 
 ## Boundaries
 
-The read model loads active Locales, the selected Brand's matching translations, and the exact global primary logo assignment with its asset/variants in a fixed number of queries. The pure evaluator can later be reused by a batch/list query that preloads the same inputs without running one query per Brand.
+The read model loads active Locales and the selected Brand's matching translations, then reuses `CentralBrandMediaQuery` as the authoritative selector for the exact global primary logo assignment with its asset/variants. CA-012, CA-013, CA-014, and quality therefore share one Brand-logo definition in a fixed number of queries. The pure evaluator can later be reused by a batch/list query that preloads the same inputs without running one query per Brand.
 
 There is no `central_brands` quality column, JSON issue payload, calculation timestamp, new table, cache, job, AuditEvent, or write-side hook. Tags, Products, Category coverage, external identities, Parent Company, lifecycle status, and Site publication/projection state are not scored. Site visibility, Published/Unpublished, Synced/Stale, field-level provenance, richer media roles, and richer translation workflow remain separate future concerns.

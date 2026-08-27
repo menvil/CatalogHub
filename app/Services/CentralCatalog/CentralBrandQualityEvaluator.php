@@ -170,8 +170,12 @@ final class CentralBrandQualityEvaluator
         $localeLabel = "{$localeName} ({$localeCode})";
         $status = $translation?->getAttribute('status');
 
-        if (! $status instanceof TranslationStatus || $status === TranslationStatus::Missing) {
-            return new CentralBrandQualityCheck(
+        if (! $status instanceof TranslationStatus) {
+            $status = TranslationStatus::Missing;
+        }
+
+        return match ($status) {
+            TranslationStatus::Missing => new CentralBrandQualityCheck(
                 key: 'translation:'.$localeCode,
                 label: $localeLabel.' translation is missing',
                 description: 'Add a translation for this active locale.',
@@ -182,11 +186,8 @@ final class CentralBrandQualityEvaluator
                 editorPermission: 'translations.manage',
                 editorLabel: 'Edit translation',
                 locale: $localeCode,
-            );
-        }
-
-        if ($status === TranslationStatus::Outdated) {
-            return new CentralBrandQualityCheck(
+            ),
+            TranslationStatus::Outdated => new CentralBrandQualityCheck(
                 key: 'translation:'.$localeCode,
                 label: $localeLabel.' translation is outdated',
                 description: 'Review this translation because its canonical source changed.',
@@ -197,16 +198,17 @@ final class CentralBrandQualityEvaluator
                 editorPermission: 'translations.manage',
                 editorLabel: 'Review translation',
                 locale: $localeCode,
-            );
-        }
-
-        return new CentralBrandQualityCheck(
-            key: 'translation:'.$localeCode,
-            label: $localeLabel.' translation is present',
-            description: 'A current translation exists for this active locale.',
-            completed: true,
-            locale: $localeCode,
-        );
+            ),
+            TranslationStatus::MachineTranslated,
+            TranslationStatus::HumanReviewed,
+            TranslationStatus::Approved => new CentralBrandQualityCheck(
+                key: 'translation:'.$localeCode,
+                label: $localeLabel.' translation is present',
+                description: 'A current translation exists for this active locale.',
+                completed: true,
+                locale: $localeCode,
+            ),
+        };
     }
 
     private function hasText(mixed $value): bool

@@ -11,6 +11,7 @@ use App\Models\CentralCatalog\CentralBrand;
 use App\Models\Locale;
 use App\Models\MediaAsset;
 use App\Models\MediaAssignment;
+use App\Models\MediaVariant;
 use App\Models\Translations\BrandTranslation;
 use App\Queries\CentralCatalog\CentralBrandQualityQuery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -67,6 +68,7 @@ final class CentralBrandQualityQueryTest extends TestCase
             'site_id' => null,
             'market_id' => null,
             'is_primary' => true,
+            'visibility' => 'global',
         ]);
 
         $unusable = app(CentralBrandQualityQuery::class)->forBrand($brand)->summary;
@@ -76,6 +78,65 @@ final class CentralBrandQualityQueryTest extends TestCase
         self::assertContains('brand_logo_unusable', $unusable->issueCodes());
         self::assertNotContains('brand_logo_missing', $unusable->issueCodes());
         self::assertContains('brand_logo_missing', $missing->issueCodes());
+    }
+
+    public function test_eager_loaded_ready_variant_makes_logo_usable_without_a_master_file(): void
+    {
+        Storage::fake('public');
+        $brand = $this->completeBrand();
+        $asset = MediaAsset::factory()->create([
+            'disk' => 'public',
+            'original_path' => 'media/originals/unavailable-master.png',
+        ]);
+        $variantPath = 'media/variants/quality-logo/brand_logo_256.webp';
+        MediaVariant::factory()->for($asset, 'asset')->create([
+            'variant_type' => 'brand_logo_256',
+            'disk' => 'public',
+            'path' => $variantPath,
+            'status' => 'ready',
+        ]);
+        Storage::disk('public')->put($variantPath, 'usable variant');
+        MediaAssignment::factory()->for($asset, 'asset')->create([
+            'entity_type' => MediaAssignment::ENTITY_TYPE_CENTRAL_BRAND,
+            'entity_id' => $brand->id,
+            'role' => MediaAssignment::ROLE_BRAND_LOGO,
+            'locale' => null,
+            'site_id' => null,
+            'market_id' => null,
+            'is_primary' => true,
+            'visibility' => 'global',
+        ]);
+
+        $result = app(CentralBrandQualityQuery::class)->forBrand($brand);
+
+        self::assertSame('brand_logo_256', $result->logo->variantName);
+        self::assertSame(CentralBrandQualityState::Complete, $result->summary->state);
+        self::assertSame(100, $result->summary->score);
+    }
+
+    public function test_non_global_assignment_does_not_satisfy_the_global_primary_logo_check(): void
+    {
+        Storage::fake('public');
+        $brand = $this->completeBrand();
+        $path = 'media/originals/private-logo.png';
+        Storage::disk('public')->put($path, 'private logo');
+        $asset = MediaAsset::factory()->create(['disk' => 'public', 'original_path' => $path]);
+        MediaAssignment::factory()->for($asset, 'asset')->create([
+            'entity_type' => MediaAssignment::ENTITY_TYPE_CENTRAL_BRAND,
+            'entity_id' => $brand->id,
+            'role' => MediaAssignment::ROLE_BRAND_LOGO,
+            'locale' => null,
+            'site_id' => null,
+            'market_id' => null,
+            'is_primary' => true,
+            'visibility' => 'private',
+        ]);
+
+        $result = app(CentralBrandQualityQuery::class)->forBrand($brand);
+
+        self::assertNull($result->logo->url);
+        self::assertContains('brand_logo_missing', $result->summary->issueCodes());
+        self::assertNotContains('brand_logo_unusable', $result->summary->issueCodes());
     }
 
     public function test_read_model_has_no_side_effects_and_does_not_change_lifecycle(): void
@@ -142,6 +203,7 @@ final class CentralBrandQualityQueryTest extends TestCase
             'site_id' => null,
             'market_id' => null,
             'is_primary' => true,
+            'visibility' => 'global',
         ]);
     }
 }

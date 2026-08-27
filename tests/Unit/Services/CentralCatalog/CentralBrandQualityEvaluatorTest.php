@@ -126,6 +126,23 @@ final class CentralBrandQualityEvaluatorTest extends TestCase
         self::assertSame(86, $summary->score);
     }
 
+    public function test_machine_translated_active_locale_is_complete(): void
+    {
+        [$german] = $this->locales();
+
+        $summary = $this->evaluate(
+            $this->completeBrand(),
+            collect([$german]),
+            collect([$german->id => $this->translation($german, TranslationStatus::MachineTranslated)]),
+            true,
+            true,
+        );
+
+        self::assertSame(CentralBrandQualityState::Complete, $summary->state);
+        self::assertSame(100, $summary->score);
+        self::assertSame([], $summary->issueCodes());
+    }
+
     public function test_evaluation_does_not_mutate_inputs(): void
     {
         [$german] = $this->locales();

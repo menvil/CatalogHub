@@ -7,7 +7,6 @@ namespace App\Queries\CentralCatalog;
 use App\Data\CentralCatalog\CentralBrandQualityReadModelData;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\Locale;
-use App\Models\MediaAssignment;
 use App\Models\Translations\BrandTranslation;
 use App\Services\CentralCatalog\CentralBrandQualityEvaluator;
 use App\Services\Media\BrandLogoPresenter;
@@ -16,6 +15,7 @@ final readonly class CentralBrandQualityQuery
 {
     public function __construct(
         private CentralBrandQualityEvaluator $evaluator,
+        private CentralBrandMediaQuery $media,
         private BrandLogoPresenter $logos,
     ) {}
 
@@ -34,17 +34,7 @@ final readonly class CentralBrandQualityQuery
             ->get()
             ->keyBy(static fn (BrandTranslation $translation): int => (int) $translation->locale_id);
 
-        $assignment = MediaAssignment::query()
-            ->with('asset.variants')
-            ->forEntity(MediaAssignment::ENTITY_TYPE_CENTRAL_BRAND, (int) $brand->getKey())
-            ->forRole(MediaAssignment::ROLE_BRAND_LOGO)
-            ->whereNull('locale')
-            ->whereNull('site_id')
-            ->whereNull('market_id')
-            ->where('is_primary', true)
-            ->orderBy('position')
-            ->orderBy('id')
-            ->first();
+        $assignment = $this->media->primaryLogoAssignmentFor($brand);
         $logo = $this->logos->forDetail($assignment?->asset);
 
         return new CentralBrandQualityReadModelData(
@@ -52,7 +42,7 @@ final readonly class CentralBrandQualityQuery
                 $brand,
                 $locales,
                 $translations,
-                $assignment instanceof MediaAssignment,
+                $assignment !== null,
                 $logo->url !== null,
             ),
             logo: $logo,

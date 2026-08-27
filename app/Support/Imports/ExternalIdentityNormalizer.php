@@ -11,9 +11,17 @@ final class ExternalIdentityNormalizer
 {
     public static function externalId(string $value): string
     {
+        $controlCharacterMatch = preg_match('/\p{Cc}/u', $value);
+
+        if ($controlCharacterMatch !== 0) {
+            throw ValidationException::withMessages([
+                'external_id' => 'The external ID must be nonblank, at most 255 characters, and contain no control characters.',
+            ]);
+        }
+
         $normalized = trim($value);
 
-        if ($normalized === '' || mb_strlen($normalized) > 255 || preg_match('/\p{Cc}/u', $normalized) === 1) {
+        if ($normalized === '' || mb_strlen($normalized) > 255) {
             throw ValidationException::withMessages([
                 'external_id' => 'The external ID must be nonblank, at most 255 characters, and contain no control characters.',
             ]);

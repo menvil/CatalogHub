@@ -106,6 +106,24 @@ final class CentralBrandExternalIdentityActionsTest extends TestCase
         self::assertDatabaseCount('central_brand_external_identities', 3);
     }
 
+    public function test_malformed_utf8_is_rejected_before_identity_persistence(): void
+    {
+        $this->expectException(ValidationException::class);
+
+        try {
+            app(LinkCentralBrandExternalIdentityAction::class)->handle(
+                User::factory()->create(),
+                CentralBrand::factory()->create(),
+                ImportSource::factory()->create(),
+                "external\xC3\x28",
+                null,
+            );
+        } finally {
+            self::assertDatabaseCount('central_brand_external_identities', 0);
+            self::assertDatabaseCount('audit_log_entries', 0);
+        }
+    }
+
     public function test_inactive_source_rejects_new_link_but_existing_identity_can_be_updated_and_removed(): void
     {
         $actor = User::factory()->create();

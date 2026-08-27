@@ -38,7 +38,7 @@ final readonly class LinkCentralBrandExternalIdentityAction
 
         return DB::transaction(function () use ($actor, $brand, $source, $normalizedId, $normalizedUrl, $hash): CentralBrandExternalIdentity {
             $lockedBrand = CentralBrand::query()->lockForUpdate()->findOrFail($brand->getKey());
-            $currentSource = ImportSource::query()->findOrFail($source->getKey());
+            $currentSource = ImportSource::query()->lockForUpdate()->findOrFail($source->getKey());
 
             if (! $currentSource->isActive()) {
                 throw ValidationException::withMessages([

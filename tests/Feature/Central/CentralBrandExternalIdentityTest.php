@@ -14,6 +14,7 @@ use App\Models\Imports\ImportSource;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 final class CentralBrandExternalIdentityTest extends TestCase
@@ -115,6 +116,62 @@ final class CentralBrandExternalIdentityTest extends TestCase
             AuditAction::CatalogBrandExternalIdentityUpdated->value,
             AuditAction::CatalogBrandExternalIdentityUnlinked->value,
         ], AuditLogEntry::query()->orderBy('id')->pluck('action')->all());
+    }
+
+    public function test_store_trims_external_id_before_length_validation(): void
+    {
+        $brand = CentralBrand::factory()->create();
+        $source = ImportSource::factory()->create();
+        $externalId = str_repeat('x', 255);
+
+        $this->actingAs(User::factory()->create())
+            ->post(route('central.brands.external-identities.store', $brand), [
+                'import_source_id' => $source->id,
+                'external_id' => '  '.$externalId.'  ',
+            ])
+            ->assertRedirect(route('central.brands.show', $brand).'#external-identities')
+            ->assertSessionDoesntHaveErrors();
+
+        self::assertDatabaseHas('central_brand_external_identities', [
+            'central_brand_id' => $brand->id,
+            'external_id' => $externalId,
+            'external_id_hash' => hash('sha256', $externalId),
+        ]);
+    }
+
+    #[DataProvider('externalIdsWithBoundaryControlCharacters')]
+    public function test_requests_reject_boundary_control_characters_before_trimming(string $externalId): void
+    {
+        $actor = User::factory()->create();
+        $brand = CentralBrand::factory()->create();
+        $source = ImportSource::factory()->create();
+
+        $this->actingAs($actor)
+            ->post(route('central.brands.external-identities.store', $brand), [
+                'import_source_id' => $source->id,
+                'external_id' => $externalId,
+            ])
+            ->assertSessionHasErrors('external_id');
+
+        $identity = CentralBrandExternalIdentity::factory()
+            ->for($brand, 'brand')->for($source, 'source')->externalId('PERSISTED')->create();
+
+        $this->patch(route('central.brands.external-identities.update', [$brand, $identity]), [
+            '_external_identity_id' => $identity->id,
+            'external_id' => $externalId,
+        ])->assertSessionHasErrors('external_id');
+
+        self::assertSame('PERSISTED', $identity->fresh()->external_id);
+        self::assertDatabaseCount('central_brand_external_identities', 1);
+        self::assertDatabaseCount('audit_log_entries', 0);
+    }
+
+    public static function externalIdsWithBoundaryControlCharacters(): iterable
+    {
+        yield 'leading NUL' => ["\0external"];
+        yield 'trailing NUL' => ["external\0"];
+        yield 'leading vertical tab' => ["\vexternal"];
+        yield 'trailing vertical tab' => ["external\v"];
     }
 
     public function test_validation_reopens_only_relevant_modal_with_old_input_and_no_mutation(): void

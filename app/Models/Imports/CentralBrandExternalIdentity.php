@@ -14,8 +14,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'central_brand_id',
     'import_source_id',
-    'external_id',
-    'external_id_hash',
     'external_url',
 ])]
 final class CentralBrandExternalIdentity extends Model

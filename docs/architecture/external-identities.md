@@ -8,10 +8,13 @@ There is no second source registry and no source/external-ID shortcut column on
 
 ## Identity contract
 
-An external ID is opaque within one ImportSource namespace. The application
-trims leading and trailing whitespace, rejects blank/control-character values,
-and otherwise preserves bytes, casing, internal whitespace, and leading zeroes.
-Thus `ABC` and `abc` may coexist, while `000123` remains `000123`.
+An external ID is opaque within one ImportSource namespace. The normalizer and
+both HTTP validators reject malformed UTF-8 and control characters in the
+original value before trimming surrounding whitespace. This prevents leading or
+trailing control bytes from being normalized into another identity. The
+application then rejects blank values and otherwise preserves casing, internal
+whitespace, and leading zeroes. Thus `ABC` and `abc` may coexist, while `000123`
+remains `000123`.
 
 Cross-database uniqueness is authoritative on
 `(import_source_id, external_id_hash)`, where the hash is SHA-256 of the exact

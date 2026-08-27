@@ -43,4 +43,25 @@ final class ExternalIdentityNormalizerTest extends TestCase
         $this->expectException(ValidationException::class);
         ExternalIdentityNormalizer::externalId('   ');
     }
+
+    #[DataProvider('externalIdsWithBoundaryControlCharacters')]
+    public function test_control_characters_are_rejected_before_trimming(string $externalId): void
+    {
+        $this->expectException(ValidationException::class);
+        ExternalIdentityNormalizer::externalId($externalId);
+    }
+
+    public static function externalIdsWithBoundaryControlCharacters(): iterable
+    {
+        yield 'leading NUL' => ["\0external"];
+        yield 'trailing NUL' => ["external\0"];
+        yield 'leading vertical tab' => ["\vexternal"];
+        yield 'trailing vertical tab' => ["external\v"];
+    }
+
+    public function test_malformed_utf8_is_rejected(): void
+    {
+        $this->expectException(ValidationException::class);
+        ExternalIdentityNormalizer::externalId("external\xC3\x28");
+    }
 }

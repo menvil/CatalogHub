@@ -13,6 +13,8 @@ use Illuminate\Validation\Rule;
 
 final class StoreCentralBrandExternalIdentityRequest extends FormRequest
 {
+    private bool $originalExternalIdIsInvalid = false;
+
     public function authorize(): bool
     {
         return true;
@@ -20,6 +22,15 @@ final class StoreCentralBrandExternalIdentityRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $externalId = $this->input('external_id');
+        if (is_string($externalId)) {
+            $this->originalExternalIdIsInvalid = preg_match('/\p{Cc}/u', $externalId) !== 0;
+
+            if (! $this->originalExternalIdIsInvalid) {
+                $this->merge(['external_id' => trim($externalId)]);
+            }
+        }
+
         if ($this->input('external_url') === '') {
             $this->merge(['external_url' => null]);
         }
@@ -68,7 +79,7 @@ final class StoreCentralBrandExternalIdentityRequest extends FormRequest
 
     private function validExternalId(string $attribute, mixed $value, Closure $fail): void
     {
-        if (! is_string($value) || trim($value) === '' || preg_match('/\p{Cc}/u', trim($value)) === 1) {
+        if (! is_string($value) || $this->originalExternalIdIsInvalid || trim($value) === '') {
             $fail('The external ID must be nonblank and contain no control characters.');
         }
     }

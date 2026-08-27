@@ -25,7 +25,6 @@ final class CentralBrandExternalIdentityResolverTest extends TestCase
 
         self::assertTrue($brand->is($resolver->findBrand($source, '  000123  ')));
         self::assertNull($resolver->findBrand($source, '000124'));
-        self::assertTrue($brand->is($resolver->findBrand($source, '000123'."\n")));
         self::assertNull($resolver->findBrand($otherSource, '000123'));
 
         CentralBrandExternalIdentity::factory()->for($brand, 'brand')->for($source, 'source')->externalId('ABC')->create();

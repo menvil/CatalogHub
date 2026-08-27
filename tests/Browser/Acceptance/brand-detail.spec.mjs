@@ -6,7 +6,47 @@ import {
 } from '../Support/acceptance.mjs'
 
 const activeBrandId = 20
+const completeBrandId = 21
 const draftBrandId = 24
+
+test('CA-012 derives complete and needs-attention quality states from persisted Brand data', async ({ page }) => {
+    const assertNoPageErrors = observePageErrors(page)
+
+    await signIn(page, 'central', foundationDemo.centralAdmin)
+    await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
+
+    await page.goto(`/admin/central/brands/${completeBrandId}`)
+    const completeQuality = page.locator('[data-screen-region="quality-completeness"]')
+    await expect(completeQuality).toContainText('Complete')
+    await expect(completeQuality).toContainText('100%')
+    await expect(completeQuality).toContainText('10 of 10 checks complete')
+    await expect(completeQuality).toContainText('All applicable quality checks are complete.')
+
+    await page.goto(`/admin/central/brands/${activeBrandId}`)
+    const quality = page.locator('[data-screen-region="quality-completeness"]')
+    await expect(quality).toContainText('Needs attention')
+    await expect(quality).toContainText('50%')
+    await expect(quality).toContainText('5 of 10 checks complete')
+    await expect(quality).toContainText('Primary Brand logo is missing')
+    await expect(quality).toContainText('German (de-DE) translation is missing')
+
+    await quality.getByRole('link', { name: 'Manage logo', exact: true }).click()
+    await expect(page.locator('[data-screen-id="CA-014"]')).toBeVisible()
+    await page.locator('#logo').setInputFiles('tests/Fixtures/media/brand-logo-a.png')
+    await page.locator('form[action$="/media/logo"] button[type="submit"]').click()
+    await expect(page.getByAltText('Samsung logo')).toBeVisible()
+
+    await page.getByRole('tab', { name: 'Overview', exact: true }).click()
+    await expect(quality).toContainText('60%')
+    await expect(quality).toContainText('6 of 10 checks complete')
+    await expect(quality).not.toContainText('Primary Brand logo is missing')
+
+    await page.getByRole('tab', { name: 'Media', exact: true }).click()
+    await page.getByRole('button', { name: 'Remove logo', exact: true }).click()
+    await page.getByRole('dialog', { name: 'Remove this logo from Samsung?' }).getByRole('button', { name: 'Remove logo', exact: true }).click()
+    await expect(page.getByText('No logo has been assigned to this brand yet.')).toBeVisible()
+    assertNoPageErrors()
+})
 
 test('CA-012 supports list, detail, edit, and detail navigation', async ({ page }) => {
     const assertNoPageErrors = observePageErrors(page)

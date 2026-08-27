@@ -100,8 +100,11 @@ final class CentralBrandMediaController extends Controller
     {
         $actor = $request->user();
         assert($actor instanceof User);
-        $action($actor, $brand);
+        $removed = $action($actor, $brand);
 
-        return redirect()->route('central.brands.media', $brand)->with('success', 'Brand logo assignment removed.');
+        return redirect()->route('central.brands.media', $brand)->with(
+            $removed ? 'success' : 'warning',
+            $removed ? 'Brand logo assignment removed.' : 'No canonical Brand logo assignment exists.',
+        );
     }
 }

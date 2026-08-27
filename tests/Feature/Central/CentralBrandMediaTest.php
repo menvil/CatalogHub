@@ -174,8 +174,10 @@ final class CentralBrandMediaTest extends TestCase
 
     public function test_assigned_logo_with_an_unavailable_file_is_not_presented_as_unassigned(): void
     {
+        Storage::fake('public');
         $brand = CentralBrand::factory()->create(['name' => 'Samsung']);
         $asset = MediaAsset::factory()->create(['disk' => 'public', 'original_path' => 'media/originals/missing.png']);
+        Storage::disk('public')->assertMissing('media/originals/missing.png');
         app(SetCentralBrandLogoAction::class)->execute(User::factory()->create(), $brand, $asset);
 
         $this->actingAs(User::factory()->centralAdmin()->create())
@@ -183,6 +185,19 @@ final class CentralBrandMediaTest extends TestCase
             ->assertOk()
             ->assertSee('The assignment exists, but neither a ready semantic variant nor the normalized master can be delivered.')
             ->assertDontSee('No canonical logo assigned');
+    }
+
+    public function test_removing_a_missing_canonical_logo_reports_a_no_op(): void
+    {
+        $brand = CentralBrand::factory()->create();
+
+        $this->actingAs(User::factory()->centralAdmin()->create())
+            ->delete(route('central.brands.media.logo.destroy', $brand))
+            ->assertRedirect(route('central.brands.media', $brand))
+            ->assertSessionHas('warning', 'No canonical Brand logo assignment exists.')
+            ->assertSessionMissing('success');
+
+        $this->assertDatabaseCount('media_assignments', 0);
     }
 
     public function test_replace_and_remove_retain_the_previous_media_asset_and_file(): void

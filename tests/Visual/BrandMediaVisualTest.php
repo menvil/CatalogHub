@@ -37,6 +37,15 @@ final class BrandMediaVisualTest extends TestCase
         ));
 
         self::assertCount(3, $references);
+        $identitySet = [];
+        foreach ($references as $reference) {
+            $identitySet[$reference['state'].'@'.$reference['viewport']] = $reference['path'];
+        }
+        self::assertSame([
+            'empty@1440x1000' => 'tests/Visual/baselines/ca-014__empty__1440x1000.png',
+            'logo-ready@1440x1000' => 'tests/Visual/baselines/ca-014__logo-ready__1440x1000.png',
+            'logo-ready@390x844' => 'tests/Visual/baselines/ca-014__logo-ready__390x844.png',
+        ], $identitySet);
         self::assertSame(
             array_fill(0, 3, BrandMediaFixture::VERSION),
             array_column($references, 'fixture'),

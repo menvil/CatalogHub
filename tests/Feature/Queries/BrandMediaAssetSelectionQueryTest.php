@@ -23,8 +23,8 @@ final class BrandMediaAssetSelectionQueryTest extends TestCase
                 'type' => 'image',
                 'status' => 'active',
                 'mime_type' => 'image/png',
-                'created_at' => $timestamp->addMinutes($index),
-                'updated_at' => $timestamp->addMinutes($index),
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
             ]);
         }
         MediaAsset::factory()->create(['type' => 'document', 'status' => 'active', 'mime_type' => 'application/pdf']);
@@ -40,6 +40,9 @@ final class BrandMediaAssetSelectionQueryTest extends TestCase
         self::assertSame(3, $first->count());
         self::assertSame([8, 7, 6], $first->pluck('id')->all());
         self::assertSame([5, 4, 3], $second->pluck('id')->all());
+        self::assertSame([], array_values(array_intersect($first->pluck('id')->all(), $second->pluck('id')->all())));
+        self::assertSame($first->pluck('id')->sortDesc()->values()->all(), $first->pluck('id')->all());
+        self::assertSame($second->pluck('id')->sortDesc()->values()->all(), $second->pluck('id')->all());
         self::assertSame(['brand-candidate-2.png'], $search->pluck('original_filename')->all());
     }
 }

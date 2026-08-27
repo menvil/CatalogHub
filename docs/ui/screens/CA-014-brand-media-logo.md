@@ -49,7 +49,7 @@ Remove requires confirmation and deletes only the exact canonical assignment. Ca
 
 ## Quality and audit
 
-The screen links directly to Phase 13 derived quality semantics. No assignment yields `brand_logo_missing`; an assignment without usable delivery yields `brand_logo_unusable`; a successful repair removes the issue on the next CA-012 read; removal restores `brand_logo_missing`. There is no stored score recalculation.
+The screen links directly to Phase 13 derived-quality semantics. No assignment yields `brand_logo_missing`; an assignment without usable delivery yields `brand_logo_unusable`; a successful repair removes the issue on the next CA-012 read; removal restores `brand_logo_missing`. There is no stored score recalculation.
 
 Initial assignment and replace emit `catalog.brand.logo.assigned`; remove emits `catalog.brand.logo.removed`. Audit is in the mutation transaction, no-op assignment emits nothing, and failure rolls the mutation back. Payloads contain the semantic role and MediaAsset ID only—never paths, signed URLs, credentials or temporary upload metadata.
 

@@ -152,6 +152,92 @@ test('CA-012 manages normalized Brand tags and shows direct current category cov
     assertNoPageErrors()
 })
 
+test('CA-012 manages external identity provenance with reversible modal editing', async ({ page }) => {
+    const assertNoPageErrors = observePageErrors(page)
+    let nativeDialogs = 0
+    page.on('dialog', async (dialog) => {
+        nativeDialogs += 1
+        await dialog.dismiss()
+    })
+
+    await signIn(page, 'central', foundationDemo.centralAdmin)
+    await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
+    await page.goto(`/admin/central/brands/${activeBrandId}#external-identities`)
+
+    const provenance = page.locator('[data-screen-region="external-identities"]')
+    await expect(provenance).toContainText('Manufacturer API')
+    await expect(provenance).toContainText('brand-00142')
+    await expect(provenance).toContainText('Open record')
+    await expect(provenance).toContainText('Legacy Feed')
+    await expect(provenance).toContainText('Inactive')
+    await expect(provenance).toContainText('SAMSUNG')
+
+    await provenance.getByRole('button', { name: 'Add identity' }).click()
+    const addDialog = page.getByRole('dialog', { name: 'Add external identity' })
+    await addDialog.getByLabel('Source').click()
+    await addDialog.getByRole('option', { name: 'Manufacturer API (manufacturer_api)', exact: true }).click()
+    await addDialog.locator('input[name="external_id"]').fill('temporary-cancelled-id')
+    await addDialog.getByLabel('External record URL').fill('https://example.test/temporary')
+    await addDialog.getByRole('button', { name: 'Cancel' }).click()
+
+    await provenance.getByRole('button', { name: 'Add identity' }).click()
+    await expect(addDialog.locator('#add-external-identity-source')).toHaveValue('')
+    await expect(addDialog.locator('input[name="external_id"]')).toHaveValue('')
+    await expect(addDialog.getByLabel('External record URL')).toHaveValue('')
+    await addDialog.getByLabel('Source').click()
+    await addDialog.getByRole('option', { name: 'Manufacturer API (manufacturer_api)', exact: true }).click()
+    await addDialog.locator('input[name="external_id"]').fill('brand-browser-001')
+    await addDialog.getByLabel('External record URL').fill('https://example.test/brands/brand-browser-001')
+    await addDialog.getByRole('button', { name: 'Add identity' }).click()
+
+    await expect(page).toHaveURL(new RegExp(`/admin/central/brands/${activeBrandId}#external-identities$`))
+    let browserRow = provenance.locator('[data-external-identity-id]').filter({ hasText: 'brand-browser-001' })
+    await expect(browserRow).toHaveCount(1)
+    await browserRow.getByRole('button', { name: 'Edit' }).click()
+    const editDialog = page.getByRole('dialog', { name: 'Edit external identity' })
+    await expect(editDialog).toContainText('Manufacturer API')
+    await expect(editDialog.getByRole('combobox')).toHaveCount(0)
+    await editDialog.locator('input[name="external_id"]').fill('temporary-escape-id')
+    await page.keyboard.press('Escape')
+    await expect(editDialog).toBeHidden()
+
+    await browserRow.getByRole('button', { name: 'Edit' }).click()
+    await expect(editDialog.locator('input[name="external_id"]')).toHaveValue('brand-browser-001')
+    await editDialog.locator('input[name="external_id"]').fill('brand-browser-002')
+    await editDialog.getByRole('button', { name: 'Save identity' }).click()
+    browserRow = provenance.locator('[data-external-identity-id]').filter({ hasText: 'brand-browser-002' })
+    await expect(browserRow).toHaveCount(1)
+
+    await browserRow.getByRole('button', { name: 'Remove' }).click()
+    const removeDialog = page.getByRole('dialog', { name: 'Remove external identity?' })
+    await expect(removeDialog).toContainText('Manufacturer API')
+    await expect(removeDialog).toContainText('brand-browser-002')
+    await expect(removeDialog).toContainText('does not delete the ImportSource')
+    await removeDialog.getByRole('button', { name: 'Remove identity' }).click()
+    await expect(provenance).not.toContainText('brand-browser-002')
+    await expect(provenance).toContainText('Manufacturer API')
+
+    await provenance.getByRole('button', { name: 'Add identity' }).click()
+    await addDialog.getByLabel('Source').click()
+    await addDialog.getByRole('option', { name: 'Manufacturer API (manufacturer_api)', exact: true }).click()
+    await addDialog.locator('input[name="external_id"]').fill('invalid-url-id')
+    await addDialog.getByLabel('External record URL').fill('https://user:pass@example.test/brand')
+    await addDialog.getByRole('button', { name: 'Add identity' }).click()
+    await expect(addDialog).toBeVisible()
+    await expect(addDialog).toContainText('without embedded credentials')
+    await expect(addDialog.locator('input[name="external_id"]')).toHaveValue('invalid-url-id')
+    await addDialog.getByRole('button', { name: 'Cancel' }).click()
+
+    await provenance.getByRole('button', { name: 'Add identity' }).click()
+    await expect(addDialog.locator('input[name="external_id"]')).toHaveValue('')
+    await expect(addDialog.getByLabel('External record URL')).toHaveValue('')
+    await expect(addDialog.getByText('without embedded credentials')).toHaveCount(0)
+    await addDialog.getByRole('button', { name: 'Cancel' }).click()
+
+    expect(nativeDialogs).toBe(0)
+    assertNoPageErrors()
+})
+
 test('CA-012 remains usable and overflow-free at 390px', async ({ page }) => {
     const assertNoPageErrors = observePageErrors(page)
 
@@ -174,6 +260,17 @@ test('CA-012 remains usable and overflow-free at 390px', async ({ page }) => {
         return rect.left >= 0 && rect.right <= window.innerWidth && rect.top >= 0 && rect.bottom <= window.innerHeight
     })).toBe(true)
     await tagDialog.getByRole('button', { name: 'Cancel' }).click()
+    const provenance = page.locator('[data-screen-region="external-identities"]')
+    await expect(provenance).toBeVisible()
+    await expect(provenance).toContainText('brand-00142')
+    await provenance.getByRole('button', { name: 'Add identity' }).click()
+    const identityDialog = page.getByRole('dialog', { name: 'Add external identity' })
+    await expect(identityDialog).toBeVisible()
+    await expect.poll(() => identityDialog.evaluate((element) => {
+        const rect = element.getBoundingClientRect()
+        return rect.left >= 0 && rect.right <= window.innerWidth && rect.top >= 0 && rect.bottom <= window.innerHeight
+    })).toBe(true)
+    await identityDialog.getByRole('button', { name: 'Cancel' }).click()
     await expect(page.locator('[data-screen-region="record-metadata"]')).toBeVisible()
     await expect(page.locator('[data-screen-region="lifecycle"]')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Archive Brand', exact: true })).toBeVisible()

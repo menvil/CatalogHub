@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trimStrings(except: ['external_id']);
         $middleware->prepend(AssignRequestId::class);
         $middleware->append(AddSecurityHeaders::class);
         $middleware->alias([

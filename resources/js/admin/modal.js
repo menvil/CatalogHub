@@ -55,6 +55,18 @@ export function bootAdminModals() {
         previousFocus?.focus?.({ preventScroll: true });
         syncBody();
         modal.dispatchEvent(new CustomEvent('admin:modal-closed', { bubbles: true }));
+
+        modal.querySelectorAll('[data-admin-modal-reset-value]').forEach((control) => {
+            if (! (control instanceof HTMLInputElement || control instanceof HTMLSelectElement || control instanceof HTMLTextAreaElement)) return;
+            control.value = control.dataset.adminModalResetValue ?? '';
+            control.removeAttribute('aria-invalid');
+            control.dispatchEvent(new Event('input', { bubbles: true }));
+            control.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+        modal.querySelectorAll('[data-admin-modal-reset-error], [data-ui-form-field] [role="alert"]').forEach((message) => {
+            message.textContent = '';
+            message.classList.add('hidden');
+        });
     };
 
     document.addEventListener('click', (event) => {

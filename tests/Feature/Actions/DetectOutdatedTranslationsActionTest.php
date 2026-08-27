@@ -3,6 +3,9 @@
 namespace Tests\Feature\Actions;
 
 use App\Actions\CentralCatalog\SyncCentralBrandTagsAction;
+use App\Actions\Imports\LinkCentralBrandExternalIdentityAction;
+use App\Actions\Imports\RemoveCentralBrandExternalIdentityAction;
+use App\Actions\Imports\UpdateCentralBrandExternalIdentityAction;
 use App\Actions\Translations\DetectOutdatedTranslationsAction;
 use App\Enums\TranslationStatus;
 use App\Models\CentralCatalog\AttributeDefinition;
@@ -11,6 +14,7 @@ use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
+use App\Models\Imports\ImportSource;
 use App\Models\Locale;
 use App\Models\MeasurementUnit;
 use App\Models\Translations\AttributeOptionTranslation;
@@ -133,6 +137,34 @@ class DetectOutdatedTranslationsActionTest extends TestCase
         $beforeHash = $hashService->forBrand($brand);
 
         app(SyncCentralBrandTagsAction::class)->handle(User::factory()->create(), $brand, ['Premium']);
+
+        self::assertSame($beforeHash, $hashService->forBrand($brand->refresh()));
+        self::assertSame(0, app(DetectOutdatedTranslationsAction::class)->handle($brand));
+        self::assertSame(TranslationStatus::Approved, $translation->fresh()->status);
+    }
+
+    public function test_brand_external_identity_changes_do_not_participate_in_translation_source_hash(): void
+    {
+        $hashService = app(TranslationSourceHashService::class);
+        $actor = User::factory()->create();
+        $brand = CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
+        $source = ImportSource::factory()->create();
+        $locale = Locale::factory()->create(['code' => 'de-DE']);
+        $translation = BrandTranslation::factory()->create([
+            'brand_id' => $brand->id,
+            'locale_id' => $locale->id,
+            'locale' => $locale->code,
+            'source_hash' => $hashService->forBrand($brand),
+            'status' => TranslationStatus::Approved,
+        ]);
+        $beforeHash = $hashService->forBrand($brand);
+
+        $identity = app(LinkCentralBrandExternalIdentityAction::class)
+            ->handle($actor, $brand, $source, '000123', null);
+        app(UpdateCentralBrandExternalIdentityAction::class)
+            ->handle($actor, $brand, $identity, '000124', 'https://example.test/brands/000124');
+        app(RemoveCentralBrandExternalIdentityAction::class)
+            ->handle($actor, $brand, $identity);
 
         self::assertSame($beforeHash, $hashService->forBrand($brand->refresh()));
         self::assertSame(0, app(DetectOutdatedTranslationsAction::class)->handle($brand));

@@ -32,6 +32,9 @@ class CentralBrandsMigrationTest extends TestCase
             'updated_at',
         ]));
         $this->assertFalse(Schema::hasColumn('central_brands', 'country_code'));
+        foreach (['quality_status', 'quality_score', 'completeness', 'is_complete', 'has_quality_issues', 'quality_issues', 'quality_calculated_at'] as $column) {
+            $this->assertFalse(Schema::hasColumn('central_brands', $column));
+        }
     }
 
     public function test_central_brands_storage_indexes_match_the_domain_contract(): void

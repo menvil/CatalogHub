@@ -24,7 +24,10 @@ final readonly class BrandLogoPresenter
         if (! $asset instanceof MediaAsset) {
             return new BrandLogoPresentation(null, null);
         }
-        $variants = $asset->variants()->where('status', 'ready')->get()->keyBy('variant_type');
+        $variants = ($asset->relationLoaded('variants')
+            ? $asset->variants->where('status', 'ready')
+            : $asset->variants()->where('status', 'ready')->get())
+            ->keyBy('variant_type');
         foreach ($preferences as $name) {
             $variant = $variants->get($name);
             if ($variant instanceof MediaVariant && $this->storage->exists($variant->disk, $variant->path)) {

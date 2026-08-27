@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Support;
 
+use App\Enums\TranslationStatus;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\Locale;
 use App\Models\Translations\BrandTranslation;
+use Carbon\CarbonImmutable;
 use RuntimeException;
 
 final class BrandTranslationFixture
@@ -36,7 +38,31 @@ final class BrandTranslationFixture
             ])->saveOrFail();
         }
 
-        BrandTranslation::query()->where('brand_id', $brand->id)->delete();
+        BrandTranslation::query()
+            ->whereIn('brand_id', [BrandDetailFixture::NEEDS_ATTENTION_BRAND_ID, BrandDetailFixture::COMPLETE_BRAND_ID])
+            ->delete();
+
+        foreach (Locale::query()->active()->orderBy('position')->orderBy('code')->get() as $locale) {
+            BrandTranslation::factory()->create([
+                'brand_id' => BrandDetailFixture::COMPLETE_BRAND_ID,
+                'locale_id' => $locale->getKey(),
+                'locale' => $locale->code,
+                'name' => 'Sony '.$locale->code,
+                'tagline' => 'Complete deterministic Brand translation.',
+                'short_description' => 'Complete Brand quality fixture for '.$locale->code.'.',
+                'description' => null,
+                'seo_title' => null,
+                'seo_description' => null,
+                'status' => TranslationStatus::HumanReviewed,
+            ]);
+        }
+
+        CentralBrand::query()->whereKey(BrandDetailFixture::NEEDS_ATTENTION_BRAND_ID)->update([
+            'updated_at' => CarbonImmutable::parse('2026-07-26T09:00:00Z'),
+        ]);
+        CentralBrand::query()->whereKey(BrandDetailFixture::COMPLETE_BRAND_ID)->update([
+            'updated_at' => CarbonImmutable::parse('2026-07-27T09:00:00Z'),
+        ]);
     }
 
     private function __construct() {}

@@ -10,19 +10,26 @@ use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Imports\CentralBrandExternalIdentity;
 use App\Models\Imports\ImportSource;
+use App\Models\MediaAsset;
+use App\Models\MediaAssignment;
 use App\Support\Imports\ExternalIdentityNormalizer;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 
 final class BrandDetailFixture
 {
-    public const VERSION = 'brand-detail-v4';
+    public const VERSION = 'brand-detail-v5';
 
     public const ACTIVE_BRAND_ID = 20;
 
     public const ARCHIVED_BRAND_ID = 21;
 
     public const DRAFT_BRAND_ID = 24;
+
+    public const NEEDS_ATTENTION_BRAND_ID = self::ACTIVE_BRAND_ID;
+
+    public const COMPLETE_BRAND_ID = self::ARCHIVED_BRAND_ID;
 
     public static function create(): void
     {
@@ -45,7 +52,20 @@ final class BrandDetailFixture
             'support_url' => 'https://www.samsung.com/support/',
             'contact_email' => 'support@example.com',
             'primary_color' => '#1428A0',
+            'updated_at' => CarbonImmutable::parse('2026-07-26T09:00:00Z'),
         ])->saveOrFail();
+
+        $archivedBrand->forceFill([
+            'website_url' => 'https://www.sony.com/',
+            'country_id' => CountryReference::id('JP'),
+            'founded_year' => 1946,
+            'support_url' => 'https://www.sony.com/electronics/support',
+            'contact_email' => null,
+            'primary_color' => '#000000',
+            'updated_at' => CarbonImmutable::parse('2026-07-27T09:00:00Z'),
+        ])->saveOrFail();
+
+        self::assignCompleteBrandLogo($archivedBrand);
 
         $manufacturerApi = new ImportSource;
         $manufacturerApi->forceFill([
@@ -132,6 +152,50 @@ final class BrandDetailFixture
                 'updated_at' => CarbonImmutable::parse('2026-08-09T10:00:00Z'),
             ])->saveOrFail();
         }
+    }
+
+    private static function assignCompleteBrandLogo(CentralBrand $brand): void
+    {
+        $timestamp = CarbonImmutable::parse('2026-08-12T10:00:00Z');
+        $logoPath = 'media/originals/ca-012-complete-sony-logo.png';
+        $logoBytes = (string) file_get_contents(base_path('tests/Fixtures/media/brand-logo-a.png')).'CA012-PHASE13';
+        Storage::disk('public')->put($logoPath, $logoBytes);
+
+        $asset = new MediaAsset;
+        $asset->forceFill([
+            'id' => 120110,
+            'uuid' => '00000000-0000-4000-8000-000000120110',
+            'type' => 'image',
+            'source' => 'fixture',
+            'disk' => 'public',
+            'original_path' => $logoPath,
+            'original_filename' => 'sony-logo.png',
+            'mime_type' => 'image/png',
+            'file_size' => strlen($logoBytes),
+            'width' => 320,
+            'height' => 160,
+            'checksum' => 'sha256:'.hash('sha256', $logoBytes),
+            'status' => 'active',
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ])->saveOrFail();
+
+        $assignment = new MediaAssignment;
+        $assignment->forceFill([
+            'id' => 120110,
+            'media_asset_id' => $asset->getKey(),
+            'entity_type' => MediaAssignment::ENTITY_TYPE_CENTRAL_BRAND,
+            'entity_id' => $brand->getKey(),
+            'role' => MediaAssignment::ROLE_BRAND_LOGO,
+            'position' => 0,
+            'locale' => null,
+            'site_id' => null,
+            'market_id' => null,
+            'is_primary' => true,
+            'visibility' => 'global',
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ])->saveOrFail();
     }
 
     private function __construct() {}

@@ -48,7 +48,7 @@
 @endsection
 
 @section('content')
-    <div class="space-y-admin-section" data-brand-detail-fixture="brand-detail-v4">
+    <div class="space-y-admin-section" data-brand-detail-fixture="brand-detail-v5">
         <x-admin.page-header
             screen-id="CA-012"
             :show-screen-id="false"
@@ -73,6 +73,54 @@
 
         <x-admin.detail-layout>
             <x-slot:main>
+                <x-admin.card
+                    title="Quality / Completeness"
+                    description="Derived from the canonical profile, primary logo, and active-locale translations."
+                    data-screen-region="quality-completeness"
+                >
+                    <x-slot:actions>
+                        <x-admin.status-badge :label="$quality->state->label()" :variant="$quality->state->badgeVariant()" size="sm" />
+                    </x-slot:actions>
+
+                    <div class="space-y-admin-card">
+                        <div class="grid gap-admin-card sm:grid-cols-[8rem_minmax(0,1fr)] sm:items-center">
+                            <div>
+                                <p class="text-3xl font-semibold text-admin-text" data-brand-quality-score="{{ $quality->score }}">{{ $quality->score }}%</p>
+                                <p class="mt-1 text-xs font-medium text-admin-muted">{{ $quality->completedChecks }} of {{ $quality->totalChecks }} checks complete</p>
+                            </div>
+                            <div>
+                                <div class="h-2 overflow-hidden rounded-admin-badge bg-admin-surface-muted" role="progressbar" aria-label="Brand completeness" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $quality->score }}">
+                                    <div class="h-full rounded-admin-badge {{ $quality->state === \App\Enums\CentralBrandQualityState::Complete ? 'bg-admin-success' : 'bg-admin-warning' }}" style="width: {{ $quality->score }}%"></div>
+                                </div>
+                                <p class="mt-2 text-sm text-admin-muted">The score is the percentage of equally weighted applicable checks that are complete.</p>
+                            </div>
+                        </div>
+
+                        @if ($quality->issues() === [])
+                            <div class="rounded-admin-input border border-admin-success/25 bg-admin-success-soft px-4 py-3">
+                                <p class="text-sm font-medium text-admin-success">All applicable quality checks are complete.</p>
+                            </div>
+                        @else
+                            <div class="border-t border-admin-border pt-admin-card">
+                                <h3 class="text-sm font-semibold text-admin-text">Issues to resolve</h3>
+                                <ul class="mt-2 divide-y divide-admin-border" data-brand-quality-issues>
+                                    @foreach ($quality->issues() as $issue)
+                                        <li class="flex min-w-0 flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between" data-quality-issue-code="{{ $issue->issueCode?->value }}">
+                                            <div class="min-w-0">
+                                                <p class="text-sm font-medium text-admin-text">{{ $issue->label }}</p>
+                                                <p class="mt-1 text-sm text-admin-muted">{{ $issue->description }}</p>
+                                            </div>
+                                            @if ($issue->editorRoute !== null && $issue->editorPermission !== null && auth()->user()?->can($issue->editorPermission) === true)
+                                                <a href="{{ route($issue->editorRoute, $issue->editorRouteParameters, absolute: false) }}" class="shrink-0 text-sm font-semibold text-admin-primary underline decoration-admin-primary/30 underline-offset-2">{{ $issue->editorLabel }}</a>
+                                            @endif
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                    </div>
+                </x-admin.card>
+
                 <x-admin.card title="General information" data-screen-region="general-information">
                     <dl class="divide-y divide-admin-border">
                         <div class="grid gap-1 py-3 first:pt-0 sm:grid-cols-[10rem_minmax(0,1fr)]">

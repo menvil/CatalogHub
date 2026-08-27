@@ -21,6 +21,7 @@ use App\Models\AuditLogEntry;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\Locale;
 use App\Models\MediaAsset;
+use App\Models\MediaAssignment;
 use App\Models\User;
 use App\Services\Audit\AuditRecorder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -156,10 +157,10 @@ final class BrandAuditEventsTest extends TestCase
 
         $entries = AuditLogEntry::query()->orderBy('id')->get();
         $this->assertCount(3, $entries);
-        $this->assertSame(['media_asset_id' => null], $entries[0]->before_json);
-        $this->assertSame(['media_asset_id' => $first->id], $entries[0]->after_json);
-        $this->assertSame(['media_asset_id' => $first->id], $entries[1]->before_json);
-        $this->assertSame(['media_asset_id' => $second->id], $entries[1]->after_json);
+        $this->assertSame(['media_asset_id' => null, 'role' => MediaAssignment::ROLE_BRAND_LOGO], $entries[0]->before_json);
+        $this->assertSame(['media_asset_id' => $first->id, 'role' => MediaAssignment::ROLE_BRAND_LOGO], $entries[0]->after_json);
+        $this->assertSame(['media_asset_id' => $first->id, 'role' => MediaAssignment::ROLE_BRAND_LOGO], $entries[1]->before_json);
+        $this->assertSame(['media_asset_id' => $second->id, 'role' => MediaAssignment::ROLE_BRAND_LOGO], $entries[1]->after_json);
         $this->assertSame(AuditAction::CatalogBrandLogoRemoved->value, $entries[2]->action);
         $this->assertSame($brand->getMorphClass(), $entries[2]->subject_type);
     }

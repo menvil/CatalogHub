@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Services;
 
+use App\Enums\MediaDeliveryState;
 use App\Models\MediaAsset;
 use App\Models\MediaVariant;
 use App\Services\Media\BrandLogoPresenter;
@@ -24,6 +25,7 @@ final class BrandLogoPresenterTest extends TestCase
 
         $this->assertSame('brand_logo_256', $presenter->forDetail($asset)->variantName);
         $this->assertSame('brand_logo_512', $presenter->forMedia($asset)->variantName);
+        $this->assertSame(MediaDeliveryState::Ready, $presenter->forMedia($asset)->state);
     }
 
     public function test_skips_processing_failed_and_missing_ready_variants(): void
@@ -52,14 +54,55 @@ final class BrandLogoPresenterTest extends TestCase
         $this->assertNotNull($presentation->url);
     }
 
-    public function test_returns_no_logo_when_no_assignment_asset_or_physical_master_exists(): void
+    public function test_distinguishes_missing_assignment_from_unavailable_delivery(): void
     {
         [$asset] = $this->assetWithMaster(false);
         $presenter = app(BrandLogoPresenter::class);
 
-        $this->assertNull($presenter->forMedia(null)->url);
-        $this->assertNull($presenter->forMedia($asset)->url);
-        $this->assertNull($presenter->forMedia($asset)->asset);
+        $missing = $presenter->forMedia(null);
+        $unavailable = $presenter->forMedia($asset);
+
+        $this->assertSame(MediaDeliveryState::Missing, $missing->state);
+        $this->assertNull($missing->url);
+        $this->assertSame(MediaDeliveryState::Unavailable, $unavailable->state);
+        $this->assertNull($unavailable->url);
+        $this->assertSame($asset->id, $unavailable->asset?->id);
+    }
+
+    public function test_processing_and_failed_assets_are_not_delivered_even_when_master_exists(): void
+    {
+        [$processing] = $this->assetWithMaster();
+        $processing->update(['status' => 'processing']);
+        $failed = MediaAsset::factory()->create([
+            'disk' => 'public',
+            'original_path' => 'media/originals/failed.png',
+            'status' => 'failed',
+        ]);
+        Storage::disk('public')->put($failed->original_path, 'master');
+        $presenter = app(BrandLogoPresenter::class);
+
+        $this->assertSame(MediaDeliveryState::Processing, $presenter->forMedia($processing)->state);
+        $this->assertNull($presenter->forMedia($processing)->url);
+        $this->assertSame(MediaDeliveryState::Failed, $presenter->forMedia($failed)->state);
+        $this->assertNull($presenter->forMedia($failed)->url);
+    }
+
+    public function test_variant_presentations_are_read_only_and_report_missing_ready_files(): void
+    {
+        [$asset] = $this->assetWithMaster();
+        $this->variant($asset, 'brand_logo_128', 'processing');
+        $this->variant($asset, 'brand_logo_256', 'failed');
+        $this->readyVariant($asset, 'brand_logo_512', false);
+
+        $variants = app(BrandLogoPresenter::class)->variantsForMedia($asset);
+
+        $this->assertSame(['brand_logo_128', 'brand_logo_256', 'brand_logo_512'], array_column($variants, 'name'));
+        $this->assertSame([
+            MediaDeliveryState::Processing,
+            MediaDeliveryState::Failed,
+            MediaDeliveryState::Unavailable,
+        ], array_column($variants, 'state'));
+        $this->assertSame([null, null, null], array_column($variants, 'url'));
     }
 
     /** @return array{MediaAsset, string} */

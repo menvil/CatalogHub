@@ -30,8 +30,8 @@ class AuditRecorder
         AuditAction::CatalogBrandActivated->value => ['status'],
         AuditAction::CatalogBrandArchived->value => ['status'],
         AuditAction::CatalogBrandRestored->value => ['status'],
-        AuditAction::CatalogBrandLogoAssigned->value => ['media_asset_id'],
-        AuditAction::CatalogBrandLogoRemoved->value => ['media_asset_id'],
+        AuditAction::CatalogBrandLogoAssigned->value => ['media_asset_id', 'role'],
+        AuditAction::CatalogBrandLogoRemoved->value => ['media_asset_id', 'role'],
         AuditAction::CatalogBrandTranslationSaved->value => ['translation_id', 'locale', 'status', 'changed_fields'],
     ];
 

@@ -87,6 +87,7 @@ final class CentralBrandQualityQueryTest extends TestCase
         ]);
         $locale = Locale::factory()->create(['code' => 'de-DE']);
         $before = $brand->fresh()->getAttributes();
+        $auditEntryCount = AuditLogEntry::query()->count();
 
         app(CentralBrandQualityQuery::class)->forBrand($brand);
 
@@ -96,8 +97,7 @@ final class CentralBrandQualityQueryTest extends TestCase
         self::assertDatabaseHas('locales', ['id' => $locale->id]);
         self::assertDatabaseCount('brand_translations', 0);
         self::assertDatabaseCount('media_assignments', 0);
-        self::assertDatabaseCount('audit_log_entries', 0);
-        self::assertSame(0, AuditLogEntry::query()->count());
+        self::assertSame($auditEntryCount, AuditLogEntry::query()->count());
     }
 
     public function test_query_count_is_bounded_when_active_locales_increase(): void

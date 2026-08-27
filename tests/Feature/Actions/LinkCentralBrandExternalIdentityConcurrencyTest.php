@@ -12,7 +12,6 @@ use App\Models\CentralCatalog\CentralBrand;
 use App\Models\Imports\CentralBrandExternalIdentity;
 use App\Models\Imports\ImportSource;
 use App\Models\User;
-use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\DB;
@@ -35,39 +34,20 @@ final class LinkCentralBrandExternalIdentityConcurrencyTest extends TestCase
         $source = ImportSource::factory()->create();
         $directory = sys_get_temp_dir().'/cataloghub-brand-identity-race-'.bin2hex(random_bytes(8));
         self::assertTrue(mkdir($directory));
-        $parentSelected = $directory.'/parent-selected';
-        $childSelected = $directory.'/child-selected';
+        $childReady = $directory.'/child-ready';
+        $start = $directory.'/start';
         $childOutcome = $directory.'/child-outcome';
         $connectionName = 'brand_external_identity_concurrency';
         $defaultConnection = DB::getDefaultConnection();
         config(["database.connections.{$connectionName}" => config("database.connections.{$defaultConnection}")]);
-        $parentPid = getmypid();
-        $handledSelect = false;
-
-        DB::listen(function (QueryExecuted $query) use ($parentSelected, $childSelected, $parentPid, &$handledSelect): void {
-            $sql = strtolower($query->sql);
-            if ($handledSelect || ! str_starts_with(ltrim($sql), 'select') || ! str_contains($sql, 'central_brand_external_identities')) {
-                return;
-            }
-
-            $handledSelect = true;
-            if (getmypid() === $parentPid) {
-                touch($parentSelected);
-                $this->waitForFile($childSelected, 5.0);
-
-                return;
-            }
-
-            touch($childSelected);
-        });
-
         DB::disconnect($defaultConnection);
         $childPid = pcntl_fork();
         self::assertNotSame(-1, $childPid);
 
         if ($childPid === 0) {
             DB::setDefaultConnection($connectionName);
-            $this->waitForFile($parentSelected, 5.0);
+            touch($childReady);
+            $this->waitForFile($start, 5.0);
 
             try {
                 app(LinkCentralBrandExternalIdentityAction::class)->handle(
@@ -88,6 +68,9 @@ final class LinkCentralBrandExternalIdentityConcurrencyTest extends TestCase
         }
 
         try {
+            $this->waitForFile($childReady, 5.0);
+            touch($start);
+
             try {
                 app(LinkCentralBrandExternalIdentityAction::class)->handle(
                     User::query()->findOrFail($actor->id),
@@ -110,7 +93,7 @@ final class LinkCentralBrandExternalIdentityConcurrencyTest extends TestCase
         self::assertSame(1, CentralBrandExternalIdentity::query()->count());
         self::assertSame(1, AuditLogEntry::query()->where('action', AuditAction::CatalogBrandExternalIdentityLinked->value)->count());
 
-        foreach ([$parentSelected, $childSelected, $childOutcome] as $path) {
+        foreach ([$childReady, $start, $childOutcome] as $path) {
             if (file_exists($path)) {
                 unlink($path);
             }

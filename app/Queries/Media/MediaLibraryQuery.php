@@ -29,4 +29,34 @@ final class MediaLibraryQuery implements StablePaginationBoundary
             ->latest('id')
             ->paginate($perPage, ['*'], 'page', $page);
     }
+
+    /** @return LengthAwarePaginator<int, MediaAsset> */
+    public function paginateCompatibleImages(
+        string $search,
+        int $perPage = 6,
+        int $page = 1,
+        string $pageName = 'asset_page',
+    ): LengthAwarePaginator {
+        $allowedMimes = config('media.allowed_upload_mimes');
+
+        return MediaAsset::query()
+            ->with(['variants' => fn ($query) => $query
+                ->whereIn('variant_type', ['brand_logo_128', 'brand_logo_256', 'brand_logo_512'])
+                ->whereNull('locale')
+                ->whereNull('site_id')
+                ->whereNull('market_id')])
+            ->where('type', 'image')
+            ->where('status', 'active')
+            ->whereIn('mime_type', is_array($allowedMimes) ? $allowedMimes : [])
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(function ($query) use ($search): void {
+                    $query->where('original_filename', 'like', "%{$search}%")
+                        ->orWhere('checksum', 'like', "%{$search}%")
+                        ->when(ctype_digit($search), fn ($query) => $query->orWhere('id', (int) $search));
+                });
+            })
+            ->latest()
+            ->latest('id')
+            ->paginate($perPage, ['*'], $pageName, $page);
+    }
 }

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Artisan;
 use Tests\Support\BrandDetailFixture;
 use Tests\Support\BrandFormFixture;
 use Tests\Support\BrandListFixture;
+use Tests\Support\BrandMediaFixture;
 use Tests\Support\BrandTranslationFixture;
 
 require dirname(__DIR__, 3).'/vendor/autoload.php';
@@ -33,3 +34,4 @@ BrandListFixture::create();
 BrandFormFixture::create();
 BrandDetailFixture::create();
 BrandTranslationFixture::create();
+BrandMediaFixture::create();

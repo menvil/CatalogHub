@@ -33,6 +33,9 @@ Route::middleware(['auth', EnsureCentralAdminAccess::class])
                 ->name('central.brands.store');
             Route::get('/brands/{brand}/media', [CentralBrandMediaController::class, 'show'])->name('central.brands.media');
             Route::post('/brands/{brand}/media/logo', [CentralBrandMediaController::class, 'storeLogo'])->name('central.brands.media.logo.store');
+            Route::post('/brands/{brand}/media/logo/assign', [CentralBrandMediaController::class, 'assignLogo'])
+                ->middleware('can:media.manage')
+                ->name('central.brands.media.logo.assign');
             Route::delete('/brands/{brand}/media/logo', [CentralBrandMediaController::class, 'destroyLogo'])->name('central.brands.media.logo.destroy');
             Route::patch('/brands/{brand}/tags', [CentralBrandTagsController::class, 'update'])
                 ->name('central.brands.tags.update');

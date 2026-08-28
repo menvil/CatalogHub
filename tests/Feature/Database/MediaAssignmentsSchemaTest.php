@@ -87,4 +87,34 @@ class MediaAssignmentsSchemaTest extends TestCase
             'is_primary' => true,
         ]);
     }
+
+    public function test_brand_logo_context_cannot_have_competing_global_and_private_primaries(): void
+    {
+        $asset = MediaAsset::factory()->create();
+        $otherAsset = MediaAsset::factory()->create();
+
+        MediaAssignment::factory()->for($asset, 'asset')->create([
+            'entity_type' => MediaAssignment::ENTITY_TYPE_CENTRAL_BRAND,
+            'entity_id' => 14014,
+            'role' => MediaAssignment::ROLE_BRAND_LOGO,
+            'locale' => null,
+            'site_id' => null,
+            'market_id' => null,
+            'is_primary' => true,
+            'visibility' => 'private',
+        ]);
+
+        $this->expectException(QueryException::class);
+
+        MediaAssignment::factory()->for($otherAsset, 'asset')->create([
+            'entity_type' => MediaAssignment::ENTITY_TYPE_CENTRAL_BRAND,
+            'entity_id' => 14014,
+            'role' => MediaAssignment::ROLE_BRAND_LOGO,
+            'locale' => null,
+            'site_id' => null,
+            'market_id' => null,
+            'is_primary' => true,
+            'visibility' => 'global',
+        ]);
+    }
 }

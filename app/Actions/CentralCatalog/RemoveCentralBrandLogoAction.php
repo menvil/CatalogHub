@@ -7,26 +7,40 @@ use App\Enums\AuditContext;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\MediaAssignment;
 use App\Models\User;
+use App\Queries\CentralCatalog\CentralBrandMediaQuery;
 use App\Services\Audit\AuditRecorder;
 use Illuminate\Support\Facades\DB;
 
 final readonly class RemoveCentralBrandLogoAction
 {
-    public function __construct(private AuditRecorder $audit) {}
+    public function __construct(
+        private AuditRecorder $audit,
+        private CentralBrandMediaQuery $media,
+    ) {}
 
-    public function __invoke(User $actor, CentralBrand $brand): void
+    public function __invoke(User $actor, CentralBrand $brand): bool
     {
-        DB::transaction(function () use ($actor, $brand): void {
+        return DB::transaction(function () use ($actor, $brand): bool {
             CentralBrand::query()->lockForUpdate()->findOrFail($brand->id);
-            $assignment = MediaAssignment::query()->forEntity(MediaAssignment::ENTITY_TYPE_CENTRAL_BRAND, $brand->id)->forRole(MediaAssignment::ROLE_BRAND_LOGO)->whereNull('locale')->whereNull('site_id')->whereNull('market_id')->first();
+            $assignment = $this->media->canonicalPrimaryLogoQuery($brand)
+                ->lockForUpdate()
+                ->first();
 
             if (! $assignment instanceof MediaAssignment) {
-                return;
+                return false;
             }
 
             $oldAssetId = (int) $assignment->media_asset_id;
             $assignment->delete();
-            $this->audit->record(AuditAction::CatalogBrandLogoRemoved, AuditContext::Central, $actor, $brand, null, ['media_asset_id' => $oldAssetId], ['media_asset_id' => null]);
+            $this->audit->record(AuditAction::CatalogBrandLogoRemoved, AuditContext::Central, $actor, $brand, null, [
+                'media_asset_id' => $oldAssetId,
+                'role' => MediaAssignment::ROLE_BRAND_LOGO,
+            ], [
+                'media_asset_id' => null,
+                'role' => MediaAssignment::ROLE_BRAND_LOGO,
+            ]);
+
+            return true;
         });
     }
 }

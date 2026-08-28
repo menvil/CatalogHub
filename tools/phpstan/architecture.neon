@@ -140,6 +140,12 @@ parameters:
                 behaviorTests: [tests/Feature/Admin/MediaLibraryTest.php]
                 status: approved
             -
+                class: App\Queries\Media\MediaLibraryQuery
+                method: paginateCompatibleImages
+                uniqueOrder: [media_assets.id DESC]
+                behaviorTests: [tests/Feature/Queries/BrandMediaAssetSelectionQueryTest.php]
+                status: approved
+            -
                 class: App\Queries\PublicSite\PublicProductListingQuery
                 method: get
                 uniqueOrder: [site_search_documents.id]

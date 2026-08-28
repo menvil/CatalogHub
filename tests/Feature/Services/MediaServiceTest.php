@@ -5,6 +5,7 @@ namespace Tests\Feature\Services;
 use App\Models\MediaAsset;
 use App\Services\Media\ImageIngestException;
 use App\Services\Media\MediaService;
+use App\Services\Media\MediaUploadException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -106,8 +107,9 @@ class MediaServiceTest extends TestCase
         try {
             app(MediaService::class)->uploadOriginal(UploadedFile::fake()->image('logo.png', 32, 16));
             $this->fail('The persistence exception must remain visible.');
-        } catch (RuntimeException $exception) {
-            $this->assertSame('persistence failed', $exception->getMessage());
+        } catch (MediaUploadException $exception) {
+            $this->assertSame('The media upload could not be completed.', $exception->getMessage());
+            $this->assertSame('persistence failed', $exception->getPrevious()?->getMessage());
         } finally {
             MediaAsset::flushEventListeners();
             MediaAsset::clearBootedModels();

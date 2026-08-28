@@ -23,8 +23,9 @@ final readonly class MediaService
         $disk = (string) ($metadata['disk'] ?? config('media.disk'));
         $uuid = (string) Str::uuid();
         $path = $this->paths->original($uuid, $image->canonicalExtension);
-        $this->storage->storeNormalized($disk, $path, $image);
+
         try {
+            $this->storage->storeNormalized($disk, $path, $image);
             $asset = MediaAsset::query()->create([
                 'uuid' => $uuid, 'type' => (string) ($metadata['type'] ?? 'image'), 'source' => $metadata['source'] ?? 'manual',
                 'disk' => $disk, 'original_path' => $path, 'original_filename' => $file->getClientOriginalName(),
@@ -42,7 +43,8 @@ final readonly class MediaService
                     return $existing;
                 }
             }
-            throw $exception;
+
+            throw new MediaUploadException('The media upload could not be completed.', previous: $exception);
         }
 
         return $asset;

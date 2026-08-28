@@ -90,7 +90,7 @@
         ],
         "test:pagination-boundaries": [
             "@php artisan config:clear --ansi @no_additional_args",
-            "@php artisan test tests/Feature/Central/CentralBrandListTest.php tests/Feature/Admin/MediaLibraryTest.php tests/Feature/Public/ProductListingPageTest.php tests/Feature/SiteAdmin/ProductsWithoutOffersReportTest.php tests/Feature/SiteAdmin/CheapestProductsReportTest.php tests/Feature/Sites/ProductVisibilityManagerTest.php tests/Feature/Sites/BrandVisibilityRulesTest.php"
+            "@php artisan test tests/Feature/Central/CentralBrandListTest.php tests/Feature/Admin/MediaLibraryTest.php tests/Feature/Queries/BrandMediaAssetSelectionQueryTest.php tests/Feature/Public/ProductListingPageTest.php tests/Feature/SiteAdmin/ProductsWithoutOffersReportTest.php tests/Feature/SiteAdmin/CheapestProductsReportTest.php tests/Feature/Sites/ProductVisibilityManagerTest.php tests/Feature/Sites/BrandVisibilityRulesTest.php"
         ],
         "test:query-contracts": [
             "@php artisan config:clear --ansi @no_additional_args",

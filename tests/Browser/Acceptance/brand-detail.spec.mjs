@@ -42,9 +42,9 @@ test('CA-012 derives complete and needs-attention quality states from persisted 
     await expect(quality).not.toContainText('Primary Brand logo is missing')
 
     await page.getByRole('tab', { name: 'Media', exact: true }).click()
-    await page.getByRole('button', { name: 'Remove logo', exact: true }).click()
-    await page.getByRole('dialog', { name: 'Remove this logo from Samsung?' }).getByRole('button', { name: 'Remove logo', exact: true }).click()
-    await expect(page.getByText('No logo has been assigned to this brand yet.')).toBeVisible()
+    await page.getByRole('button', { name: 'Remove assignment', exact: true }).click()
+    await page.getByRole('dialog', { name: 'Remove the canonical logo from Samsung?' }).getByRole('button', { name: 'Remove assignment', exact: true }).click()
+    await expect(page.getByText('No canonical logo assigned')).toBeVisible()
     assertNoPageErrors()
 })
 

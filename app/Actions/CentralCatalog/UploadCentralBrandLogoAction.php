@@ -2,6 +2,7 @@
 
 namespace App\Actions\CentralCatalog;
 
+use App\Data\CentralCatalog\CentralBrandLogoAssignmentResult;
 use App\Jobs\Media\GenerateMediaVariantsJob;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\User;
@@ -19,13 +20,13 @@ final readonly class UploadCentralBrandLogoAction
         private SetCentralBrandLogoAction $setLogo,
     ) {}
 
-    public function __invoke(User $actor, CentralBrand $brand, UploadedFile $file): void
+    public function __invoke(User $actor, CentralBrand $brand, UploadedFile $file): CentralBrandLogoAssignmentResult
     {
         $asset = $this->media->uploadOriginal($file);
         $createdAsset = $asset->wasRecentlyCreated;
 
         try {
-            $this->setLogo->execute($actor, $brand, $asset);
+            $result = $this->setLogo->execute($actor, $brand, $asset);
         } catch (Throwable $exception) {
             if ($createdAsset) {
                 try {
@@ -44,6 +45,10 @@ final readonly class UploadCentralBrandLogoAction
             throw $exception;
         }
 
-        GenerateMediaVariantsJob::dispatch($asset->id, MediaVariantProfile::BrandLogo)->afterCommit();
+        if ($result->changed) {
+            GenerateMediaVariantsJob::dispatch($asset->id, MediaVariantProfile::BrandLogo)->afterCommit();
+        }
+
+        return $result;
     }
 }

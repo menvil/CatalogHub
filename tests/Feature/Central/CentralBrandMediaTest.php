@@ -18,6 +18,7 @@ use App\Services\Audit\AuditRecorder;
 use App\Services\Media\MediaResolver;
 use App\Services\Media\MediaStorage;
 use App\Services\Media\MediaVariantProfile;
+use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
@@ -350,6 +351,44 @@ final class CentralBrandMediaTest extends TestCase
         ]);
         $this->assertDatabaseCount('media_assets', 1);
         Queue::assertNothingPushed();
+    }
+
+    public function test_dispatch_failure_after_commit_is_not_reported_as_an_assignment_rollback(): void
+    {
+        Storage::fake('public');
+        $brand = CentralBrand::factory()->create();
+        $old = MediaAsset::factory()->create([
+            'disk' => 'public',
+            'original_path' => 'media/originals/old.png',
+        ]);
+        Storage::disk('public')->put($old->original_path, 'old');
+        app(SetCentralBrandLogoAction::class)->execute(User::factory()->create(), $brand, $old);
+
+        $dispatcher = $this->createMock(Dispatcher::class);
+        $dispatcher->expects($this->once())
+            ->method('dispatch')
+            ->with($this->callback(static fn (object $job): bool => $job instanceof GenerateMediaVariantsJob))
+            ->willThrowException(new RuntimeException('queue unavailable'));
+        $this->app->instance(Dispatcher::class, $dispatcher);
+        $this->withoutExceptionHandling();
+
+        try {
+            $this->actingAs(User::factory()->centralAdmin()->create())
+                ->post(route('central.brands.media.logo.store', $brand), [
+                    'logo' => UploadedFile::fake()->image('replacement.png', 20, 10),
+                ]);
+            $this->fail('The post-commit dispatch exception must remain visible.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('queue unavailable', $exception->getMessage());
+        }
+
+        $assignment = MediaAssignment::query()
+            ->where('entity_type', MediaAssignment::ENTITY_TYPE_CENTRAL_BRAND)
+            ->where('entity_id', $brand->id)
+            ->where('role', MediaAssignment::ROLE_BRAND_LOGO)
+            ->sole();
+        $this->assertNotSame($old->id, $assignment->media_asset_id);
+        $this->assertDatabaseHas('media_assets', ['id' => $assignment->media_asset_id]);
     }
 
     public function test_media_mutations_update_derived_quality_without_changing_lifecycle(): void

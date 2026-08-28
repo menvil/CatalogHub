@@ -41,7 +41,7 @@ Delivery distinguishes no assignment, ready, processing, failed, and unavailable
 
 Upload and replace pass the browser file through the shared `MediaService` secure ingest pipeline. Accepted input is JPEG, PNG or WebP, with a maximum 20 MiB, 8000 pixels per side, and 16 million pixels. Detection uses decoded content, not the client extension or MIME. GIF, SVG, AVIF, corrupt data and mismatched content are rejected. Shared Media has no approved SVG sanitizer, so SVG remains deferred.
 
-Ingest completes before assignment mutation. A validation, decode, storage or persistence failure leaves the previous assignment and usable logo intact. Successful replace transactionally updates the canonical assignment and queues the existing Brand Logo variant profile after commit. Replacement and removal do not physically delete the prior/shared `MediaAsset`; lifecycle and orphan cleanup remain Shared Media responsibilities.
+Ingest completes before assignment mutation. A validation, decode, storage or persistence failure leaves the previous assignment and usable logo intact. Successful replace transactionally updates the canonical assignment and then attempts to queue the existing Brand Logo variant profile. A post-commit dispatch failure remains a runtime failure and is never reported as an assignment rollback. Replacement and removal do not physically delete the prior/shared `MediaAsset`; lifecycle and orphan cleanup remain Shared Media responsibilities.
 
 Actors who also have the existing `media.manage` permission receive a bounded, server-paginated selector for active, available compatible raster assets. It accepts only a semantic MediaAsset ID and revalidates type, status, MIME and delivery server-side. This is not a generic DAM, folder browser or bulk media workflow. Actors with only `catalog.brands.manage` retain upload/replace/remove access but do not see the Media Library selector.
 
@@ -51,7 +51,7 @@ Remove requires confirmation and deletes only the exact canonical assignment. Ca
 
 The screen links directly to Phase 13 derived-quality semantics. No assignment yields `brand_logo_missing`; an assignment without usable delivery yields `brand_logo_unusable`; a successful repair removes the issue on the next CA-012 read; removal restores `brand_logo_missing`. There is no stored score recalculation.
 
-Initial assignment and replace emit `catalog.brand.logo.assigned`; remove emits `catalog.brand.logo.removed`. Audit is in the mutation transaction, no-op assignment emits nothing, and failure rolls the mutation back. Payloads contain the semantic role and MediaAsset ID only—never paths, signed URLs, credentials or temporary upload metadata.
+Initial assignment and replace emit `catalog.brand.logo.assigned`; remove emits `catalog.brand.logo.removed`. Audit is in the mutation transaction, no-op assignment emits nothing, and failure rolls the mutation back. A repair from a non-canonical context records `media_asset_id = null` before and the assigned asset ID after, representing the semantic creation of the canonical assignment. Payloads otherwise contain only the semantic role and MediaAsset ID—never paths, signed URLs, credentials or temporary upload metadata.
 
 ## Deferred
 

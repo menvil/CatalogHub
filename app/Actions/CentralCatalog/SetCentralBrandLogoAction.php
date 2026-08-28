@@ -27,14 +27,15 @@ final readonly class SetCentralBrandLogoAction
             $assignment = $this->media->primaryLogoContextQuery($brand)->lockForUpdate()->first();
             if ($assignment instanceof MediaAssignment) {
                 $oldAssetId = (int) $assignment->media_asset_id;
+                $wasCanonical = $assignment->position === 0 && $assignment->visibility === 'global';
 
-                if ($oldAssetId === (int) $asset->id && $assignment->position === 0 && $assignment->visibility === 'global') {
+                if ($oldAssetId === (int) $asset->id && $wasCanonical) {
                     return new CentralBrandLogoAssignmentResult($assignment, false);
                 }
 
                 $assignment->update(['media_asset_id' => $asset->id, 'position' => 0, 'is_primary' => true, 'visibility' => 'global']);
                 $this->audit->record(AuditAction::CatalogBrandLogoAssigned, AuditContext::Central, $actor, $brand, null, [
-                    'media_asset_id' => $oldAssetId,
+                    'media_asset_id' => $wasCanonical ? $oldAssetId : null,
                     'role' => MediaAssignment::ROLE_BRAND_LOGO,
                 ], [
                     'media_asset_id' => (int) $asset->id,

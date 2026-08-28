@@ -128,6 +128,44 @@ final class CentralBrandLogoActionTest extends TestCase
         ]);
     }
 
+    public function test_same_asset_non_canonical_repair_has_a_meaningful_audit_snapshot(): void
+    {
+        $brand = CentralBrand::factory()->create();
+        $asset = MediaAsset::factory()->create();
+        $existing = MediaAssignment::factory()->create([
+            'media_asset_id' => $asset->id,
+            'entity_type' => MediaAssignment::ENTITY_TYPE_CENTRAL_BRAND,
+            'entity_id' => $brand->id,
+            'role' => MediaAssignment::ROLE_BRAND_LOGO,
+            'position' => 9,
+            'locale' => null,
+            'site_id' => null,
+            'market_id' => null,
+            'is_primary' => true,
+            'visibility' => 'private',
+        ]);
+
+        $result = app(SetCentralBrandLogoAction::class)->execute(User::factory()->create(), $brand, $asset);
+
+        $this->assertTrue($result->changed);
+        $this->assertSame($existing->id, $result->assignment->id);
+        $this->assertDatabaseHas('media_assignments', [
+            'id' => $existing->id,
+            'media_asset_id' => $asset->id,
+            'position' => 0,
+            'visibility' => 'global',
+        ]);
+        $entry = AuditLogEntry::query()->sole();
+        $this->assertSame([
+            'media_asset_id' => null,
+            'role' => MediaAssignment::ROLE_BRAND_LOGO,
+        ], $entry->before_json);
+        $this->assertSame([
+            'media_asset_id' => $asset->id,
+            'role' => MediaAssignment::ROLE_BRAND_LOGO,
+        ], $entry->after_json);
+    }
+
     public function test_logo_audit_is_semantic_and_minimal(): void
     {
         $brand = CentralBrand::factory()->create();

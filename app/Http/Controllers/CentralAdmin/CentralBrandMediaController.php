@@ -16,11 +16,11 @@ use App\Queries\CentralCatalog\CentralBrandMediaQuery;
 use App\Queries\Media\MediaLibraryQuery;
 use App\Services\Media\BrandLogoPresenter;
 use App\Services\Media\ImageIngestException;
+use App\Services\Media\MediaUploadException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
-use RuntimeException;
 
 final class CentralBrandMediaController extends Controller
 {
@@ -67,7 +67,7 @@ final class CentralBrandMediaController extends Controller
             $result = $action($actor, $brand, $request->logo());
         } catch (ImageIngestException $e) {
             return back()->withErrors(['logo' => $e->getMessage()])->withInput();
-        } catch (RuntimeException) {
+        } catch (MediaUploadException) {
             return back()->withErrors([
                 'logo' => 'The logo could not be stored. The existing assignment was not changed.',
             ])->withInput();

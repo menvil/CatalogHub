@@ -28,8 +28,8 @@
     {"screen_id":"CA-014","state":"logo-ready","viewport":"1440x1000","fixture":"brand-media-v2","path":"tests/Visual/baselines/ca-014__logo-ready__1440x1000.png","sha256":"3a703b726f433216df80dc1bc9b30a6b41b6cade92945b1ddc68969a479eee22","approved_on":"2026-08-27"},
     {"screen_id":"CA-014","state":"logo-ready","viewport":"390x844","fixture":"brand-media-v2","path":"tests/Visual/baselines/ca-014__logo-ready__390x844.png","sha256":"dfa662d0c5793108d1f614c3571f76a4313f7c12918bda9436c8756253ce219b","approved_on":"2026-08-27"},
     {"screen_id":"CA-015","state":"missing","viewport":"1440x1000","fixture":"brand-translations-v2","path":"tests/Visual/baselines/ca-015__missing__1440x1000.png","sha256":"123aa7f60ab068b7c801d5f17e950cfd250eb06eb7b8e6b53b0ce514bd7b9064","approved_on":"2026-08-30"},
-    {"screen_id":"CA-015","state":"approved","viewport":"1440x1000","fixture":"brand-translations-v2","path":"tests/Visual/baselines/ca-015__approved__1440x1000.png","sha256":"697d9dc0bfd54a81a087962ac4662f05461409b1d4b39ef0a522b2209e65be0f","approved_on":"2026-08-28"},
-    {"screen_id":"CA-015","state":"outdated","viewport":"1440x1000","fixture":"brand-translations-v2","path":"tests/Visual/baselines/ca-015__outdated__1440x1000.png","sha256":"a68eb42f3ec85c8f042ce52d0519cb7578e54de202d9491a4b9b5858e903cd37","approved_on":"2026-08-28"},
+    {"screen_id":"CA-015","state":"approved","viewport":"1440x1000","fixture":"brand-translations-v2","path":"tests/Visual/baselines/ca-015__approved__1440x1000.png","sha256":"97a7f8827585acd64cba46b6c0fc3bfbd1379e1888bcc09d2ab4b7fad8f2f211","approved_on":"2026-08-30"},
+    {"screen_id":"CA-015","state":"outdated","viewport":"1440x1000","fixture":"brand-translations-v2","path":"tests/Visual/baselines/ca-015__outdated__1440x1000.png","sha256":"308d6fd4d1d1c3b49e1ad51c72cf33da9b677a9a4c3796a59c7bf6b3b2369da8","approved_on":"2026-08-30"},
     {"screen_id":"CA-015","state":"approved","viewport":"390x844","fixture":"brand-translations-v2","path":"tests/Visual/baselines/ca-015__approved__390x844.png","sha256":"448f132074630827c7260e466199e83646bdb2bbf2b921bb7944d84768334135","approved_on":"2026-08-28"}
   ]
 }

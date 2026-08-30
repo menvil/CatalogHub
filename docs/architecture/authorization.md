@@ -44,7 +44,7 @@ Role assignment, membership changes, and user enable/disable write the mutation 
 
 Canonical Brand list, detail, create/update, lifecycle, and logo assignment routes require `catalog.brands.manage`. Super Admin keeps wildcard access; Central Admin and Catalog Editor receive the permission. Translator, Site Admin, and Moderator do not. `catalog.products.manage` no longer authorizes Brand routes, and `catalog.brands.manage` does not authorize Product administration or the global Media Library (`media.manage`).
 
-Brand translation routes remain independently protected by `translations.manage`. A Translator may use CA-015 and create attributed audit entries without canonical Brand mutation access. Brand Overview and Media tabs use `catalog.brands.manage`; the Translations tab uses `translations.manage`.
+Brand translation read, Save, explicit Approve, and explicit Mark Outdated routes remain independently protected by `translations.manage`. The common translation subsystem has no separate approval permission, so the existing boundary also authorizes CA-015 approval. A Translator may use CA-015 and create attributed audit entries without canonical Brand mutation access. Brand Overview and Media tabs use `catalog.brands.manage`; the Translations tab uses `translations.manage`.
 
 ## Executable coverage
 

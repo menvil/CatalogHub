@@ -29,6 +29,8 @@ final class CentralBrandTranslationTest extends TestCase
             'central.brands.translations.index' => ['GET', 'admin/central/brands/{brand}/translations'],
             'central.brands.translations.edit' => ['GET', 'admin/central/brands/{brand}/translations/{locale}'],
             'central.brands.translations.save' => ['POST', 'admin/central/brands/{brand}/translations/{locale}'],
+            'central.brands.translations.approve' => ['POST', 'admin/central/brands/{brand}/translations/{locale}/approve'],
+            'central.brands.translations.outdated' => ['POST', 'admin/central/brands/{brand}/translations/{locale}/outdated'],
         ];
 
         foreach ($routes as $name => [$method, $uri]) {
@@ -57,7 +59,7 @@ final class CentralBrandTranslationTest extends TestCase
             ->assertOk()
             ->assertSee('data-screen-id="CA-015"', false)
             ->assertSee('Samsung')
-            ->assertSee('No translation has been created for this locale yet.');
+            ->assertSee('No translation row exists for this active locale. Nothing is persisted until Save.');
         $this->get(route('central.brands.translations.edit', [$archived, $locale->code]))->assertOk();
 
         $this->actingAs($catalogEditor)
@@ -75,6 +77,8 @@ final class CentralBrandTranslationTest extends TestCase
         $this->get("/admin/central/brands/{$brand->id}/translations/zz-ZZ")->assertNotFound();
         $this->get(route('central.brands.translations.edit', [$brand, $inactive->code]))->assertNotFound();
         $this->post(route('central.brands.translations.save', [$brand, $inactive->code]), ['name' => 'Nicht verfügbar'])->assertNotFound();
+        $this->post(route('central.brands.translations.approve', [$brand, $inactive->code]))->assertNotFound();
+        $this->post(route('central.brands.translations.outdated', [$brand, $inactive->code]))->assertNotFound();
         $this->assertDatabaseCount('brand_translations', 0);
     }
 
@@ -107,15 +111,15 @@ final class CentralBrandTranslationTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => UserRole::Translator]))
             ->get(route('central.brands.translations.edit', [$brand, $selected->code]))
             ->assertOk()
-            ->assertSeeInOrder(['English (en-US)', 'Français (fr-FR)', 'Deutsch (de-DE)'])
-            ->assertDontSee('Español (es-ES)');
+            ->assertSeeInOrder(['English', 'en-US', 'Français', 'fr-FR', 'Deutsch', 'de-DE'])
+            ->assertDontSee('Español');
 
         $oneLocale = DatabaseQueryCounter::measure(fn () => app(BrandTranslationEditorQuery::class)->forBrand($brand, $selected));
         Locale::factory()->count(8)->create();
         $manyLocales = DatabaseQueryCounter::measure(fn () => app(BrandTranslationEditorQuery::class)->forBrand($brand, $selected));
 
         $this->assertSame($oneLocale['count'], $manyLocales['count']);
-        $this->assertSame(2, $manyLocales['count']);
+        $this->assertSame(3, $manyLocales['count']);
     }
 
     public function test_save_creates_translation_on_same_screen_without_mutating_canonical_brand(): void

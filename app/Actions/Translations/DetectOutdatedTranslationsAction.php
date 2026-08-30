@@ -62,6 +62,10 @@ final readonly class DetectOutdatedTranslationsAction
         return $translations
             ->whereNotNull('source_hash')
             ->where('source_hash', '!=', $currentHash)
-            ->update(['status' => TranslationStatus::Outdated]);
+            ->update([
+                'status' => TranslationStatus::Outdated,
+                'approved_at' => null,
+                'approved_by_user_id' => null,
+            ]);
     }
 }

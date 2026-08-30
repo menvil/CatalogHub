@@ -22,4 +22,6 @@ enum AuditAction: string
     case CatalogBrandLogoAssigned = 'catalog.brand.logo.assigned';
     case CatalogBrandLogoRemoved = 'catalog.brand.logo.removed';
     case CatalogBrandTranslationSaved = 'catalog.brand.translation.saved';
+    case TranslationApproved = 'translation.approved';
+    case TranslationMarkedOutdated = 'translation.marked_outdated';
 }

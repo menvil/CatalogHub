@@ -9,13 +9,14 @@ use Tests\Support\BrandTranslationFixture;
 
 final class BrandTranslationVisualTest extends TestCase
 {
-    public function test_ca_015_current_v1_references_have_checksums_and_manifest_entries(): void
+    public function test_ca_015_current_v2_references_have_checksums_and_manifest_entries(): void
     {
         $root = dirname(__DIR__, 2);
         $names = [
             'ca-015__missing__1440x1000',
-            'ca-015__existing__1440x1000',
-            'ca-015__existing__390x844',
+            'ca-015__approved__1440x1000',
+            'ca-015__outdated__1440x1000',
+            'ca-015__approved__390x844',
         ];
 
         foreach ($names as $name) {
@@ -32,7 +33,7 @@ final class BrandTranslationVisualTest extends TestCase
             static fn (array $reference): bool => $reference['screen_id'] === 'CA-015',
         ));
 
-        self::assertCount(3, $references);
-        self::assertSame(array_fill(0, 3, BrandTranslationFixture::VERSION), array_column($references, 'fixture'));
+        self::assertCount(4, $references);
+        self::assertSame(array_fill(0, 4, BrandTranslationFixture::VERSION), array_column($references, 'fixture'));
     }
 }

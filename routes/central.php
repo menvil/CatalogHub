@@ -82,6 +82,12 @@ Route::middleware(['auth', EnsureCentralAdminAccess::class])
             Route::post('/brands/{brand}/translations/{locale:code}', [CentralBrandTranslationController::class, 'save'])
                 ->withoutScopedBindings()
                 ->name('central.brands.translations.save');
+            Route::post('/brands/{brand}/translations/{locale:code}/approve', [CentralBrandTranslationController::class, 'approve'])
+                ->withoutScopedBindings()
+                ->name('central.brands.translations.approve');
+            Route::post('/brands/{brand}/translations/{locale:code}/outdated', [CentralBrandTranslationController::class, 'markOutdated'])
+                ->withoutScopedBindings()
+                ->name('central.brands.translations.outdated');
 
             Route::get('/products/{product}/translations/{locale}', [TranslationEditorController::class, 'editProduct'])
                 ->name('central.products.translations.edit');

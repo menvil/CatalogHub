@@ -10,7 +10,7 @@ use Illuminate\Validation\ValidationException;
 
 final class ApproveTranslationAction
 {
-    public function handle(Model $translation, User $user): Model
+    public function handle(Model $translation, User $user, bool $forgetDashboardCache = true): Model
     {
         if ($translation->getAttribute('status') === TranslationStatus::Approved) {
             return $translation;
@@ -26,7 +26,9 @@ final class ApproveTranslationAction
         $translation->setAttribute('approved_at', now());
         $translation->setAttribute('approved_by_user_id', $user->getKey());
         $translation->saveOrFail();
-        TranslationStatsService::forgetDashboardCache();
+        if ($forgetDashboardCache) {
+            TranslationStatsService::forgetDashboardCache();
+        }
 
         return $translation;
     }

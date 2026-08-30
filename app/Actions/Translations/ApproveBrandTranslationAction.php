@@ -13,6 +13,7 @@ use App\Models\Translations\BrandTranslation;
 use App\Models\User;
 use App\Services\Audit\AuditRecorder;
 use App\Services\Translations\TranslationSourceHashService;
+use App\Services\Translations\TranslationStatsService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -26,7 +27,7 @@ final readonly class ApproveBrandTranslationAction
 
     public function handle(User $actor, CentralBrand $brand, Locale $locale): BrandTranslation
     {
-        return DB::transaction(function () use ($actor, $brand, $locale): BrandTranslation {
+        [$translation, $mutated] = DB::transaction(function () use ($actor, $brand, $locale): array {
             $lockedBrand = CentralBrand::query()->lockForUpdate()->findOrFail($brand->getKey());
             $lockedLocale = Locale::query()->active()->lockForUpdate()->findOrFail($locale->getKey());
             $translation = BrandTranslation::query()
@@ -38,7 +39,7 @@ final readonly class ApproveBrandTranslationAction
             $oldStatus = $translation->getRawOriginal('status');
 
             if ($oldStatus === TranslationStatus::Approved->value) {
-                return $translation;
+                return [$translation, false];
             }
 
             $expectedSourceHash = $this->sourceHashes->forBrand($lockedBrand);
@@ -50,7 +51,7 @@ final readonly class ApproveBrandTranslationAction
             }
 
             /** @var BrandTranslation $approved */
-            $approved = $this->approve->handle($translation, $actor);
+            $approved = $this->approve->handle($translation, $actor, false);
             $this->audit->record(
                 AuditAction::TranslationApproved,
                 AuditContext::Central,
@@ -71,7 +72,13 @@ final readonly class ApproveBrandTranslationAction
                 ],
             );
 
-            return $approved;
+            return [$approved, true];
         });
+
+        if ($mutated) {
+            TranslationStatsService::forgetDashboardCache();
+        }
+
+        return $translation;
     }
 }

@@ -85,6 +85,41 @@ final class BrandTranslationWorkflowActionTest extends TestCase
         $this->assertSame(0, $this->workflowAuditQuery($brand)->count());
     }
 
+    public function test_approval_forgets_dashboard_cache_after_the_transaction_succeeds(): void
+    {
+        $actor = User::factory()->create();
+        $brand = CentralBrand::factory()->create();
+        $locale = Locale::factory()->create(['code' => 'de-DE']);
+        $this->translation($brand, $locale, TranslationStatus::HumanReviewed);
+        Cache::put('translations.dashboard.stats', ['stale' => true], 60);
+
+        app(ApproveBrandTranslationAction::class)->handle($actor, $brand, $locale);
+
+        $this->assertFalse(Cache::has('translations.dashboard.stats'));
+    }
+
+    public function test_approval_keeps_dashboard_cache_when_the_transaction_rolls_back(): void
+    {
+        $actor = User::factory()->create();
+        $brand = CentralBrand::factory()->create();
+        $locale = Locale::factory()->create(['code' => 'de-DE']);
+        $translation = $this->translation($brand, $locale, TranslationStatus::HumanReviewed);
+        Cache::put('translations.dashboard.stats', ['stale' => true], 60);
+        $audit = $this->createMock(AuditRecorder::class);
+        $audit->method('record')->willThrowException(new RuntimeException('audit unavailable'));
+        $this->app->instance(AuditRecorder::class, $audit);
+
+        try {
+            app(ApproveBrandTranslationAction::class)->handle($actor, $brand, $locale);
+            $this->fail('Expected audit failure.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('audit unavailable', $exception->getMessage());
+        }
+
+        $this->assertTrue(Cache::has('translations.dashboard.stats'));
+        $this->assertSame(TranslationStatus::HumanReviewed, $translation->fresh()->status);
+    }
+
     public function test_mark_outdated_preserves_copy_clears_approval_and_is_no_op_when_already_outdated(): void
     {
         $actor = User::factory()->create();

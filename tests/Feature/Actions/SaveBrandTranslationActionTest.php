@@ -15,6 +15,7 @@ use App\Models\Translations\BrandTranslation;
 use App\Models\User;
 use App\Queries\Translations\BrandTranslationEditorQuery;
 use App\Services\Translations\TranslationSourceHashService;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -120,17 +121,19 @@ final class SaveBrandTranslationActionTest extends TestCase
 
     public function test_true_no_op_does_not_touch_the_row_or_create_audit_noise(): void
     {
+        CarbonImmutable::setTestNow('2026-08-30 10:00:00 UTC');
         $actor = User::factory()->create();
         $brand = CentralBrand::factory()->create();
         $locale = Locale::factory()->create(['code' => 'de-DE']);
         $action = app(SaveBrandTranslationAction::class);
         $created = $action->handle($actor, $brand, $locale, $this->input());
-        $createdAt = $created->updated_at;
+        $createdAt = $created->getRawOriginal('updated_at');
 
+        CarbonImmutable::setTestNow('2026-08-30 10:00:02 UTC');
         $saved = $action->handle($actor, $brand, $locale, $this->input());
 
         $this->assertTrue($created->is($saved));
-        $this->assertTrue($createdAt?->equalTo($saved->updated_at));
+        $this->assertSame($createdAt, $saved->getRawOriginal('updated_at'));
         $this->assertSame(1, $this->savedAuditQuery($brand)->count());
     }
 

@@ -30,6 +30,8 @@ final class BrandTranslationActivityQueryTest extends TestCase
         foreach (range(1, 10) as $offset) {
             $this->event($brand, $locale, $actor, "2026-08-28 10:{$offset}:00", $offset);
         }
+        $this->event($brand, $locale, $actor, '2026-08-28 10:11:00', 11, AuditAction::TranslationApproved);
+        $this->event($brand, $locale, $actor, '2026-08-28 10:12:00', 12, AuditAction::TranslationMarkedOutdated);
         $this->event($brand, $otherLocale, $actor, '2026-08-28 11:00:00', 100);
         $this->event($otherBrand, $locale, $actor, '2026-08-28 12:00:00', 101);
         AuditLogEntry::factory()->central()->create([
@@ -48,7 +50,12 @@ final class BrandTranslationActivityQueryTest extends TestCase
 
         $this->assertCount(BrandTranslationActivityQuery::LIMIT, $activity);
         $this->assertSame(2, $measured['count']);
-        $this->assertSame(range(10, 3), $activity->pluck('after_json.sequence')->all());
+        $this->assertSame(range(12, 5), $activity->pluck('after_json.sequence')->all());
+        $this->assertSame([
+            AuditAction::TranslationMarkedOutdated->value,
+            AuditAction::TranslationApproved->value,
+            AuditAction::CatalogBrandTranslationSaved->value,
+        ], $activity->pluck('action')->unique()->values()->all());
         $this->assertTrue($activity->every(fn (AuditLogEntry $event): bool => $event->relationLoaded('actor')));
         $this->assertTrue($activity->every(fn (AuditLogEntry $event): bool => $event->subject_id === (string) $brand->id));
         $this->assertTrue($activity->every(fn (AuditLogEntry $event): bool => $event->after_json['locale'] === 'de-DE'));
@@ -82,18 +89,32 @@ final class BrandTranslationActivityQueryTest extends TestCase
             ->assertDontSee('SECRET RAW LOCALIZED COPY');
     }
 
-    private function event(CentralBrand $brand, Locale $locale, User $actor, string $createdAt, int $sequence): void
-    {
+    private function event(
+        CentralBrand $brand,
+        Locale $locale,
+        User $actor,
+        string $createdAt,
+        int $sequence,
+        AuditAction $action = AuditAction::CatalogBrandTranslationSaved,
+    ): void {
         AuditLogEntry::factory()->central()->create([
             'actor_id' => $actor->id,
-            'action' => AuditAction::CatalogBrandTranslationSaved->value,
+            'action' => $action->value,
             'subject_type' => $brand->getMorphClass(),
             'subject_id' => (string) $brand->id,
             'after_json' => [
                 'translation_id' => $sequence,
                 'locale' => $locale->code,
-                'status' => 'human_reviewed',
-                'changed_fields' => ['name'],
+                'status' => match ($action) {
+                    AuditAction::TranslationApproved => 'approved',
+                    AuditAction::TranslationMarkedOutdated => 'outdated',
+                    default => 'human_reviewed',
+                },
+                'changed_fields' => match ($action) {
+                    AuditAction::TranslationApproved => ['status', 'approval'],
+                    AuditAction::TranslationMarkedOutdated => ['status'],
+                    default => ['name'],
+                },
                 'sequence' => $sequence,
             ],
             'created_at' => $createdAt,

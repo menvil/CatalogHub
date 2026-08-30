@@ -20,6 +20,7 @@ use App\Services\Translations\TranslationSourceHashService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
 use Tests\TestCase;
@@ -96,6 +97,7 @@ final class BrandTranslationWorkflowActionTest extends TestCase
             'approved_at' => now(),
             'approved_by_user_id' => $actor->id,
         ]);
+        Cache::put('translations.dashboard.stats', ['stale' => true], 60);
 
         $outdated = app(MarkBrandTranslationOutdatedAction::class)->handle($actor, $brand, $locale);
 
@@ -105,6 +107,7 @@ final class BrandTranslationWorkflowActionTest extends TestCase
         $this->assertSame('Private description', $outdated->description);
         $this->assertNull($outdated->approved_at);
         $this->assertNull($outdated->approved_by_user_id);
+        $this->assertFalse(Cache::has('translations.dashboard.stats'));
         $this->assertSame(CentralBrandStatus::Active, $brand->fresh()->status);
         $this->assertSame(
             AuditAction::TranslationMarkedOutdated->value,
@@ -146,6 +149,31 @@ final class BrandTranslationWorkflowActionTest extends TestCase
         $this->assertSame(TranslationStatus::Approved, $approved->fresh()->status);
         $this->assertNotNull($approved->fresh()->approved_at);
         $this->assertSame(0, $this->workflowAuditQuery($brand)->count());
+    }
+
+    public function test_mark_outdated_keeps_dashboard_cache_when_the_transaction_rolls_back(): void
+    {
+        $actor = User::factory()->create();
+        $brand = CentralBrand::factory()->create();
+        $locale = Locale::factory()->create(['code' => 'de-DE']);
+        $translation = $this->translation($brand, $locale, TranslationStatus::Approved, [
+            'approved_at' => now(),
+            'approved_by_user_id' => $actor->id,
+        ]);
+        Cache::put('translations.dashboard.stats', ['stale' => true], 60);
+        $audit = $this->createMock(AuditRecorder::class);
+        $audit->method('record')->willThrowException(new RuntimeException('audit unavailable'));
+        $this->app->instance(AuditRecorder::class, $audit);
+
+        try {
+            app(MarkBrandTranslationOutdatedAction::class)->handle($actor, $brand, $locale);
+            $this->fail('Expected audit failure.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('audit unavailable', $exception->getMessage());
+        }
+
+        $this->assertTrue(Cache::has('translations.dashboard.stats'));
+        $this->assertSame(TranslationStatus::Approved, $translation->fresh()->status);
     }
 
     public function test_http_workflow_requires_translation_authority_and_an_existing_active_locale_row(): void

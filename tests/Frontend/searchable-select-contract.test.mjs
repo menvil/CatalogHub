@@ -24,3 +24,8 @@ test('searchable select implements its keyboard and form-control contract', () =
         assert.ok(source.includes(contract), `Missing searchable-select contract: ${contract}`)
     }
 })
+
+test('choosing a remote option cancels pending search work before the form can submit', () => {
+    assert.match(source, /function choose\(root, option\) \{[\s\S]*?cancelRemoteSearch\(root\)[\s\S]*?native\.value = value/)
+    assert.match(source, /function cancelRemoteSearch\(root\) \{[\s\S]*?window\.clearTimeout\(previous\.timer\)[\s\S]*?previous\?\.controller\?\.abort\(\)/)
+})

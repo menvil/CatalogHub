@@ -101,6 +101,17 @@ function scheduleRemoteSearch(root, query) {
     remoteState.set(root, { ...previous, timer })
 }
 
+function cancelRemoteSearch(root) {
+    const previous = remoteState.get(root)
+    if (previous?.timer) window.clearTimeout(previous.timer)
+    previous?.controller?.abort()
+    remoteState.set(root, { ...previous, timer: null, controller: null })
+
+    const { input, loading } = elements(root)
+    input?.removeAttribute('aria-busy')
+    if (loading) loading.hidden = true
+}
+
 function visibleOptions(root) {
     return elements(root).options.filter((option) => ! option.hidden)
 }
@@ -160,6 +171,7 @@ function filter(root, query) {
 function choose(root, option) {
     const { input, native, options } = elements(root)
     if (! input || ! native) return
+    cancelRemoteSearch(root)
     const value = option?.dataset.value ?? ''
     const label = option?.dataset.label ?? ''
     native.value = value

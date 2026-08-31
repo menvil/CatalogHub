@@ -8,9 +8,15 @@ use App\Data\Translations\BrandTranslationEditorData;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\Locale;
 use App\Models\Translations\BrandTranslation;
+use App\Services\Translations\TranslationSourceHashService;
 
-final class BrandTranslationEditorQuery
+final readonly class BrandTranslationEditorQuery
 {
+    public function __construct(
+        private TranslationSourceHashService $sourceHashes,
+        private BrandTranslationActivityQuery $activity,
+    ) {}
+
     public function forBrand(CentralBrand $brand, ?Locale $selectedLocale = null): BrandTranslationEditorData
     {
         $locales = Locale::query()
@@ -30,13 +36,22 @@ final class BrandTranslationEditorQuery
         $translation = $selectedLocale instanceof Locale
             ? $translations->get($selectedLocale->getKey())
             : null;
+        $translation = $translation instanceof BrandTranslation ? $translation : null;
+        $currentSourceHash = $this->sourceHashes->forBrand($brand);
 
         return new BrandTranslationEditorData(
             brand: $brand,
             locales: $locales,
             translationsByLocale: $translations,
             selectedLocale: $selectedLocale,
-            translation: $translation instanceof BrandTranslation ? $translation : null,
+            translation: $translation,
+            currentSourceHash: $currentSourceHash,
+            sourceHashMatches: $translation instanceof BrandTranslation
+                && is_string($translation->source_hash)
+                && hash_equals($currentSourceHash, $translation->source_hash),
+            activity: $selectedLocale instanceof Locale
+                ? $this->activity->forBrandAndLocale($brand, $selectedLocale)
+                : collect(),
         );
     }
 }

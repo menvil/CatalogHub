@@ -1,32 +1,56 @@
 ---
 screen_id: CA-015
 context: central-admin
-purpose: Manage localized text content for one canonical Brand.
+purpose: Manage the localized text and row-level translation workflow for one canonical Brand.
 roles: translation manager
-route: /admin/central/brands/{brand}/translations (GET); /admin/central/brands/{brand}/translations/{locale-code} (GET, POST)
+route: /admin/central/brands/{brand}/translations (GET); /admin/central/brands/{brand}/translations/{locale-code} (GET, POST); /approve (POST); /outdated (POST)
 viewports: desktop=1440x1000;mobile=390x844
-fixture: brand-translations-v1
-regions: central-shell;breadcrumbs;page-header;brand-tabs;locale-selector;locale-status;translation-form;canonical-context;approval-metadata;flash-feedback
-actions: select-locale;save-translation
-states: no-active-locales;missing;human-reviewed;approved;outdated
+fixture: brand-translations-v2
+regions: central-shell;breadcrumbs;page-header;brand-tabs;locale-selector;workflow-actions;source-context;target-form;approval-metadata;recent-activity;flash-feedback
+actions: select-locale;copy-from-source;save-translation;approve-translation;mark-outdated
+states: no-active-locales;missing;machine-translated;human-reviewed;approved;outdated;rtl;validation-error;empty-activity;populated-activity
 permissions: translations.manage
-responsive: Locale choices scroll horizontally when needed; form fields and metadata stack without page-level overflow at 390px.
-out_of_scope: source-target-editor;copy-from-source;approval-redesign;history;field-statuses;machine-provider;public-localization;fallback;localized-media;translated-slug
-reference_version: v1
+responsive: Source, Target, and workflow/activity columns stack without page-level overflow at 390px; locale cards scroll within their bounded region.
+out_of_scope: machine-provider;translation-memory;glossary;persisted-field-statuses;localized-media;public-localization;site-publication;fallback;translated-slug
+reference_version: v2
 ---
 
-# CA-015 — Brand Translations v1
+# CA-015 — Brand Translations v2
 
-CA-015 manages the text rows in `brand_translations` for one canonical Brand. The index route chooses the default active locale first, then the first active locale by position and code. With no active locale it renders a stable empty state and creates no locale. The locale selector contains active locales only, displays each locale's row status, and changes the route to the selected locale code. Direct inactive-locale routes return not found and cannot create a translation.
+CA-015 is the manual translation workspace for one canonical Brand. The index route selects the default active Locale first, then the first active Locale by position and code. The selector queries all active Locales and their Brand rows in bulk, shows `Missing`, `Machine translated`, `Human reviewed`, `Approved`, or `Outdated`, and never creates a row on GET. With no active Locales, the screen renders an empty state. An inactive Locale—including one with a retained historical row—is absent from the selector and rejected by direct read and mutation routes.
 
-Access requires the existing `translations.manage` permission. A translation specialist can arrive from Missing or Outdated Translations without Brand catalog mutation access. Overview and Media tabs and the Brand breadcrumb link appear only when `catalog.brands.manage` is also allowed. Conversely, Brand Overview and Media expose the Translations tab only to users allowed to manage translations.
+## Source and Target semantics
 
-The form stores Localized name (required), Tagline, Short description, Description, SEO title, SEO description, and the existing row-level `TranslationStatus`. A missing row prefills Localized name with the canonical Brand name in the UI only; nothing is persisted before Save. Blank optional strings normalize to `null`. Brand, locale, source hash, and approval actor/time come only from server context. A new or unapproved row cannot post `Approved`; the common `AllowedTranslationStatuses` policy is authoritative. Normal Save stays on the same Brand and locale, flashes `Translation saved.`, and has no leave-warning or confirmation dialog.
+The Source column follows the existing common `TranslationSourceHashService::forBrand()` contract. That hash contains normalized canonical `CentralBrand.name` and `CentralBrand.slug`; there is no persisted source-Locale entity and CA-015 does not invent one. Canonical name is therefore the only real source value with a corresponding localized target (`BrandTranslation.name`). Canonical slug is shown only to explain source-hash context because translated slug is out of scope. Tagline, descriptions, and SEO copy have no canonical Brand equivalent and are explicitly presented without fabricated source copy.
 
-The selected-locale summary distinguishes a missing row from stored statuses. An approved row shows safe approver name/email and approved time; raw foreign keys are not presented. Outdated copy is deliberately neutral because the common subsystem supports explicit marking as well as source-hash detection. Translated controls use the selected locale's `ltr` or `rtl` direction without changing the Central Admin shell direction.
+The Target column edits only `BrandTranslation`: required localized name plus optional tagline, short description, description, SEO title, and SEO description. Target controls use the selected Locale's direction. An RTL target does not change breadcrumbs, navigation, actions, or the Central Admin shell to RTL. Field cues such as required, optional, or missing are derived presentation; workflow authority remains the row-level status.
 
-The canonical context card exposes only read-only Brand name and slug. Slug, lifecycle status, website, country, and media remain canonical data and are never translation form fields.
+`Copy from Source` exists only for localized name. It is an explicit client-side form convenience: a non-empty different target requires overwrite confirmation, Copy performs no HTTP request, changes no status, writes no audit event, and persists nothing until Save.
 
-## v1 versus future v2
+## Save workflow and statuses
 
-This executable v1 is the common translation core plus locale selection, status, metadata, and save. The richer design reference remains a future target: side-by-side Source/Target editing, Copy from Source, explicit approval redesign, Mark Outdated controls, translation history/activity, field-level review/completeness, AI or machine-translation providers, translation memory/glossary, localized media, and public localized Brand delivery are deferred.
+The authoritative shared `TranslationStatus` values remain `Missing`, `MachineTranslated`, `HumanReviewed`, `Approved`, and `Outdated`. No Brand-only status exists. `Published` and `Synced` remain future Site/projection concerns.
+
+Save is a separate server-side mutation guarded by `translations.manage`. The FormRequest trims strings and normalizes blank optional values to `null`; Brand, Locale identity/code, source hash, actor, and approval metadata come only from route and server context. The Action locks the canonical Brand and exact Brand/Locale row in a transaction, creates or updates one row, refreshes its current source hash, and records only meaningful changes. A true no-op does not touch timestamps, invalidate cache, or emit audit noise. Posting `Approved` cannot approve a new or unapproved row.
+
+Editing localized content or refreshing changed source context on an approved row invalidates approval through the common workflow rule: the result becomes `HumanReviewed` and both approval fields are cleared. An unchanged approved Save preserves its status and attribution.
+
+## Explicit approval and Outdated
+
+`Approve translation` is distinct from Save. It requires an existing `HumanReviewed` row whose stored source hash matches the currently locked canonical Brand. The Brand action delegates the transition to the shared approval Action, while the server supplies the approver and timestamp. An already Approved row is a no-op. Missing, Machine Translated, Outdated, stale-source, wrong Brand, or wrong Locale rows cannot be approved. Approval changes neither Brand lifecycle nor canonical content.
+
+`Mark outdated` is also a separate mutation. It retains every localized field, changes the shared row status to `Outdated`, clears stale approval attribution, and leaves canonical Brand data untouched. Repeating it for an Outdated row is a no-op. Manual marking coexists with automatic hash comparison: the existing detector still marks stored rows when canonical name or slug changes and clears approval metadata. No persisted outdated-reason subsystem is introduced; the UI distinguishes an explicit Outdated row with a matching hash from a row whose stored hash differs.
+
+## Activity, Audit, Quality, and permissions
+
+Recent activity is a newest-first, deterministic, locale-specific query over the existing append-only Audit log, bounded to eight events and eager-loading actors. It includes meaningful translation save/create, explicit approval, and explicit Mark Outdated events. The UI renders the semantic action, actor, UTC time, status/changed field names already available, and never raw localized copy. There is no parallel translation-history table or stored content snapshot.
+
+Save, Approve, and Mark Outdated record minimized Brand-subject audit payloads containing translation ID, Locale code, old/new status, and changed field names. Audit recording is inside each mutation transaction, so failure rolls back the row. No-op actions emit nothing.
+
+Phase 13 remains the only Brand Quality evaluator. For every active Locale, absent/`Missing` and `Outdated` are incomplete; `MachineTranslated`, `HumanReviewed`, and `Approved` are complete. CA-012 links an affected issue directly to this Brand and Locale. Reads immediately reflect saves and status transitions; CA-015 runs no score job and persists no quality state. Inactive Locales are neither editable here nor counted by Quality, and deactivation does not delete existing rows.
+
+All reads and mutations use the existing `translations.manage` boundary, including explicit approval because the common subsystem has no separate approval permission. A translation specialist does not need `catalog.brands.manage`; Brand Overview/Media tabs and the Brand breadcrumb remain authorization-aware.
+
+## Deferred capabilities
+
+CA-015 does not provide an AI or machine-translation provider, automatic translation jobs, translation memory, glossary management, persisted per-field review status, localized media, generic/bulk Brand translation management, public fallback/routing, translated slugs, Site publication/overrides/sync, or localized SEO delivery. `MachineTranslated` remains a supported common domain state without a provider workflow.

@@ -8,11 +8,19 @@ use Illuminate\Database\Eloquent\Model;
 
 final class MarkTranslationOutdatedAction
 {
-    public function handle(Model $translation): Model
+    public function handle(Model $translation, bool $forgetDashboardCache = true): Model
     {
+        if ($translation->getAttribute('status') === TranslationStatus::Outdated) {
+            return $translation;
+        }
+
         $translation->setAttribute('status', TranslationStatus::Outdated);
-        $translation->save();
-        TranslationStatsService::forgetDashboardCache();
+        $translation->setAttribute('approved_at', null);
+        $translation->setAttribute('approved_by_user_id', null);
+        $translation->saveOrFail();
+        if ($forgetDashboardCache) {
+            TranslationStatsService::forgetDashboardCache();
+        }
 
         return $translation;
     }

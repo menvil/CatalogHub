@@ -12,6 +12,7 @@ use App\Models\CentralCatalog\CentralBrand;
 use App\Models\Locale;
 use App\Models\Translations\BrandTranslation;
 use App\Models\User;
+use App\Services\Translations\TranslationSourceHashService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -103,5 +104,40 @@ final class CentralBrandQualityDetailTest extends TestCase
         foreach (['quality_status', 'quality_score', 'completeness', 'is_complete', 'has_quality_issues', 'quality_issues', 'quality_calculated_at'] as $column) {
             self::assertFalse(Schema::hasColumn('central_brands', $column), $column.' must remain derived.');
         }
+    }
+
+    public function test_http_translation_workflow_immediately_removes_and_restores_derived_quality_issues(): void
+    {
+        $brand = CentralBrand::factory()->active()->create(['name' => 'Workflow Brand']);
+        $locale = Locale::factory()->create(['code' => 'de-DE', 'name' => 'German']);
+        $actor = User::factory()->centralAdmin()->create();
+        $save = route('central.brands.translations.save', [$brand, $locale->code]);
+        $payload = [
+            'name' => 'Workflow Marke',
+            'tagline' => 'Beständige Übersetzung',
+            'status' => TranslationStatus::HumanReviewed->value,
+        ];
+
+        $this->actingAs($actor);
+        self::assertContains('brand_translation_missing', $this->get(route('central.brands.show', $brand))->viewData('quality')->issueCodes());
+
+        $this->post($save, $payload)->assertRedirect();
+        self::assertNotContains('brand_translation_missing', $this->get(route('central.brands.show', $brand))->viewData('quality')->issueCodes());
+
+        $this->post(route('central.brands.translations.approve', [$brand, $locale->code]))->assertRedirect();
+        $translation = BrandTranslation::query()->sole();
+        self::assertSame(TranslationStatus::Approved, $translation->status);
+        self::assertSame(app(TranslationSourceHashService::class)->forBrand($brand), $translation->source_hash);
+
+        $this->post(route('central.brands.translations.outdated', [$brand, $locale->code]))->assertRedirect();
+        $outdatedQuality = $this->get(route('central.brands.show', $brand))->viewData('quality');
+        self::assertContains('brand_translation_outdated', $outdatedQuality->issueCodes());
+        self::assertSame('Beständige Übersetzung', $translation->fresh()->tagline);
+
+        $this->post($save, [...$payload, 'tagline' => 'Korrigierte Übersetzung'])->assertRedirect();
+        $reviewedQuality = $this->get(route('central.brands.show', $brand))->viewData('quality');
+        self::assertNotContains('brand_translation_outdated', $reviewedQuality->issueCodes());
+        self::assertSame(TranslationStatus::HumanReviewed, $translation->fresh()->status);
+        self::assertSame(CentralBrandStatus::Active, $brand->fresh()->status);
     }
 }

@@ -16,6 +16,10 @@ test('searchable select implements its keyboard and form-control contract', () =
         'data-ui-searchable-select-native',
         'data-ui-searchable-select-option',
         "new Event('change', { bubbles: true })",
+        'dataset.searchUrl',
+        'AbortController',
+        'fetch(url',
+        'url.searchParams.set',
     ]) {
         assert.ok(source.includes(contract), `Missing searchable-select contract: ${contract}`)
     }

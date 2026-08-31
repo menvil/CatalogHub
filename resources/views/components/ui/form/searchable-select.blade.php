@@ -2,6 +2,7 @@
     'id', 'name', 'label', 'options' => [], 'selected' => null, 'placeholder' => 'Select an option',
     'searchPlaceholder' => 'Search…', 'help' => null, 'error' => null, 'required' => false,
     'disabled' => false, 'clearable' => false, 'emptyMessage' => 'No matching options.',
+    'remote' => null, 'loadingMessage' => 'Loading options…',
 ])
 @php
     $selected = $selected === null || $selected === '' ? null : (string) $selected;
@@ -20,6 +21,7 @@
         class="relative min-w-0"
         data-ui-searchable-select
         data-selected-label="{{ $selectedLabel }}"
+        @if (filled($remote)) data-search-url="{{ $remote }}" data-loading-message="{{ $loadingMessage }}" @endif
     >
         <select
             id="{{ $id }}"
@@ -91,6 +93,9 @@
                 >{{ $option['label'] }}</div>
             @endforeach
             <p class="px-3 py-2 text-sm text-admin-muted" data-ui-searchable-select-empty hidden>{{ $emptyMessage }}</p>
+            @if (filled($remote))
+                <p class="px-3 py-2 text-sm text-admin-muted" data-ui-searchable-select-loading hidden>{{ $loadingMessage }}</p>
+            @endif
         </div>
     </div>
 </x-ui.form.field>

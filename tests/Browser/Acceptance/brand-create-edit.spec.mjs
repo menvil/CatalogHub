@@ -6,6 +6,7 @@ import {
 } from '../Support/acceptance.mjs'
 
 const formFixtureId = 13013
+const ownershipFixtureId = 13016
 
 test('CA-013 creates a normalized draft and returns to Brands', async ({ page }) => {
     const assertNoPageErrors = observePageErrors(page)
@@ -24,7 +25,7 @@ test('CA-013 creates a normalized draft and returns to Brands', async ({ page })
     await expect(page.locator('[data-screen-id="CA-013"]')).toBeVisible()
     await expect(page.getByText('CA-013', { exact: true })).toHaveCount(0)
     await expect(page.locator('#brand-form')).toHaveAttribute('data-admin-form-leave-warning', 'false')
-    await page.getByLabel('Name').fill('Samsung Electronics')
+    await page.locator('#brand-name').fill('Samsung Electronics')
     await page.getByLabel('Founded year').fill('1938')
     await page.getByLabel('Website').fill('https://www.samsung.com/')
     await page.getByLabel('Support URL').fill('https://www.samsung.com/support/')
@@ -103,7 +104,7 @@ test('CA-013 displays server validation, retains submitted input, and writes not
     await signIn(page, 'central', foundationDemo.centralAdmin)
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
     await page.goto(`/admin/central/brands/${formFixtureId}/edit`)
-    await page.getByLabel('Name').fill('Samsung Invalid Submission')
+    await page.locator('#brand-name').fill('Samsung Invalid Submission')
     await page.getByLabel('Website').fill('ftp://invalid.example.test')
     await page.getByLabel('Founded year').fill('1940')
     await page.getByLabel('Support URL').fill('https://submitted.example/support')
@@ -118,9 +119,9 @@ test('CA-013 displays server validation, retains submitted input, and writes not
     await expect(page.getByLabel('Support URL')).toHaveValue('https://submitted.example/support')
     await expect(page.getByLabel('Contact email')).toHaveValue('submitted@example.com')
     await expect(page.getByLabel('Primary color (optional)', { exact: true })).toHaveValue('#AABBCC')
-    await expect(page.getByLabel('Name')).toHaveValue('Samsung Invalid Submission')
+    await expect(page.locator('#brand-name')).toHaveValue('Samsung Invalid Submission')
     await page.reload()
-    await expect(page.getByLabel('Name')).toHaveValue('Samsung Form Fixture')
+    await expect(page.locator('#brand-name')).toHaveValue('Samsung Form Fixture')
     await expect(page.getByLabel('Website')).toHaveValue('https://www.samsung.com/')
     await expect(page.getByText('Draft', { exact: true })).toBeVisible()
     assertNoPageErrors()
@@ -140,7 +141,7 @@ test('CA-013 edits canonical fields while preserving slug and lifecycle', async 
     await page.locator(`[data-row-id="${formFixtureId}"]`).getByRole('link', { name: 'Edit', exact: true }).click()
     await expect(page).toHaveURL(new RegExp(`/admin/central/brands/${formFixtureId}/edit$`))
 
-    await page.getByLabel('Name').fill('Samsung Form Updated')
+    await page.locator('#brand-name').fill('Samsung Form Updated')
     await page.getByLabel('Website').fill('https://www.samsung.com/global')
     await page.getByLabel('Founded year').fill('1969')
     await page.getByLabel('Support URL').fill('https://www.samsung.com/us/support/')
@@ -149,7 +150,7 @@ test('CA-013 edits canonical fields while preserving slug and lifecycle', async 
     await page.getByRole('button', { name: 'Save changes', exact: true }).click()
 
     await expect(page.getByText('Brand updated.', { exact: true })).toBeVisible()
-    await expect(page.getByLabel('Name')).toHaveValue('Samsung Form Updated')
+    await expect(page.locator('#brand-name')).toHaveValue('Samsung Form Updated')
     await expect(page.getByLabel('Slug')).toHaveValue('samsung-form-fixture')
     await expect(page.getByLabel('Website')).toHaveValue('https://www.samsung.com/global')
     await expect(page.getByLabel('Founded year')).toHaveValue('1969')
@@ -214,7 +215,7 @@ test('CA-013 create and edit remain usable without horizontal overflow at 390px'
     for (const url of ['/admin/central/brands/create', `/admin/central/brands/${formFixtureId}/edit`]) {
         await page.goto(url)
         await expect(page.locator('[data-screen-id="CA-013"]')).toBeVisible()
-        await expect(page.getByLabel('Name')).toBeVisible()
+        await expect(page.locator('#brand-name')).toBeVisible()
         await expect(page.getByRole('combobox', { name: 'Country' })).toBeVisible()
         await expect(page.getByLabel('Primary color (optional)', { exact: true })).toBeVisible()
         await expect(page.getByRole('link', { name: 'Cancel', exact: true })).toBeVisible()
@@ -230,6 +231,98 @@ test('CA-013 create and edit remain usable without horizontal overflow at 390px'
     const formCardWidth = await page.locator('[data-screen-region="brand-profile-workspace"]').evaluate((element) => element.getBoundingClientRect().width)
     expect(workspaceWidth).toBeGreaterThan(1500)
     expect(formCardWidth).toBeGreaterThan(1200)
+
+    assertNoPageErrors()
+})
+
+test('CA-013 persists create, replace, and clear Parent Company mutations while retaining Organizations', async ({ page }) => {
+    const assertNoPageErrors = observePageErrors(page)
+    const ownership = page.locator('[data-screen-region="parent-company"]')
+
+    await signIn(page, 'central', foundationDemo.centralAdmin)
+    await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
+    await page.goto(`/admin/central/brands/${ownershipFixtureId}/edit`)
+    await expect(ownership).toContainText('No Parent Company assigned')
+    await expect(page.getByText('Draft', { exact: true })).toBeVisible()
+
+    await ownership.getByRole('button', { name: 'Create new Organization', exact: true }).click()
+    const createDialog = page.getByRole('dialog', { name: 'Create Organization' })
+    await createDialog.getByLabel('Organization name').fill('Created Parent 株式会社')
+    await createDialog.getByRole('button', { name: 'Create and assign', exact: true }).click()
+    await expect(page.getByText('Organization created and assigned as Parent Company.', { exact: true })).toBeVisible()
+    await page.reload()
+    await expect(ownership).toContainText('Created Parent 株式会社')
+
+    await ownership.getByRole('button', { name: 'Change Parent Company', exact: true }).click()
+    const manageDialog = page.getByRole('dialog', { name: 'Manage Parent Company' })
+    const organizationPicker = manageDialog.getByRole('combobox', { name: 'Organization' })
+    await organizationPicker.fill('Samsung Group International')
+    await manageDialog.getByRole('option', { name: 'Samsung Group International', exact: true }).click()
+    await manageDialog.getByRole('button', { name: 'Replace Parent Company', exact: true }).click()
+    await expect(page.getByText('Parent Company updated.', { exact: true })).toBeVisible()
+    await page.reload()
+    await expect(ownership).toContainText('Samsung Group International')
+    await expect(page.getByText('Draft', { exact: true })).toBeVisible()
+
+    await ownership.getByRole('button', { name: 'Clear Parent Company', exact: true }).click()
+    const clearDialog = page.getByRole('dialog', { name: 'Clear Parent Company?' })
+    await clearDialog.getByRole('button', { name: 'Clear Parent Company', exact: true }).click()
+    await expect(page.getByText('Parent Company cleared.', { exact: true })).toBeVisible()
+    await page.reload()
+    await expect(ownership).toContainText('No Parent Company assigned')
+    await expect(page.getByText('Draft', { exact: true })).toBeVisible()
+
+    await ownership.getByRole('button', { name: 'Assign existing Organization', exact: true }).click()
+    const retainedPicker = page.getByRole('dialog', { name: 'Manage Parent Company' }).getByRole('combobox', { name: 'Organization' })
+    await retainedPicker.fill('Created Parent 株式会社')
+    await expect(page.getByRole('option', { name: 'Created Parent 株式会社', exact: true })).toBeVisible()
+    await retainedPicker.fill('Samsung Group International')
+    await expect(page.getByRole('option', { name: 'Samsung Group International', exact: true })).toBeVisible()
+    await page.getByRole('dialog', { name: 'Manage Parent Company' }).getByRole('button', { name: 'Cancel', exact: true }).click()
+
+    assertNoPageErrors()
+})
+
+test('CA-013 Parent Company cancel and validation failure leave ownership unchanged', async ({ page }) => {
+    const assertNoPageErrors = observePageErrors(page)
+    const ownership = page.locator('[data-screen-region="parent-company"]')
+
+    await signIn(page, 'central', foundationDemo.centralAdmin)
+    await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
+    await page.goto(`/admin/central/brands/${ownershipFixtureId}/edit`)
+    await expect(ownership).toContainText('No Parent Company assigned')
+
+    await ownership.getByRole('button', { name: 'Create new Organization', exact: true }).click()
+    const cancelledCreate = page.getByRole('dialog', { name: 'Create Organization' })
+    await cancelledCreate.getByLabel('Organization name').fill('Cancelled Parent Company')
+    await cancelledCreate.getByRole('button', { name: 'Cancel', exact: true }).click()
+    await page.reload()
+    await expect(ownership).toContainText('No Parent Company assigned')
+
+    await ownership.getByRole('button', { name: 'Assign existing Organization', exact: true }).click()
+    const manageDialog = page.getByRole('dialog', { name: 'Manage Parent Company' })
+    const organizationPicker = manageDialog.getByRole('combobox', { name: 'Organization' })
+    await organizationPicker.fill('Cancelled Parent Company')
+    await expect(manageDialog.getByText('No matching options.', { exact: true })).toBeVisible()
+    await expect(manageDialog.getByRole('option', { name: 'Cancelled Parent Company', exact: true })).toHaveCount(0)
+    await organizationPicker.fill('Samsung Group International')
+    await manageDialog.getByRole('option', { name: 'Samsung Group International', exact: true }).click()
+    await manageDialog.getByRole('button', { name: 'Assign Parent Company', exact: true }).click()
+    await expect(ownership).toContainText('Samsung Group International')
+
+    await ownership.getByRole('button', { name: 'Create new Organization', exact: true }).click()
+    const invalidCreate = page.getByRole('dialog', { name: 'Create Organization' })
+    await invalidCreate.getByLabel('Organization name').fill('   ')
+    await invalidCreate.getByRole('button', { name: 'Create and assign', exact: true }).click()
+    await expect(page.getByRole('dialog', { name: 'Create Organization' })).toBeVisible()
+    await expect(page.locator('#new-parent-company-name-error')).toBeVisible()
+    await expect(ownership).toContainText('Samsung Group International')
+    await page.reload()
+    await expect(ownership).toContainText('Samsung Group International')
+
+    await ownership.getByRole('button', { name: 'Clear Parent Company', exact: true }).click()
+    await page.getByRole('dialog', { name: 'Clear Parent Company?' }).getByRole('button', { name: 'Clear Parent Company', exact: true }).click()
+    await expect(ownership).toContainText('No Parent Company assigned')
 
     assertNoPageErrors()
 })

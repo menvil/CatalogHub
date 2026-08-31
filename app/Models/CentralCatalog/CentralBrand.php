@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property CentralBrandStatus $status
@@ -102,5 +103,11 @@ final class CentralBrand extends Model
     public function translations(): HasMany
     {
         return $this->hasMany(BrandTranslation::class, 'brand_id');
+    }
+
+    /** @return HasOne<CentralBrandOwnership, $this> */
+    public function ownership(): HasOne
+    {
+        return $this->hasOne(CentralBrandOwnership::class, 'central_brand_id');
     }
 }

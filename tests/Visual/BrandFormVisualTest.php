@@ -16,6 +16,9 @@ final class BrandFormVisualTest extends TestCase
             'ca-013__create__390x844',
             'ca-013__edit__1440x1000',
             'ca-013__edit__390x844',
+            'ca-013__ownership-populated__1440x1000',
+            'ca-013__ownership-populated__390x844',
+            'ca-013__ownership-picker__1440x1000',
         ];
 
         foreach ($names as $name) {
@@ -46,7 +49,7 @@ final class BrandFormVisualTest extends TestCase
             static fn (array $reference): bool => $reference['screen_id'] === 'CA-013',
         ));
 
-        self::assertCount(4, $references);
+        self::assertCount(7, $references);
         $stateViewports = array_map(
             static fn (array $reference): string => $reference['state'].'@'.$reference['viewport'],
             $references,
@@ -57,7 +60,10 @@ final class BrandFormVisualTest extends TestCase
             'create@390x844',
             'edit@1440x1000',
             'edit@390x844',
+            'ownership-picker@1440x1000',
+            'ownership-populated@1440x1000',
+            'ownership-populated@390x844',
         ], $stateViewports);
-        self::assertSame(array_fill(0, 4, 'brand-form-v3'), array_column($references, 'fixture'));
+        self::assertSame(array_fill(0, 7, 'brand-form-v4'), array_column($references, 'fixture'));
     }
 }

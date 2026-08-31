@@ -13,6 +13,7 @@ use App\Actions\CentralCatalog\RestoreCentralBrandAction;
 use App\Enums\AuditAction;
 use App\Enums\CentralBrandStatus;
 use App\Enums\TranslationStatus;
+use App\Enums\UserRole;
 use App\Models\AuditLogEntry;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralBrandOwnership;
@@ -25,6 +26,7 @@ use App\Services\CentralCatalog\CentralBrandQualityEvaluator;
 use App\Services\Translations\TranslationSourceHashService;
 use App\Support\Normalization\OrganizationNameNormalizer;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
@@ -155,6 +157,37 @@ final class CentralBrandOwnershipActionTest extends TestCase
         self::assertNull($newBrand->fresh()->ownership);
         self::assertSame($organization->id, $ownedBrand->fresh()->ownership?->organization_id);
         self::assertDatabaseCount('organizations', 1);
+    }
+
+    public function test_all_ownership_actions_authorize_before_mutating_state(): void
+    {
+        $actor = User::factory()->create(['role' => UserRole::Translator]);
+        $brand = CentralBrand::factory()->create();
+        $existing = Organization::factory()->create(['name' => 'Existing Owner']);
+        $target = Organization::factory()->create(['name' => 'Target Owner']);
+        CentralBrandOwnership::factory()->create([
+            'central_brand_id' => $brand->id,
+            'organization_id' => $existing->id,
+        ]);
+
+        $mutations = [
+            fn () => app(AssignCentralBrandOwnerAction::class)->handle($actor, $brand, $target),
+            fn () => app(ClearCentralBrandOwnerAction::class)->handle($actor, $brand),
+            fn () => app(CreateOrganizationAndAssignCentralBrandOwnerAction::class)
+                ->handle($actor, $brand, 'Forbidden Organization'),
+        ];
+
+        foreach ($mutations as $mutation) {
+            try {
+                $mutation();
+                self::fail('Expected ownership Action authorization to fail.');
+            } catch (AuthorizationException) {
+                self::assertSame($existing->id, $brand->fresh()->ownership?->organization_id);
+                self::assertDatabaseCount('organizations', 2);
+            }
+        }
+
+        self::assertSame(0, $this->auditQuery($brand)->count());
     }
 
     public function test_ownership_is_independent_from_lifecycle_quality_and_translation_source(): void

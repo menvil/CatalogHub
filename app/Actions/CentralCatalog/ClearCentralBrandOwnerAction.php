@@ -12,6 +12,7 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Services\Audit\AuditRecorder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 final readonly class ClearCentralBrandOwnerAction
 {
@@ -19,6 +20,8 @@ final readonly class ClearCentralBrandOwnerAction
 
     public function handle(User $actor, CentralBrand $brand): CentralBrand
     {
+        Gate::forUser($actor)->authorize('catalog.brands.manage');
+
         return DB::transaction(function () use ($actor, $brand): CentralBrand {
             $lockedBrand = CentralBrand::query()->lockForUpdate()->findOrFail($brand->getKey());
             $ownership = CentralBrandOwnership::query()

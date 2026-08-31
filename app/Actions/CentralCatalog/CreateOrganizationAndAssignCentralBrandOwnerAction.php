@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Support\Normalization\OrganizationNameNormalizer;
 use Closure;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 
 final readonly class CreateOrganizationAndAssignCentralBrandOwnerAction
@@ -18,6 +19,8 @@ final readonly class CreateOrganizationAndAssignCentralBrandOwnerAction
 
     public function handle(User $actor, CentralBrand $brand, string $name): CentralBrand
     {
+        Gate::forUser($actor)->authorize('catalog.brands.manage');
+
         Validator::make(['name' => $name], [
             'name' => [
                 'string',

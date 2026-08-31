@@ -68,6 +68,7 @@ test('CA-012 supports list, detail, edit, and detail navigation', async ({ page 
     await expect(page.getByText('CA-013', { exact: true })).toHaveCount(0)
     await expect(page.locator('#brand-form')).toHaveAttribute('data-admin-form-leave-warning', 'false')
     await expect(page.locator('#brand-name')).toHaveValue('Samsung')
+    await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Samsung')
     await page.getByRole('link', { name: 'Cancel', exact: true }).click()
 
     await expect(page).toHaveURL(new RegExp(`/admin/central/brands/${activeBrandId}$`))

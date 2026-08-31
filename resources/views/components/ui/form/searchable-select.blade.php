@@ -2,7 +2,7 @@
     'id', 'name', 'label', 'options' => [], 'selected' => null, 'placeholder' => 'Select an option',
     'searchPlaceholder' => 'Search…', 'help' => null, 'error' => null, 'required' => false,
     'disabled' => false, 'clearable' => false, 'emptyMessage' => 'No matching options.',
-    'remote' => null, 'loadingMessage' => 'Loading options…',
+    'remote' => null, 'loadingMessage' => 'Loading options…', 'errorMessage' => 'Unable to load options.',
 ])
 @php
     $selected = $selected === null || $selected === '' ? null : (string) $selected;
@@ -21,7 +21,8 @@
         class="relative min-w-0"
         data-ui-searchable-select
         data-selected-label="{{ $selectedLabel }}"
-        @if (filled($remote)) data-search-url="{{ $remote }}" data-loading-message="{{ $loadingMessage }}" @endif
+        data-empty-message="{{ $emptyMessage }}"
+        @if (filled($remote)) data-search-url="{{ $remote }}" data-loading-message="{{ $loadingMessage }}" data-error-message="{{ $errorMessage }}" @endif
     >
         <select
             id="{{ $id }}"

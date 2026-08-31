@@ -109,6 +109,111 @@ final class AssignCentralBrandOwnerConcurrencyTest extends TestCase
         rmdir($directory);
     }
 
+    public function test_concurrent_cross_brand_owner_swap_uses_a_stable_organization_lock_order(): void
+    {
+        if (! function_exists('pcntl_fork') || DB::connection()->getDriverName() === 'sqlite') {
+            $this->markTestSkipped('The coordinated ownership swap runs in the MariaDB and PostgreSQL matrix.');
+        }
+
+        $actor = User::factory()->create();
+        $brandA = CentralBrand::factory()->create();
+        $brandB = CentralBrand::factory()->create();
+        $organizationA = Organization::factory()->create(['name' => 'Lower ID Owner']);
+        $organizationB = Organization::factory()->create(['name' => 'Higher ID Owner']);
+        CentralBrandOwnership::factory()->create([
+            'central_brand_id' => $brandA->id,
+            'organization_id' => $organizationA->id,
+        ]);
+        CentralBrandOwnership::factory()->create([
+            'central_brand_id' => $brandB->id,
+            'organization_id' => $organizationB->id,
+        ]);
+
+        $directory = sys_get_temp_dir().'/cataloghub-brand-ownership-swap-'.bin2hex(random_bytes(8));
+        self::assertTrue(mkdir($directory));
+        $parentBrandLocked = $directory.'/parent-brand-locked';
+        $childBrandLocked = $directory.'/child-brand-locked';
+        $childOutcome = $directory.'/child-outcome';
+        $connectionName = 'brand_ownership_swap_concurrency';
+        $defaultConnection = DB::getDefaultConnection();
+        config(["database.connections.{$connectionName}" => config("database.connections.{$defaultConnection}")]);
+        $parentPid = getmypid();
+        $handledBrandLock = false;
+
+        DB::listen(function (QueryExecuted $query) use (
+            $parentBrandLocked,
+            $childBrandLocked,
+            $parentPid,
+            &$handledBrandLock,
+        ): void {
+            $sql = strtolower($query->sql);
+            if ($handledBrandLock
+                || ! str_starts_with(ltrim($sql), 'select')
+                || ! str_contains($sql, 'central_brands')
+                || ! str_contains($sql, 'for update')) {
+                return;
+            }
+
+            $handledBrandLock = true;
+            if (getmypid() === $parentPid) {
+                touch($parentBrandLocked);
+                $this->waitForFile($childBrandLocked, 5.0);
+
+                return;
+            }
+
+            touch($childBrandLocked);
+            $this->waitForFile($parentBrandLocked, 5.0);
+        });
+
+        DB::disconnect($defaultConnection);
+        $childPid = pcntl_fork();
+        self::assertNotSame(-1, $childPid);
+
+        if ($childPid === 0) {
+            DB::setDefaultConnection($connectionName);
+
+            try {
+                app(AssignCentralBrandOwnerAction::class)->handle(
+                    User::query()->findOrFail($actor->id),
+                    CentralBrand::query()->findOrFail($brandB->id),
+                    Organization::query()->findOrFail($organizationA->id),
+                );
+                file_put_contents($childOutcome, 'assigned');
+            } catch (Throwable $exception) {
+                file_put_contents($childOutcome, 'error:'.$exception::class);
+            }
+
+            exit(0);
+        }
+
+        try {
+            app(AssignCentralBrandOwnerAction::class)->handle($actor, $brandA, $organizationB);
+            $parentOutcome = 'assigned';
+        } catch (Throwable $exception) {
+            $parentOutcome = 'error:'.$exception::class;
+        } finally {
+            pcntl_waitpid($childPid, $status);
+        }
+
+        self::assertTrue($handledBrandLock);
+        self::assertSame('assigned', $parentOutcome);
+        self::assertSame('assigned', file_get_contents($childOutcome));
+        self::assertSame($organizationB->id, $brandA->fresh()->ownership?->organization_id);
+        self::assertSame($organizationA->id, $brandB->fresh()->ownership?->organization_id);
+        self::assertSame(2, CentralBrandOwnership::query()->count());
+        self::assertSame(2, AuditLogEntry::query()
+            ->where('action', AuditAction::CatalogBrandOwnerAssigned->value)
+            ->count());
+
+        foreach ([$parentBrandLocked, $childBrandLocked, $childOutcome] as $path) {
+            if (file_exists($path)) {
+                unlink($path);
+            }
+        }
+        rmdir($directory);
+    }
+
     private function waitForFile(string $path, float $timeoutSeconds): void
     {
         $deadline = microtime(true) + $timeoutSeconds;

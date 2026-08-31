@@ -52,6 +52,8 @@ final class SearchableSelectTest extends TestCase
 
         $this->assertStringContainsString('data-search-url="/organizations/search"', $html);
         $this->assertStringContainsString('data-ui-searchable-select-loading', $html);
+        $this->assertStringContainsString('data-empty-message="No matching options."', $html);
+        $this->assertStringContainsString('data-error-message="Unable to load options."', $html);
         $this->assertSame(1, substr_count($html, '<option'));
     }
 }

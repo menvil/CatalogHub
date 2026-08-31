@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Queries\CentralCatalog;
 
+use App\Contracts\Persistence\RawSqlPersistenceBoundary;
 use App\Models\Organization;
+use App\Support\Database\LiteralLikePattern;
 use App\Support\Normalization\OrganizationNameNormalizer;
 use Illuminate\Support\Collection;
 
-final class OrganizationSearchQuery
+final class OrganizationSearchQuery implements RawSqlPersistenceBoundary
 {
     public const LIMIT = 20;
 
@@ -21,7 +23,10 @@ final class OrganizationSearchQuery
         $organizations = Organization::query()
             ->when(
                 $normalizedQuery !== '',
-                static fn ($builder) => $builder->where('normalized_name', 'like', $normalizedQuery.'%'),
+                static fn ($builder) => $builder->whereRaw(
+                    "normalized_name LIKE ? ESCAPE '!'",
+                    [LiteralLikePattern::startingWith($normalizedQuery)],
+                ),
             )
             ->orderBy('normalized_name')
             ->orderBy('id')

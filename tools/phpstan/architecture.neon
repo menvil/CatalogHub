@@ -47,6 +47,14 @@ parameters:
     architecture:
         rawSqlExceptions:
             -
+                class: App\Queries\CentralCatalog\OrganizationSearchQuery
+                ownerMethods: [search]
+                methods: [whereRaw]
+                reason: 'Literal normalized-name prefix search requires an explicit ESCAPE clause with a bound pattern.'
+                bindings: required
+                behaviorTests: [tests/Feature/Queries/OrganizationSearchQueryTest.php]
+                status: approved
+            -
                 class: App\Queries\Translations\MissingTranslationsQuery
                 ownerMethods: [get]
                 methods: [whereRaw]

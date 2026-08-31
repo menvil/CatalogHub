@@ -56,7 +56,11 @@ function replaceRemoteOptions(root, remoteOptions) {
     })
 
     if (loading) loading.hidden = true
-    if (empty) empty.hidden = options.length !== 0
+    if (empty) {
+        empty.textContent = root.dataset.emptyMessage ?? empty.textContent
+        empty.hidden = options.length !== 0
+    }
+    setActive(root, null)
 }
 
 async function searchRemote(root, query) {
@@ -86,6 +90,11 @@ async function searchRemote(root, query) {
     } catch (error) {
         if (error?.name !== 'AbortError') {
             replaceRemoteOptions(root, [])
+            const { empty } = elements(root)
+            if (empty) {
+                empty.textContent = root.dataset.errorMessage ?? 'Unable to load options.'
+                empty.hidden = false
+            }
         }
     } finally {
         if (remoteState.get(root)?.controller === controller) {
@@ -128,6 +137,7 @@ function setActive(root, option) {
 function open(root) {
     const { input, listbox } = elements(root)
     if (! input || ! listbox || input.disabled) return
+    const wasClosed = listbox.hidden
 
     document.querySelectorAll('[data-ui-searchable-select]').forEach((candidate) => {
         if (candidate !== root) close(candidate)
@@ -135,8 +145,7 @@ function open(root) {
     listbox.hidden = false
     input.setAttribute('aria-expanded', 'true')
     root.querySelector('[data-ui-searchable-select-chevron]')?.classList.add('rotate-180')
-    if (remoteConfiguration(root) && ! remoteState.get(root)?.loaded) {
-        remoteState.set(root, { ...remoteState.get(root), loaded: true })
+    if (remoteConfiguration(root) && wasClosed) {
         void searchRemote(root, '')
     }
 }

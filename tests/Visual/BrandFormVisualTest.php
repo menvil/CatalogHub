@@ -65,5 +65,11 @@ final class BrandFormVisualTest extends TestCase
             'ownership-populated@390x844',
         ], $stateViewports);
         self::assertSame(array_fill(0, 7, 'brand-form-v4'), array_column($references, 'fixture'));
+        foreach ($references as $reference) {
+            self::assertSame(
+                hash_file('sha256', "{$root}/{$reference['path']}"),
+                $reference['sha256'],
+            );
+        }
     }
 }

@@ -21,6 +21,7 @@ use App\Models\Locale;
 use App\Models\Organization;
 use App\Models\Translations\BrandTranslation;
 use App\Models\User;
+use App\Queries\CentralCatalog\OrganizationSearchQuery;
 use App\Services\Audit\AuditRecorder;
 use App\Services\CentralCatalog\CentralBrandQualityEvaluator;
 use App\Services\Translations\TranslationSourceHashService;
@@ -104,6 +105,28 @@ final class CentralBrandOwnershipActionTest extends TestCase
         self::assertSame($organizations[0]->normalized_name, $organizations[1]->normalized_name);
         self::assertSame($organizations[0]->id, $brandA->fresh()->ownership?->organization_id);
         self::assertSame($organizations[1]->id, $brandB->fresh()->ownership?->organization_id);
+    }
+
+    public function test_create_and_assign_persists_full_expanding_unicode_normalization_with_bounded_search_prefix(): void
+    {
+        $actor = User::factory()->create();
+        $brand = CentralBrand::factory()->create();
+        $name = str_repeat('ﬃ', 200);
+
+        app(CreateOrganizationAndAssignCentralBrandOwnerAction::class)->handle($actor, $brand, $name);
+
+        $organization = Organization::query()->sole();
+        self::assertSame(600, mb_strlen($organization->normalized_name));
+        self::assertSame(
+            OrganizationNameNormalizer::prefixForNormalizedName($organization->normalized_name),
+            $organization->normalized_name_prefix,
+        );
+        self::assertSame(OrganizationNameNormalizer::SEARCH_PREFIX_LENGTH, mb_strlen($organization->normalized_name_prefix));
+        self::assertSame($organization->id, $brand->fresh()->ownership?->organization_id);
+        self::assertSame(
+            [(string) $organization->id],
+            collect(app(OrganizationSearchQuery::class)->search($name))->pluck('value')->all(),
+        );
     }
 
     public function test_create_rejects_blank_control_and_overlong_names_without_changing_ownership(): void

@@ -49,10 +49,12 @@ final readonly class CreateOrganizationAndAssignCentralBrandOwnerAction
         ])->validate();
 
         return DB::transaction(function () use ($actor, $brand, $name): CentralBrand {
+            $normalizedName = OrganizationNameNormalizer::search($name);
             $organization = new Organization;
             $organization->forceFill([
                 'name' => $name,
-                'normalized_name' => OrganizationNameNormalizer::search($name),
+                'normalized_name' => $normalizedName,
+                'normalized_name_prefix' => OrganizationNameNormalizer::prefixForNormalizedName($normalizedName),
             ])->saveOrFail();
 
             return $this->assignOwner->handle($actor, $brand, $organization);

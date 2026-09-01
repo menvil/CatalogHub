@@ -50,7 +50,7 @@ parameters:
                 class: App\Queries\CentralCatalog\OrganizationSearchQuery
                 ownerMethods: [search]
                 methods: [whereRaw]
-                reason: 'Literal normalized-name prefix search requires an explicit ESCAPE clause with a bound pattern.'
+                reason: 'Literal bounded-prefix and full normalized-name search require an explicit ESCAPE clause with bound patterns.'
                 bindings: required
                 behaviorTests: [tests/Feature/Queries/OrganizationSearchQueryTest.php]
                 status: approved

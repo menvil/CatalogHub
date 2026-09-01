@@ -11,8 +11,9 @@ return new class extends Migration
         Schema::create('organizations', function (Blueprint $table): void {
             $table->id();
             $table->string('name');
-            // Case-folding may expand a valid 255-character display name.
-            $table->string('normalized_name', 512)->index();
+            $table->text('normalized_name');
+            // 191 utf8mb4 characters remain safely indexable across supported databases.
+            $table->string('normalized_name_prefix', 191)->index();
             $table->timestamps();
         });
 

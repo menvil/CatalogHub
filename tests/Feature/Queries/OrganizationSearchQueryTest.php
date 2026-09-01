@@ -18,9 +18,10 @@ final class OrganizationSearchQueryTest extends TestCase
 
     public function test_search_uses_one_bounded_query_with_stable_name_and_id_ordering(): void
     {
-        foreach (range(1, 21) as $index) {
-            Organization::factory()->create(['name' => 'Same Name']);
-        }
+        $duplicates = collect(range(1, 21))
+            ->map(static fn (): Organization => Organization::factory()->create(['name' => 'Same Name']));
+        $beyondNameLimit = $duplicates->last();
+        self::assertInstanceOf(Organization::class, $beyondNameLimit);
         Organization::factory()->create(['name' => 'Aardvark']);
         Organization::factory()->create(['name' => 'Zulu']);
         $queryCount = 0;
@@ -38,24 +39,37 @@ final class OrganizationSearchQueryTest extends TestCase
         self::assertTrue(collect($results)->every(
             static fn (array $option): bool => str_starts_with($option['search'], $expectedPrefix),
         ));
+        self::assertCount(OrganizationSearchQuery::LIMIT, collect($results)->pluck('label')->unique());
+        self::assertTrue(collect($results)->every(
+            static fn (array $option): bool => $option['label'] === sprintf(
+                'Same Name — Organization #%s',
+                $option['value'],
+            ),
+        ));
+        self::assertNotContains((string) $beyondNameLimit->id, collect($results)->pluck('value')->all());
         self::assertSame(
             collect($results)->pluck('value')->map(static fn (string $id): int => (int) $id)->sort()->values()->all(),
             collect($results)->pluck('value')->map(static fn (string $id): int => (int) $id)->values()->all(),
+        );
+
+        self::assertSame(
+            [app(OrganizationSearchQuery::class)->option($beyondNameLimit)],
+            app(OrganizationSearchQuery::class)->search('#'.$beyondNameLimit->id),
         );
     }
 
     public function test_search_treats_like_metacharacters_as_literal_prefix_characters(): void
     {
-        foreach ([
+        $organizations = collect([
             'Acme% Holdings',
             'AcmeX Holdings',
             'Unit_ Group',
             'UnitX Group',
             'Bang! Parent',
             'BangX Parent',
-        ] as $name) {
-            Organization::factory()->create(['name' => $name]);
-        }
+        ])->mapWithKeys(static fn (string $name): array => [
+            $name => Organization::factory()->create(['name' => $name]),
+        ]);
 
         foreach ([
             'Acme%' => ['Acme% Holdings'],
@@ -63,7 +77,10 @@ final class OrganizationSearchQueryTest extends TestCase
             'Bang!' => ['Bang! Parent'],
         ] as $prefix => $expectedLabels) {
             self::assertSame(
-                $expectedLabels,
+                collect($expectedLabels)
+                    ->map(fn (string $label): string => app(OrganizationSearchQuery::class)
+                        ->option($organizations->get($label))['label'])
+                    ->all(),
                 collect(app(OrganizationSearchQuery::class)->search($prefix))->pluck('label')->all(),
             );
         }

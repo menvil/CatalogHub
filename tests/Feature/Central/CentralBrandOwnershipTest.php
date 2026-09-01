@@ -137,12 +137,18 @@ final class CentralBrandOwnershipTest extends TestCase
         $options = $response->json('options');
         self::assertIsArray($options);
         self::assertCount(20, $options);
-        self::assertSame('Acme Group 01', $options[0]['label']);
-        self::assertSame('Acme Group 20', $options[19]['label']);
+        self::assertStringStartsWith('Acme Group 01 — Organization #', $options[0]['label']);
+        self::assertStringStartsWith('Acme Group 20 — Organization #', $options[19]['label']);
 
+        $beta = Organization::query()->where('name', 'Бета Холдинг')->sole();
         $this->getJson(route('central.brands.ownership.organizations.search', [$brand, 'q' => 'БЕТА']))
             ->assertOk()
-            ->assertJsonPath('options.0.label', 'Бета Холдинг');
+            ->assertJsonPath('options.0.label', "Бета Холдинг — Organization #{$beta->id}");
+
+        $this->getJson(route('central.brands.ownership.organizations.search', [$brand, 'q' => '#'.$beta->id]))
+            ->assertOk()
+            ->assertJsonPath('options.0.value', (string) $beta->id)
+            ->assertJsonCount(1, 'options');
 
         $this->get(route('central.brands.edit', $brand))
             ->assertOk()

@@ -54,8 +54,8 @@
                     :selected="old('organization_id', $currentOwner?->getKey())"
                     :error="$assignOwnerOpen ? data_get($ownershipErrors, 'organization_id.0') : null"
                     placeholder="Search Organizations"
-                    search-placeholder="Search by Organization name"
-                    help="Results are loaded from the canonical Organization directory. Similar names remain distinct records."
+                    search-placeholder="Search by Organization name or #ID"
+                    help="Results are loaded from the canonical Organization directory. Organization IDs distinguish identical names and can be searched as #ID."
                     :remote="route('central.brands.ownership.organizations.search', $brand, absolute: false)"
                     required
                 />

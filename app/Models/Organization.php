@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 /**
  * @property string $name
  * @property string $normalized_name
+ * @property string $normalized_name_prefix
  */
 #[Fillable(['name'])]
 final class Organization extends Model
@@ -24,7 +25,7 @@ final class Organization extends Model
     use HasFactory;
 
     /** @var list<string> */
-    protected $hidden = ['normalized_name'];
+    protected $hidden = ['normalized_name', 'normalized_name_prefix'];
 
     protected static function newFactory(): OrganizationFactory
     {

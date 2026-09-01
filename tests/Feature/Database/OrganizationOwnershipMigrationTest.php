@@ -20,7 +20,7 @@ final class OrganizationOwnershipMigrationTest extends TestCase
     public function test_schema_has_normalized_organization_identity_and_one_owner_per_brand(): void
     {
         self::assertTrue(Schema::hasColumns('organizations', [
-            'id', 'name', 'normalized_name', 'created_at', 'updated_at',
+            'id', 'name', 'normalized_name', 'normalized_name_prefix', 'created_at', 'updated_at',
         ]));
         self::assertTrue(Schema::hasColumns('central_brand_ownerships', [
             'id', 'central_brand_id', 'organization_id', 'created_at', 'updated_at',
@@ -28,6 +28,9 @@ final class OrganizationOwnershipMigrationTest extends TestCase
 
         $organizationIndexes = collect(Schema::getIndexes('organizations'));
         self::assertTrue($organizationIndexes->contains(
+            static fn (array $index): bool => $index['columns'] === ['normalized_name_prefix'],
+        ));
+        self::assertFalse($organizationIndexes->contains(
             static fn (array $index): bool => $index['columns'] === ['normalized_name'],
         ));
 

@@ -6,7 +6,7 @@ Brand, Organization, and ownership are distinct concepts. `CentralBrand` represe
 
 ## Persistence and identity
 
-`organizations` contains `id`, `name`, non-unique indexed `normalized_name`, and timestamps. ID is authoritative identity. The normalized form is NFC-normalized, whitespace-collapsed, Unicode case-folded search data; it supports deterministic prefix search and does not reject or merge legitimate same-name entities.
+`organizations` contains `id`, `name`, full `normalized_name`, indexed `normalized_name_prefix`, and timestamps. ID is authoritative identity. The normalized form is NFC-normalized, whitespace-collapsed, Unicode case-folded search data and is stored as text because full case folding can expand a valid 255-character display name beyond a fixed 512-character field. The first 191 normalized characters form the portable utf8mb4 index key; this supports deterministic prefix search without rejecting or merging legitimate same-name entities.
 
 `central_brand_ownerships` contains Brand and Organization foreign keys plus timestamps. The unique Brand foreign key enforces at most one current owner. Organization is non-unique, allowing one Organization to own many Brands. Both delete rules restrict while a relation exists; clear/replace never delete Organizations.
 
@@ -18,7 +18,7 @@ Create-and-assign opens one outer transaction around Organization creation and t
 
 ## Read and search
 
-`CentralBrand::ownership()` is the single Brand read relation; callers eager-load `ownership.organization`. CA-013 initial HTML includes at most the current selected Organization. The server-side search query uses indexed normalized-name prefix search, stable normalized-name/ID ordering, and a limit of 20, avoiding unbounded directory payloads and locale-by-locale or Organization N+1 queries.
+`CentralBrand::ownership()` is the single Brand read relation; callers eager-load `ownership.organization`. CA-013 initial HTML includes at most the current selected Organization. The server-side search query uses the indexed normalized prefix (and verifies the full value for longer queries), stable normalized-name/ID ordering, and a limit of 20. Every option includes the authoritative Organization ID, and `#ID` performs an exact lookup so same-name rows beyond the ordinary name-result cap remain reachable and distinguishable without unbounded directory payloads.
 
 ## Cross-domain invariants
 

@@ -125,11 +125,13 @@ final class BrandFormFixture
         string $name,
         CarbonImmutable $timestamp,
     ): Organization {
+        $normalizedName = OrganizationNameNormalizer::search($name);
         $organization = new Organization;
         $organization->forceFill([
             'id' => $id,
             'name' => $name,
-            'normalized_name' => OrganizationNameNormalizer::search($name),
+            'normalized_name' => $normalizedName,
+            'normalized_name_prefix' => OrganizationNameNormalizer::prefixForNormalizedName($normalizedName),
             'created_at' => $timestamp,
             'updated_at' => $timestamp,
         ])->saveOrFail();

@@ -25,7 +25,7 @@ for (const state of states) {
             const dialog = page.getByRole('dialog', { name: 'Manage Parent Company' })
             const picker = dialog.getByRole('combobox', { name: 'Organization' })
             await picker.fill('Samsung')
-            await expect(dialog.getByRole('option', { name: 'Samsung Group International', exact: true })).toBeVisible()
+            await expect(dialog.getByRole('option', { name: 'Samsung Group International — Organization #1301602', exact: true })).toBeVisible()
         }
         await page.evaluate(() => document.fonts.ready)
         if (state.state === 'ownership-populated') {

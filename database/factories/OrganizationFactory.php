@@ -20,6 +20,9 @@ final class OrganizationFactory extends Factory
         return [
             'name' => $name,
             'normalized_name' => fn (array $attributes): string => OrganizationNameNormalizer::search((string) $attributes['name']),
+            'normalized_name_prefix' => fn (array $attributes): string => OrganizationNameNormalizer::prefixForNormalizedName(
+                OrganizationNameNormalizer::search((string) $attributes['name']),
+            ),
         ];
     }
 }

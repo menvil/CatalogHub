@@ -27,7 +27,7 @@ The desktop composition remains General Information, Online Presence, and Brand 
 
 Edit adds a separate ownership card because Parent Company is a relation, not a scalar profile field. It displays the current canonical Organization or the honest `No Parent Company assigned` state. The controls are separate HTTP mutations and never submit through `CentralBrandInput`:
 
-- Assign/Change searches existing Organizations through the Brand-scoped JSON endpoint. Results are prefix-searchable by Unicode case-folded `normalized_name`, ordered by normalized name then ID, limited to 20, and never preload the Organization directory into HTML.
+- Assign/Change searches existing Organizations through the Brand-scoped JSON endpoint. Name results use the indexed 191-character Unicode case-folded prefix, verify the full normalized value for longer queries, are ordered by normalized name then ID, limited to 20, and never preload the Organization directory into HTML. Options render as `Name — Organization #ID`; exact `#ID` lookup keeps every valid same-name Organization reachable beyond the ordinary name-result cap.
 - Create new Organization validates a distinct display name, creates the canonical Organization, and assigns it to the Brand in one transaction. Same normalized names are allowed and are never silently merged.
 - Clear removes only the ownership row after explicit confirmation. The Organization remains available to this or other Brands.
 

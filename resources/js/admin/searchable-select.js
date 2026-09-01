@@ -26,7 +26,9 @@ function replaceRemoteOptions(root, remoteOptions) {
     listbox.querySelectorAll('[data-ui-searchable-select-option]').forEach((option) => option.remove())
     native.querySelectorAll('option:not(:first-child)').forEach((option) => option.remove())
 
-    const options = Array.isArray(remoteOptions) ? remoteOptions : []
+    const remoteResults = Array.isArray(remoteOptions) ? remoteOptions : []
+    const remoteResultCount = remoteResults.length
+    const options = [...remoteResults]
     if (selectedValue && ! options.some((option) => String(option.value) === selectedValue)) {
         options.unshift({ value: selectedValue, label: selectedLabel, search: selectedLabel })
     }
@@ -59,12 +61,12 @@ function replaceRemoteOptions(root, remoteOptions) {
     if (loading) loading.hidden = true
     if (empty) {
         empty.textContent = root.dataset.emptyMessage ?? empty.textContent
-        empty.hidden = options.length !== 0
+        empty.hidden = remoteResultCount !== 0
     }
     if (status) {
-        status.textContent = options.length === 0
+        status.textContent = remoteResultCount === 0
             ? (root.dataset.emptyMessage ?? 'No matching options.')
-            : String(options.length) + ' options loaded.'
+            : String(remoteResultCount) + ' options loaded.'
     }
     setActive(root, null)
 }
@@ -125,9 +127,10 @@ function cancelRemoteSearch(root) {
     previous?.controller?.abort()
     remoteState.set(root, { ...previous, timer: null, controller: null })
 
-    const { input, loading } = elements(root)
+    const { input, loading, status } = elements(root)
     input?.removeAttribute('aria-busy')
     if (loading) loading.hidden = true
+    if (status) status.textContent = ''
 }
 
 function visibleOptions(root) {

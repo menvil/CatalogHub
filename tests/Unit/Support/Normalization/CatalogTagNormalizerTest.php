@@ -18,4 +18,12 @@ final class CatalogTagNormalizerTest extends TestCase
             CatalogTagNormalizer::identityHash('Premium'),
         );
     }
+
+    public function test_it_rejects_malformed_utf8_instead_of_preserving_invalid_bytes(): void
+    {
+        $malformed = "Invalid\xC3\x28";
+
+        self::assertSame('', CatalogTagNormalizer::name($malformed));
+        self::assertSame('', CatalogTagNormalizer::identity($malformed));
+    }
 }

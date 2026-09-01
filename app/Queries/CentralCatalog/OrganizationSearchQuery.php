@@ -17,8 +17,13 @@ final class OrganizationSearchQuery implements RawSqlPersistenceBoundary
     /** @return list<array{value: string, label: string, search: string}> */
     public function search(?string $query): array
     {
+        $query ??= '';
+        if (! OrganizationNameNormalizer::isValidInput($query)) {
+            return [];
+        }
+
         $exactId = $this->exactId($query);
-        $normalizedQuery = OrganizationNameNormalizer::search($query ?? '');
+        $normalizedQuery = OrganizationNameNormalizer::search($query);
         $normalizedPrefix = OrganizationNameNormalizer::prefixForNormalizedName($normalizedQuery);
 
         /** @var Collection<int, Organization> $organizations */

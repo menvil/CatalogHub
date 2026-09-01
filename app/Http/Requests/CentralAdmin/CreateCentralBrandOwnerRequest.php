@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\CentralAdmin;
 
-use Closure;
+use App\Rules\ValidOrganizationName;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -29,14 +29,7 @@ final class CreateCentralBrandOwnerRequest extends FormRequest
         return [
             'organization_name' => [
                 'required',
-                'string',
-                'max:255',
-                static function (string $attribute, mixed $value, Closure $fail): void {
-                    $controlCharacterMatch = is_string($value) ? preg_match('/\p{Cc}/u', $value) : false;
-                    if ($controlCharacterMatch === false || $controlCharacterMatch === 1) {
-                        $fail('Organization names must be valid UTF-8 and cannot contain control characters or newlines.');
-                    }
-                },
+                new ValidOrganizationName,
             ],
         ];
     }

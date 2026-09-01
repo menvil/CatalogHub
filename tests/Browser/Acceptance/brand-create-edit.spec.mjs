@@ -304,7 +304,7 @@ test('CA-013 Parent Company cancel and validation failure leave ownership unchan
     const manageDialog = page.getByRole('dialog', { name: 'Manage Parent Company' })
     const organizationPicker = manageDialog.getByRole('combobox', { name: 'Organization' })
     await organizationPicker.fill('Cancelled Parent Company')
-    await expect(manageDialog.getByText('No matching options.', { exact: true })).toBeVisible()
+    await expect(manageDialog.getByRole('listbox').getByText('No matching options.', { exact: true })).toBeVisible()
     await expect(manageDialog.getByRole('option', { name: 'Cancelled Parent Company', exact: true })).toHaveCount(0)
     await organizationPicker.fill('#1301602')
     await manageDialog.getByRole('option', { name: 'Samsung Group International — Organization #1301602', exact: true }).click()

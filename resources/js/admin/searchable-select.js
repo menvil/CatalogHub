@@ -6,6 +6,7 @@ function elements(root) {
         options: Array.from(root.querySelectorAll('[data-ui-searchable-select-option]')),
         empty: root.querySelector('[data-ui-searchable-select-empty]'),
         loading: root.querySelector('[data-ui-searchable-select-loading]'),
+        status: root.querySelector('[data-ui-searchable-select-status]'),
     }
 }
 
@@ -17,7 +18,7 @@ function remoteConfiguration(root) {
 }
 
 function replaceRemoteOptions(root, remoteOptions) {
-    const { listbox, native, empty, loading } = elements(root)
+    const { listbox, native, empty, loading, status } = elements(root)
     if (! listbox || ! native) return
 
     const selectedValue = native.value
@@ -60,6 +61,11 @@ function replaceRemoteOptions(root, remoteOptions) {
         empty.textContent = root.dataset.emptyMessage ?? empty.textContent
         empty.hidden = options.length !== 0
     }
+    if (status) {
+        status.textContent = options.length === 0
+            ? (root.dataset.emptyMessage ?? 'No matching options.')
+            : String(options.length) + ' options loaded.'
+    }
     setActive(root, null)
 }
 
@@ -71,9 +77,10 @@ async function searchRemote(root, query) {
     previous?.controller?.abort()
     const controller = new AbortController()
     remoteState.set(root, { ...previous, controller })
-    const { loading, empty, input } = elements(root)
+    const { loading, empty, input, status } = elements(root)
     if (loading) loading.hidden = false
     if (empty) empty.hidden = true
+    if (status) status.textContent = root.dataset.loadingMessage ?? 'Loading options…'
     input?.setAttribute('aria-busy', 'true')
 
     try {
@@ -88,13 +95,14 @@ async function searchRemote(root, query) {
         if (remoteState.get(root)?.controller !== controller) return
         replaceRemoteOptions(root, payload.options)
     } catch (error) {
-        if (error?.name !== 'AbortError') {
+        if (error?.name !== 'AbortError' && remoteState.get(root)?.controller === controller) {
             replaceRemoteOptions(root, [])
             const { empty } = elements(root)
             if (empty) {
                 empty.textContent = root.dataset.errorMessage ?? 'Unable to load options.'
                 empty.hidden = false
             }
+            if (status) status.textContent = root.dataset.errorMessage ?? 'Unable to load options.'
         }
     } finally {
         if (remoteState.get(root)?.controller === controller) {
@@ -106,8 +114,9 @@ async function searchRemote(root, query) {
 function scheduleRemoteSearch(root, query) {
     const previous = remoteState.get(root)
     if (previous?.timer) window.clearTimeout(previous.timer)
+    previous?.controller?.abort()
     const timer = window.setTimeout(() => void searchRemote(root, query), 180)
-    remoteState.set(root, { ...previous, timer })
+    remoteState.set(root, { ...previous, timer, controller: null })
 }
 
 function cancelRemoteSearch(root) {

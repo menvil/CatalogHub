@@ -17,6 +17,12 @@
         $assignOwnerOpen = $ownershipModal === 'assign';
         $createOwnerOpen = $ownershipModal === 'create';
         $currentOwner = $brand->ownership?->organization;
+        $requestedOrganizationId = old('organization_id', $currentOwner?->getKey());
+        $selectedOrganizationId = is_scalar($requestedOrganizationId)
+            ? $requestedOrganizationId
+            : $currentOwner?->getKey();
+        $requestedOrganizationName = $createOwnerOpen ? old('organization_name') : '';
+        $organizationName = is_scalar($requestedOrganizationName) ? (string) $requestedOrganizationName : '';
     @endphp
     <div class="space-y-admin-section" data-brand-form-fixture="brand-form-v4" data-brand-form-mode="edit">
         <x-admin.page-header
@@ -51,7 +57,7 @@
                     name="organization_id"
                     label="Organization"
                     :options="$organizationOptions"
-                    :selected="old('organization_id', $currentOwner?->getKey())"
+                    :selected="$selectedOrganizationId"
                     :error="$assignOwnerOpen ? data_get($ownershipErrors, 'organization_id.0') : null"
                     placeholder="Search Organizations"
                     search-placeholder="Search by Organization name or #ID"
@@ -76,7 +82,7 @@
                     id="new-parent-company-name"
                     name="organization_name"
                     label="Organization name"
-                    :value="$createOwnerOpen ? old('organization_name') : ''"
+                    :value="$organizationName"
                     :error="$createOwnerOpen ? data_get($ownershipErrors, 'organization_name.0') : null"
                     help="Creates a distinct canonical Organization and assigns it to this Brand. Existing same-name Organizations are not merged automatically."
                     maxlength="255"

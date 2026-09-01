@@ -121,6 +121,47 @@ final class CentralBrandOwnershipTest extends TestCase
         self::assertSame($organization->id, $brand->fresh()->ownership->organization_id);
     }
 
+    public function test_unicode_whitespace_and_array_payloads_reopen_the_modal_without_render_errors(): void
+    {
+        $this->actingAs(User::factory()->centralAdmin()->create());
+        $brand = CentralBrand::factory()->create();
+        $organization = Organization::factory()->create();
+        CentralBrandOwnership::factory()->create([
+            'central_brand_id' => $brand->id,
+            'organization_id' => $organization->id,
+        ]);
+
+        foreach ([
+            ['organization_name' => "\u{00A0}"],
+            ['organization_name' => ['Unexpected array']],
+        ] as $payload) {
+            $response = $this->from(route('central.brands.edit', $brand))
+                ->post(route('central.brands.ownership.create', $brand), $payload)
+                ->assertRedirect(route('central.brands.edit', $brand))
+                ->assertSessionHasErrors('organization_name');
+
+            $this->followRedirects($response)
+                ->assertOk()
+                ->assertSee('data-admin-modal="create-parent-company-modal"', false)
+                ->assertSee('data-admin-modal-open="true"', false);
+        }
+
+        $response = $this->from(route('central.brands.edit', $brand))
+            ->post(route('central.brands.ownership.assign', $brand), [
+                'organization_id' => ['Unexpected array'],
+            ])
+            ->assertRedirect(route('central.brands.edit', $brand))
+            ->assertSessionHasErrors('organization_id');
+
+        $this->followRedirects($response)
+            ->assertOk()
+            ->assertSee('data-admin-modal="manage-parent-company-modal"', false)
+            ->assertSee('data-admin-modal-open="true"', false);
+
+        self::assertSame($organization->id, $brand->fresh()->ownership->organization_id);
+        self::assertDatabaseCount('organizations', 1);
+    }
+
     public function test_search_is_server_side_bounded_deterministic_and_does_not_embed_the_directory(): void
     {
         $this->actingAs(User::factory()->centralAdmin()->create());

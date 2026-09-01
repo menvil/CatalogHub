@@ -98,5 +98,8 @@
                 <p class="px-3 py-2 text-sm text-admin-muted" data-ui-searchable-select-loading hidden>{{ $loadingMessage }}</p>
             @endif
         </div>
+        @if (filled($remote))
+            <p class="sr-only" role="status" aria-live="polite" aria-atomic="true" data-ui-searchable-select-status></p>
+        @endif
     </div>
 </x-ui.form.field>

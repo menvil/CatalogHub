@@ -39,6 +39,13 @@ final class CentralBrandOwnershipActionTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function tearDown(): void
+    {
+        CarbonImmutable::setTestNow();
+
+        parent::tearDown();
+    }
+
     public function test_assign_replace_clear_and_no_op_use_one_relation_and_minimized_audit(): void
     {
         CarbonImmutable::setTestNow('2026-08-31 10:00:00 UTC');
@@ -137,7 +144,7 @@ final class CentralBrandOwnershipActionTest extends TestCase
         app(AssignCentralBrandOwnerAction::class)->handle($actor, $brand, $existing);
         $action = app(CreateOrganizationAndAssignCentralBrandOwnerAction::class);
 
-        foreach (['   ', "Invalid\nName", "Invalid\xC3\x28", str_repeat('A', 256)] as $invalidName) {
+        foreach (['   ', "\u{00A0}", "Invalid\nName", "Invalid\xC3\x28", str_repeat('A', 256)] as $invalidName) {
             try {
                 $action->handle($actor, $brand, $invalidName);
                 self::fail('Expected invalid Organization name.');

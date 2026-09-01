@@ -91,6 +91,7 @@ test('remote searchable select aborts in-flight work and cancels debounce when c
         const option = document.querySelector('#runtime-organization-option-0')
         input.value = 'Target'
         input.dispatchEvent(new Event('input', { bubbles: true }))
+        window.__runtimeAbortedWhenScheduled = window.__runtimeSearchCalls[0].aborted
         option.click()
         window[scheduleKey] = originalSchedule
         window[cancelKey] = originalCancel
@@ -100,6 +101,7 @@ test('remote searchable select aborts in-flight work and cancels debounce when c
 
     await expect(page.locator('#runtime-organization')).toHaveValue('42')
     await expect(input).toHaveValue('Target Organization')
+    expect(await page.evaluate(() => window.__runtimeAbortedWhenScheduled)).toBe(true)
     expect(await page.evaluate(() => window.__runtimeDebounce)).toEqual({ delay: 180, cancelled: true })
     const origin = new URL(page.url()).origin
     expect(await page.evaluate(() => window.__runtimeSearchCalls)).toEqual([
@@ -149,18 +151,21 @@ test('remote searchable select distinguishes failures and refreshes empty result
                     <p data-ui-searchable-select-empty hidden>No matching refresh options.</p>
                     <p data-ui-searchable-select-loading hidden>Loading refresh options…</p>
                 </div>
+                <p id="runtime-refresh-status" role="status" aria-live="polite" data-ui-searchable-select-status></p>
             </div>
         `)
     })
 
     const input = page.getByRole('combobox', { name: 'Refresh Organization' })
     await input.focus()
-    await expect(page.getByText('Unable to load refresh options.', { exact: true })).toBeVisible()
+    await expect(page.locator('#runtime-refresh-listbox').getByText('Unable to load refresh options.', { exact: true })).toBeVisible()
+    await expect(page.locator('#runtime-refresh-status')).toHaveText('Unable to load refresh options.')
 
     await page.getByRole('heading', { name: 'Create Brand', exact: true }).click()
     await expect(page.locator('#runtime-refresh-listbox')).toBeHidden()
     await input.focus()
-    await expect(page.getByText('No matching refresh options.', { exact: true })).toBeVisible()
+    await expect(page.locator('#runtime-refresh-listbox').getByText('No matching refresh options.', { exact: true })).toBeVisible()
+    await expect(page.locator('#runtime-refresh-status')).toHaveText('No matching refresh options.')
     const origin = new URL(page.url()).origin
     expect(await page.evaluate(() => window.__runtimeSearchCalls)).toEqual([
         `${origin}/runtime-refresh-organizations`,

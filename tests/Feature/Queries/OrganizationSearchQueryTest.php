@@ -85,4 +85,22 @@ final class OrganizationSearchQueryTest extends TestCase
             );
         }
     }
+
+    public function test_invalid_utf8_and_control_characters_return_no_matches_without_querying_the_database(): void
+    {
+        Organization::factory()->create(['name' => 'Safe Organization']);
+        $queryCount = 0;
+        DB::listen(static function (QueryExecuted $query) use (&$queryCount): void {
+            if (str_contains($query->sql, 'organizations')) {
+                $queryCount++;
+            }
+        });
+
+        foreach (["unsafe\0query", "Invalid\xC3\x28"] as $query) {
+            self::assertSame([], app(OrganizationSearchQuery::class)->search($query));
+            self::assertSame('', OrganizationNameNormalizer::search($query));
+        }
+
+        self::assertSame(0, $queryCount);
+    }
 }

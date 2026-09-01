@@ -1,54 +1,52 @@
 ---
 screen_id: CA-013
 context: central-admin
-purpose: Create or edit the canonical, language-neutral Brand profile.
+purpose: Create or edit the canonical, language-neutral Brand profile and manage its current direct Parent Company.
 roles: authorized Central Admin catalog user
-route: /admin/central/brands/create (GET); /admin/central/brands (POST); /admin/central/brands/{brand}/edit (GET); /admin/central/brands/{brand} (PATCH)
+route: /admin/central/brands/create (GET); /admin/central/brands (POST); /admin/central/brands/{brand}/edit (GET); /admin/central/brands/{brand} (PATCH); /admin/central/brands/{brand}/ownership/organizations (GET); /admin/central/brands/{brand}/ownership (POST/DELETE); /admin/central/brands/{brand}/ownership/organization (POST)
 viewports: desktop=1440x1000;mobile=390x844
-fixture: brand-form-v3
-regions: central-shell;header-breadcrumbs;page-header;profile-editor;general-information;online-presence;brand-identity-fields;profile-sidebar;status-context;logo-context;form-actions;validation-errors;flash-feedback
-actions: cancel-to-list;cancel-to-detail;back-to-overview;manage-media;create-brand;save-changes
-states: create-default;create-validation-error;edit-draft;edit-active;edit-archived;edit-logo;edit-logo-empty;edit-validation-error;save-progress;save-success-via-redirect-flash
+fixture: brand-form-v4
+regions: central-shell;header-breadcrumbs;page-header;profile-editor;general-information;parent-company;online-presence;brand-identity-fields;profile-sidebar;status-context;logo-context;form-actions;ownership-modals;validation-errors;flash-feedback
+actions: cancel-to-list;cancel-to-detail;back-to-overview;manage-media;create-brand;save-changes;assign-owner;create-and-assign-organization;replace-owner;clear-owner
+states: create-default;create-validation-error;edit-draft;edit-active;edit-archived;edit-logo;owner-empty;owner-populated;owner-picker;owner-create;owner-validation-error;save-progress;save-success-via-redirect-flash
 permissions: catalog.brands.manage
-responsive: Desktop uses the full Central Admin workspace with a readable main column and right sidebar. Mobile places real persisted context before the field cards, stacks all controls, and has no page-level horizontal overflow.
-out_of_scope: status-lifecycle-control;logo-mutation;translations;product-usage;activity-log;delete;parent-company;tags;social-links;site-publication;quality-completeness
-reference_version: v2
+responsive: Desktop keeps the profile and ownership cards in the main column with persisted context in the sidebar. Mobile stacks cards and ownership modal controls without page-level horizontal overflow.
+out_of_scope: status-lifecycle-control;logo-mutation;translations;product-usage;activity-log;delete;organization-global-crud;organization-editing;ownership-history;multiple-owners;ownership-percentages;tags;social-links;site-publication;quality-completeness
+reference_version: v3
 ---
 
-# CA-013 — Brand Create / Edit v2
+# CA-013 — Brand Create / Edit v3
 
-## Contract
+## Scalar Brand profile
 
-Create and Edit share one Brand Profile form and the established `FormRequest → CentralBrandInput → Action` write boundary. The accepted canonical fields are `name`, `slug`, `website_url`, `country_id`, `founded_year`, `support_url`, `contact_email`, and `primary_color`. Localized names, tagline, descriptions, and SEO remain on `BrandTranslation` and never appear in this form.
+Create and Edit retain the established `FormRequest → CentralBrandInput → Action` boundary for `name`, `slug`, `website_url`, `country_id`, `founded_year`, `support_url`, `contact_email`, and `primary_color`. Create always produces Draft and does not create a temporary Brand or accept ownership. Edit works for Draft, Active, and Archived Brands. Lifecycle controls remain on CA-012, media mutations on CA-014, and localized copy on CA-015.
 
-Create always produces Draft, ignores lifecycle/internal payload fields, redirects to Brands List, and flashes `Brand created.`. Edit supports Draft, Active, and Archived Brands, redirects back to Edit, and flashes `Brand updated.`. Lifecycle status is read-only; activation, archive, and restore remain on CA-012. A blank optional value clears it, an omitted optional value retains the locked current value, and validation failure preserves submitted values without partial mutation.
+The desktop composition remains General Information, Online Presence, and Brand Identity in the main column, with read-only lifecycle and current logo context in the sidebar. Optional scalar blank values clear, omitted values retain their locked value, and validation failure cannot partially mutate the Brand.
 
-## Information architecture
+## Ownership / Parent Company
 
-The desktop workspace is a main-plus-sidebar composition rather than one vertically undifferentiated CRUD card:
+Edit adds a separate ownership card because Parent Company is a relation, not a scalar profile field. It displays the current canonical Organization or the honest `No Parent Company assigned` state. The controls are separate HTTP mutations and never submit through `CentralBrandInput`:
 
-- General Information: Name, Slug, searchable Country, and Founded year.
-- Online Presence: Website, Support URL, and Contact email.
-- Brand Identity: Primary color through the generic `x-ui.form.color-input`, with a synchronized native picker and visible `#RRGGBB` text.
-- Brand Status sidebar: read-only lifecycle badge and concise lifecycle ownership guidance.
-- Edit-only Brand Identity sidebar: current logo through `BrandLogoPresenter`, an honest empty state when absent, and `Manage Media` linking to CA-014. CA-013 has no upload, replace, or remove controls.
+- Assign/Change searches existing Organizations through the Brand-scoped JSON endpoint. Name results use the indexed 191-character Unicode case-folded prefix, verify the full normalized value for longer queries, are ordered by normalized name then ID, limited to 20, and never preload the Organization directory into HTML. Options render as `Name — Organization #ID`; exact `#ID` lookup keeps every valid same-name Organization reachable beyond the ordinary name-result cap.
+- Create new Organization validates a distinct display name, creates the canonical Organization, and assigns it to the Brand in one transaction. Same normalized names are allowed and are never silently merged.
+- Clear removes only the ownership row after explicit confirmation. The Organization remains available to this or other Brands.
 
-Create has no persisted Brand and therefore shows only the Draft status context. Edit also provides `Back to Overview`. Cancel returns Create to CA-011 and Edit to CA-012. The sticky action bar keeps Cancel and the primary submit action reachable without enabling the shared leave-warning dialog.
+Assigning the already-current Organization is a true no-op. Replace retains the former Organization. All route context and Organization IDs are server-validated, and ownership cannot change canonical scalar fields or Brand lifecycle.
 
-Country retains the Phase 9 searchable selector contract: active Countries are searchable by localized/English name and alpha codes, the selected inactive Country may be retained or cleared, and no `country_code` HTTP field exists.
+## Validation, authorization, and audit
 
-## Responsive behavior
+All profile and ownership routes require `catalog.brands.manage`; hiding buttons is not the authorization boundary. Ownership validation reopens the relevant modal with field feedback and preserves the current relation. Cancel creates and assigns nothing.
 
-At 390×844 the header, status/identity context, General Information, Online Presence, Brand Identity, and actions form a single bounded column. The logo preview becomes shorter, the Country selector and color controls fit the viewport, long URLs/email values remain contained, and the action bar remains reachable. Browser coverage verifies both create and edit without horizontal overflow.
+Assign/replace and clear use domain Actions that lock the Brand and ownership context, mutate inside a database transaction, and record minimized append-only Audit snapshots on the `CentralBrand` subject. Create-and-assign wraps Organization creation in that transaction, so validation or Audit failure leaves neither a relation nor an accidental Organization. No-op emits no Audit event.
 
-## Visual direction and references
+Ownership is independent of Quality, translation source hash/status/approval, lifecycle, Media, and Site/public projection. It is current direct corporate context only.
 
-The long-term design reference is `pictures/1. Central Admin/1.3. Brands/CA-013 — Brand Create:Edit.png`. It directs hierarchy, card grouping, compact paired fields, broad desktop proportions, sidebar treatment, and action prominence. It is not an executable baseline and must not be overwritten.
+## Responsive and visual contract
 
-The Phase 10 executable references in `docs/ui/visual-references.json` use `brand-form-v3`: Create desktop/mobile and rich Edit desktop/mobile. The rich Edit fixture contains South Korea, 1938, official/support URLs, contact email, `#1428A0`, and a deterministic local logo. Screenshots were reviewed against the long-term reference before their checksums were approved.
+At 390×844, the existing sidebar-first mobile flow and profile cards remain bounded; the ownership card stacks the long Organization name and actions, while modals fit the viewport. Browser coverage executes persisted create, reload, replace, reload, clear, Organization-retention, cancel, validation-error, lifecycle-preservation, and horizontal-overflow paths.
 
-## Intentional gaps
+`brand-form-v4` supplies real `Organization → CentralBrandOwnership → CentralBrand` rows. Approved references include Create and Edit at desktop/mobile, focused populated ownership at desktop/mobile, and the server-backed picker on desktop. The long-term image under `pictures/` remains design input rather than an executable baseline.
 
-The target design's Parent Company is deliberately omitted. A legal/company owner is not equivalent to another Brand, and a free-text `parent_company` column would create duplicate, unstructured identity. Ownership requires a future organization/ownership relation.
+## Deferred
 
-Also deferred are descriptions and SEO (already localized), tags/classification, external identities/provenance/social links, site visibility/publication, category assignments, publish controls, richer media, translation workflow, validation summary, and quality/completeness indicators. Unsupported values are not shown as disabled placeholders or fake counters.
+There is no global Organizations CRUD/detail page, Organization editing, legal registry data, translations, media, lifecycle, hierarchy, historical/multiple/percentage/beneficial ownership, fuzzy deduplication, Site-specific owner, or public projection. Phase 17 may display the authoritative relation on CA-012 as read-only context.

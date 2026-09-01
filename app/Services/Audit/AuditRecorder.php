@@ -24,6 +24,8 @@ class AuditRecorder
         AuditAction::CatalogBrandCreated->value => ['name', 'slug', 'status', 'website_url', 'country_code', 'founded_year', 'support_url', 'contact_email', 'primary_color'],
         AuditAction::CatalogBrandUpdated->value => ['name', 'slug', 'website_url', 'country_code', 'founded_year', 'support_url', 'contact_email', 'primary_color'],
         AuditAction::CatalogBrandTagsUpdated->value => ['tags'],
+        AuditAction::CatalogBrandOwnerAssigned->value => ['organization_id', 'organization_name'],
+        AuditAction::CatalogBrandOwnerCleared->value => ['organization_id', 'organization_name'],
         AuditAction::CatalogBrandExternalIdentityLinked->value => ['source_code', 'external_id', 'external_url'],
         AuditAction::CatalogBrandExternalIdentityUpdated->value => ['source_code', 'external_id', 'external_url'],
         AuditAction::CatalogBrandExternalIdentityUnlinked->value => ['source_code', 'external_id', 'external_url'],

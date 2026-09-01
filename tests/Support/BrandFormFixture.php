@@ -6,16 +6,25 @@ namespace Tests\Support;
 
 use App\Enums\CentralBrandStatus;
 use App\Models\CentralCatalog\CentralBrand;
+use App\Models\CentralCatalog\CentralBrandOwnership;
 use App\Models\MediaAsset;
 use App\Models\MediaAssignment;
+use App\Models\Organization;
+use App\Support\Normalization\OrganizationNameNormalizer;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Storage;
 
 final class BrandFormFixture
 {
-    public const VERSION = 'brand-form-v3';
+    public const VERSION = 'brand-form-v4';
 
     public const BRAND_ID = 13013;
+
+    public const OWNERSHIP_BRAND_ID = 13016;
+
+    public const OWNER_ORGANIZATION_ID = 1301601;
+
+    public const ALTERNATIVE_ORGANIZATION_ID = 1301602;
 
     public static function create(): CentralBrand
     {
@@ -79,7 +88,55 @@ final class BrandFormFixture
             'updated_at' => $timestamp,
         ])->saveOrFail();
 
+        $owner = self::createOrganization(
+            self::OWNER_ORGANIZATION_ID,
+            'Samsung Electronics Co., Ltd. — Global Corporate Holdings',
+            $timestamp,
+        );
+        self::createOrganization(
+            self::ALTERNATIVE_ORGANIZATION_ID,
+            'Samsung Group International',
+            $timestamp,
+        );
+
+        $ownership = new CentralBrandOwnership;
+        $ownership->forceFill([
+            'id' => 1301601,
+            'central_brand_id' => $brand->getKey(),
+            'organization_id' => $owner->getKey(),
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ])->saveOrFail();
+
+        CentralBrand::factory()->create([
+            'id' => self::OWNERSHIP_BRAND_ID,
+            'name' => 'Zeta Ownership Journey Fixture',
+            'slug' => 'zeta-ownership-journey-fixture',
+            'status' => CentralBrandStatus::Draft,
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ]);
+
         return $brand;
+    }
+
+    private static function createOrganization(
+        int $id,
+        string $name,
+        CarbonImmutable $timestamp,
+    ): Organization {
+        $normalizedName = OrganizationNameNormalizer::search($name);
+        $organization = new Organization;
+        $organization->forceFill([
+            'id' => $id,
+            'name' => $name,
+            'normalized_name' => $normalizedName,
+            'normalized_name_prefix' => OrganizationNameNormalizer::prefixForNormalizedName($normalizedName),
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ])->saveOrFail();
+
+        return $organization;
     }
 
     private function __construct() {}

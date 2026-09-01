@@ -81,6 +81,54 @@
                 </div>
             </x-admin.card>
 
+            @if ($editing)
+                @php($currentOwner = $brand->ownership?->organization)
+                <x-admin.card
+                    title="Ownership / Parent Company"
+                    description="The current direct legal or corporate owner of this Brand."
+                    data-screen-region="parent-company"
+                >
+                    @if ($currentOwner !== null)
+                        <div class="rounded-admin-input border border-admin-border bg-admin-surface-muted p-admin-card">
+                            <p class="text-xs font-medium uppercase tracking-wide text-admin-muted">Current Parent Company</p>
+                            <p class="mt-2 break-words text-base font-semibold text-admin-text" data-current-parent-company>{{ $currentOwner->name }}</p>
+                            <p class="mt-1 text-sm text-admin-muted">Canonical Organization #{{ $currentOwner->getKey() }}</p>
+                        </div>
+                    @else
+                        <div class="rounded-admin-input border border-dashed border-admin-border bg-admin-surface-muted p-admin-card text-center" data-parent-company-empty>
+                            <p class="font-medium text-admin-text">No Parent Company assigned</p>
+                            <p class="mt-1 text-sm text-admin-muted">This Brand currently has no direct corporate owner relation.</p>
+                        </div>
+                    @endif
+
+                    <div class="mt-admin-card flex flex-wrap gap-admin-field">
+                        <x-ui.button
+                            type="button"
+                            variant="secondary"
+                            aria-haspopup="dialog"
+                            aria-controls="manage-parent-company-modal"
+                            data-admin-modal-open-target="manage-parent-company-modal"
+                        >{{ $currentOwner === null ? 'Assign existing Organization' : 'Change Parent Company' }}</x-ui.button>
+                        <x-ui.button
+                            type="button"
+                            variant="secondary"
+                            aria-haspopup="dialog"
+                            aria-controls="create-parent-company-modal"
+                            data-admin-modal-open-target="create-parent-company-modal"
+                        >Create new Organization</x-ui.button>
+                        @if ($currentOwner !== null)
+                            <x-ui.button
+                                type="button"
+                                variant="danger"
+                                aria-haspopup="dialog"
+                                aria-controls="clear-parent-company-modal"
+                                data-admin-modal-open-target="clear-parent-company-modal"
+                            >Clear Parent Company</x-ui.button>
+                        @endif
+                    </div>
+                </x-admin.card>
+            @endif
+
             <x-admin.card
                 title="Online Presence"
                 description="Official destinations and public Brand contact details."

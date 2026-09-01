@@ -258,8 +258,9 @@ final class CentralBrandTranslationTest extends TestCase
             ->assertOk()
             ->assertSee('Overview')
             ->assertSee('Media')
+            ->assertSee('Translations')
             ->assertDontSee('central.brands.translations.index')
-            ->assertDontSee('>Translations<', false);
+            ->assertDontSee('Review translations');
 
         $this->actingAs(User::factory()->create(['role' => UserRole::Translator]))
             ->get(route('central.brands.translations.edit', [$brand, $locale->code]))

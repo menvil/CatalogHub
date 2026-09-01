@@ -7,7 +7,9 @@ namespace Tests\Feature\Central;
 use App\Enums\CentralBrandStatus;
 use App\Enums\UserRole;
 use App\Models\CentralCatalog\CentralBrand;
+use App\Models\CentralCatalog\CentralBrandOwnership;
 use App\Models\CentralCatalog\CentralProduct;
+use App\Models\Organization;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -107,6 +109,34 @@ final class CentralBrandDetailTest extends TestCase
             ->get(route('central.brands.show', $brand))
             ->assertOk()
             ->assertSeeInOrder(['Country', '—', 'Founded', '—', 'Website', '—', 'Support URL', '—', 'Contact email', '—', 'Primary color', '—']);
+    }
+
+    public function test_parent_company_is_read_only_authoritative_ownership_with_an_honest_empty_state(): void
+    {
+        $ownedBrand = CentralBrand::factory()->active()->create(['name' => 'Owned Brand']);
+        $organization = Organization::factory()->create(['name' => 'Example Holdings International']);
+        $ownership = CentralBrandOwnership::factory()->create([
+            'central_brand_id' => $ownedBrand->id,
+            'organization_id' => $organization->id,
+        ]);
+        $unownedBrand = CentralBrand::factory()->create(['name' => 'Independent Brand']);
+        $user = User::factory()->create();
+        $before = $ownership->updated_at?->toJSON();
+
+        $this->actingAs($user)
+            ->get(route('central.brands.show', $ownedBrand))
+            ->assertOk()
+            ->assertSee('data-parent-company', false)
+            ->assertSee('Example Holdings International')
+            ->assertDontSee('Change Parent Company')
+            ->assertDontSee('Clear Parent Company');
+
+        $this->get(route('central.brands.show', $unownedBrand))
+            ->assertOk()
+            ->assertSee('No Parent Company');
+
+        self::assertSame(1, CentralBrandOwnership::query()->count());
+        self::assertSame($before, $ownership->fresh()->updated_at?->toJSON());
     }
 
     public function test_unsafe_legacy_website_is_plain_text_and_never_an_executable_link(): void

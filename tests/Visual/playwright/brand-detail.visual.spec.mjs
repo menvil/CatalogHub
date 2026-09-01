@@ -3,7 +3,7 @@ import { foundationDemo, observePageErrors, signIn } from '../../Browser/Support
 
 const states = [
     { state: 'active', name: 'ca-012__active__1440x1000.png', width: 1440, height: 1000, url: '/admin/central/brands/20', maxDiffPixelRatio: 0.02 },
-    { state: 'active', name: 'ca-012__active__390x844.png', width: 390, height: 844, url: '/admin/central/brands/20', maxDiffPixelRatio: 0.065 },
+    { state: 'active', name: 'ca-012__active__390x844.png', width: 390, height: 844, url: '/admin/central/brands/20', maxDiffPixelRatio: 0.02 },
     { state: 'archived', name: 'ca-012__archived__1440x1000.png', width: 1440, height: 1000, url: '/admin/central/brands/21', maxDiffPixelRatio: 0.02 },
 ]
 
@@ -15,7 +15,7 @@ for (const state of states) {
         await signIn(page, 'central', foundationDemo.centralAdmin)
         await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
         await page.goto(state.url)
-        await expect(page.locator('[data-brand-detail-fixture="brand-detail-v5"]')).toBeVisible()
+        await expect(page.locator('[data-brand-detail-fixture="brand-detail-v6"]')).toBeVisible()
         if (state.state === 'active' && await page.locator('[data-brand-tags]').count() === 0) {
             await page.locator('[data-screen-region="classification"]').getByRole('button', { name: 'Manage tags' }).click()
             const dialog = page.getByRole('dialog', { name: 'Manage tags' })
@@ -26,6 +26,8 @@ for (const state of states) {
             }
             await dialog.getByRole('button', { name: 'Save tags' }).click()
             await expect(page.locator('[data-brand-tags]')).toContainText('Consumer Electronics')
+            await page.goto(state.url)
+            await expect(page.locator('[data-brand-detail-fixture="brand-detail-v6"]')).toBeVisible()
         }
         await page.evaluate(() => window.scrollTo(0, 0))
         await page.evaluate(() => document.fonts.ready)

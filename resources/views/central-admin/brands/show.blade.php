@@ -7,6 +7,7 @@
     $primaryColorIsSafe = is_string($brand->primary_color)
         && preg_match('/\A#[0-9A-F]{6}\z/', $brand->primary_color) === 1;
     $productsCount = (int) $brand->products_count;
+    $parentCompany = $brand->ownership?->organization;
     $lifecycleError = $errors->first('status') ?: session('lifecycle_error');
     $tagError = $errors->first('tags');
     if ($tagError === '') {
@@ -48,299 +49,276 @@
 @endsection
 
 @section('content')
-    <div class="space-y-admin-section" data-brand-detail-fixture="brand-detail-v5">
+    <div class="space-y-admin-section" data-brand-detail-fixture="brand-detail-v6">
         <x-admin.page-header
             screen-id="CA-012"
             :show-screen-id="false"
             :title="$brand->name"
-            description="Canonical brand in the central catalog."
+            :description="'Canonical brand in the central catalog. · '.$brand->slug"
             :breadcrumbs="[]"
         >
             <x-slot:actions>
-                @if ($logo->url)
-                    <img src="{{ $logo->url }}" alt="{{ $brand->name }} logo" class="h-10 w-16 rounded border border-admin-border object-contain p-1">
-                @endif
                 <div data-screen-region="status-context">
                     <x-admin.status-badge :label="$brand->status->label()" :variant="$statusVariant" />
                 </div>
+                <x-admin.status-badge :label="$quality->state->label()" :variant="$quality->state->badgeVariant()" />
                 @can('catalog.brands.manage')
-                    <x-ui.button variant="secondary" :href="route('central.brands.edit', $brand, absolute: false)">Edit Brand</x-ui.button>
+                    <x-ui.button :href="route('central.brands.edit', $brand, absolute: false)">Edit Brand</x-ui.button>
                 @endcan
             </x-slot:actions>
         </x-admin.page-header>
 
         @include('central-admin.brands.partials.subnav', ['active' => 'overview'])
 
-        <x-admin.detail-layout>
-            <x-slot:main>
-                <x-admin.card
-                    title="Quality / Completeness"
-                    description="Derived from the canonical profile, primary logo, and active-locale translations."
-                    data-screen-region="quality-completeness"
-                >
-                    <x-slot:actions>
-                        <x-admin.status-badge :label="$quality->state->label()" :variant="$quality->state->badgeVariant()" size="sm" />
-                    </x-slot:actions>
+        <div class="grid min-w-0 gap-admin-section xl:grid-cols-12" data-admin-detail-layout>
+            <x-admin.card class="min-w-0 xl:col-span-8" padding="lg" data-screen-region="brand-identity">
+                <div class="grid min-w-0 gap-6 md:grid-cols-[10rem_minmax(0,1fr)]">
+                    <div class="min-w-0">
+                        <div class="flex aspect-square items-center justify-center overflow-hidden rounded-admin-card border border-admin-border bg-admin-surface-muted p-5">
+                            @if ($logo->url)
+                                <img src="{{ $logo->url }}" alt="{{ $brand->name }} logo" class="h-full w-full object-contain">
+                            @else
+                                <div class="text-center">
+                                    <p class="text-sm font-semibold text-admin-text">No logo</p>
+                                    <p class="mt-1 text-xs text-admin-muted">Global primary logo is not assigned.</p>
+                                </div>
+                            @endif
+                        </div>
+                        @can('catalog.brands.manage')
+                            <a href="{{ route('central.brands.media', $brand, absolute: false) }}" class="mt-3 inline-flex text-sm font-semibold text-admin-primary underline decoration-admin-primary/30 underline-offset-2">Manage logo</a>
+                        @endcan
+                    </div>
 
+                    <div class="min-w-0">
+                        <div class="flex min-w-0 flex-wrap items-start justify-between gap-3 border-b border-admin-border pb-admin-card">
+                            <div class="min-w-0">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-admin-muted">Canonical identity</p>
+                                <h2 class="mt-1 break-words text-2xl font-semibold text-admin-text">{{ $brand->name }}</h2>
+                                <p class="mt-1 break-all font-foundation-mono text-sm text-admin-muted">{{ $brand->slug }}</p>
+                            </div>
+                        </div>
+
+                        <dl class="grid min-w-0 gap-x-8 sm:grid-cols-2" data-screen-region="general-information">
+                            <div class="min-w-0 border-b border-admin-border py-3" data-screen-region="parent-company">
+                                <dt class="text-xs font-medium uppercase tracking-wide text-admin-muted">Parent Company</dt>
+                                <dd class="mt-1 break-words text-sm font-semibold text-admin-text" data-parent-company>{{ $parentCompany?->name ?? 'No Parent Company' }}</dd>
+                            </div>
+                            <div class="min-w-0 border-b border-admin-border py-3">
+                                <dt class="text-xs font-medium uppercase tracking-wide text-admin-muted">Country</dt>
+                                <dd class="mt-1 break-words text-sm text-admin-text">{{ $countryName === null ? '—' : $countryName.' ('.$brand->country->alpha2.')' }}</dd>
+                            </div>
+                            <div class="min-w-0 border-b border-admin-border py-3">
+                                <dt class="text-xs font-medium uppercase tracking-wide text-admin-muted">Founded</dt>
+                                <dd class="mt-1 text-sm text-admin-text">{{ $brand->founded_year ?? '—' }}</dd>
+                            </div>
+                            <div class="min-w-0 border-b border-admin-border py-3">
+                                <dt class="text-xs font-medium uppercase tracking-wide text-admin-muted">Website</dt>
+                                <dd class="mt-1 break-all text-sm text-admin-text">
+                                    @if ($brand->website_url === null) —
+                                    @elseif ($websiteIsSafe)<a href="{{ $brand->website_url }}" target="_blank" rel="noopener noreferrer" class="font-medium text-admin-primary underline decoration-admin-primary/30 underline-offset-2">{{ $brand->website_url }}</a>
+                                    @else {{ $brand->website_url }} @endif
+                                </dd>
+                            </div>
+                            <div class="contents" data-screen-region="online-presence">
+                                <div class="min-w-0 border-b border-admin-border py-3">
+                                    <dt class="text-xs font-medium uppercase tracking-wide text-admin-muted">Support URL</dt>
+                                    <dd class="mt-1 break-all text-sm text-admin-text">
+                                        @if ($brand->support_url === null) —
+                                        @elseif ($supportUrlIsSafe)<a href="{{ $brand->support_url }}" target="_blank" rel="noopener noreferrer" class="font-medium text-admin-primary underline decoration-admin-primary/30 underline-offset-2">{{ $brand->support_url }}</a>
+                                        @else {{ $brand->support_url }} @endif
+                                    </dd>
+                                </div>
+                                <div class="min-w-0 border-b border-admin-border py-3">
+                                    <dt class="text-xs font-medium uppercase tracking-wide text-admin-muted">Contact email</dt>
+                                    <dd class="mt-1 break-all text-sm text-admin-text">{{ $brand->contact_email ?? '—' }}</dd>
+                                </div>
+                            </div>
+                            <div class="min-w-0 border-b border-admin-border py-3">
+                                <dt class="text-xs font-medium uppercase tracking-wide text-admin-muted">Primary color</dt>
+                                <dd class="mt-1 flex min-w-0 items-center gap-2 text-sm text-admin-text">
+                                    @if ($primaryColorIsSafe)
+                                        <span class="h-5 w-5 shrink-0 rounded-admin-input border border-admin-border" style="background-color: {{ $brand->primary_color }}" aria-hidden="true"></span>
+                                        <span class="break-all font-foundation-mono text-xs">{{ $brand->primary_color }}</span>
+                                    @else
+                                        —
+                                    @endif
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+            </x-admin.card>
+
+            <div class="min-w-0 space-y-admin-section xl:col-span-4">
+                <x-admin.card title="Brand health" data-screen-region="quality-completeness">
                     <div class="space-y-admin-card">
-                        <div class="grid gap-admin-card sm:grid-cols-[8rem_minmax(0,1fr)] sm:items-center">
+                        <div class="flex items-end justify-between gap-4">
                             <div>
-                                <p class="text-3xl font-semibold text-admin-text" data-brand-quality-score="{{ $quality->score }}">{{ $quality->score }}%</p>
+                                <p class="text-4xl font-semibold text-admin-text" data-brand-quality-score="{{ $quality->score }}">{{ $quality->score }}%</p>
                                 <p class="mt-1 text-xs font-medium text-admin-muted">{{ $quality->completedChecks }} of {{ $quality->totalChecks }} checks complete</p>
                             </div>
-                            <div>
-                                <div class="h-2 overflow-hidden rounded-admin-badge bg-admin-surface-muted" role="progressbar" aria-label="Brand completeness" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $quality->score }}">
-                                    <div class="h-full rounded-admin-badge {{ $quality->state === \App\Enums\CentralBrandQualityState::Complete ? 'bg-admin-success' : 'bg-admin-warning' }}" style="width: {{ $quality->score }}%"></div>
+                            <x-admin.status-badge :label="$quality->state->label()" :variant="$quality->state->badgeVariant()" size="sm" />
+                        </div>
+                        <div class="h-2 overflow-hidden rounded-admin-badge bg-admin-surface-muted" role="progressbar" aria-label="Brand completeness" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $quality->score }}">
+                            <div class="h-full rounded-admin-badge {{ $quality->state === \App\Enums\CentralBrandQualityState::Complete ? 'bg-admin-success' : 'bg-admin-warning' }}" style="width: {{ $quality->score }}%"></div>
+                        </div>
+                        <div class="border-t border-admin-border pt-admin-card" data-screen-region="translation-summary">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <p class="text-sm font-semibold text-admin-text">Translations</p>
+                                    <p class="mt-1 text-xs text-admin-muted">{{ $translationSummary->complete() }} of {{ $translationSummary->total }} active locales complete</p>
                                 </div>
-                                <p class="mt-2 text-sm text-admin-muted">The score is the percentage of equally weighted applicable checks that are complete.</p>
+                                <strong class="text-xl font-semibold text-admin-text">{{ $translationSummary->score() }}%</strong>
                             </div>
-                        </div>
-
-                        @if ($quality->issues() === [])
-                            <div class="rounded-admin-input border border-admin-success/25 bg-admin-success-soft px-4 py-3">
-                                <p class="text-sm font-medium text-admin-success">All applicable quality checks are complete.</p>
+                            <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
+                                <span class="rounded-admin-input bg-admin-success-soft px-2 py-1 text-admin-success">Approved {{ $translationSummary->approved }}</span>
+                                <span class="rounded-admin-input bg-admin-surface-muted px-2 py-1 text-admin-muted">Reviewed {{ $translationSummary->humanReviewed }}</span>
+                                <span class="rounded-admin-input bg-admin-info-soft px-2 py-1 text-admin-info">Machine {{ $translationSummary->machineTranslated }}</span>
+                                <span class="rounded-admin-input bg-admin-warning-soft px-2 py-1 text-admin-warning">Missing {{ $translationSummary->missing }}</span>
+                                <span class="rounded-admin-input bg-admin-warning-soft px-2 py-1 text-admin-warning">Outdated {{ $translationSummary->outdated }}</span>
                             </div>
-                        @else
-                            <div class="border-t border-admin-border pt-admin-card">
-                                <h3 class="text-sm font-semibold text-admin-text">Issues to resolve</h3>
-                                <ul class="mt-2 divide-y divide-admin-border" data-brand-quality-issues>
-                                    @foreach ($quality->issues() as $issue)
-                                        <li class="flex min-w-0 flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between" data-quality-issue-code="{{ $issue->issueCode?->value }}">
-                                            <div class="min-w-0">
-                                                <p class="text-sm font-medium text-admin-text">{{ $issue->label }}</p>
-                                                <p class="mt-1 text-sm text-admin-muted">{{ $issue->description }}</p>
-                                            </div>
-                                            @if ($issue->editorRoute !== null && $issue->editorPermission !== null && auth()->user()?->can($issue->editorPermission) === true)
-                                                <a href="{{ route($issue->editorRoute, $issue->editorRouteParameters, absolute: false) }}" class="shrink-0 text-sm font-semibold text-admin-primary underline decoration-admin-primary/30 underline-offset-2">{{ $issue->editorLabel }}</a>
-                                            @endif
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
+                            @can('translations.manage')
+                                <a href="{{ route('central.brands.translations.index', $brand, absolute: false) }}" class="mt-3 inline-flex text-sm font-semibold text-admin-primary underline decoration-admin-primary/30 underline-offset-2">Review translations</a>
+                            @endcan
+                        </div>
                     </div>
-                </x-admin.card>
-
-                <x-admin.card title="General information" data-screen-region="general-information">
-                    <dl class="divide-y divide-admin-border">
-                        <div class="grid gap-1 py-3 first:pt-0 sm:grid-cols-[10rem_minmax(0,1fr)]">
-                            <dt class="text-sm font-medium text-admin-muted">Name</dt>
-                            <dd class="min-w-0 break-words text-sm text-admin-text">{{ $brand->name }}</dd>
-                        </div>
-                        <div class="grid gap-1 py-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
-                            <dt class="text-sm font-medium text-admin-muted">Slug</dt>
-                            <dd class="min-w-0 break-all font-foundation-mono text-sm text-admin-text">{{ $brand->slug }}</dd>
-                        </div>
-                        <div class="grid gap-1 py-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
-                            <dt class="text-sm font-medium text-admin-muted">Status</dt>
-                            <dd class="text-sm text-admin-text">{{ $brand->status->label() }}</dd>
-                        </div>
-                        <div class="grid gap-1 py-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
-                            <dt class="text-sm font-medium text-admin-muted">Country</dt>
-                            <dd class="min-w-0 break-words text-sm text-admin-text">
-                                {{ $countryName === null ? '—' : $countryName.' ('.$brand->country->alpha2.')' }}
-                            </dd>
-                        </div>
-                        <div class="grid gap-1 pt-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
-                            <dt class="text-sm font-medium text-admin-muted">Founded</dt>
-                            <dd class="text-sm text-admin-text">{{ $brand->founded_year ?? '—' }}</dd>
-                        </div>
-                    </dl>
-                </x-admin.card>
-
-                <x-admin.card title="Online presence" data-screen-region="online-presence">
-                    <dl class="divide-y divide-admin-border">
-                        <div class="grid gap-1 py-3 first:pt-0 sm:grid-cols-[10rem_minmax(0,1fr)]">
-                            <dt class="text-sm font-medium text-admin-muted">Website</dt>
-                            <dd class="min-w-0 break-all text-sm text-admin-text">
-                                @if ($brand->website_url === null)
-                                    —
-                                @elseif ($websiteIsSafe)
-                                    <a href="{{ $brand->website_url }}" target="_blank" rel="noopener noreferrer" class="font-medium text-admin-primary underline decoration-admin-primary/30 underline-offset-2">{{ $brand->website_url }}</a>
-                                @else
-                                    {{ $brand->website_url }}
-                                @endif
-                            </dd>
-                        </div>
-                        <div class="grid gap-1 py-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
-                            <dt class="text-sm font-medium text-admin-muted">Support URL</dt>
-                            <dd class="min-w-0 break-all text-sm text-admin-text">
-                                @if ($brand->support_url === null)
-                                    —
-                                @elseif ($supportUrlIsSafe)
-                                    <a href="{{ $brand->support_url }}" target="_blank" rel="noopener noreferrer" class="font-medium text-admin-primary underline decoration-admin-primary/30 underline-offset-2">{{ $brand->support_url }}</a>
-                                @else
-                                    {{ $brand->support_url }}
-                                @endif
-                            </dd>
-                        </div>
-                        <div class="grid gap-1 pt-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
-                            <dt class="text-sm font-medium text-admin-muted">Contact email</dt>
-                            <dd class="min-w-0 break-all text-sm text-admin-text">{{ $brand->contact_email ?? '—' }}</dd>
-                        </div>
-                    </dl>
-                </x-admin.card>
-
-                <x-admin.card title="Brand identity" data-screen-region="brand-identity">
-                    <div class="flex items-center justify-between gap-admin-field">
-                        <span class="text-sm font-medium text-admin-muted">Primary color</span>
-                        @if ($brand->primary_color === null)
-                            <span class="text-sm text-admin-text">—</span>
-                        @else
-                            <span class="flex items-center gap-2 font-foundation-mono text-sm text-admin-text">
-                                @if ($primaryColorIsSafe)
-                                    <span class="h-6 w-6 rounded-admin-input border border-admin-border" style="background-color: {{ $brand->primary_color }}" aria-hidden="true"></span>
-                                @endif
-                                {{ $brand->primary_color }}
-                            </span>
-                        @endif
-                    </div>
-                </x-admin.card>
-
-                <x-admin.card
-                    id="classification"
-                    title="Classification"
-                    description="Editorial tags and current product catalogue coverage."
-                    data-screen-region="classification"
-                >
-                    <x-slot:actions>
-                        @can('catalog.brands.manage')
-                            <x-ui.button
-                                variant="secondary"
-                                aria-haspopup="dialog"
-                                aria-controls="manage-brand-tags-modal"
-                                data-admin-modal-open-target="manage-brand-tags-modal"
-                            >Manage tags</x-ui.button>
-                        @endcan
-                    </x-slot:actions>
-
-                    <div class="space-y-admin-section">
-                        <section aria-labelledby="brand-tags-heading">
-                            <h3 id="brand-tags-heading" class="text-sm font-semibold text-admin-text">Tags</h3>
-                            @if ($brand->tags->isEmpty())
-                                <p class="mt-2 text-sm text-admin-muted">No tags have been assigned to this Brand.</p>
-                            @else
-                                <div class="mt-3 flex flex-wrap gap-2" data-brand-tags>
-                                    @foreach ($brand->tags as $tag)
-                                        <span class="inline-flex max-w-full rounded-admin-badge bg-admin-surface-muted px-3 py-1 text-sm font-medium text-admin-text ring-1 ring-inset ring-admin-border">{{ $tag->name }}</span>
-                                    @endforeach
-                                </div>
-                            @endif
-                        </section>
-
-                        <section class="border-t border-admin-border pt-admin-card" aria-labelledby="brand-category-coverage-heading">
-                            <div>
-                                <h3 id="brand-category-coverage-heading" class="text-sm font-semibold text-admin-text">Current category coverage</h3>
-                                <p class="mt-1 text-sm text-admin-muted">Derived automatically from direct Category assignments of current Brand products.</p>
-                            </div>
-
-                            @if ($categoryCoverage->isEmpty())
-                                <div class="mt-3 rounded-admin-input border border-dashed border-admin-border bg-admin-surface-muted p-admin-card">
-                                    <p class="text-sm font-medium text-admin-text">No category coverage yet.</p>
-                                    <p class="mt-1 text-sm text-admin-muted">Category coverage is derived automatically from Brand products.</p>
-                                </div>
-                            @else
-                                <ul class="mt-3 divide-y divide-admin-border" data-brand-category-coverage>
-                                    @foreach ($categoryCoverage as $coverage)
-                                        @php
-                                            $categoryStatusVariant = $coverage->status->color() === 'gray'
-                                                ? 'neutral'
-                                                : $coverage->status->color();
-                                        @endphp
-                                        <li class="flex min-w-0 flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0" data-category-id="{{ $coverage->categoryId }}">
-                                            <div class="flex min-w-0 flex-wrap items-center gap-2">
-                                                <span class="min-w-0 break-words text-sm font-medium text-admin-text">{{ $coverage->name }}</span>
-                                                <x-admin.status-badge :label="$coverage->status->label()" :variant="$categoryStatusVariant" size="sm" />
-                                            </div>
-                                            <span class="shrink-0 text-sm text-admin-muted">
-                                                <strong class="font-semibold text-admin-text">{{ number_format($coverage->productsCount) }}</strong>
-                                                {{ $coverage->productsCount === 1 ? 'product' : 'products' }}
-                                            </span>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            @endif
-                        </section>
-                    </div>
-                </x-admin.card>
-
-                @include('central-admin.brands.partials.external-identities-card')
-
-                <x-admin.card title="Usage" data-screen-region="usage">
-                    <div class="flex items-baseline justify-between gap-admin-field">
-                        <span class="text-sm font-medium text-admin-muted">Products</span>
-                        <strong class="text-2xl font-semibold text-admin-text" data-products-count="{{ $productsCount }}">{{ number_format($productsCount) }}</strong>
-                    </div>
-                    <p class="mt-2 text-sm text-admin-muted">
-                        @if ($productsCount === 0)
-                            No canonical products reference this brand yet.
-                        @elseif ($productsCount === 1)
-                            1 canonical product references this brand.
-                        @else
-                            {{ number_format($productsCount) }} canonical products reference this brand.
-                        @endif
-                    </p>
-                </x-admin.card>
-            </x-slot:main>
-
-            <x-slot:aside>
-                <x-admin.card title="Record" data-screen-region="record-metadata">
-                    <dl class="space-y-admin-card">
-                        <div class="flex items-start justify-between gap-admin-field">
-                            <dt class="text-sm font-medium text-admin-muted">Status</dt>
-                            <dd><x-admin.status-badge :label="$brand->status->label()" :variant="$statusVariant" size="sm" /></dd>
-                        </div>
-                        <div class="flex flex-col gap-1">
-                            <dt class="text-sm font-medium text-admin-muted">Created</dt>
-                            <dd><x-ui.timestamp :value="$brand->created_at" timezone="UTC" /></dd>
-                        </div>
-                        <div class="flex flex-col gap-1">
-                            <dt class="text-sm font-medium text-admin-muted">Updated</dt>
-                            <dd><x-ui.timestamp :value="$brand->updated_at" timezone="UTC" /></dd>
-                        </div>
-                        <div class="flex items-start justify-between gap-admin-field">
-                            <dt class="text-sm font-medium text-admin-muted">Record ID</dt>
-                            <dd class="break-all font-foundation-mono text-sm text-admin-text">{{ $brand->getKey() }}</dd>
-                        </div>
-                    </dl>
                 </x-admin.card>
 
                 <x-admin.card title="Lifecycle" data-screen-region="lifecycle">
                     @if ($lifecycleError)
-                        <p class="mb-admin-card rounded-admin-input border border-admin-danger/30 bg-admin-danger-soft px-3 py-2 text-sm text-admin-text" role="alert" data-lifecycle-error>
-                            {{ $lifecycleError }}
-                        </p>
+                        <p class="mb-admin-card rounded-admin-input border border-admin-danger/30 bg-admin-danger-soft px-3 py-2 text-sm text-admin-text" role="alert" data-lifecycle-error>{{ $lifecycleError }}</p>
                     @endif
-
                     @can('catalog.brands.manage')
-                    @switch($brand->status)
-                        @case(\App\Enums\CentralBrandStatus::Draft)
-                            <p class="text-sm text-admin-muted">Draft brands are not yet ready for normal catalog use.</p>
-                            <div class="mt-admin-card grid gap-admin-field">
-                                <x-ui.button class="w-full" aria-haspopup="dialog" aria-controls="activate-brand-modal" data-admin-modal-open-target="activate-brand-modal">Activate Brand</x-ui.button>
-                                <x-ui.button variant="danger" class="w-full" aria-haspopup="dialog" aria-controls="archive-brand-modal" data-admin-modal-open-target="archive-brand-modal">Archive Brand</x-ui.button>
-                            </div>
-                            @break
-
-                        @case(\App\Enums\CentralBrandStatus::Active)
-                            <p class="text-sm text-admin-muted">Active brands are available for normal catalog use.</p>
-                            <div class="mt-admin-card">
-                                <x-ui.button variant="danger" class="w-full" aria-haspopup="dialog" aria-controls="archive-brand-modal" data-admin-modal-open-target="archive-brand-modal">Archive Brand</x-ui.button>
-                            </div>
-                            @break
-
-                        @case(\App\Enums\CentralBrandStatus::Archived)
-                            <p class="text-sm text-admin-muted">Archived brands remain in existing references but should not be used for new relationships.</p>
-                            <p class="mt-2 text-sm text-admin-muted">Restoring returns the brand to Draft. It must be activated separately.</p>
-                            <div class="mt-admin-card">
-                                <x-ui.button class="w-full" aria-haspopup="dialog" aria-controls="restore-brand-modal" data-admin-modal-open-target="restore-brand-modal">Restore Brand</x-ui.button>
-                            </div>
-                            @break
-                    @endswitch
+                        @switch($brand->status)
+                            @case(\App\Enums\CentralBrandStatus::Draft)
+                                <p class="text-sm text-admin-muted">Draft brands are not yet ready for normal catalog use.</p>
+                                <div class="mt-admin-card grid gap-admin-field sm:grid-cols-2 xl:grid-cols-1">
+                                    <x-ui.button class="w-full" aria-haspopup="dialog" aria-controls="activate-brand-modal" data-admin-modal-open-target="activate-brand-modal">Activate Brand</x-ui.button>
+                                    <x-ui.button variant="danger" class="w-full" aria-haspopup="dialog" aria-controls="archive-brand-modal" data-admin-modal-open-target="archive-brand-modal">Archive Brand</x-ui.button>
+                                </div>
+                                @break
+                            @case(\App\Enums\CentralBrandStatus::Active)
+                                <p class="text-sm text-admin-muted">Active brands are available for normal catalog use.</p>
+                                <x-ui.button variant="danger" class="mt-admin-card w-full" aria-haspopup="dialog" aria-controls="archive-brand-modal" data-admin-modal-open-target="archive-brand-modal">Archive Brand</x-ui.button>
+                                @break
+                            @case(\App\Enums\CentralBrandStatus::Archived)
+                                <p class="text-sm text-admin-muted">Archived brands remain in existing references. Restore returns this Brand to Draft.</p>
+                                <x-ui.button class="mt-admin-card w-full" aria-haspopup="dialog" aria-controls="restore-brand-modal" data-admin-modal-open-target="restore-brand-modal">Restore Brand</x-ui.button>
+                                @break
+                        @endswitch
                     @endcan
                 </x-admin.card>
-            </x-slot:aside>
-        </x-admin.detail-layout>
+            </div>
+
+            <div class="min-w-0 xl:col-span-4">
+                @include('central-admin.brands.partials.external-identities-card')
+            </div>
+
+            <x-admin.card class="min-w-0 xl:col-span-4" title="Product portfolio" description="Derived from current canonical Products." data-screen-region="usage">
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="rounded-admin-input border border-admin-border bg-admin-surface-muted p-3 text-center">
+                        <strong class="text-2xl font-semibold text-admin-text" data-products-count="{{ $productsCount }}">{{ number_format($productsCount) }}</strong>
+                        <p class="mt-1 text-xs font-medium text-admin-muted">Products</p>
+                    </div>
+                    <div class="rounded-admin-input border border-admin-border bg-admin-surface-muted p-3 text-center">
+                        <strong class="text-2xl font-semibold text-admin-text">{{ number_format($categoryCoverage->count()) }}</strong>
+                        <p class="mt-1 text-xs font-medium text-admin-muted">Categories</p>
+                    </div>
+                </div>
+                <p class="mt-3 text-sm text-admin-muted">
+                    @if ($productsCount === 0) No canonical products reference this brand yet.
+                    @elseif ($productsCount === 1) 1 canonical product references this brand.
+                    @else {{ number_format($productsCount) }} canonical products reference this brand. @endif
+                </p>
+                <div class="mt-admin-card border-t border-admin-border pt-admin-card">
+                    <h3 class="text-sm font-semibold text-admin-text">Current category coverage</h3>
+                    <p class="mt-1 text-xs text-admin-muted">Derived automatically from direct Category assignments of current Brand products; not a manual Brand relation.</p>
+                    @if ($categoryCoverage->isEmpty())
+                        <p class="mt-3 text-sm text-admin-muted">No category coverage yet.</p>
+                        <p class="mt-1 text-xs text-admin-muted">Category coverage is derived automatically from Brand products.</p>
+                    @else
+                        <ul class="mt-2 divide-y divide-admin-border" data-brand-category-coverage>
+                            @foreach ($categoryCoverage as $coverage)
+                                @php
+                                    $categoryStatusVariant = $coverage->status->color() === 'gray'
+                                        ? 'neutral'
+                                        : $coverage->status->color();
+                                @endphp
+                                <li class="flex min-w-0 flex-wrap items-center justify-between gap-3 py-2" data-category-id="{{ $coverage->categoryId }}">
+                                    <span class="flex min-w-0 flex-wrap items-center gap-2">
+                                        <span class="min-w-0 break-words text-sm font-medium text-admin-text">{{ $coverage->name }}</span>
+                                        <x-admin.status-badge :label="$coverage->status->label()" :variant="$categoryStatusVariant" size="sm" />
+                                    </span>
+                                    <span class="shrink-0 text-xs text-admin-muted">{{ number_format($coverage->productsCount) }} {{ $coverage->productsCount === 1 ? 'product' : 'products' }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
+            </x-admin.card>
+
+            <x-admin.card id="classification" class="min-w-0 xl:col-span-4" title="Classification" description="Editorial Tags are separate from derived Category coverage." data-screen-region="classification">
+                <x-slot:actions>
+                    @can('catalog.brands.manage')
+                        <x-ui.button variant="secondary" aria-haspopup="dialog" aria-controls="manage-brand-tags-modal" data-admin-modal-open-target="manage-brand-tags-modal">Manage tags</x-ui.button>
+                    @endcan
+                </x-slot:actions>
+                @if ($brand->tags->isEmpty())
+                    <p class="text-sm text-admin-muted">No tags have been assigned to this Brand.</p>
+                @else
+                    <div class="flex flex-wrap gap-2" data-brand-tags>
+                        @foreach ($brand->tags as $tag)
+                            <span class="inline-flex max-w-full rounded-admin-badge bg-admin-surface-muted px-3 py-1 text-sm font-medium text-admin-text ring-1 ring-inset ring-admin-border">{{ $tag->name }}</span>
+                        @endforeach
+                    </div>
+                @endif
+            </x-admin.card>
+
+            <x-admin.card class="min-w-0 xl:col-span-8" title="{{ $quality->issues() === [] ? 'Quality checks' : 'Issues to resolve' }}" data-screen-region="quality-issues">
+                @if ($quality->issues() === [])
+                    <div class="rounded-admin-input border border-admin-success/25 bg-admin-success-soft px-4 py-3">
+                        <p class="text-sm font-medium text-admin-success">All applicable quality checks are complete.</p>
+                    </div>
+                @else
+                    <ul class="grid min-w-0 gap-x-6 md:grid-cols-2" data-brand-quality-issues>
+                        @foreach ($quality->issues() as $issue)
+                            <li class="flex min-w-0 flex-col gap-2 border-b border-admin-border py-3 first:pt-0" data-quality-issue-code="{{ $issue->issueCode?->value }}">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-medium text-admin-text">{{ $issue->label }}</p>
+                                    <p class="mt-1 text-sm text-admin-muted">{{ $issue->description }}</p>
+                                </div>
+                                @if ($issue->editorRoute !== null && $issue->editorPermission !== null && auth()->user()?->can($issue->editorPermission) === true)
+                                    <a href="{{ route($issue->editorRoute, $issue->editorRouteParameters, absolute: false) }}" class="w-fit text-sm font-semibold text-admin-primary underline decoration-admin-primary/30 underline-offset-2">{{ $issue->editorLabel }}</a>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </x-admin.card>
+
+            <x-admin.card class="min-w-0 xl:col-span-4" title="Record" data-screen-region="record-metadata">
+                <dl class="space-y-admin-card">
+                    <div class="flex items-start justify-between gap-admin-field">
+                        <dt class="text-sm font-medium text-admin-muted">Status</dt>
+                        <dd><x-admin.status-badge :label="$brand->status->label()" :variant="$statusVariant" size="sm" /></dd>
+                    </div>
+                    <div class="grid grid-cols-2 gap-admin-field">
+                        <div class="min-w-0">
+                            <dt class="text-sm font-medium text-admin-muted">Created</dt>
+                            <dd class="mt-1"><x-ui.timestamp :value="$brand->created_at" timezone="UTC" /></dd>
+                        </div>
+                        <div class="min-w-0">
+                            <dt class="text-sm font-medium text-admin-muted">Updated</dt>
+                            <dd class="mt-1"><x-ui.timestamp :value="$brand->updated_at" timezone="UTC" /></dd>
+                        </div>
+                    </div>
+                    <div class="flex items-start justify-between gap-admin-field">
+                        <dt class="text-sm font-medium text-admin-muted">Record ID</dt>
+                        <dd class="break-all font-foundation-mono text-sm text-admin-text">{{ $brand->getKey() }}</dd>
+                    </div>
+                </dl>
+            </x-admin.card>
+        </div>
 
         @can('catalog.brands.manage')
         <form id="manage-brand-tags-form" method="POST" action="{{ route('central.brands.tags.update', $brand, absolute: false) }}">

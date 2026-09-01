@@ -10,6 +10,8 @@ final class CentralBrandDetailQuery
 {
     public function loadUsage(CentralBrand $brand): CentralBrand
     {
-        return $brand->load(['country.translations', 'tags'])->loadCount('products');
+        return $brand
+            ->load(['country.translations', 'tags', 'ownership.organization'])
+            ->loadCount('products');
     }
 }

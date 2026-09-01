@@ -74,13 +74,25 @@
             <x-admin.card class="min-w-0 xl:col-span-8" padding="lg" data-screen-region="brand-identity">
                 <div class="grid min-w-0 gap-6 md:grid-cols-[10rem_minmax(0,1fr)]">
                     <div class="min-w-0">
-                        <div class="flex aspect-square items-center justify-center overflow-hidden rounded-admin-card border border-admin-border bg-admin-surface-muted p-5">
-                            @if ($logo->url)
+                        <div class="flex aspect-square w-full items-center justify-center overflow-hidden rounded-admin-card border border-admin-border bg-admin-surface-muted p-5" data-logo-delivery-state="{{ $logo->state->value }}">
+                            @if ($logo->state === \App\Enums\MediaDeliveryState::Ready && $logo->url !== null)
                                 <img src="{{ $logo->url }}" alt="{{ $brand->name }} logo" class="h-full w-full object-contain">
-                            @else
+                            @elseif ($logo->state === \App\Enums\MediaDeliveryState::Missing || $logo->asset === null)
                                 <div class="text-center">
                                     <p class="text-sm font-semibold text-admin-text">No logo</p>
                                     <p class="mt-1 text-xs text-admin-muted">Global primary logo is not assigned.</p>
+                                </div>
+                            @else
+                                @php
+                                    $logoStateCopy = match ($logo->state) {
+                                        \App\Enums\MediaDeliveryState::Processing => 'The assigned logo is still processing.',
+                                        \App\Enums\MediaDeliveryState::Failed => 'Processing failed for the assigned logo.',
+                                        default => 'A logo is assigned, but no usable file is currently available.',
+                                    };
+                                @endphp
+                                <div class="text-center">
+                                    <p class="text-sm font-semibold text-admin-text">{{ $logo->state->label() }} logo</p>
+                                    <p class="mt-1 text-xs text-admin-muted">{{ $logoStateCopy }}</p>
                                 </div>
                             @endif
                         </div>
@@ -226,9 +238,9 @@
                     </div>
                 </div>
                 <p class="mt-3 text-sm text-admin-muted">
-                    @if ($productsCount === 0) No canonical products reference this brand yet.
-                    @elseif ($productsCount === 1) 1 canonical product references this brand.
-                    @else {{ number_format($productsCount) }} canonical products reference this brand. @endif
+                    @if ($productsCount === 0) No current canonical products reference this brand yet.
+                    @elseif ($productsCount === 1) 1 current canonical product references this brand.
+                    @else {{ number_format($productsCount) }} current canonical products reference this brand. @endif
                 </p>
                 <div class="mt-admin-card border-t border-admin-border pt-admin-card">
                     <h3 class="text-sm font-semibold text-admin-text">Current category coverage</h3>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Central;
 
 use App\Enums\CentralBrandStatus;
+use App\Enums\CentralProductStatus;
 use App\Enums\UserRole;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralBrandOwnership;
@@ -175,6 +176,9 @@ final class CentralBrandDetailTest extends TestCase
         $brand = CentralBrand::factory()->create(['name' => 'Counted Brand']);
         $other = CentralBrand::factory()->create(['name' => 'Other Brand']);
         CentralProduct::factory()->count(3)->for($brand, 'brand')->create();
+        CentralProduct::factory()->for($brand, 'brand')->create([
+            'status' => CentralProductStatus::Archived,
+        ]);
         CentralProduct::factory()->count(2)->for($other, 'brand')->create();
         CentralProduct::factory()->create(['central_brand_id' => null]);
 
@@ -182,7 +186,7 @@ final class CentralBrandDetailTest extends TestCase
             ->get(route('central.brands.show', $brand))
             ->assertOk()
             ->assertSee('data-products-count="3"', false)
-            ->assertSee('3 canonical products reference this brand.')
+            ->assertSee('3 current canonical products reference this brand.')
             ->assertDontSee('Product List');
 
         /** @var CentralBrand $viewBrand */
@@ -199,7 +203,7 @@ final class CentralBrandDetailTest extends TestCase
             ->get(route('central.brands.show', $brand))
             ->assertOk()
             ->assertSee('data-products-count="0"', false)
-            ->assertSee('No canonical products reference this brand yet.')
+            ->assertSee('No current canonical products reference this brand yet.')
             ->assertDontSee('Create Product');
     }
 

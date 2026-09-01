@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Queries\CentralCatalog;
 
+use App\Enums\CentralProductStatus;
 use App\Models\CentralCatalog\CentralBrand;
 
 final class CentralBrandDetailQuery
@@ -12,6 +13,9 @@ final class CentralBrandDetailQuery
     {
         return $brand
             ->load(['country.translations', 'tags', 'ownership.organization'])
-            ->loadCount('products');
+            ->loadCount([
+                'products' => static fn ($query) => $query
+                    ->where('status', '!=', CentralProductStatus::Archived->value),
+            ]);
     }
 }

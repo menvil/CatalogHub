@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Queries;
 
+use App\Enums\CentralProductStatus;
 use App\Models\CentralCatalog\CatalogTag;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralBrandOwnership;
@@ -28,6 +29,9 @@ final class CentralBrandDetailQueryTest extends TestCase
             'organization_id' => $organization->id,
         ]);
         CentralProduct::factory()->count(2)->for($brand, 'brand')->create();
+        CentralProduct::factory()->for($brand, 'brand')->create([
+            'status' => CentralProductStatus::Archived,
+        ]);
         $tag = CatalogTag::factory()->create();
         $brand->tags()->attach($tag);
 

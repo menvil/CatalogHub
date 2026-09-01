@@ -2,20 +2,25 @@
 
 | Field | Value |
 | --- | --- |
-| Manifest version | 1.0.0 |
-| Status | Proposed; artifact versioning incomplete |
+| Manifest version | 1.1.0 |
+| Status | Partially approved; Brand prototype artifacts versioned |
 | Owner | CatalogHub Product Owner |
-| Approver | `TBD — approver must be named` |
-| Approval date | `TBD — YYYY-MM-DD` |
-| Acceptance mode | Semantic/manual for MVP; strict pixel diff is not required |
+| Approver | menvil (CatalogHub Product Owner) |
+| Approval date | 2026-09-01 |
+| Acceptance mode | Semantic/manual for MVP; immutable versions identify source artifacts and do not require strict pixel diff |
 
 ## Reproducibility status
 
-The CA/SA PNGs listed below exist in the working copy under `pictures/`, but
-that directory is not committed in the current MR baseline. Therefore every
-SHA-256 is intentionally marked **REQUIRED BEFORE IMPLEMENTATION — NOT
-VERSIONED**. Native dimensions were read from the local files and are inventory
-evidence only.
+The five Brand prototypes CA-011 through CA-015 are committed at their listed
+`pictures/1. Central Admin/1.3. Brands/` paths and are reproducible immutable
+references for `brand-prototype-v1`. Their SHA-256 values and native dimensions
+identify the exact approved source artifacts.
+
+The remaining CA/SA PNGs may exist only in the working copy under `pictures/`;
+they are not committed in this manifest version. Their SHA-256 entries therefore
+remain **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED**, and their native
+dimensions are inventory evidence only. Versioning the five Brand files does not
+approve or make the other local prototype files reproducible.
 
 Before a screen work package starts, its approved PNG must be committed (or
 placed in an approved immutable artifact store), its SHA-256 recorded here, and
@@ -48,6 +53,12 @@ when applicable, route, seed scenario, viewport, artifact SHA, primary action
 result, and deviations by severity. Semantic acceptance checks surface,
 navigation, context, hierarchy, visible states, data density, component family,
 and primary actions. It is not a pixel-diff percentage.
+
+`immutable prototype brand-prototype-v1` is an artifact identity and integrity
+label for CA-011 through CA-015. It means the committed file and recorded digest
+are the fixed prototype source used during manual comparison. Those rows still
+use the semantic/manual MVP acceptance procedure above; the label does not
+introduce strict pixel-diff acceptance.
 
 ## Central Admin and Site Admin references
 
@@ -224,6 +235,18 @@ existed.
 | PUB-023 | **REQUIRED BEFORE IMPLEMENTATION: `PUB-023.png`** | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | TBD | TBD | 375×812 (to approve) | en | `VR-PUB-023-POPULATED` | semantic/manual MVP |
 | PUB-046 | **REQUIRED BEFORE IMPLEMENTATION: `PUB-046.png`** | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | TBD | TBD | 1440×900 (to approve) | en | `VR-PUB-046-POPULATED` | semantic/manual MVP |
 | PUB-057 | **REQUIRED BEFORE IMPLEMENTATION: `PUB-057.png`** | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | TBD | TBD | 1440×900 (to approve) | en | `VR-PUB-057-POPULATED` | semantic/manual MVP |
+
+## Changelog
+
+### 1.1.0 — 2026-09-01
+
+- Approved and versioned the exact CA-011 through CA-015 Brand prototype files
+  as `brand-prototype-v1`, with SHA-256, dimensions, viewport, locale and seed
+  scenario recorded in their manifest rows.
+- Named the Product Owner approver and recorded the approval date for this
+  partial manifest approval.
+- Kept every non-Brand prototype placeholder unapproved and explicitly
+  non-versioned.
 
 ## Artifact update gate
 

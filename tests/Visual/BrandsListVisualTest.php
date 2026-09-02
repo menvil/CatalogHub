@@ -37,6 +37,6 @@ final class BrandsListVisualTest extends TestCase
 
         self::assertCount(2, $references);
         self::assertSame(['1440x1000', '390x844'], array_column($references, 'viewport'));
-        self::assertSame(['brands-list-v1', 'brands-list-v1'], array_column($references, 'fixture'));
+        self::assertSame(['brands-list-v2', 'brands-list-v2'], array_column($references, 'fixture'));
     }
 }

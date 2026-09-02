@@ -128,9 +128,9 @@ parameters:
                 status: approved
             -
                 class: App\Queries\CentralCatalog\CentralBrandCategoryCoverageQuery
-                ownerMethods: [forBrand]
+                ownerMethods: [forBrand, countsForBrands]
                 methods: [selectRaw]
-                reason: 'Derived Brand coverage requires one portable grouped product count over direct Category assignments.'
+                reason: 'Derived Brand coverage requires portable grouped product and distinct Category counts over direct Category assignments.'
                 bindings: literal_only
                 behaviorTests: [tests/Feature/Queries/CentralBrandCategoryCoverageQueryTest.php]
                 status: approved

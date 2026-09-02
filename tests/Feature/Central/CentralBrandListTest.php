@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Central;
 
 use App\Data\CentralCatalog\BrandListFiltersData;
+use App\Data\CentralCatalog\CentralBrandListRow;
 use App\Enums\CentralBrandStatus;
 use App\Enums\Permission;
 use App\Enums\UserRole;
@@ -29,6 +30,10 @@ final class CentralBrandListTest extends TestCase
         $filters = new BrandListFiltersData(
             search: null,
             status: null,
+            countryId: null,
+            categoryCoverage: null,
+            translation: null,
+            quality: null,
             sort: 'status',
             direction: 'asc',
             perPage: 2,
@@ -63,8 +68,8 @@ final class CentralBrandListTest extends TestCase
             ->assertSee('data-admin-status-badge="success"', false)
             ->assertSee('Brands')
             ->assertSee('Manage brand profiles, product associations, media assets, and localization across your catalog.')
-            ->assertSeeInOrder(['Brand', 'Status', 'Updated', 'Actions'])
-            ->assertSee('Add Brand')
+            ->assertSeeInOrder(['Brand', 'Category Coverage', 'Products', 'Status', 'Translation Coverage', 'Logo Health', 'Updated', 'Actions'])
+            ->assertSee('New Brand')
             ->assertSee('href="'.route('central.brands.create', absolute: false).'"', false)
             ->assertSee('Samsung')
             ->assertSee('samsung')
@@ -75,6 +80,9 @@ final class CentralBrandListTest extends TestCase
             ->assertSee('View')
             ->assertSee('href="'.route('central.brands.edit', $brand, absolute: false).'"', false)
             ->assertSee('Edit')
+            ->assertDontSee('Import Brands')
+            ->assertDontSee('>Sites<', false)
+            ->assertDontSee('type="checkbox"', false)
             ->assertDontSee('href="https://www.samsung.com/global/long-path"', false);
     }
 
@@ -195,7 +203,7 @@ final class CentralBrandListTest extends TestCase
             $response = $this->get(route('central.brands.index', ['per_page' => (string) $perPage]))
                 ->assertOk();
 
-            /** @var LengthAwarePaginator<int, CentralBrand> $brands */
+            /** @var LengthAwarePaginator<int, CentralBrandListRow> $brands */
             $brands = $response->viewData('brands');
 
             $this->assertSame($perPage, $brands->perPage());
@@ -212,9 +220,13 @@ final class CentralBrandListTest extends TestCase
             ->assertSee('data-ui-screen-state="empty"', false)
             ->assertSee('No brands yet')
             ->assertSee('Create the first canonical brand in the central catalog.')
-            ->assertSee('Add Brand')
+            ->assertSee('New Brand')
             ->assertSee('href="'.$createUrl.'"', false)
-            ->assertSeeInOrder(['No brands yet', 'Add Brand']);
+            ->assertSeeInOrder(['No brands yet', 'New Brand']);
+
+        $emptyResponse = $this->get(route('central.brands.index'));
+        $emptyResponse->assertSeeInOrder(['Total Brands', '0', 'Active', '0', 'With Logos', '0']);
+        $emptyResponse->assertDontSee('NaN');
 
         CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
 
@@ -233,7 +245,7 @@ final class CentralBrandListTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->get(route('central.brands.index'))
             ->assertOk()
-            ->assertSee('Add Brand')
+            ->assertSee('New Brand')
             ->assertSee('View')
             ->assertSee('Edit')
             ->assertSee('href="'.route('central.brands.show', $brand, absolute: false).'"', false)
@@ -285,10 +297,14 @@ final class CentralBrandListTest extends TestCase
 
         $this->get(route('central.brands.index', [
             'status' => 'deleted',
+            'country' => 999999,
+            'coverage' => 'manual',
+            'translation' => 'published',
+            'quality' => 'needs_review',
             'sort' => 'normalized_name_hash',
             'direction' => 'sideways',
             'per_page' => 1000,
         ]))
-            ->assertSessionHasErrors(['status', 'sort', 'direction', 'per_page']);
+            ->assertSessionHasErrors(['status', 'country', 'coverage', 'translation', 'quality', 'sort', 'direction', 'per_page']);
     }
 }

@@ -8,6 +8,7 @@ use App\Models\MediaAssignment;
 use App\Services\Media\MediaVariantProfile;
 use App\Services\Media\MediaVariantSpecificationRegistry;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 final readonly class CentralBrandMediaQuery
 {
@@ -31,6 +32,45 @@ final readonly class CentralBrandMediaQuery
             ->orderBy('position')
             ->orderBy('id')
             ->first();
+    }
+
+    /**
+     * @param  Collection<int, CentralBrand>  $brands
+     * @return Collection<int, MediaAssignment>
+     */
+    public function primaryLogoAssignmentsFor(Collection $brands): Collection
+    {
+        $brandIds = $brands
+            ->map(static fn (CentralBrand $brand): int => (int) $brand->getKey())
+            ->values()
+            ->all();
+
+        if ($brandIds === []) {
+            return collect();
+        }
+
+        return MediaAssignment::query()
+            ->where('entity_type', MediaAssignment::ENTITY_TYPE_CENTRAL_BRAND)
+            ->whereIn('entity_id', $brandIds)
+            ->where('role', MediaAssignment::ROLE_BRAND_LOGO)
+            ->whereNull('locale')
+            ->whereNull('site_id')
+            ->whereNull('market_id')
+            ->where('is_primary', true)
+            ->where('visibility', 'global')
+            ->with(['asset.variants' => function ($query): void {
+                $query
+                    ->whereIn('variant_type', $this->brandLogoVariantNames())
+                    ->whereNull('locale')
+                    ->whereNull('site_id')
+                    ->whereNull('market_id');
+            }])
+            ->orderBy('entity_id')
+            ->orderBy('position')
+            ->orderBy('id')
+            ->get()
+            ->unique(static fn (MediaAssignment $assignment): int => (int) $assignment->entity_id)
+            ->keyBy(static fn (MediaAssignment $assignment): int => (int) $assignment->entity_id);
     }
 
     /** @return Builder<MediaAssignment> */

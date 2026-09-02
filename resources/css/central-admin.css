@@ -48,7 +48,7 @@
 .brand-list-page {
     display: grid;
     min-width: 0;
-    gap: 1.5rem;
+    gap: 1.25rem;
 }
 
 .brand-list-heading p {
@@ -62,26 +62,80 @@
     gap: 1rem;
 }
 
+.brand-list-metrics {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.brand-list-metric {
+    display: grid;
+    min-width: 0;
+    min-height: 8rem;
+    align-content: space-between;
+    border: 1px solid var(--color-admin-border);
+    border-radius: 0.875rem;
+    background: var(--color-admin-surface);
+    padding: 1rem;
+    box-shadow: var(--shadow-admin-card);
+}
+
+.brand-list-metric-label {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    color: var(--color-admin-text);
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.brand-list-metric-icon {
+    display: inline-flex;
+    width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-admin-primary) 10%, transparent);
+    color: var(--color-admin-primary);
+}
+
+.brand-list-metric--success .brand-list-metric-icon { background: var(--color-admin-success-soft); color: var(--color-admin-success); }
+.brand-list-metric--info .brand-list-metric-icon { background: var(--color-admin-info-soft); color: var(--color-admin-info); }
+.brand-list-metric--danger .brand-list-metric-icon { background: var(--color-admin-danger-soft); color: var(--color-admin-danger); }
+.brand-list-metric--warning .brand-list-metric-icon { background: var(--color-admin-warning-soft); color: var(--color-admin-warning); }
+
+.brand-list-metric > strong {
+    color: var(--color-admin-text);
+    font-size: 1.65rem;
+    line-height: 1.8rem;
+}
+
+.brand-list-metric-detail {
+    color: var(--color-admin-muted);
+    font-size: 0.75rem;
+}
+
 .brand-list-surface {
     min-width: 0;
     max-width: 100%;
     border: 1px solid var(--color-admin-border);
-    border-radius: 0.75rem;
+    border-radius: 0.875rem;
     background: var(--color-admin-surface);
     box-shadow: var(--shadow-admin-card);
 }
 
 .brand-list-filters {
     display: grid;
-    grid-template-columns: minmax(16rem, 30rem) minmax(11rem, 14rem);
-    gap: 1rem;
+    grid-template-columns: minmax(18rem, 2fr) repeat(5, minmax(8rem, 1fr));
+    gap: 0.75rem;
     align-items: end;
     border-bottom: 1px solid var(--color-admin-border);
-    padding: 1rem 1rem 1.5rem;
+    padding: 1rem;
 }
 
 .brand-list-search,
-.brand-list-status {
+.brand-list-filter {
     position: relative;
     min-width: 0;
 }
@@ -126,17 +180,33 @@
     color: var(--color-admin-muted);
 }
 
-.brand-list-status [data-ui-select-trigger] {
+.brand-list-filter [data-ui-select-trigger] {
     min-height: 2.5rem;
 }
 
 .brand-list-search input:focus,
 .brand-list-pagination a:focus-visible,
-.brand-list-status [data-ui-select-trigger]:focus-visible,
+.brand-list-filter [data-ui-select-trigger]:focus-visible,
 .brand-list-per-page [data-ui-select-trigger]:focus-visible {
     border-color: var(--color-admin-primary);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-admin-primary) 18%, transparent);
     outline: none;
+}
+
+.brand-list-active-filters {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--color-admin-border);
+    padding: 0.625rem 1rem;
+    color: var(--color-admin-muted);
+    font-size: 0.75rem;
+}
+
+.brand-list-active-filters a {
+    color: var(--color-admin-primary);
+    font-weight: 600;
 }
 
 .brand-list-error {
@@ -156,11 +226,23 @@
 }
 
 .brand-list-table {
-    min-width: 34rem;
+    min-width: 67rem;
     width: 100%;
     border-collapse: collapse;
     text-align: left;
     font-size: 0.875rem;
+}
+
+.brand-list-table th,
+.brand-list-table td {
+    padding: 0.75rem;
+    vertical-align: middle;
+}
+
+.brand-list-table th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
 .brand-list-table .brand-list-muted {
@@ -178,6 +260,50 @@
     color: var(--color-admin-text);
 }
 
+.brand-list-identity {
+    display: flex;
+    min-width: 11rem;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.brand-list-logo {
+    display: inline-flex;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex: 0 0 2.75rem;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid var(--color-admin-border);
+    border-radius: 0.65rem;
+    background: var(--color-admin-surface-muted);
+    color: var(--color-admin-muted);
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.brand-list-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 0.25rem;
+}
+
+.brand-list-identity-copy {
+    display: block;
+    min-width: 0;
+}
+
+.brand-list-identity-copy > strong,
+.brand-list-company {
+    display: block;
+    max-width: 13rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .brand-list-slug {
     display: block;
     margin-top: 0.125rem;
@@ -186,6 +312,60 @@
     font-weight: 400;
     line-height: 1rem;
 }
+
+.brand-list-company {
+    margin-top: 0.125rem;
+    color: var(--color-admin-muted);
+    font-size: 0.6875rem;
+}
+
+.brand-list-count,
+.brand-list-media-health,
+.brand-list-neutral {
+    color: var(--color-admin-muted);
+    font-size: 0.8125rem;
+}
+
+.brand-list-numeric {
+    font-variant-numeric: tabular-nums;
+}
+
+.brand-list-translation-cell {
+    min-width: 9rem;
+}
+
+.brand-list-coverage {
+    display: grid;
+    grid-template-columns: 2.25rem minmax(3rem, 1fr);
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.375rem;
+    font-size: 0.75rem;
+}
+
+.brand-list-progress {
+    display: block;
+    height: 0.25rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--color-admin-surface-muted);
+}
+
+.brand-list-progress > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--color-admin-success);
+}
+
+.brand-list-media-health {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.brand-list-media-health.is-ready { color: var(--color-admin-success); }
+.brand-list-media-health.is-unavailable { color: var(--color-admin-warning); }
 
 .brand-list-table [data-admin-status-badge] {
     display: flex;
@@ -229,11 +409,65 @@
     font-weight: 600;
 }
 
-.brand-list-status [data-ui-select-trigger],
-.brand-list-status [data-ui-select-menu],
+.brand-list-filter [data-ui-select-trigger],
+.brand-list-filter [data-ui-select-menu],
 .brand-list-per-page [data-ui-select-trigger],
 .brand-list-per-page [data-ui-select-menu] {
     background: var(--color-admin-surface);
+}
+
+.admin-row-actions-menu {
+    position: relative;
+}
+
+.admin-row-actions-menu > summary {
+    display: inline-flex;
+    width: 2.25rem;
+    height: 2.25rem;
+    list-style: none;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-admin-border);
+    border-radius: var(--radius-admin-input);
+    color: var(--color-admin-text);
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.admin-row-actions-menu > summary::-webkit-details-marker { display: none; }
+
+.admin-row-actions-menu > summary:hover,
+.admin-row-actions-menu[open] > summary { background: var(--color-admin-surface-muted); }
+
+.admin-row-actions-menu > div {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    right: 0;
+    z-index: 30;
+    min-width: 8rem;
+    overflow: hidden;
+    border: 1px solid var(--color-admin-border);
+    border-radius: var(--radius-admin-input);
+    background: var(--color-admin-surface);
+    padding: 0.25rem;
+    box-shadow: var(--shadow-admin-modal);
+}
+
+.admin-row-actions-menu > div > a,
+.admin-row-actions-menu > div > button {
+    display: block;
+    width: 100%;
+    border-radius: 0.375rem;
+    padding: 0.55rem 0.75rem;
+    text-align: left;
+}
+
+.admin-row-actions-menu > div > a:hover,
+.admin-row-actions-menu > div > button:hover,
+.admin-row-actions-menu > div > a:focus,
+.admin-row-actions-menu > div > button:focus {
+    background: var(--color-admin-surface-muted);
+    outline: none;
 }
 
 .admin-unit-select [data-ui-select-trigger] {
@@ -273,8 +507,16 @@
 }
 
 @media (width < 64rem) {
+    .brand-list-metrics {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
     .brand-list-filters {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .brand-list-search {
+        grid-column: 1 / -1;
     }
 
     .brand-list-pagination {
@@ -296,6 +538,26 @@
         flex-direction: column;
     }
 
+    .brand-list-heading > a { width: 100%; }
+
+    .brand-list-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .brand-list-metric {
+        min-height: 6.75rem;
+        padding: 0.75rem;
+    }
+
+    .brand-list-metric:first-child {
+        grid-column: 1 / -1;
+    }
+
+    .brand-list-metric > strong {
+        font-size: 1.375rem;
+    }
+
     .brand-list-filters,
     .brand-list-pagination {
         grid-template-columns: minmax(0, 1fr);
@@ -313,5 +575,71 @@
     .brand-list-pages {
         max-width: 100%;
         overflow-x: auto;
+    }
+
+    .brand-list-table {
+        min-width: 0;
+        table-layout: fixed;
+    }
+
+    .brand-list-table thead {
+        display: none;
+    }
+
+    .brand-list-table tbody,
+    .brand-list-table tr {
+        display: block;
+    }
+
+    .brand-list-table tr {
+        position: relative;
+        padding: 0.875rem 3.25rem 0.875rem 0.875rem;
+    }
+
+    .brand-list-table td {
+        display: block;
+        width: 100%;
+        padding: 0;
+    }
+
+    .brand-list-table .brand-list-col-secondary {
+        display: none;
+    }
+
+    .brand-list-identity {
+        min-width: 0;
+    }
+
+    .brand-list-identity-copy > strong,
+    .brand-list-company {
+        max-width: 13.5rem;
+    }
+
+    .brand-list-status-cell {
+        margin-top: 0.625rem;
+    }
+
+    .brand-list-translation-cell {
+        display: flex !important;
+        min-width: 0;
+        align-items: center;
+        gap: 0.625rem;
+        margin-top: 0.5rem;
+    }
+
+    .brand-list-coverage {
+        width: 7rem;
+        margin-bottom: 0;
+    }
+
+    .brand-list-actions-cell {
+        position: absolute;
+        top: 0.875rem;
+        right: 0.875rem;
+        width: auto !important;
+    }
+
+    .brand-list-empty {
+        padding: 1rem !important;
     }
 }

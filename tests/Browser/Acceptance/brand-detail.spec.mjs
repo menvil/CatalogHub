@@ -62,7 +62,9 @@ test('CA-012 supports list, detail, edit, and detail navigation', async ({ page 
     await signIn(page, 'central', foundationDemo.centralAdmin)
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
     await page.goto('/admin/central/brands?q=Samsung')
-    await page.locator(`[data-row-id="${activeBrandId}"]`).getByRole('link', { name: 'View', exact: true }).click()
+    const activeBrandRow = page.locator(`[data-row-id="${activeBrandId}"]`)
+    await activeBrandRow.locator('summary[aria-label^="Open actions for row"]').click()
+    await activeBrandRow.getByRole('menuitem', { name: 'View', exact: true }).click()
 
     await expect(page).toHaveURL(new RegExp(`/admin/central/brands/${activeBrandId}$`))
     await expect(page.locator('[data-screen-id="CA-012"]')).toContainText('Samsung')

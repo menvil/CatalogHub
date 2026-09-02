@@ -81,6 +81,45 @@ final class CentralBrandCategoryCoverageQueryTest extends TestCase
         self::assertStringContainsString('group by', strtolower($queries[0]['query']));
     }
 
+    public function test_page_counts_are_distinct_grouped_and_exclude_archived_or_uncategorized_products(): void
+    {
+        $first = CentralBrand::factory()->create();
+        $second = CentralBrand::factory()->create();
+        $categoryA = $this->category('Cameras');
+        $categoryB = $this->category('Lenses');
+        CentralProduct::factory()->count(2)->create([
+            'central_brand_id' => $first->id,
+            'central_category_id' => $categoryA->id,
+            'status' => CentralProductStatus::Active,
+        ]);
+        CentralProduct::factory()->create([
+            'central_brand_id' => $first->id,
+            'central_category_id' => $categoryB->id,
+            'status' => CentralProductStatus::Draft,
+        ]);
+        CentralProduct::factory()->create([
+            'central_brand_id' => $first->id,
+            'central_category_id' => $categoryB->id,
+            'status' => CentralProductStatus::Archived,
+        ]);
+        CentralProduct::factory()->create([
+            'central_brand_id' => $second->id,
+            'central_category_id' => null,
+            'status' => CentralProductStatus::Active,
+        ]);
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $counts = app(CentralBrandCategoryCoverageQuery::class)->countsForBrands(collect([$first, $second]));
+        $queries = DB::getQueryLog();
+        DB::disableQueryLog();
+
+        self::assertCount(1, $queries);
+        self::assertSame(2, $counts->get($first->id));
+        self::assertFalse($counts->has($second->id));
+        self::assertStringContainsString('count(distinct', strtolower($queries[0]['query']));
+    }
+
     private function category(string $name, CentralCategoryStatus $status = CentralCategoryStatus::Active): CentralCategory
     {
         return CentralCategory::factory()->create([

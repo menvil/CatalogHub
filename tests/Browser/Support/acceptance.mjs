@@ -1,4 +1,6 @@
 import { expect } from '@playwright/test'
+import { execFileSync } from 'node:child_process'
+import { resolve } from 'node:path'
 
 export const foundationDemo = Object.freeze({
     password: 'cataloghub-foundation-demo',
@@ -40,4 +42,32 @@ export async function captureAcceptanceScreenshot(page, testInfo, name) {
     const path = testInfo.outputPath(`${name}.png`)
     await page.screenshot({ path, fullPage: true })
     await testInfo.attach(name, { path, contentType: 'image/png' })
+}
+
+export function resetBrowserFixture() {
+    const port = Number.parseInt(process.env.CATALOGHUB_BROWSER_PORT ?? '', 10)
+
+    if (![8014, 8015].includes(port)) {
+        throw new Error('The deterministic browser fixture requires the Browser harness port.')
+    }
+
+    const root = resolve(import.meta.dirname, '../../..')
+    const database = resolve(root, `storage/logs/browser-harness-${port}.sqlite`)
+
+    execFileSync('php', ['tests/Browser/Support/bootstrap.php'], {
+        cwd: root,
+        env: {
+            ...process.env,
+            APP_ENV: 'testing',
+            APP_KEY: 'base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+            APP_URL: `http://127.0.0.1:${port}`,
+            DB_CONNECTION: 'sqlite',
+            DB_DATABASE: database,
+            DB_URL: '',
+            CACHE_STORE: 'array',
+            QUEUE_CONNECTION: 'sync',
+            SESSION_DRIVER: 'file',
+        },
+        stdio: 'pipe',
+    })
 }

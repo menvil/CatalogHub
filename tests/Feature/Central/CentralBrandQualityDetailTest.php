@@ -82,7 +82,58 @@ final class CentralBrandQualityDetailTest extends TestCase
             ->assertOk()
             ->assertSee('German (de-DE) translation is missing')
             ->assertDontSee('href="'.route('central.brands.translations.edit', [$brand, $locale->code], absolute: false).'"', false)
+            ->assertDontSee('Review translations')
             ->assertSee('href="'.route('central.brands.edit', $brand, absolute: false).'"', false);
+    }
+
+    public function test_translation_summary_counts_each_active_locale_once_without_persisted_counters(): void
+    {
+        $brand = CentralBrand::factory()->active()->create(['name' => 'Mixed Translation Brand']);
+        $locales = collect([
+            ['en-US', 'English'],
+            ['de-DE', 'German'],
+            ['fr-FR', 'French'],
+            ['bg-BG', 'Bulgarian'],
+            ['ms-MY', 'Malay'],
+        ])->map(fn (array $locale): Locale => Locale::factory()->create([
+            'code' => $locale[0],
+            'name' => $locale[1],
+            'is_active' => true,
+        ]));
+        $statuses = [
+            TranslationStatus::Approved,
+            TranslationStatus::HumanReviewed,
+            TranslationStatus::MachineTranslated,
+            TranslationStatus::Outdated,
+        ];
+
+        foreach ($statuses as $index => $status) {
+            BrandTranslation::factory()->create([
+                'brand_id' => $brand->id,
+                'locale_id' => $locales[$index]->id,
+                'locale' => $locales[$index]->code,
+                'status' => $status,
+            ]);
+        }
+
+        $response = $this->actingAs(User::factory()->centralAdmin()->create())
+            ->get(route('central.brands.show', $brand))
+            ->assertOk()
+            ->assertSee('data-screen-region="translation-summary"', false)
+            ->assertSee('3 of 5 active locales complete')
+            ->assertSee('Approved 1')
+            ->assertSee('Reviewed 1')
+            ->assertSee('Machine 1')
+            ->assertSee('Missing 1')
+            ->assertSee('Outdated 1')
+            ->assertSee('Review translations');
+
+        $summary = $response->viewData('translationSummary');
+        self::assertSame(5, $summary->total);
+        self::assertSame(3, $summary->complete());
+        self::assertSame(60, $summary->score());
+        self::assertFalse(Schema::hasColumn('central_brands', 'translation_count'));
+        self::assertFalse(Schema::hasColumn('central_brands', 'translation_coverage'));
     }
 
     public function test_archived_brand_quality_renders_without_changing_lifecycle(): void

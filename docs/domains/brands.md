@@ -37,7 +37,7 @@ The current direct Parent Company relation is `central_brand_ownerships`. Its Br
 
 Assign, replace, create-and-assign, and clear lock the Brand and exact ownership context, mutate and audit in one transaction, and emit no write or Audit event for a same-owner no-op. Database uniqueness remains the final concurrent invariant. Ownership uses `catalog.brands.manage`; no standalone Organization CRUD or `organizations.manage` permission exists.
 
-Ownership is contextual metadata, not quality. It does not change Draft/Active/Archived lifecycle, activation/archive/restore eligibility, translation source hashes/status/approval, Media, or Site/public projection state. Phase 17 may consume this relation as read-only CA-012 context without defining another owner model.
+Ownership is contextual metadata, not quality. It does not change Draft/Active/Archived lifecycle, activation/archive/restore eligibility, translation source hashes/status/approval, Media, or Site/public projection state. Phase 17 consumes the eager-loaded relation as prominent read-only CA-012 identity context without defining another owner model; ownership mutation remains on CA-013.
 
 ## Localized, media, classification, and provenance data
 
@@ -50,6 +50,8 @@ Phase 14 confirms only the global canonical `brand_logo` role. Its exact assignm
 ## Derived quality and completeness
 
 `CentralBrandQualityEvaluator` is the authoritative Brand quality contract. Quality is computed on read from canonical profile fields, the exact global primary `brand_logo` assignment and usable Shared Media delivery, plus one check for each active Locale's `BrandTranslation`. It is never stored on `central_brands`, cached in JSON, timestamped, recalculated by a job, or written to Audit.
+
+CA-012 Phase 17 also derives a compact translation-health summary from the same bounded active-Locale and Brand-translation result sets: Approved, Human reviewed, Machine translated, Missing, and Outdated counts plus their completion percentage. An absent active-Locale row is Missing. This is a read-model projection only and introduces neither counters nor per-locale queries.
 
 The equally weighted base checks are country, website, founded year, support URL **or** contact email, primary color, and usable global primary logo. Each active Locale adds one equally weighted translation check; inactive Locales add none. An absent translation or shared `Missing` status is missing, `Outdated` requires attention, and only `MachineTranslated`, `HumanReviewed`, or `Approved` is complete. The integer score is `round(completed applicable checks / total applicable checks × 100, PHP_ROUND_HALF_UP)`. See `docs/architecture/brand-quality.md` for stable issue codes and exact destinations.
 

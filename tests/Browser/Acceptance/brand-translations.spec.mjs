@@ -25,8 +25,10 @@ test('CA-012 and CA-015 complete the persisted Brand translation review workflow
     await page.goto(`/admin/central/brands/${samsungBrandId}`)
 
     const quality = page.locator('[data-screen-region="quality-completeness"]')
-    await expect(quality).toContainText('German (de-DE) translation is missing')
-    await quality.locator(`a[href$="/brands/${samsungBrandId}/translations/de-DE"]`).click()
+    const issues = page.locator('[data-screen-region="quality-issues"]')
+    await expect(quality.locator('[data-screen-region="translation-summary"]')).toContainText('0 of 4 active locales complete')
+    await expect(issues).toContainText('German (de-DE) translation is missing')
+    await issues.locator(`a[href$="/brands/${samsungBrandId}/translations/de-DE"]`).click()
 
     await expect(page).toHaveURL(new RegExp(`/admin/central/brands/${samsungBrandId}/translations/de-DE$`))
     await expect(page.locator('[data-screen-id="CA-015"]')).toBeVisible()
@@ -48,8 +50,8 @@ test('CA-012 and CA-015 complete the persisted Brand translation review workflow
     await expect(page.getByLabel('Translation metadata and activity').getByText(foundationDemo.centralAdmin)).toBeVisible()
 
     await page.getByRole('tab', { name: 'Overview', exact: true }).click()
-    await expect(quality).not.toContainText('German (de-DE) translation is missing')
-    await expect(quality).not.toContainText('German (de-DE) translation is outdated')
+    await expect(issues).not.toContainText('German (de-DE) translation is missing')
+    await expect(issues).not.toContainText('German (de-DE) translation is outdated')
 
     await page.goto(`/admin/central/brands/${samsungBrandId}/translations/de-DE`)
     await page.getByRole('button', { name: 'Mark outdated', exact: true }).click()
@@ -58,14 +60,14 @@ test('CA-012 and CA-015 complete the persisted Brand translation review workflow
     await expect(page.getByText('Marked outdated', { exact: true })).toBeVisible()
 
     await page.getByRole('tab', { name: 'Overview', exact: true }).click()
-    await expect(quality).toContainText('German (de-DE) translation is outdated')
+    await expect(issues).toContainText('German (de-DE) translation is outdated')
 
     await page.goto(`/admin/central/brands/${samsungBrandId}/translations/de-DE`)
     await page.getByLabel('Tagline').fill('Korrigierte Technologie für jeden')
     await page.locator('#status').selectOption('human_reviewed')
     await page.locator('#brand-translation-form').getByRole('button', { name: 'Save translation', exact: true }).click()
     await page.getByRole('tab', { name: 'Overview', exact: true }).click()
-    await expect(quality).not.toContainText('German (de-DE) translation is outdated')
+    await expect(issues).not.toContainText('German (de-DE) translation is outdated')
 
     expect(dialogs).toEqual([])
     assertNoPageErrors()

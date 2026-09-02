@@ -11,5 +11,6 @@ final readonly class CentralBrandQualityReadModelData
     public function __construct(
         public CentralBrandQualitySummary $summary,
         public BrandLogoPresentation $logo,
+        public CentralBrandTranslationSummary $translations,
     ) {}
 }

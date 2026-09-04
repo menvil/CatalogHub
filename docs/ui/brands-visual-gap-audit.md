@@ -1,8 +1,8 @@
 # Brands visual gap audit — CA-011…CA-015
 
-Audit date: 2026-09-01. Baseline: `develop` at `03f9ad8` after Brands Phase 16. Prototype reference version: `brand-prototype-v1`.
+Audit date: 2026-09-02. Baseline: `develop` at `8e51ab9` after Brands Phase 17. Prototype reference version: `brand-prototype-v1`.
 
-This audit compares the original Brand prototypes with the Phase 16 desktop implementation and its responsive mobile composition. The PNGs in `pictures/1. Central Admin/1.3. Brands/` are the design source; `tests/Visual/baselines/` are regression evidence only. Every row is classified once: **A** implement from an approved domain source, **B** map prototype language to existing semantics, **C** intentional future-domain gap, or **D** pure composition/visual debt.
+This audit compares the original Brand prototypes with the current desktop implementation and its responsive mobile composition. The PNGs in `pictures/1. Central Admin/1.3. Brands/` are the design source; `tests/Visual/baselines/` are regression evidence only. Every row is classified once: **A** implement from an approved domain source, **B** map prototype language to existing semantics, **C** intentional future-domain gap, or **D** pure composition/visual debt. Phase 18.1 closes the eligible CA-011 A/B/D work.
 
 ## Prototype references
 
@@ -18,18 +18,18 @@ The five files match the filenames and dimensions recorded by the original scree
 
 ## CA-011 — Brands List
 
-Phase 16 desktop is a conventional title/filter/table page; mobile bounds the table but retains a wide-table interaction. The prototype is a denser operating dashboard with summary metrics, stronger Brand identity rows, and more scan-oriented filters.
+Phase 18.1 converges CA-011 into a dense operating dashboard while retaining approved domain boundaries. Desktop now follows the prototype's header → metrics → filters → operational table → pagination hierarchy; mobile uses stacked operational rows without page-level overflow.
 
-| Prototype region | Current desktop / mobile equivalent | Domain source | Gap | Phase | Notes |
+| Prototype region | Final desktop / mobile equivalent | Domain source | Decision | Phase | Notes |
 |---|---|---|---|---|---|
-| Total, Active and review summary cards | No summary band; mobile also starts directly with filters | `CentralBrand`, lifecycle counts, derived Brand Quality | A | Phase 18 | Add bounded aggregate cards; map review to Quality rather than status. |
-| `Needs Review` | Quality is available on detail, not as a list status | `CentralBrandQualitySummary` semantics | B | Phase 18 | Label must be `Needs attention`; never add `CentralBrandStatus`. |
-| Logo-led Brand rows | Name/slug table row without the prototype's identity weight | Shared Media `brand_logo` | A | Phase 18 | Add bounded logo selection and preserve honest missing/unavailable states. |
-| Product and category context | Product count exists; category coverage is absent from the list | Derived Products and grouped Product→Category coverage | A | Phase 18 | Use grouped aggregates, never stored counters or manual Brand categories. |
-| Translation health | No compact locale-health column | Active Locales + `BrandTranslation.status` and source hash | A | Phase 18 | Grouped read only; terminology follows common translation states. |
-| Lifecycle filter/status | Lifecycle filter and badge exist but visual density differs | Draft / Active / Archived | D | Phase 18 | Match the prototype's compact scan rhythm without new lifecycle values. |
-| Rich search/filter/action composition | Simpler filters and larger whitespace | Existing search, lifecycle and create actions | D | Phase 18 | Recompose at 1440 and adapt controls for 390 rather than scaling down. |
-| Media/site coverage and Published/Synced columns | No equivalent | Future SiteBrand/projection and unsupported media roles | C | Deferred | Must not be synthesized from lifecycle or the single global logo. |
+| Total, Active and review summary cards | Five real KPI cards, responsive 5/3/2 grid | `CentralBrand`, lifecycle counts, derived Brand Quality | Implemented (A) | Phase 18.1 | Active/Logo/Missing/Needs attention percentages use current total; no fake trends. |
+| `Needs Review` | Dedicated Quality column with score and state | `CentralBrandQualityEvaluator` | Adapted (B) | Phase 18.1 | Label is `Needs attention`; lifecycle and translation remain separate. |
+| Logo-led Brand rows | Larger wordmark-safe canonical logo/fallback, name, slug and optional Parent Company | exact Shared Media `brand_logo`; Organization ownership | Implemented (A) | Phase 18.1 | Ready needs no technical label; missing uses a fallback and unavailable gets a compact warning. |
+| Product and category context | Grouped Product count and distinct Category coverage columns | non-archived Products and direct Categories | Implemented (A) | Phase 18.1 | No counters or manual Brand categories are stored. |
+| Translation health | Active-Locale percentage, progress and Missing/Outdated reason | `BrandTranslation.status` + active Locales | Implemented (A) | Phase 18.1 | Complete statuses are MachineTranslated/HumanReviewed/Approved; absent/Missing and Outdated are distinct incomplete reasons. |
+| Lifecycle filter/status | Dense Draft/Active/Archived badge and filter | `CentralBrandStatus` | Converged (D) | Phase 18.1 | No review/publication values added. |
+| Rich search/filter/action composition | Name/slug/company search; consistent Country, coverage, translation and quality filters; one global Clear; overflow actions | approved read model and routes | Converged (D) | Phase 18.1 | Explicit 6/3/2/1 control grids prevent intermediate-width overflow; query state persists through sort/page/per-page and history. |
+| Media/site coverage and Published/Synced columns | No numeric Media or technical Logo Health column; Sites/publication remain absent | exact logo contract; future SiteBrand/projection | Adapted/deferred (B/C) | Phase 18.1 / Deferred | Canonical logo state is integrated into identity; unsupported concepts are not synthesized. |
 
 ## CA-012 — Brand Detail
 
@@ -101,15 +101,18 @@ Phase 17 implements only CA-012 A/B/D rows. It introduces no migration or persis
 
 Intentional divergences are architectural: lifecycle remains Draft/Active/Archived; Quality remains Complete/Needs attention; ownership remains a single Organization relation; translations remain `BrandTranslation`; media remains the one global primary `brand_logo`; Published/Synced/Sites, additional media roles and field provenance remain future concerns.
 
-## Phase 18 bounded backlog
+## Phase 18.1 CA-011 convergence decision
+
+CA-011 A/B/D work is closed. The final screen uses the original prototype—not the former regression baseline—as its hierarchy and density target. The reviewed result has five database-derived KPIs, a six-control operational filter bar with one global Clear, larger logo-led identity rows, grouped Product and Category context, explainable active-Locale translation coverage, a separate authoritative Quality column, overflow actions, and bounded pagination. The `1440x1000`, `1024x900`, `768x1024`, and `390x844` references were reviewed against the original and pre-polish Phase 18.1 result before their `brands-list-v3` baselines were approved.
+
+Intentional differences remain explicit: Sites requires a future Site Brand projection; `Needs Review` is derived `Needs attention`; Language/Market is active-Locale Translation; numeric Media is omitted because only canonical logo identity has an approved contract; checkboxes wait for an approved bulk workflow; monthly trends wait for historical analytics; and the global shell remains outside screen ownership. The stable Imports destination is Product-oriented, so no misleading Brand import action is shown.
+
+## Remaining bounded backlog
 
 Only A/B/D work is eligible. Category C rows above are explicitly excluded.
 
 | Screen | Prototype region / class | Exact acceptance target |
 |---|---|---|
-| CA-011 | Summary metrics and review mapping (A/B) | At 1440, render bounded Total/Active/Needs attention aggregates above the table; at 390, keep metrics and filters readable without page overflow. |
-| CA-011 | Identity, product/category/translation rows (A) | Add grouped logo, real product/category counts and translation health without per-row queries or stored counters. |
-| CA-011 | Filter/table density (D) | Match the prototype's compact scan hierarchy and action placement while retaining accessible responsive table behavior. |
 | CA-013 | Canonical form and ownership composition (A/D) | Recompose existing fields and Organization picker into prototype-like desktop proportions; preserve current validation, persistence and mobile field order. |
 | CA-013 | Tags/save semantics mapping (B) | If Tags are surfaced, reuse the existing editorial tag action; label save actions without publication semantics. |
 | CA-014 | Primary-logo workspace (A/D) | Increase identity/preview hierarchy, compact real asset metadata and strengthen missing/unavailable states on desktop and mobile using only `brand_logo`. |

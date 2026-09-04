@@ -2,20 +2,25 @@
 
 | Field | Value |
 | --- | --- |
-| Manifest version | 1.0.0 |
-| Status | Proposed; artifact versioning incomplete |
+| Manifest version | 1.1.0 |
+| Status | Partially approved; Brand prototype artifacts versioned |
 | Owner | CatalogHub Product Owner |
-| Approver | `TBD — approver must be named` |
-| Approval date | `TBD — YYYY-MM-DD` |
-| Acceptance mode | Semantic/manual for MVP; strict pixel diff is not required |
+| Approver | menvil (CatalogHub Product Owner) |
+| Approval date | 2026-09-01 |
+| Acceptance mode | Semantic/manual for MVP; immutable versions identify source artifacts and do not require strict pixel diff |
 
 ## Reproducibility status
 
-The CA/SA PNGs listed below exist in the working copy under `pictures/`, but
-that directory is not committed in the current MR baseline. Therefore every
-SHA-256 is intentionally marked **REQUIRED BEFORE IMPLEMENTATION — NOT
-VERSIONED**. Native dimensions were read from the local files and are inventory
-evidence only.
+The five Brand prototypes CA-011 through CA-015 are committed at their listed
+`pictures/1. Central Admin/1.3. Brands/` paths and are reproducible immutable
+references for `brand-prototype-v1`. Their SHA-256 values and native dimensions
+identify the exact approved source artifacts.
+
+The remaining CA/SA PNGs may exist only in the working copy under `pictures/`;
+they are not committed in this manifest version. Their SHA-256 entries therefore
+remain **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED**, and their native
+dimensions are inventory evidence only. Versioning the five Brand files does not
+approve or make the other local prototype files reproducible.
 
 Before a screen work package starts, its approved PNG must be committed (or
 placed in an approved immutable artifact store), its SHA-256 recorded here, and
@@ -49,6 +54,12 @@ result, and deviations by severity. Semantic acceptance checks surface,
 navigation, context, hierarchy, visible states, data density, component family,
 and primary actions. It is not a pixel-diff percentage.
 
+`immutable prototype brand-prototype-v1` is an artifact identity and integrity
+label for CA-011 through CA-015. It means the committed file and recorded digest
+are the fixed prototype source used during manual comparison. Those rows still
+use the semantic/manual MVP acceptance procedure above; the label does not
+introduce strict pixel-diff acceptance.
+
 ## Central Admin and Site Admin references
 
 | Screen ID | Filename | SHA-256 | Native width | Native height | Intended viewport | Locale | Seed scenario | Visual acceptance mode |
@@ -63,11 +74,11 @@ and primary actions. It is not a pixel-diff percentage.
 | CA-008 | `pictures/1. Central Admin/1.2. Products/CA-008 — Product Translations.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-008-POPULATED` | semantic/manual MVP |
 | CA-009 | `pictures/1. Central Admin/1.2. Products/CA-009 — Product Version History.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-009-POPULATED` | semantic/manual MVP |
 | CA-010 | `pictures/1. Central Admin/1.2. Products/CA-010 — Product Data Quality View.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-010-POPULATED` | semantic/manual MVP |
-| CA-011 | `pictures/1. Central Admin/1.3. Brands/CA-011 — Brands List.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-011-POPULATED` | semantic/manual MVP |
-| CA-012 | `pictures/1. Central Admin/1.3. Brands/CA-012 — Brand Detail.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-012-POPULATED` | semantic/manual MVP |
-| CA-013 | `pictures/1. Central Admin/1.3. Brands/CA-013 — Brand Create:Edit.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-013-POPULATED` | semantic/manual MVP |
-| CA-014 | `pictures/1. Central Admin/1.3. Brands/CA-014 — Brand Media : Logo.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-014-POPULATED` | semantic/manual MVP |
-| CA-015 | `pictures/1. Central Admin/1.3. Brands/CA-015 — Brand Translations.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-015-POPULATED` | semantic/manual MVP |
+| CA-011 | `pictures/1. Central Admin/1.3. Brands/CA-011 — Brands List.png` | `7750e8cb470c3ee1dd58c3cf95c30c9d6636ad4e05ef76aa4050b72bedf6354b` | 1448 | 1086 | 1448×1086 | en | `VR-CA-011-POPULATED` | immutable prototype `brand-prototype-v1` |
+| CA-012 | `pictures/1. Central Admin/1.3. Brands/CA-012 — Brand Detail.png` | `b1e3e71386e41d79e9f5fed1904ec9ba77a8cf291a1c04a5b01a3fd3bdf6f4de` | 1448 | 1086 | 1448×1086 | en | `VR-CA-012-POPULATED` | immutable prototype `brand-prototype-v1` |
+| CA-013 | `pictures/1. Central Admin/1.3. Brands/CA-013 — Brand Create:Edit.png` | `ed3c038a940ae44f10a95ec49ae58a3be3b9c2ce65b0522abe4c26f351dd68af` | 1448 | 1086 | 1448×1086 | en | `VR-CA-013-POPULATED` | immutable prototype `brand-prototype-v1` |
+| CA-014 | `pictures/1. Central Admin/1.3. Brands/CA-014 — Brand Media : Logo.png` | `79973a4c00b177e49d3f5401e5e4fab122a2e4c0d803953b72998584f42dc1e1` | 1448 | 1086 | 1448×1086 | en | `VR-CA-014-POPULATED` | immutable prototype `brand-prototype-v1` |
+| CA-015 | `pictures/1. Central Admin/1.3. Brands/CA-015 — Brand Translations.png` | `cf129080993a2aa03dd4dfbfa5cf824ef6da5c68d23be52b7275063ab05ce66b` | 1448 | 1086 | 1448×1086 | en | `VR-CA-015-POPULATED` | immutable prototype `brand-prototype-v1` |
 | CA-016 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-016 — Categories List.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-016-POPULATED` | semantic/manual MVP |
 | CA-017 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-017 — Category Detail.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-017-POPULATED` | semantic/manual MVP |
 | CA-018 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-018 — Category Create:Edit.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-018-POPULATED` | semantic/manual MVP |
@@ -224,6 +235,18 @@ existed.
 | PUB-023 | **REQUIRED BEFORE IMPLEMENTATION: `PUB-023.png`** | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | TBD | TBD | 375×812 (to approve) | en | `VR-PUB-023-POPULATED` | semantic/manual MVP |
 | PUB-046 | **REQUIRED BEFORE IMPLEMENTATION: `PUB-046.png`** | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | TBD | TBD | 1440×900 (to approve) | en | `VR-PUB-046-POPULATED` | semantic/manual MVP |
 | PUB-057 | **REQUIRED BEFORE IMPLEMENTATION: `PUB-057.png`** | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | TBD | TBD | 1440×900 (to approve) | en | `VR-PUB-057-POPULATED` | semantic/manual MVP |
+
+## Changelog
+
+### 1.1.0 — 2026-09-01
+
+- Approved and versioned the exact CA-011 through CA-015 Brand prototype files
+  as `brand-prototype-v1`, with SHA-256, dimensions, viewport, locale and seed
+  scenario recorded in their manifest rows.
+- Named the Product Owner approver and recorded the approval date for this
+  partial manifest approval.
+- Kept every non-Brand prototype placeholder unapproved and explicitly
+  non-versioned.
 
 ## Artifact update gate
 

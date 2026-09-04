@@ -99,12 +99,15 @@ class DetectOutdatedTranslationsActionTest extends TestCase
         $hashService = app(TranslationSourceHashService::class);
         $brand = CentralBrand::factory()->create(['name' => 'Samsung', 'slug' => 'samsung']);
         $locale = Locale::factory()->create(['code' => 'de-DE']);
+        $approver = User::factory()->create();
         $translation = BrandTranslation::factory()->create([
             'brand_id' => $brand->id,
             'locale_id' => $locale->id,
             'locale' => $locale->code,
             'source_hash' => $hashService->forBrand($brand),
             'status' => TranslationStatus::Approved,
+            'approved_at' => now(),
+            'approved_by_user_id' => $approver->id,
         ]);
 
         $brand->update([
@@ -119,7 +122,10 @@ class DetectOutdatedTranslationsActionTest extends TestCase
 
         $brand->update(['name' => 'Samsung Electronics']);
         $this->assertSame(1, app(DetectOutdatedTranslationsAction::class)->handle($brand));
-        $this->assertSame(TranslationStatus::Outdated, $translation->fresh()->status);
+        $translation->refresh();
+        $this->assertSame(TranslationStatus::Outdated, $translation->status);
+        $this->assertNull($translation->approved_at);
+        $this->assertNull($translation->approved_by_user_id);
     }
 
     public function test_brand_tag_changes_do_not_participate_in_translation_source_hash(): void

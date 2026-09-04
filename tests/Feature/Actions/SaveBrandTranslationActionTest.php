@@ -6,15 +6,20 @@ namespace Tests\Feature\Actions;
 
 use App\Actions\Translations\SaveBrandTranslationAction;
 use App\Data\Translations\BrandTranslationInput;
+use App\Enums\AuditAction;
 use App\Enums\TranslationStatus;
+use App\Models\AuditLogEntry;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\Locale;
 use App\Models\Translations\BrandTranslation;
 use App\Models\User;
 use App\Queries\Translations\BrandTranslationEditorQuery;
 use App\Services\Translations\TranslationSourceHashService;
+use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 final class SaveBrandTranslationActionTest extends TestCase
@@ -114,6 +119,93 @@ final class SaveBrandTranslationActionTest extends TestCase
         $this->assertSame(1, BrandTranslation::query()->count());
     }
 
+    public function test_true_no_op_does_not_touch_the_row_or_create_audit_noise(): void
+    {
+        CarbonImmutable::setTestNow('2026-08-30 10:00:00 UTC');
+        $actor = User::factory()->create();
+        $brand = CentralBrand::factory()->create();
+        $locale = Locale::factory()->create(['code' => 'de-DE']);
+        $action = app(SaveBrandTranslationAction::class);
+        $created = $action->handle($actor, $brand, $locale, $this->input());
+        $createdAt = $created->getRawOriginal('updated_at');
+
+        CarbonImmutable::setTestNow('2026-08-30 10:00:02 UTC');
+        $saved = $action->handle($actor, $brand, $locale, $this->input());
+
+        $this->assertTrue($created->is($saved));
+        $this->assertSame($createdAt, $saved->getRawOriginal('updated_at'));
+        $this->assertSame(1, $this->savedAuditQuery($brand)->count());
+    }
+
+    public function test_editing_approved_copy_invalidates_approval_without_stale_attribution(): void
+    {
+        $approver = User::factory()->create();
+        $editor = User::factory()->create();
+        $brand = CentralBrand::factory()->create();
+        $locale = Locale::factory()->create(['code' => 'de-DE']);
+        $translation = BrandTranslation::factory()->create([
+            'brand_id' => $brand->id,
+            'locale_id' => $locale->id,
+            'locale' => $locale->code,
+            'name' => 'Samsung',
+            'tagline' => 'Technology for everyone',
+            'short_description' => 'Localized summary',
+            'description' => 'Localized description',
+            'seo_title' => 'Samsung localized',
+            'seo_description' => 'Samsung products',
+            'status' => TranslationStatus::Approved,
+            'source_hash' => app(TranslationSourceHashService::class)->forBrand($brand),
+            'approved_at' => now(),
+            'approved_by_user_id' => $approver->id,
+        ]);
+
+        $updated = app(SaveBrandTranslationAction::class)->handle(
+            $editor,
+            $brand,
+            $locale,
+            $this->input(name: 'Samsung Deutschland', status: TranslationStatus::Approved),
+        );
+
+        $this->assertTrue($translation->is($updated));
+        $this->assertSame(TranslationStatus::HumanReviewed, $updated->status);
+        $this->assertNull($updated->approved_at);
+        $this->assertNull($updated->approved_by_user_id);
+        $this->assertContains('status', AuditLogEntry::query()->latest('id')->firstOrFail()->after_json['changed_fields']);
+    }
+
+    public function test_unchanged_approved_save_preserves_approval_but_direct_approval_is_rejected(): void
+    {
+        $approver = User::factory()->create();
+        $brand = CentralBrand::factory()->create();
+        $locale = Locale::factory()->create(['code' => 'de-DE']);
+        $approvedAt = now()->subDay();
+        BrandTranslation::factory()->create([
+            'brand_id' => $brand->id,
+            'locale_id' => $locale->id,
+            'locale' => $locale->code,
+            'name' => 'Samsung',
+            'tagline' => 'Technology for everyone',
+            'short_description' => 'Localized summary',
+            'description' => 'Localized description',
+            'seo_title' => 'Samsung localized',
+            'seo_description' => 'Samsung products',
+            'status' => TranslationStatus::Approved,
+            'source_hash' => app(TranslationSourceHashService::class)->forBrand($brand),
+            'approved_at' => $approvedAt,
+            'approved_by_user_id' => $approver->id,
+        ]);
+
+        $saved = app(SaveBrandTranslationAction::class)->handle(User::factory()->create(), $brand, $locale, $this->input(status: TranslationStatus::Approved));
+        $this->assertSame(TranslationStatus::Approved, $saved->status);
+        $this->assertSame($approver->id, $saved->approved_by_user_id);
+        $this->assertSame($approvedAt->format('Y-m-d H:i:s'), $saved->getRawOriginal('approved_at'));
+        $this->assertSame(0, $this->savedAuditQuery($brand)->count());
+
+        $newLocale = Locale::factory()->create(['code' => 'fr-FR']);
+        $this->expectException(ValidationException::class);
+        app(SaveBrandTranslationAction::class)->handle(User::factory()->create(), $brand, $newLocale, $this->input(status: TranslationStatus::Approved));
+    }
+
     private function input(
         string $name = 'Samsung',
         ?string $tagline = 'Technology for everyone',
@@ -129,5 +221,14 @@ final class SaveBrandTranslationActionTest extends TestCase
             seoDescription: $seoDescription,
             status: $status,
         );
+    }
+
+    /** @return Builder<AuditLogEntry> */
+    private function savedAuditQuery(CentralBrand $brand): Builder
+    {
+        return AuditLogEntry::query()
+            ->where('action', AuditAction::CatalogBrandTranslationSaved->value)
+            ->where('subject_type', $brand->getMorphClass())
+            ->where('subject_id', (string) $brand->getKey());
     }
 }

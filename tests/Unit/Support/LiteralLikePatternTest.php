@@ -16,6 +16,13 @@ final class LiteralLikePatternTest extends TestCase
         $this->assertSame($expected, LiteralLikePattern::containing($value));
     }
 
+    #[Test]
+    #[DataProvider('prefixPatterns')]
+    public function it_escapes_prefix_like_metacharacters_as_literals(string $value, string $expected): void
+    {
+        $this->assertSame($expected, LiteralLikePattern::startingWith($value));
+    }
+
     /** @return iterable<string, array{string, string}> */
     public static function patterns(): iterable
     {
@@ -23,5 +30,14 @@ final class LiteralLikePatternTest extends TestCase
         yield 'percent' => ['100%', '%100!%%'];
         yield 'underscore' => ['model_name', '%model!_name%'];
         yield 'escape character' => ['wow!', '%wow!!%'];
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function prefixPatterns(): iterable
+    {
+        yield 'plain' => ['monitor', 'monitor%'];
+        yield 'percent' => ['100%', '100!%%'];
+        yield 'underscore' => ['model_name', 'model!_name%'];
+        yield 'escape character' => ['wow!', 'wow!!%'];
     }
 }

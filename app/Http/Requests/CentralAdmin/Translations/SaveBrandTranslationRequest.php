@@ -27,19 +27,17 @@ final class SaveBrandTranslationRequest extends SaveTranslationRequest
     public function brandTranslationInput(): BrandTranslationInput
     {
         $data = $this->validated();
-        $name = $data['name'] ?? null;
         $status = $data['status'] ?? TranslationStatus::HumanReviewed->value;
 
-        assert(is_string($name));
         assert(is_string($status));
 
         return new BrandTranslationInput(
-            name: trim($name),
-            tagline: $this->nullableTrimmedString($data, 'tagline'),
-            shortDescription: $this->nullableTrimmedString($data, 'short_description'),
-            description: $this->nullableTrimmedString($data, 'description'),
-            seoTitle: $this->nullableTrimmedString($data, 'seo_title'),
-            seoDescription: $this->nullableTrimmedString($data, 'seo_description'),
+            name: $this->string('name')->trim()->toString(),
+            tagline: $this->nullableTrimmedString('tagline'),
+            shortDescription: $this->nullableTrimmedString('short_description'),
+            description: $this->nullableTrimmedString('description'),
+            seoTitle: $this->nullableTrimmedString('seo_title'),
+            seoDescription: $this->nullableTrimmedString('seo_description'),
             status: TranslationStatus::from($status),
         );
     }
@@ -54,16 +52,9 @@ final class SaveBrandTranslationRequest extends SaveTranslationRequest
             : null;
     }
 
-    /** @param array<string, mixed> $data */
-    private function nullableTrimmedString(array $data, string $key): ?string
+    private function nullableTrimmedString(string $key): ?string
     {
-        $value = $data[$key] ?? null;
-
-        if (! is_string($value)) {
-            return null;
-        }
-
-        $value = trim($value);
+        $value = $this->string($key)->trim()->toString();
 
         return $value === '' ? null : $value;
     }

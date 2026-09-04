@@ -43,4 +43,20 @@ final class SearchableSelectTest extends TestCase
         $this->assertStringContainsString('value=""', $html);
         $this->assertStringContainsString('No matching options.', $html);
     }
+
+    public function test_component_supports_bounded_server_side_search_without_embedding_the_directory(): void
+    {
+        $html = Blade::render(
+            '<x-ui.form.searchable-select id="organization" name="organization_id" label="Organization" :options="[]" :remote="\'/organizations/search\'" />',
+        );
+
+        $this->assertStringContainsString('data-search-url="/organizations/search"', $html);
+        $this->assertStringContainsString('data-ui-searchable-select-loading', $html);
+        $this->assertStringContainsString('data-ui-searchable-select-status', $html);
+        $this->assertStringContainsString('role="status"', $html);
+        $this->assertStringContainsString('aria-live="polite"', $html);
+        $this->assertStringContainsString('data-empty-message="No matching options."', $html);
+        $this->assertStringContainsString('data-error-message="Unable to load options."', $html);
+        $this->assertSame(1, substr_count($html, '<option'));
+    }
 }

@@ -11,6 +11,8 @@ use App\Http\Requests\CentralAdmin\CentralBrandFormRequest;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\User;
 use App\Queries\CentralCatalog\CentralBrandMediaQuery;
+use App\Queries\CentralCatalog\CentralBrandOwnershipQuery;
+use App\Queries\CentralCatalog\OrganizationSearchQuery;
 use App\Services\Geography\CountryOptionProvider;
 use App\Services\Media\BrandLogoPresenter;
 use Illuminate\Contracts\View\View;
@@ -41,11 +43,17 @@ final class CentralBrandFormController extends Controller
         CountryOptionProvider $countries,
         CentralBrandMediaQuery $media,
         BrandLogoPresenter $logos,
+        OrganizationSearchQuery $organizations,
+        CentralBrandOwnershipQuery $ownerships,
     ): View {
+        $brand = $ownerships->loadForEditor($brand);
+        $owner = $brand->ownership?->organization;
+
         return view('central-admin.brands.edit', [
             'brand' => $brand,
             'countryOptions' => $countries->options($brand->country_id, app()->getLocale()),
             'logo' => $logos->forDetail($media->logoFor($brand)),
+            'organizationOptions' => $owner === null ? [] : [$organizations->option($owner)],
         ]);
     }
 

@@ -7,6 +7,7 @@ use App\Http\Controllers\CentralAdmin\CentralBrandFormController;
 use App\Http\Controllers\CentralAdmin\CentralBrandLifecycleController;
 use App\Http\Controllers\CentralAdmin\CentralBrandListController;
 use App\Http\Controllers\CentralAdmin\CentralBrandMediaController;
+use App\Http\Controllers\CentralAdmin\CentralBrandOwnershipController;
 use App\Http\Controllers\CentralAdmin\CentralBrandTagsController;
 use App\Http\Controllers\CentralAdmin\CentralBrandTranslationController;
 use App\Http\Controllers\CentralAdmin\DesignSystem\ComponentGalleryController;
@@ -53,6 +54,14 @@ Route::middleware(['auth', EnsureCentralAdminAccess::class])
                 ->name('central.brands.edit');
             Route::patch('/brands/{brand}', [CentralBrandFormController::class, 'update'])
                 ->name('central.brands.update');
+            Route::get('/brands/{brand}/ownership/organizations', [CentralBrandOwnershipController::class, 'search'])
+                ->name('central.brands.ownership.organizations.search');
+            Route::post('/brands/{brand}/ownership', [CentralBrandOwnershipController::class, 'assign'])
+                ->name('central.brands.ownership.assign');
+            Route::post('/brands/{brand}/ownership/organization', [CentralBrandOwnershipController::class, 'create'])
+                ->name('central.brands.ownership.create');
+            Route::delete('/brands/{brand}/ownership', [CentralBrandOwnershipController::class, 'clear'])
+                ->name('central.brands.ownership.clear');
             Route::post('/brands/{brand}/activate', [CentralBrandLifecycleController::class, 'activate'])
                 ->name('central.brands.activate');
             Route::post('/brands/{brand}/archive', [CentralBrandLifecycleController::class, 'archive'])
@@ -82,6 +91,12 @@ Route::middleware(['auth', EnsureCentralAdminAccess::class])
             Route::post('/brands/{brand}/translations/{locale:code}', [CentralBrandTranslationController::class, 'save'])
                 ->withoutScopedBindings()
                 ->name('central.brands.translations.save');
+            Route::post('/brands/{brand}/translations/{locale:code}/approve', [CentralBrandTranslationController::class, 'approve'])
+                ->withoutScopedBindings()
+                ->name('central.brands.translations.approve');
+            Route::post('/brands/{brand}/translations/{locale:code}/outdated', [CentralBrandTranslationController::class, 'markOutdated'])
+                ->withoutScopedBindings()
+                ->name('central.brands.translations.outdated');
 
             Route::get('/products/{product}/translations/{locale}', [TranslationEditorController::class, 'editProduct'])
                 ->name('central.products.translations.edit');

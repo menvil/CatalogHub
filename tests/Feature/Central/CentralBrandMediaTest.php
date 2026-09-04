@@ -186,6 +186,12 @@ final class CentralBrandMediaTest extends TestCase
             ->assertOk()
             ->assertSee('The assignment exists, but neither a ready semantic variant nor the normalized master can be delivered.')
             ->assertDontSee('No canonical logo assigned');
+
+        $this->get(route('central.brands.show', $brand))
+            ->assertOk()
+            ->assertSee('data-logo-delivery-state="unavailable"', false)
+            ->assertSee('A logo is assigned, but no usable file is currently available.')
+            ->assertDontSee('>No logo<', false);
     }
 
     public function test_removing_a_missing_canonical_logo_reports_a_no_op(): void
@@ -450,6 +456,12 @@ final class CentralBrandMediaTest extends TestCase
             ->assertSee('brand_logo_256')
             ->assertSee('data-logo-delivery-state="processing"', false)
             ->assertDontSee('<img', false);
+
+        $this->get(route('central.brands.show', $brand))
+            ->assertOk()
+            ->assertSee('data-logo-delivery-state="processing"', false)
+            ->assertSee('The assigned logo is still processing.')
+            ->assertDontSee('>No logo<', false);
     }
 
     private function gifBytes(): string

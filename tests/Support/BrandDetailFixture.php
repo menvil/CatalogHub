@@ -6,20 +6,23 @@ namespace Tests\Support;
 
 use App\Enums\CentralProductStatus;
 use App\Models\CentralCatalog\CentralBrand;
+use App\Models\CentralCatalog\CentralBrandOwnership;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Imports\CentralBrandExternalIdentity;
 use App\Models\Imports\ImportSource;
 use App\Models\MediaAsset;
 use App\Models\MediaAssignment;
+use App\Models\Organization;
 use App\Support\Imports\ExternalIdentityNormalizer;
+use App\Support\Normalization\OrganizationNameNormalizer;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 
 final class BrandDetailFixture
 {
-    public const VERSION = 'brand-detail-v5';
+    public const VERSION = 'brand-detail-v6';
 
     public const ACTIVE_BRAND_ID = 20;
 
@@ -53,6 +56,26 @@ final class BrandDetailFixture
             'contact_email' => 'support@example.com',
             'primary_color' => '#1428A0',
             'updated_at' => CarbonImmutable::parse('2026-07-26T09:00:00Z'),
+        ])->saveOrFail();
+
+        $normalizedParentCompanyName = OrganizationNameNormalizer::search('Samsung Electronics Co., Ltd.');
+        $parentCompany = new Organization;
+        $parentCompany->forceFill([
+            'id' => 120100,
+            'name' => 'Samsung Electronics Co., Ltd.',
+            'normalized_name' => $normalizedParentCompanyName,
+            'normalized_name_prefix' => OrganizationNameNormalizer::prefixForNormalizedName($normalizedParentCompanyName),
+            'created_at' => CarbonImmutable::parse('2026-08-12T10:00:00Z'),
+            'updated_at' => CarbonImmutable::parse('2026-08-12T10:00:00Z'),
+        ])->saveOrFail();
+
+        $ownership = new CentralBrandOwnership;
+        $ownership->forceFill([
+            'id' => 120100,
+            'central_brand_id' => $activeBrand->getKey(),
+            'organization_id' => $parentCompany->getKey(),
+            'created_at' => CarbonImmutable::parse('2026-08-12T10:00:00Z'),
+            'updated_at' => CarbonImmutable::parse('2026-08-12T10:00:00Z'),
         ])->saveOrFail();
 
         $archivedBrand->forceFill([

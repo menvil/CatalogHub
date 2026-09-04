@@ -107,6 +107,7 @@ final class SyncCentralBrandTagsActionTest extends TestCase
             array_map(static fn (int $index): string => "Tag {$index}", range(1, 21)),
             ['   '],
             ["Line\nBreak"],
+            ["Invalid\xC3\x28"],
             [str_repeat('x', 81)],
         ] as $invalidTags) {
             try {

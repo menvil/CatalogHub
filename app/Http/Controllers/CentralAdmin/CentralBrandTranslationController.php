@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\CentralAdmin;
 
+use App\Actions\Translations\ApproveBrandTranslationAction;
+use App\Actions\Translations\MarkBrandTranslationOutdatedAction;
 use App\Actions\Translations\SaveBrandTranslationAction;
 use App\Data\Translations\BrandTranslationEditorData;
 use App\Http\Controllers\Controller;
@@ -14,6 +16,7 @@ use App\Models\User;
 use App\Queries\Translations\BrandTranslationEditorQuery;
 use App\Services\Translations\AllowedTranslationStatuses;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 final class CentralBrandTranslationController extends Controller
@@ -60,6 +63,38 @@ final class CentralBrandTranslationController extends Controller
             ->with('success', 'Translation saved.');
     }
 
+    public function approve(
+        Request $request,
+        CentralBrand $brand,
+        Locale $locale,
+        ApproveBrandTranslationAction $action,
+    ): RedirectResponse {
+        abort_unless($locale->is_active, 404);
+        $actor = $request->user();
+        assert($actor instanceof User);
+        $action->handle($actor, $brand, $locale);
+
+        return redirect()
+            ->route('central.brands.translations.edit', [$brand, $locale->code])
+            ->with('success', 'Translation approved.');
+    }
+
+    public function markOutdated(
+        Request $request,
+        CentralBrand $brand,
+        Locale $locale,
+        MarkBrandTranslationOutdatedAction $action,
+    ): RedirectResponse {
+        abort_unless($locale->is_active, 404);
+        $actor = $request->user();
+        assert($actor instanceof User);
+        $action->handle($actor, $brand, $locale);
+
+        return redirect()
+            ->route('central.brands.translations.edit', [$brand, $locale->code])
+            ->with('success', 'Translation marked outdated.');
+    }
+
     private function view(BrandTranslationEditorData $editor, AllowedTranslationStatuses $statuses): View
     {
         return view('central-admin.brands.translations', [
@@ -69,6 +104,9 @@ final class CentralBrandTranslationController extends Controller
             'translationsByLocale' => $editor->translationsByLocale,
             'selectedLocale' => $editor->selectedLocale,
             'translation' => $editor->translation,
+            'currentSourceHash' => $editor->currentSourceHash,
+            'sourceHashMatches' => $editor->sourceHashMatches,
+            'activity' => $editor->activity,
             'statusOptions' => $statuses->optionsFor($editor->translation),
         ]);
     }

@@ -22,9 +22,26 @@
             ? ($currentDirection === 'desc' ? 'descending' : 'ascending')
             : 'none';
         $percent = static fn (int $value): string => number_format($summary->percentage($value) ?? 0, 1).'% of total';
+        $activeFilterCount = collect([
+            $filters->search,
+            $filters->countryId,
+            $filters->status,
+            $filters->categoryCoverage,
+            $filters->translation,
+            $filters->quality,
+        ])->filter(fn ($value) => $value !== null)->count();
+        $clearFilterQuery = [];
+        if (request()->filled('sort')) {
+            $clearFilterQuery['sort'] = request('sort');
+            $clearFilterQuery['direction'] = request('direction', 'asc');
+        }
+        if (request()->filled('per_page')) {
+            $clearFilterQuery['per_page'] = request('per_page');
+        }
+        $clearFiltersUrl = route('central.brands.index', $clearFilterQuery, absolute: false);
     @endphp
 
-    <div class="brand-list-page" data-screen-id="CA-011" data-fixture-version="brands-list-v2">
+    <div class="brand-list-page" data-screen-id="CA-011" data-fixture-version="brands-list-v3">
         <header class="brand-list-heading">
             <div class="min-w-0">
                 <h1 class="text-foundation-heading font-semibold text-admin-text">Brands</h1>
@@ -65,7 +82,7 @@
                 </div>
 
                 <div class="brand-list-filter brand-list-filter--country">
-                    <x-ui.form.searchable-select id="brand-country" name="country" label="Country" placeholder="All countries" search-placeholder="Search countries…" :options="$countryOptions" :selected="request('country')" clearable data-brand-list-submit />
+                    <x-ui.form.searchable-select id="brand-country" name="country" label="Country" placeholder="All countries" search-placeholder="Search countries…" :options="$countryOptions" :selected="request('country')" data-brand-list-submit />
                 </div>
                 <div class="brand-list-filter">
                     <x-ui.form.select id="brand-status" name="status" label="Status" placeholder="All" :options="$statusOptions" :selected="request('status')" data-brand-list-submit />
@@ -86,19 +103,9 @@
             </form>
 
             @if ($filters->hasConstraints())
-                @php
-                    $activeFilterCount = collect([
-                        $filters->search,
-                        $filters->countryId,
-                        $filters->status,
-                        $filters->categoryCoverage,
-                        $filters->translation,
-                        $filters->quality,
-                    ])->filter(fn ($value) => $value !== null)->count();
-                @endphp
-                <div class="brand-list-active-filters">
+                <div class="brand-list-active-filters" data-brand-active-filter-count="{{ $activeFilterCount }}">
                     <span>{{ $activeFilterCount }} active {{ str('filter')->plural($activeFilterCount) }}</span>
-                    <a href="{{ route('central.brands.index', absolute: false) }}">Clear filters</a>
+                    <a href="{{ $clearFiltersUrl }}">Clear filters</a>
                 </div>
             @endif
 
@@ -116,7 +123,7 @@
                             <th scope="col" class="brand-list-col-secondary" aria-sort="{{ $ariaSort('products') }}"><a href="{{ $sortUrl('products') }}" class="brand-list-sort">Products <span aria-hidden="true">{{ $currentSort === 'products' ? ($currentDirection === 'asc' ? '↑' : '↓') : '↕' }}</span></a></th>
                             <th scope="col" aria-sort="{{ $ariaSort('status') }}"><a href="{{ $sortUrl('status') }}" class="brand-list-sort">Status <span aria-hidden="true">{{ $currentSort === 'status' ? ($currentDirection === 'asc' ? '↑' : '↓') : '↕' }}</span></a></th>
                             <th scope="col">Translation Coverage</th>
-                            <th scope="col" class="brand-list-col-secondary">Logo Health</th>
+                            <th scope="col">Quality</th>
                             <th scope="col" class="brand-list-col-secondary" aria-sort="{{ $ariaSort('updated_at') }}"><a href="{{ $sortUrl('updated_at') }}" class="brand-list-sort">Updated <span aria-hidden="true">{{ $currentSort === 'updated_at' ? ($currentDirection === 'asc' ? '↑' : '↓') : '↕' }}</span></a></th>
                             <th scope="col" class="text-right">Actions</th>
                         </tr>
@@ -134,20 +141,24 @@
                                 $translationScore = $row->health->translations->total > 0 ? $row->health->translations->score() : null;
                                 $quality = $row->health->summary;
                                 $logoState = $row->health->logo->state;
-                                $logoLabel = match ($logoState) {
-                                    \App\Enums\MediaDeliveryState::Ready => 'Logo ready',
-                                    \App\Enums\MediaDeliveryState::Missing => 'Missing',
-                                    default => 'Unavailable',
-                                };
+                                $translationBreakdown = array_values(array_filter([
+                                    $row->health->translations->missing > 0 ? number_format($row->health->translations->missing).' missing' : null,
+                                    $row->health->translations->outdated > 0 ? number_format($row->health->translations->outdated).' outdated' : null,
+                                ]));
                             @endphp
                             <tr data-row-id="{{ $brand->getKey() }}">
                                 <td class="brand-list-brand-cell">
                                     <div class="brand-list-identity">
-                                        <span class="brand-list-logo" data-logo-state="{{ $logoState->value }}">
-                                            @if ($row->health->logo->url)
-                                                <img src="{{ $row->health->logo->url }}" alt="" loading="lazy">
-                                            @else
-                                                <span aria-hidden="true">{{ mb_strtoupper(mb_substr($brand->name, 0, 1)) }}</span>
+                                        <span class="brand-list-logo-shell">
+                                            <span @class(['brand-list-logo', 'has-logo' => $row->health->logo->url !== null]) data-logo-state="{{ $logoState->value }}">
+                                                @if ($row->health->logo->url)
+                                                    <img src="{{ $row->health->logo->url }}" alt="" loading="lazy">
+                                                @else
+                                                    <span aria-hidden="true">{{ mb_strtoupper(mb_substr($brand->name, 0, 1)) }}</span>
+                                                @endif
+                                            </span>
+                                            @if (! in_array($logoState, [\App\Enums\MediaDeliveryState::Ready, \App\Enums\MediaDeliveryState::Missing], true))
+                                                <span class="brand-list-logo-warning" title="Logo unavailable"><x-ui.icon name="exclamation-triangle" decorative size="sm" /><span class="sr-only">Logo unavailable</span></span>
                                             @endif
                                         </span>
                                         <span class="brand-list-identity-copy">
@@ -159,8 +170,8 @@
                                         </span>
                                     </div>
                                 </td>
-                                <td class="brand-list-col-secondary"><span class="brand-list-count">{{ $row->categoryCount > 0 ? trans_choice(':count category|:count categories', $row->categoryCount, ['count' => number_format($row->categoryCount)]) : 'No coverage' }}</span></td>
-                                <td class="brand-list-col-secondary"><strong class="brand-list-numeric">{{ number_format((int) $brand->products_count) }}</strong></td>
+                                <td class="brand-list-category-cell" data-mobile-label="Categories"><span class="brand-list-count">{{ $row->categoryCount > 0 ? trans_choice(':count category|:count categories', $row->categoryCount, ['count' => number_format($row->categoryCount)]) : 'No coverage' }}</span></td>
+                                <td class="brand-list-products-cell" data-mobile-label="Products"><strong class="brand-list-numeric">{{ number_format((int) $brand->products_count) }}</strong></td>
                                 <td class="brand-list-status-cell"><x-ui.status-badge :label="$status->label()" :tone="$statusTone" size="sm" /></td>
                                 <td class="brand-list-translation-cell">
                                     @if ($translationScore === null)
@@ -171,10 +182,17 @@
                                             <span class="brand-list-progress" role="progressbar" aria-label="{{ $brand->name }} translation coverage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $translationScore }}"><span style="width: {{ $translationScore }}%"></span></span>
                                         </div>
                                     @endif
-                                    <x-ui.status-badge :label="$quality->state->label()" :tone="$quality->state->badgeVariant()" size="sm" data-brand-quality="{{ $quality->state->value }}" />
+                                    @if ($translationBreakdown !== [])
+                                        <span class="brand-list-translation-breakdown" data-brand-translation-breakdown>{{ implode(' · ', $translationBreakdown) }}</span>
+                                    @endif
                                 </td>
-                                <td class="brand-list-col-secondary"><span @class(['brand-list-media-health', 'is-ready' => $logoState === \App\Enums\MediaDeliveryState::Ready, 'is-unavailable' => ! in_array($logoState, [\App\Enums\MediaDeliveryState::Ready, \App\Enums\MediaDeliveryState::Missing], true)])><x-ui.icon name="photo" size="sm" /> {{ $logoLabel }}</span></td>
-                                <td class="brand-list-col-secondary brand-list-muted"><time datetime="{{ $brand->updated_at?->toAtomString() }}">{{ $brand->updated_at?->diffForHumans() }}</time></td>
+                                <td class="brand-list-quality-cell">
+                                    <div class="brand-list-quality">
+                                        <strong>{{ $quality->score }}%</strong>
+                                        <x-ui.status-badge :label="$quality->state->label()" :tone="$quality->state->badgeVariant()" size="sm" data-brand-quality="{{ $quality->state->value }}" />
+                                    </div>
+                                </td>
+                                <td class="brand-list-updated-cell brand-list-muted"><time datetime="{{ $brand->updated_at?->toAtomString() }}">{{ $brand->updated_at?->diffForHumans() }}</time></td>
                                 <td class="brand-list-actions-cell">
                                     <x-admin.row-actions :row-id="$brand->getKey()" display="menu" :actions="[
                                         ['label' => 'View', 'url' => route('central.brands.show', $brand, absolute: false)],
@@ -186,7 +204,7 @@
                             <tr>
                                 <td colspan="8" class="brand-list-empty p-4 text-admin-muted">
                                     @if ($filters->hasConstraints())
-                                        <x-ui.states.filtered-empty id="brands-filtered-empty" title="No matching brands" message="No brands match the current search and filters." :clear-url="route('central.brands.index', absolute: false)" />
+                                        <x-ui.states.filtered-empty id="brands-filtered-empty" title="No matching brands" message="No brands match the current search and filters." :clear-url="$clearFiltersUrl" />
                                     @else
                                         <x-ui.states.empty id="brands-empty" title="No brands yet" message="Create the first canonical brand in the central catalog." action-label="New Brand" :action-url="route('central.brands.create', absolute: false)" />
                                     @endif

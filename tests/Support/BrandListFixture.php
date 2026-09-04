@@ -24,7 +24,7 @@ use RuntimeException;
 
 final class BrandListFixture
 {
-    public const VERSION = 'brands-list-v2';
+    public const VERSION = 'brands-list-v3';
 
     /** @return Collection<int, CentralBrand> */
     public static function create(): Collection
@@ -109,6 +109,7 @@ final class BrandListFixture
                 self::assignLogo($brands->get($slug), 181000 + $offset);
             }
         }
+        self::assignUnavailableLogo($brands->get('benq'), 181099);
 
         $activeLocales = Locale::query()->active()->orderBy('position')->orderBy('code')->get();
         foreach ($activeLocales as $locale) {
@@ -160,7 +161,8 @@ final class BrandListFixture
             throw new RuntimeException('BrandListFixture logo Brand is missing.');
         }
 
-        $bytes = (string) file_get_contents(base_path('tests/Fixtures/media/brand-logo-a.png')).$brand->slug;
+        $fixture = in_array($brand->slug, ['anker', 'asus', 'canon'], true) ? 'brand-logo-b.png' : 'brand-logo-a.png';
+        $bytes = (string) file_get_contents(base_path('tests/Fixtures/media/'.$fixture)).$brand->slug;
         $path = "media/originals/ca-011-{$brand->slug}.png";
         Storage::disk('public')->put($path, $bytes);
         $asset = new MediaAsset;
@@ -177,6 +179,45 @@ final class BrandListFixture
             'width' => 320,
             'height' => 160,
             'checksum' => 'sha256:'.hash('sha256', $bytes),
+            'status' => 'active',
+            'created_at' => CarbonImmutable::parse('2026-08-01T09:00:00Z'),
+            'updated_at' => CarbonImmutable::parse('2026-08-01T09:00:00Z'),
+        ])->saveOrFail();
+        MediaAssignment::factory()->create([
+            'id' => $id,
+            'media_asset_id' => $asset->getKey(),
+            'entity_type' => MediaAssignment::ENTITY_TYPE_CENTRAL_BRAND,
+            'entity_id' => $brand->getKey(),
+            'role' => MediaAssignment::ROLE_BRAND_LOGO,
+            'position' => 0,
+            'locale' => null,
+            'site_id' => null,
+            'market_id' => null,
+            'is_primary' => true,
+            'visibility' => 'global',
+        ]);
+    }
+
+    private static function assignUnavailableLogo(mixed $brand, int $id): void
+    {
+        if (! $brand instanceof CentralBrand) {
+            throw new RuntimeException('BrandListFixture unavailable-logo Brand is missing.');
+        }
+
+        $asset = new MediaAsset;
+        $asset->forceFill([
+            'id' => $id,
+            'uuid' => sprintf('00000000-0000-4000-8000-%012d', $id),
+            'type' => 'image',
+            'source' => 'fixture',
+            'disk' => 'public',
+            'original_path' => 'media/originals/ca-011-unavailable-logo.png',
+            'original_filename' => 'unavailable-logo.png',
+            'mime_type' => 'image/png',
+            'file_size' => 256,
+            'width' => 320,
+            'height' => 160,
+            'checksum' => 'sha256:'.hash('sha256', 'ca-011-unavailable-logo'),
             'status' => 'active',
             'created_at' => CarbonImmutable::parse('2026-08-01T09:00:00Z'),
             'updated_at' => CarbonImmutable::parse('2026-08-01T09:00:00Z'),

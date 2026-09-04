@@ -13,6 +13,8 @@ final class BrandsListVisualTest extends TestCase
         $root = dirname(__DIR__, 2);
         $names = [
             'ca-011__default__1440x1000',
+            'ca-011__default__1024x900',
+            'ca-011__default__768x1024',
             'ca-011__default__390x844',
         ];
 
@@ -35,8 +37,8 @@ final class BrandsListVisualTest extends TestCase
             static fn (array $reference): bool => $reference['screen_id'] === 'CA-011',
         ));
 
-        self::assertCount(2, $references);
-        self::assertSame(['1440x1000', '390x844'], array_column($references, 'viewport'));
-        self::assertSame(['brands-list-v2', 'brands-list-v2'], array_column($references, 'fixture'));
+        self::assertCount(4, $references);
+        self::assertSame(['1440x1000', '1024x900', '768x1024', '390x844'], array_column($references, 'viewport'));
+        self::assertSame(['brands-list-v3', 'brands-list-v3', 'brands-list-v3', 'brands-list-v3'], array_column($references, 'fixture'));
     }
 }

@@ -140,6 +140,74 @@ final class CentralBrandListReadModelQueryTest extends TestCase
             ->getCollection()->map(fn ($row): int => (int) $row->brand->id)->all());
     }
 
+    public function test_translation_filters_distinguish_missing_outdated_and_inactive_locales(): void
+    {
+        $activeEnglish = Locale::factory()->active()->create(['code' => 'en-US', 'position' => 1]);
+        $activeGerman = Locale::factory()->active()->create(['code' => 'de-DE', 'position' => 2]);
+        $disabledFrench = Locale::factory()->disabled()->create(['code' => 'fr-FR', 'position' => 3]);
+        $outdated = CentralBrand::factory()->create(['name' => 'Outdated only', 'slug' => 'outdated-only']);
+        $missing = CentralBrand::factory()->create(['name' => 'Missing only', 'slug' => 'missing-only']);
+        $complete = CentralBrand::factory()->create(['name' => 'Complete active locales', 'slug' => 'complete-active-locales']);
+
+        BrandTranslation::factory()->outdated()->create([
+            'brand_id' => $outdated->id,
+            'locale_id' => $activeEnglish->id,
+            'locale' => $activeEnglish->code,
+        ]);
+        BrandTranslation::factory()->approved()->create([
+            'brand_id' => $outdated->id,
+            'locale_id' => $activeGerman->id,
+            'locale' => $activeGerman->code,
+        ]);
+        BrandTranslation::factory()->create([
+            'brand_id' => $missing->id,
+            'locale_id' => $activeEnglish->id,
+            'locale' => $activeEnglish->code,
+            'status' => TranslationStatus::Missing,
+        ]);
+        BrandTranslation::factory()->machineTranslated()->create([
+            'brand_id' => $complete->id,
+            'locale_id' => $activeEnglish->id,
+            'locale' => $activeEnglish->code,
+        ]);
+        BrandTranslation::factory()->humanReviewed()->create([
+            'brand_id' => $complete->id,
+            'locale_id' => $activeGerman->id,
+            'locale' => $activeGerman->code,
+        ]);
+        BrandTranslation::factory()->outdated()->create([
+            'brand_id' => $complete->id,
+            'locale_id' => $disabledFrench->id,
+            'locale' => $disabledFrench->code,
+        ]);
+
+        $query = app(CentralBrandListReadModelQuery::class);
+        $rows = $query->paginate($this->filters())->healthByBrandId;
+
+        $outdatedHealth = $rows->get($outdated->id);
+        $missingHealth = $rows->get($missing->id);
+        $completeHealth = $rows->get($complete->id);
+        self::assertNotNull($outdatedHealth);
+        self::assertNotNull($missingHealth);
+        self::assertNotNull($completeHealth);
+        self::assertSame(0, $outdatedHealth->translations->missing);
+        self::assertSame(1, $outdatedHealth->translations->outdated);
+        self::assertSame(2, $missingHealth->translations->missing);
+        self::assertSame(0, $missingHealth->translations->outdated);
+        self::assertSame(0, $completeHealth->translations->missing);
+        self::assertSame(0, $completeHealth->translations->outdated);
+
+        self::assertSame([$outdated->id], $query->paginate($this->filters(translation: 'outdated'))->brands
+            ->getCollection()->map(fn ($row): int => (int) $row->brand->id)->all());
+        self::assertSame([$missing->id], $query->paginate($this->filters(translation: 'missing'))->brands
+            ->getCollection()->map(fn ($row): int => (int) $row->brand->id)->all());
+        self::assertSame([$complete->id], $query->paginate($this->filters(translation: 'complete'))->brands
+            ->getCollection()->map(fn ($row): int => (int) $row->brand->id)->all());
+        self::assertEqualsCanonicalizing([$missing->id, $outdated->id], $query
+            ->paginate($this->filters(translation: 'needs_attention'))->brands
+            ->getCollection()->map(fn ($row): int => (int) $row->brand->id)->all());
+    }
+
     public function test_query_count_does_not_grow_per_brand(): void
     {
         Storage::fake('public');

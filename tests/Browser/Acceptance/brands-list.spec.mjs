@@ -18,7 +18,7 @@ test('CA-011 exposes the persisted operational read model and discovery controls
     await page.getByRole('navigation', { name: 'Central Admin sections' }).getByRole('link', { name: 'Brands', exact: true }).click()
 
     await expect(page).toHaveURL(/\/admin\/central\/brands$/)
-    await expect(page.locator('[data-screen-id="CA-011"][data-fixture-version="brands-list-v2"]')).toBeVisible()
+    await expect(page.locator('[data-screen-id="CA-011"][data-fixture-version="brands-list-v3"]')).toBeVisible()
     await expect(metric(page, 'total-brands')).toContainText('27')
     await expect(metric(page, 'active')).toContainText('14')
     await expect(metric(page, 'with-logos')).toContainText('9')
@@ -31,17 +31,25 @@ test('CA-011 exposes the persisted operational read model and discovery controls
     await expect(acer).toContainText('8')
     await expect(acer.getByRole('progressbar', { name: 'Acer translation coverage' })).toHaveAttribute('aria-valuenow', '100')
     await expect(acer.locator('[data-brand-quality="complete"]')).toBeVisible()
-    await expect(acer).toContainText('Logo ready')
+    await expect(acer.locator('.brand-list-quality')).toContainText('100%')
+    const acerLogo = await acer.locator('[data-logo-state="ready"]').boundingBox()
+    expect(acerLogo?.width).toBeGreaterThanOrEqual(64)
+    expect(acerLogo?.height).toBeGreaterThanOrEqual(40)
+    await expect(acer).not.toContainText('Logo ready')
 
     const benq = page.locator('tr[data-row-id]').filter({ hasText: 'BenQ' })
-    await expect(benq.locator('[data-logo-state="missing"]')).toBeVisible()
+    await expect(benq.locator('[data-logo-state="unavailable"]')).toBeVisible()
+    await expect(benq.getByText('Logo unavailable', { exact: true })).toBeAttached()
     await expect(benq).toContainText('1 category')
     await expect(benq.getByRole('progressbar', { name: 'BenQ translation coverage' })).toHaveAttribute('aria-valuenow', '0')
+    await expect(benq.locator('[data-brand-translation-breakdown]')).toContainText('4 missing')
     await expect(benq.locator('[data-brand-quality="needs_attention"]')).toBeVisible()
+    await expect(page.locator('tr[data-row-id]').filter({ hasText: 'Bose' }).locator('[data-logo-state="missing"]')).toBeVisible()
 
-    for (const heading of ['Brand', 'Category Coverage', 'Products', 'Status', 'Translation Coverage', 'Logo Health', 'Updated', 'Actions']) {
+    for (const heading of ['Brand', 'Category Coverage', 'Products', 'Status', 'Translation Coverage', 'Quality', 'Updated', 'Actions']) {
         await expect(page.getByRole('columnheader', { name: new RegExp(`^${heading}`) })).toBeVisible()
     }
+    await expect(page.getByRole('columnheader', { name: 'Logo Health' })).toHaveCount(0)
     await expect(page.getByRole('link', { name: 'New Brand', exact: true })).toBeVisible()
     await expect(page.getByText('Import Brands', { exact: true })).toHaveCount(0)
     await expect(page.getByRole('columnheader', { name: /Sites/ })).toHaveCount(0)
@@ -85,8 +93,12 @@ test('CA-011 searches, combines filters, sorts, paginates, and preserves navigat
     await expect(page).toHaveURL(/quality=complete/)
     await expect(page.getByText('Acer', { exact: true })).toBeVisible()
     await expect(page.getByText('ASUS', { exact: true })).toHaveCount(0)
+    await search.fill('Acer')
+    await expect(page).toHaveURL(/q=Acer/)
+    await expect(page.locator('[data-brand-active-filter-count="6"]')).toContainText('6 active filters')
     await page.getByRole('link', { name: 'Clear filters', exact: true }).click()
     await expect(page).toHaveURL(/\/admin\/central\/brands$/)
+    await expect(page.getByRole('link', { name: 'Clear filters', exact: true })).toHaveCount(0)
 
     await page.getByRole('columnheader', { name: /Products/ }).getByRole('link').click()
     await expect(page).toHaveURL(/sort=products&direction=asc/)
@@ -120,6 +132,61 @@ test('CA-011 searches, combines filters, sorts, paginates, and preserves navigat
     assertNoPageErrors()
 })
 
+test('CA-011 translation filters are exact and explain every matching row', async ({ page }) => {
+    await signIn(page, 'central', foundationDemo.centralAdmin)
+    await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
+
+    await page.goto('/admin/central/brands?translation=outdated')
+    const outdatedRows = page.locator('tr[data-row-id]')
+    await expect(page.locator('tr[data-row-id]').filter({ hasText: 'ASUS' })).toBeVisible()
+    await expect(page.locator('tr[data-row-id]').filter({ hasText: 'Anker' })).toHaveCount(0)
+    for (let index = 0; index < await outdatedRows.count(); index++) {
+        await expect(outdatedRows.nth(index).locator('[data-brand-translation-breakdown]')).toContainText('outdated')
+    }
+
+    await page.goto('/admin/central/brands?translation=missing')
+    await expect(page.locator('tr[data-row-id]').filter({ hasText: 'Anker' })).toContainText('3 missing')
+    await expect(page.locator('tr[data-row-id]').filter({ hasText: 'ASUS' })).toHaveCount(0)
+
+    await page.goto('/admin/central/brands?translation=complete')
+    await expect(page.locator('tr[data-row-id]').filter({ hasText: 'Acer' })).toBeVisible()
+    await expect(page.locator('tr[data-row-id]').filter({ hasText: 'ASUS' })).toHaveCount(0)
+})
+
+test('CA-011 filter grid remains contained at intermediate and narrow widths', async ({ page }) => {
+    await signIn(page, 'central', foundationDemo.centralAdmin)
+    await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
+
+    for (const viewport of [
+        { width: 1024, height: 900, columns: 3 },
+        { width: 768, height: 1024, columns: 2 },
+        { width: 390, height: 844, columns: 1 },
+    ]) {
+        await page.setViewportSize(viewport)
+        await page.goto('/admin/central/brands?q=Acer')
+
+        const columns = await page.locator('.brand-list-filters').evaluate((element) =>
+            getComputedStyle(element).gridTemplateColumns.split(' ').length,
+        )
+        expect(columns).toBe(viewport.columns)
+
+        for (const selector of [
+            '#brand-search',
+            '#brand-country-combobox',
+            '#brand-status-trigger',
+            '#brand-coverage-trigger',
+            '#brand-translation-trigger',
+            '#brand-quality-trigger',
+        ]) {
+            const box = await page.locator(selector).boundingBox()
+            expect(box?.x).toBeGreaterThanOrEqual(0)
+            expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(viewport.width)
+        }
+
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+    }
+})
+
 test('CA-011 remains operational at 390px without page-level overflow', async ({ page }) => {
     const assertNoPageErrors = observePageErrors(page)
 
@@ -131,9 +198,13 @@ test('CA-011 remains operational at 390px without page-level overflow', async ({
     await expect(page.getByRole('heading', { name: 'Brands', exact: true })).toBeVisible()
     await expect(page.getByRole('searchbox', { name: 'Search', exact: true })).toBeVisible()
     const row = page.locator('tr[data-row-id]').filter({ hasText: 'Acer' })
+    await expect(row).toHaveCSS('display', 'grid')
+    await expect(row.locator('[data-logo-state="ready"]')).toBeVisible()
     await expect(row).toContainText('Active')
     await expect(row).toContainText('100%')
     await expect(row).toContainText('Complete')
+    await expect(row.locator('.brand-list-products-cell')).toHaveAttribute('data-mobile-label', 'Products')
+    await expect(row.locator('.brand-list-category-cell')).toHaveAttribute('data-mobile-label', 'Categories')
     await expect(row.locator('summary[aria-label^="Open actions for row"]')).toBeVisible()
     await expect.poll(
         () => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),

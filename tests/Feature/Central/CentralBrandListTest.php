@@ -68,7 +68,8 @@ final class CentralBrandListTest extends TestCase
             ->assertSee('data-admin-status-badge="success"', false)
             ->assertSee('Brands')
             ->assertSee('Manage brand profiles, product associations, media assets, and localization across your catalog.')
-            ->assertSeeInOrder(['Brand', 'Category Coverage', 'Products', 'Status', 'Translation Coverage', 'Logo Health', 'Updated', 'Actions'])
+            ->assertSeeInOrder(['Brand', 'Category Coverage', 'Products', 'Status', 'Translation Coverage', 'Quality', 'Updated', 'Actions'])
+            ->assertDontSee('Logo Health')
             ->assertSee('New Brand')
             ->assertSee('href="'.route('central.brands.create', absolute: false).'"', false)
             ->assertSee('Samsung')
@@ -151,6 +152,43 @@ final class CentralBrandListTest extends TestCase
             ->assertSee('Draft Brand')
             ->assertSee('Active Brand')
             ->assertSee('Archived Brand');
+    }
+
+    public function test_global_clear_resets_every_filter_and_preserves_only_presentation_state(): void
+    {
+        CentralBrand::factory()->create(['name' => 'Filtered Brand', 'slug' => 'filtered-brand']);
+        $this->actingAs(User::factory()->create());
+        $clearUrl = route('central.brands.index', [
+            'sort' => 'products',
+            'direction' => 'desc',
+            'per_page' => 50,
+        ], absolute: false);
+
+        $this->get(route('central.brands.index', [
+            'q' => 'Filtered',
+            'country' => CountryReference::id('US'),
+            'status' => CentralBrandStatus::Active->value,
+            'coverage' => 'none',
+            'translation' => 'missing',
+            'quality' => 'needs_attention',
+            'sort' => 'products',
+            'direction' => 'desc',
+            'per_page' => 50,
+            'page' => 4,
+        ]))
+            ->assertOk()
+            ->assertSee('data-brand-active-filter-count="6"', false)
+            ->assertSee('6 active filters')
+            ->assertSee('Clear filters')
+            ->assertSee($clearUrl)
+            ->assertDontSee('aria-label="Clear Country"', false)
+            ->assertDontSee('data-ui-searchable-select-clear', false);
+
+        $this->get($clearUrl)
+            ->assertOk()
+            ->assertSee('Filtered Brand')
+            ->assertDontSee('Clear filters')
+            ->assertDontSee('data-brand-active-filter-count', false);
     }
 
     public function test_sorting_is_case_insensitive_stable_and_supports_updated_order(): void

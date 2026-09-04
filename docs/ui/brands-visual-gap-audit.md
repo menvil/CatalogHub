@@ -23,13 +23,13 @@ Phase 18.1 converges CA-011 into a dense operating dashboard while retaining app
 | Prototype region | Final desktop / mobile equivalent | Domain source | Decision | Phase | Notes |
 |---|---|---|---|---|---|
 | Total, Active and review summary cards | Five real KPI cards, responsive 5/3/2 grid | `CentralBrand`, lifecycle counts, derived Brand Quality | Implemented (A) | Phase 18.1 | Active/Logo/Missing/Needs attention percentages use current total; no fake trends. |
-| `Needs Review` | Quality appears beside translation coverage | `CentralBrandQualityEvaluator` | Adapted (B) | Phase 18.1 | Label is `Needs attention`; lifecycle remains unchanged. |
-| Logo-led Brand rows | Canonical logo/fallback, name, slug and optional Parent Company | exact Shared Media `brand_logo`; Organization ownership | Implemented (A) | Phase 18.1 | Missing and unavailable stay honest presenter states. |
+| `Needs Review` | Dedicated Quality column with score and state | `CentralBrandQualityEvaluator` | Adapted (B) | Phase 18.1 | Label is `Needs attention`; lifecycle and translation remain separate. |
+| Logo-led Brand rows | Larger wordmark-safe canonical logo/fallback, name, slug and optional Parent Company | exact Shared Media `brand_logo`; Organization ownership | Implemented (A) | Phase 18.1 | Ready needs no technical label; missing uses a fallback and unavailable gets a compact warning. |
 | Product and category context | Grouped Product count and distinct Category coverage columns | non-archived Products and direct Categories | Implemented (A) | Phase 18.1 | No counters or manual Brand categories are stored. |
-| Translation health | Active-Locale percentage, progress and derived Quality | `BrandTranslation.status` + active Locales | Implemented (A) | Phase 18.1 | Complete statuses are MachineTranslated/HumanReviewed/Approved; absent/Missing and Outdated are incomplete. |
+| Translation health | Active-Locale percentage, progress and Missing/Outdated reason | `BrandTranslation.status` + active Locales | Implemented (A) | Phase 18.1 | Complete statuses are MachineTranslated/HumanReviewed/Approved; absent/Missing and Outdated are distinct incomplete reasons. |
 | Lifecycle filter/status | Dense Draft/Active/Archived badge and filter | `CentralBrandStatus` | Converged (D) | Phase 18.1 | No review/publication values added. |
-| Rich search/filter/action composition | Name/slug/company search; Country, coverage, translation and quality filters; overflow actions | approved read model and routes | Converged (D) | Phase 18.1 | Query state persists through sort/page/per-page and history. |
-| Media/site coverage and Published/Synced columns | Logo Health replaces numeric Media; Sites/publication remain absent | exact logo contract; future SiteBrand/projection | Adapted/deferred (B/C) | Phase 18.1 / Deferred | Unsupported concepts are not synthesized. |
+| Rich search/filter/action composition | Name/slug/company search; consistent Country, coverage, translation and quality filters; one global Clear; overflow actions | approved read model and routes | Converged (D) | Phase 18.1 | Explicit 6/3/2/1 control grids prevent intermediate-width overflow; query state persists through sort/page/per-page and history. |
+| Media/site coverage and Published/Synced columns | No numeric Media or technical Logo Health column; Sites/publication remain absent | exact logo contract; future SiteBrand/projection | Adapted/deferred (B/C) | Phase 18.1 / Deferred | Canonical logo state is integrated into identity; unsupported concepts are not synthesized. |
 
 ## CA-012 — Brand Detail
 
@@ -103,9 +103,9 @@ Intentional divergences are architectural: lifecycle remains Draft/Active/Archiv
 
 ## Phase 18.1 CA-011 convergence decision
 
-CA-011 A/B/D work is closed. The final screen uses the original prototype—not the former regression baseline—as its hierarchy and density target. The reviewed result adds five database-derived KPIs, a six-control operational filter bar, logo-led identity rows, grouped Product and Category context, active-Locale translation coverage, authoritative Quality, overflow actions, and bounded pagination. The desktop `1440x1000` and mobile `390x844` references were reviewed against the original before their `brands-list-v2` baselines were approved.
+CA-011 A/B/D work is closed. The final screen uses the original prototype—not the former regression baseline—as its hierarchy and density target. The reviewed result has five database-derived KPIs, a six-control operational filter bar with one global Clear, larger logo-led identity rows, grouped Product and Category context, explainable active-Locale translation coverage, a separate authoritative Quality column, overflow actions, and bounded pagination. The `1440x1000`, `1024x900`, `768x1024`, and `390x844` references were reviewed against the original and pre-polish Phase 18.1 result before their `brands-list-v3` baselines were approved.
 
-Intentional differences remain explicit: Sites requires a future Site Brand projection; `Needs Review` is derived `Needs attention`; Language/Market is active-Locale Translation; numeric Media becomes canonical Logo Health; checkboxes wait for an approved bulk workflow; monthly trends wait for historical analytics; and the global shell remains outside screen ownership. The stable Imports destination is Product-oriented, so no misleading Brand import action is shown.
+Intentional differences remain explicit: Sites requires a future Site Brand projection; `Needs Review` is derived `Needs attention`; Language/Market is active-Locale Translation; numeric Media is omitted because only canonical logo identity has an approved contract; checkboxes wait for an approved bulk workflow; monthly trends wait for historical analytics; and the global shell remains outside screen ownership. The stable Imports destination is Product-oriented, so no misleading Brand import action is shown.
 
 ## Remaining bounded backlog
 

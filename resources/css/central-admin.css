@@ -64,7 +64,7 @@
 
 .brand-list-metrics {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 1rem;
 }
 
@@ -127,7 +127,7 @@
 
 .brand-list-filters {
     display: grid;
-    grid-template-columns: minmax(18rem, 2fr) repeat(5, minmax(8rem, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.75rem;
     align-items: end;
     border-bottom: 1px solid var(--color-admin-border);
@@ -180,13 +180,26 @@
     color: var(--color-admin-muted);
 }
 
-.brand-list-filter [data-ui-select-trigger] {
+.brand-list-filter [data-ui-select-trigger],
+.brand-list-filter [data-ui-searchable-select-input] {
     min-height: 2.5rem;
+}
+
+.brand-list-filter [data-ui-searchable-select-input] {
+    border-color: var(--color-admin-border);
+    border-radius: var(--radius-admin-input);
+    background: var(--color-admin-surface);
+    color: var(--color-admin-text);
+}
+
+.brand-list-filter [data-ui-searchable-select-input]:hover {
+    background: var(--color-admin-surface-muted);
 }
 
 .brand-list-search input:focus,
 .brand-list-pagination a:focus-visible,
 .brand-list-filter [data-ui-select-trigger]:focus-visible,
+.brand-list-filter [data-ui-searchable-select-input]:focus-visible,
 .brand-list-per-page [data-ui-select-trigger]:focus-visible {
     border-color: var(--color-admin-primary);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-admin-primary) 18%, transparent);
@@ -262,16 +275,25 @@
 
 .brand-list-identity {
     display: flex;
-    min-width: 11rem;
+    min-width: 13.5rem;
     align-items: center;
     gap: 0.75rem;
+}
+
+.brand-list-logo-shell {
+    position: relative;
+    display: inline-flex;
+    width: 4.5rem;
+    height: 2.75rem;
+    flex: 0 0 4.5rem;
+    align-items: center;
+    justify-content: center;
 }
 
 .brand-list-logo {
     display: inline-flex;
     width: 2.75rem;
     height: 2.75rem;
-    flex: 0 0 2.75rem;
     align-items: center;
     justify-content: center;
     overflow: hidden;
@@ -283,11 +305,34 @@
     font-weight: 700;
 }
 
+.brand-list-logo.has-logo {
+    width: 4.5rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
 .brand-list-logo img {
-    width: 100%;
-    height: 100%;
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 2.75rem;
     object-fit: contain;
-    padding: 0.25rem;
+}
+
+.brand-list-logo-warning {
+    position: absolute;
+    right: 0;
+    bottom: -0.125rem;
+    display: inline-flex;
+    width: 1.25rem;
+    height: 1.25rem;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--color-admin-surface);
+    border-radius: 999px;
+    background: var(--color-admin-warning-soft);
+    color: var(--color-admin-warning);
 }
 
 .brand-list-identity-copy {
@@ -320,8 +365,8 @@
 }
 
 .brand-list-count,
-.brand-list-media-health,
-.brand-list-neutral {
+.brand-list-neutral,
+.brand-list-translation-breakdown {
     color: var(--color-admin-muted);
     font-size: 0.8125rem;
 }
@@ -358,14 +403,23 @@
     background: var(--color-admin-success);
 }
 
-.brand-list-media-health {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
+.brand-list-translation-breakdown {
+    display: block;
+    margin-top: 0.25rem;
+    white-space: nowrap;
 }
 
-.brand-list-media-health.is-ready { color: var(--color-admin-success); }
-.brand-list-media-health.is-unavailable { color: var(--color-admin-warning); }
+.brand-list-quality {
+    display: grid;
+    min-width: 7.25rem;
+    justify-items: start;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+}
+
+.brand-list-quality > strong {
+    font-variant-numeric: tabular-nums;
+}
 
 .brand-list-table [data-admin-status-badge] {
     display: flex;
@@ -506,9 +560,23 @@
     opacity: 0.55;
 }
 
-@media (width < 64rem) {
+@media (width >= 23rem) {
+    .brand-list-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .brand-list-metric:last-child {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (width >= 40rem) {
     .brand-list-metrics {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .brand-list-metric:last-child {
+        grid-column: auto;
     }
 
     .brand-list-filters {
@@ -528,6 +596,34 @@
     }
 }
 
+@media (width >= 56.25rem) {
+    .brand-list-filters {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .brand-list-search {
+        grid-column: auto;
+    }
+}
+
+@media (width >= 80rem) {
+    .brand-list-metrics {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .brand-list-filters {
+        grid-template-columns: minmax(13rem, 1.7fr) repeat(5, minmax(0, 1fr));
+    }
+
+    .brand-list-pagination {
+        grid-template-columns: 1fr auto auto;
+    }
+
+    .brand-list-pagination > p {
+        grid-column: auto;
+    }
+}
+
 @media (width < 40rem) {
     .admin-component-gallery-catalog-header h1 {
         font-size: 1.375rem;
@@ -540,18 +636,11 @@
 
     .brand-list-heading > a { width: 100%; }
 
-    .brand-list-metrics {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.75rem;
-    }
+    .brand-list-metrics { gap: 0.75rem; }
 
     .brand-list-metric {
         min-height: 6.75rem;
         padding: 0.75rem;
-    }
-
-    .brand-list-metric:first-child {
-        grid-column: 1 / -1;
     }
 
     .brand-list-metric > strong {
@@ -577,9 +666,13 @@
         overflow-x: auto;
     }
 
+    .brand-list-table-wrap {
+        overflow: visible;
+    }
+
     .brand-list-table {
         min-width: 0;
-        table-layout: fixed;
+        display: block;
     }
 
     .brand-list-table thead {
@@ -591,23 +684,49 @@
         display: block;
     }
 
+    .brand-list-table tbody {
+        padding: 0.75rem;
+    }
+
     .brand-list-table tr {
         position: relative;
-        padding: 0.875rem 3.25rem 0.875rem 0.875rem;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem 1rem;
+        margin-bottom: 0.75rem;
+        border: 1px solid var(--color-admin-border);
+        border-radius: 0.75rem;
+        padding: 0.875rem;
+        background: var(--color-admin-surface);
+    }
+
+    .brand-list-table tr:last-child {
+        margin-bottom: 0;
     }
 
     .brand-list-table td {
         display: block;
+        min-width: 0;
         width: 100%;
         padding: 0;
     }
 
-    .brand-list-table .brand-list-col-secondary {
-        display: none;
+    .brand-list-brand-cell,
+    .brand-list-translation-cell {
+        grid-column: 1 / -1;
     }
+
+    .brand-list-brand-cell { order: 1; }
+    .brand-list-status-cell { order: 2; }
+    .brand-list-quality-cell { order: 3; }
+    .brand-list-translation-cell { order: 4; }
+    .brand-list-category-cell { order: 5; }
+    .brand-list-products-cell { order: 6; }
+    .brand-list-actions-cell { order: 7; }
 
     .brand-list-identity {
         min-width: 0;
+        padding-right: 2.75rem;
     }
 
     .brand-list-identity-copy > strong,
@@ -616,30 +735,54 @@
     }
 
     .brand-list-status-cell {
-        margin-top: 0.625rem;
+        align-self: center;
     }
 
     .brand-list-translation-cell {
-        display: flex !important;
         min-width: 0;
-        align-items: center;
-        gap: 0.625rem;
-        margin-top: 0.5rem;
+        border-top: 1px solid var(--color-admin-border);
+        padding-top: 0.75rem !important;
     }
 
     .brand-list-coverage {
-        width: 7rem;
-        margin-bottom: 0;
+        width: 100%;
+        max-width: 12rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .brand-list-quality {
+        min-width: 0;
+    }
+
+    .brand-list-category-cell,
+    .brand-list-products-cell {
+        display: grid !important;
+        gap: 0.125rem;
+    }
+
+    .brand-list-category-cell::before,
+    .brand-list-products-cell::before {
+        color: var(--color-admin-muted);
+        content: attr(data-mobile-label);
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: 0.025em;
+        text-transform: uppercase;
+    }
+
+    .brand-list-updated-cell {
+        display: none !important;
     }
 
     .brand-list-actions-cell {
         position: absolute;
-        top: 0.875rem;
+        top: 0.75rem;
         right: 0.875rem;
         width: auto !important;
     }
 
     .brand-list-empty {
+        grid-column: 1 / -1;
         padding: 1rem !important;
     }
 }

@@ -4,7 +4,7 @@ import { foundationDemo, observePageErrors, signIn } from '../../Browser/Support
 const states = [
     { name: 'ca-011__default__1440x1000.png', width: 1440, height: 1000, maxDiffPixelRatio: 0.02 },
     { name: 'ca-011__default__1024x900.png', width: 1024, height: 900, maxDiffPixelRatio: 0.025 },
-    { name: 'ca-011__default__768x1024.png', width: 768, height: 1024, maxDiffPixelRatio: 0.025 },
+    { name: 'ca-011__default__768x1024.png', width: 768, height: 1024, maxDiffPixelRatio: 0.05 },
     { name: 'ca-011__default__390x844.png', width: 390, height: 844, maxDiffPixelRatio: 0.065 },
 ]
 

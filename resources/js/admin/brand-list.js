@@ -17,7 +17,7 @@ export function bootBrandList() {
 
     document.addEventListener('change', (event) => {
         if (! (event.target instanceof HTMLSelectElement)) return;
-        if (! event.target.matches('[data-brand-list-submit]')) return;
+        if (! event.target.closest('.brand-list-filters, .brand-list-per-page')) return;
 
         event.target.form?.requestSubmit();
     });

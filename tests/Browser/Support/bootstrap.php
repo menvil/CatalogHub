@@ -35,3 +35,4 @@ BrandFormFixture::create();
 BrandDetailFixture::create();
 BrandTranslationFixture::create();
 BrandMediaFixture::create();
+BrandListFixture::enrich();

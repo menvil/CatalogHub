@@ -4,9 +4,36 @@ function closeSelect(select, restoreFocus = false) {
 
     if (! trigger || ! menu) return;
     menu.hidden = true;
+    menu.style.removeProperty('max-height');
     trigger.setAttribute('aria-expanded', 'false');
     select.querySelector('[data-ui-select-chevron]')?.classList.remove('rotate-180');
     if (restoreFocus) trigger.focus();
+}
+
+function positionSelectMenu(trigger, menu) {
+    const viewportHeight = document.documentElement.clientHeight;
+    const triggerBounds = trigger.getBoundingClientRect();
+    const viewportMargin = 8;
+    const gap = 4;
+    const spaceBelow = Math.max(0, viewportHeight - triggerBounds.bottom - viewportMargin - gap);
+    const spaceAbove = Math.max(0, triggerBounds.top - viewportMargin - gap);
+
+    menu.style.removeProperty('max-height');
+    menu.style.top = `calc(100% + ${gap}px)`;
+    menu.style.bottom = 'auto';
+
+    const menuHeight = menu.getBoundingClientRect().height;
+    const opensAbove = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+    const availableSpace = opensAbove ? spaceAbove : spaceBelow;
+
+    menu.dataset.placement = opensAbove ? 'top' : 'bottom';
+    if (opensAbove) {
+        menu.style.top = 'auto';
+        menu.style.bottom = `calc(100% + ${gap}px)`;
+    }
+    if (availableSpace < menuHeight) {
+        menu.style.maxHeight = `${Math.floor(availableSpace)}px`;
+    }
 }
 
 function openSelect(select) {
@@ -19,6 +46,7 @@ function openSelect(select) {
     if (! trigger || ! menu || trigger.disabled) return;
 
     menu.hidden = false;
+    positionSelectMenu(trigger, menu);
     trigger.setAttribute('aria-expanded', 'true');
     select.querySelector('[data-ui-select-chevron]')?.classList.add('rotate-180');
     (menu.querySelector('[role="option"][aria-selected="true"]') ?? menu.querySelector('[role="option"]'))?.focus();

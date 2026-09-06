@@ -43,4 +43,32 @@ final class CentralBrandCategoryCoverageQuery implements RawSqlPersistenceBounda
                 productsCount: (int) $row->getAttribute('products_count'),
             ));
     }
+
+    /**
+     * @param  Collection<int, CentralBrand>  $brands
+     * @return Collection<int<0, max>, int>
+     */
+    public function countsForBrands(Collection $brands): Collection
+    {
+        $brandIds = $brands
+            ->map(static fn (CentralBrand $brand): int => (int) $brand->getKey())
+            ->values()
+            ->all();
+
+        if ($brandIds === []) {
+            return collect();
+        }
+
+        return CentralProduct::query()
+            ->whereIn('central_brand_id', $brandIds)
+            ->where('status', '!=', CentralProductStatus::Archived->value)
+            ->whereNotNull('central_category_id')
+            ->select('central_brand_id')
+            ->selectRaw('COUNT(DISTINCT central_category_id) AS categories_count')
+            ->groupBy('central_brand_id')
+            ->get()
+            ->mapWithKeys(static fn (CentralProduct $row): array => [
+                (int) $row->central_brand_id => (int) $row->getAttribute('categories_count'),
+            ]);
+    }
 }

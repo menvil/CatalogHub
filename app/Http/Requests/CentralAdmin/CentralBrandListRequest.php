@@ -22,7 +22,11 @@ final class CentralBrandListRequest extends FormRequest
         return [
             'q' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', Rule::enum(CentralBrandStatus::class)],
-            'sort' => ['nullable', Rule::in(['name', 'slug', 'status', 'updated_at'])],
+            'country' => ['nullable', 'integer', 'min:1', 'exists:countries,id'],
+            'coverage' => ['nullable', Rule::in(['has', 'none'])],
+            'translation' => ['nullable', Rule::in(['complete', 'missing', 'outdated', 'needs_attention'])],
+            'quality' => ['nullable', Rule::in(['complete', 'needs_attention'])],
+            'sort' => ['nullable', Rule::in(['name', 'products', 'status', 'updated_at'])],
             'direction' => ['nullable', Rule::in(['asc', 'desc'])],
             'per_page' => ['nullable', Rule::in([20, 50, 100])],
             'page' => ['nullable', 'integer', 'min:1'],
@@ -36,6 +40,10 @@ final class CentralBrandListRequest extends FormRequest
         return new BrandListFiltersData(
             search: $this->nullableTrimmedString($data, 'q'),
             status: $this->nullableTrimmedString($data, 'status'),
+            countryId: is_numeric($data['country'] ?? null) ? (int) $data['country'] : null,
+            categoryCoverage: $this->nullableTrimmedString($data, 'coverage'),
+            translation: $this->nullableTrimmedString($data, 'translation'),
+            quality: $this->nullableTrimmedString($data, 'quality'),
             sort: is_string($data['sort'] ?? null) ? $data['sort'] : 'name',
             direction: is_string($data['direction'] ?? null) ? $data['direction'] : 'asc',
             perPage: is_numeric($data['per_page'] ?? null) ? (int) $data['per_page'] : 20,

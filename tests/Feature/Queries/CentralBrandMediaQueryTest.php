@@ -10,6 +10,7 @@ use App\Models\MediaAssignment;
 use App\Models\MediaVariant;
 use App\Queries\CentralCatalog\CentralBrandMediaQuery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\Support\DatabaseQueryCounter;
 use Tests\TestCase;
 
@@ -117,6 +118,46 @@ final class CentralBrandMediaQueryTest extends TestCase
         self::assertTrue($assignment->relationLoaded('asset'));
         self::assertTrue($assignment->asset->relationLoaded('variants'));
         self::assertSame(['brand_logo_128'], $assignment->asset->variants->pluck('variant_type')->all());
+        self::assertLessThanOrEqual(3, $measured['count']);
+    }
+
+    public function test_batch_selector_preserves_the_exact_single_brand_semantics_in_bounded_queries(): void
+    {
+        Storage::fake('public');
+        $readyBrand = CentralBrand::factory()->create();
+        $privateBrand = CentralBrand::factory()->create();
+        $missingBrand = CentralBrand::factory()->create();
+        $asset = MediaAsset::factory()->create();
+        $ready = MediaAssignment::factory()->for($asset, 'asset')->create([
+            'entity_type' => MediaAssignment::ENTITY_TYPE_CENTRAL_BRAND,
+            'entity_id' => $readyBrand->id,
+            'role' => MediaAssignment::ROLE_BRAND_LOGO,
+            'locale' => null,
+            'site_id' => null,
+            'market_id' => null,
+            'is_primary' => true,
+            'visibility' => 'global',
+        ]);
+        MediaAssignment::factory()->create([
+            'entity_type' => MediaAssignment::ENTITY_TYPE_CENTRAL_BRAND,
+            'entity_id' => $privateBrand->id,
+            'role' => MediaAssignment::ROLE_BRAND_LOGO,
+            'locale' => null,
+            'site_id' => null,
+            'market_id' => null,
+            'is_primary' => true,
+            'visibility' => 'private',
+        ]);
+
+        $measured = DatabaseQueryCounter::measure(
+            fn () => app(CentralBrandMediaQuery::class)->primaryLogoAssignmentsFor(
+                collect([$readyBrand, $privateBrand, $missingBrand]),
+            ),
+        );
+        $assignments = $measured['result'];
+
+        self::assertSame([$readyBrand->id], $assignments->keys()->all());
+        self::assertSame($ready->id, $assignments->get($readyBrand->id)?->id);
         self::assertLessThanOrEqual(3, $measured['count']);
     }
 }

@@ -100,14 +100,13 @@
                 @if (request('per_page'))
                     <input type="hidden" name="per_page" value="{{ request('per_page') }}">
                 @endif
+                @if ($filters->hasConstraints())
+                    <div class="brand-list-active-filters" data-brand-active-filter-count="{{ $activeFilterCount }}">
+                        <span>{{ $activeFilterCount }} active {{ str('filter')->plural($activeFilterCount) }}</span>
+                        <x-ui.button variant="secondary" :href="$clearFiltersUrl" aria-label="Clear filters">Clear</x-ui.button>
+                    </div>
+                @endif
             </form>
-
-            @if ($filters->hasConstraints())
-                <div class="brand-list-active-filters" data-brand-active-filter-count="{{ $activeFilterCount }}">
-                    <span>{{ $activeFilterCount }} active {{ str('filter')->plural($activeFilterCount) }}</span>
-                    <x-ui.button variant="secondary" :href="$clearFiltersUrl" aria-label="Clear filters">Clear</x-ui.button>
-                </div>
-            @endif
 
             @if ($errors->any())
                 <p class="brand-list-error" role="alert">{{ $errors->first() }}</p>
@@ -116,7 +115,7 @@
             <div class="brand-list-table-wrap" data-admin-data-table>
                 <table class="brand-list-table w-full border-collapse text-sm">
                     <caption class="sr-only">Brands</caption>
-                    <thead class="text-admin-muted">
+                    <thead class="bg-admin-surface-muted text-admin-muted">
                         <tr>
                             <th scope="col" aria-sort="{{ $ariaSort('name') }}"><a href="{{ $sortUrl('name') }}" class="brand-list-sort">Brand <span aria-hidden="true">{{ $currentSort === 'name' ? ($currentDirection === 'asc' ? '↑' : '↓') : '↕' }}</span></a></th>
                             <th scope="col" class="brand-list-col-secondary">Category Coverage</th>

@@ -232,10 +232,21 @@ test('CA-011 filter grid remains contained at intermediate and narrow widths', a
             '#brand-coverage-trigger',
             '#brand-translation-trigger',
             '#brand-quality-trigger',
+            '.brand-list-active-filters',
         ]) {
             const box = await page.locator(selector).boundingBox()
             expect(box?.x).toBeGreaterThanOrEqual(0)
             expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(viewport.width)
+        }
+
+        if (viewport.width >= 768) {
+            const [qualityBounds, clearBounds] = await Promise.all([
+                page.locator('#brand-quality-trigger').boundingBox(),
+                page.getByRole('link', { name: 'Clear filters', exact: true }).boundingBox(),
+            ])
+            const qualityCenter = (qualityBounds?.y ?? 0) + (qualityBounds?.height ?? 0) / 2
+            const clearCenter = (clearBounds?.y ?? 0) + (clearBounds?.height ?? 0) / 2
+            expect(Math.abs(qualityCenter - clearCenter)).toBeLessThanOrEqual(2)
         }
 
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)

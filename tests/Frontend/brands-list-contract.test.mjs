@@ -21,10 +21,10 @@ test('CA-011 separates translation, quality, and canonical logo identity', () =>
     assert.ok(!view.includes('Logo ready'), 'A ready canonical logo explains itself')
 })
 
-test('CA-011 exposes one global clear contract and explicit responsive grids', () => {
-    assert.equal((view.match(/>Clear filters</g) ?? []).length, 1)
+test('CA-011 exposes a right-aligned global clear contract with explicit responsive grids', () => {
+    assert.equal((view.match(/aria-label="Clear filters"/g) ?? []).length, 1)
     assert.ok(view.includes('data-brand-active-filter-count'))
-    assert.ok(!view.includes('data-brand-list-clear-country'))
+    assert.ok(!view.match(/name="country"[^>]+clearable/))
 
     for (const contract of [
         '@media (width >= 40rem)',

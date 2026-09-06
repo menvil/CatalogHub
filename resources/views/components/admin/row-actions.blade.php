@@ -8,7 +8,7 @@
     @if ($display === 'menu')
         <details class="admin-row-actions-menu" data-admin-row-actions-menu>
             <summary aria-label="Open actions for row {{ $rowId }}" aria-haspopup="menu"><span aria-hidden="true">⋮</span></summary>
-            <div role="menu">
+            <div role="menu" data-admin-row-actions-panel>
     @endif
     @foreach ($actions as $action)
         @php

@@ -95,8 +95,15 @@ test('CA-011 searches, combines filters, sorts, paginates, and preserves navigat
     await expect(page.getByText('ASUS', { exact: true })).toHaveCount(0)
     await search.fill('Acer')
     await expect(page).toHaveURL(/q=Acer/)
-    await expect(page.locator('[data-brand-active-filter-count="6"]')).toContainText('6 active filters')
-    await page.getByRole('link', { name: 'Clear filters', exact: true }).click()
+    const activeFilterState = page.locator('[data-brand-active-filter-count="6"]')
+    const clearFilters = page.getByRole('link', { name: 'Clear filters', exact: true })
+    await expect(activeFilterState).toContainText('6 active filters')
+    const [activeCountBounds, clearBounds] = await Promise.all([
+        activeFilterState.getByText('6 active filters', { exact: true }).boundingBox(),
+        clearFilters.boundingBox(),
+    ])
+    expect(clearBounds?.x).toBeGreaterThan(activeCountBounds?.x ?? Number.POSITIVE_INFINITY)
+    await clearFilters.click()
     await expect(page).toHaveURL(/\/admin\/central\/brands$/)
     await expect(page.getByRole('link', { name: 'Clear filters', exact: true })).toHaveCount(0)
 
@@ -130,6 +137,54 @@ test('CA-011 searches, combines filters, sorts, paginates, and preserves navigat
     await expect(page.locator('[data-screen-id="CA-013"]')).toBeVisible()
 
     assertNoPageErrors()
+})
+
+test('CA-011 per-page menu flips above the footer without extending the page', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 700 })
+    await signIn(page, 'central', foundationDemo.centralAdmin)
+    await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
+    await page.goto('/admin/central/brands')
+
+    const trigger = page.locator('#brands-per-page-trigger')
+    const menu = page.locator('#brands-per-page-menu')
+    await trigger.scrollIntoViewIfNeeded()
+    const scrollHeightBefore = await page.evaluate(() => document.documentElement.scrollHeight)
+    await trigger.click()
+    await expect(menu).toBeVisible()
+    await expect(menu).toHaveAttribute('data-placement', 'top')
+
+    const [triggerBounds, menuBounds] = await Promise.all([trigger.boundingBox(), menu.boundingBox()])
+    expect(menuBounds?.y).toBeLessThan(triggerBounds?.y ?? 0)
+    expect((menuBounds?.y ?? 0) + (menuBounds?.height ?? 0)).toBeLessThanOrEqual(triggerBounds?.y ?? 0)
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(scrollHeightBefore)
+})
+
+test('CA-011 brand identity opens detail and a single-result actions menu escapes table clipping', async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 700 })
+    await signIn(page, 'central', foundationDemo.centralAdmin)
+    await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
+    await page.goto('/admin/central/brands?q=Acer')
+
+    const row = page.locator('tr[data-row-id]').filter({ hasText: 'Acer' })
+    await expect(row).toHaveCount(1)
+    const actionTrigger = row.locator('summary[aria-label^="Open actions for row"]')
+    await actionTrigger.scrollIntoViewIfNeeded()
+    await actionTrigger.click()
+    const actionPanel = row.locator('[data-admin-row-actions-panel]')
+    await expect(actionPanel).toBeVisible()
+    const [panelBounds, viewport] = await Promise.all([
+        actionPanel.boundingBox(),
+        page.evaluate(() => ({ width: document.documentElement.clientWidth, height: document.documentElement.clientHeight })),
+    ])
+    expect(panelBounds?.x).toBeGreaterThanOrEqual(0)
+    expect((panelBounds?.x ?? 0) + (panelBounds?.width ?? 0)).toBeLessThanOrEqual(viewport.width)
+    expect(panelBounds?.y).toBeGreaterThanOrEqual(0)
+    expect((panelBounds?.y ?? 0) + (panelBounds?.height ?? 0)).toBeLessThanOrEqual(viewport.height)
+    await expect(row.getByRole('menuitem', { name: 'View', exact: true })).toBeVisible()
+
+    await page.keyboard.press('Escape')
+    await row.locator('.brand-list-identity').click()
+    await expect(page.locator('[data-screen-id="CA-012"]')).toBeVisible()
 })
 
 test('CA-011 translation filters are exact and explain every matching row', async ({ page }) => {

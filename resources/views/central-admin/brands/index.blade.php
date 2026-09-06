@@ -105,7 +105,7 @@
             @if ($filters->hasConstraints())
                 <div class="brand-list-active-filters" data-brand-active-filter-count="{{ $activeFilterCount }}">
                     <span>{{ $activeFilterCount }} active {{ str('filter')->plural($activeFilterCount) }}</span>
-                    <a href="{{ $clearFiltersUrl }}">Clear filters</a>
+                    <x-ui.button variant="secondary" :href="$clearFiltersUrl" aria-label="Clear filters">Clear</x-ui.button>
                 </div>
             @endif
 
@@ -116,7 +116,7 @@
             <div class="brand-list-table-wrap" data-admin-data-table>
                 <table class="brand-list-table w-full border-collapse text-sm">
                     <caption class="sr-only">Brands</caption>
-                    <thead class="bg-admin-surface-muted text-admin-muted">
+                    <thead class="text-admin-muted">
                         <tr>
                             <th scope="col" aria-sort="{{ $ariaSort('name') }}"><a href="{{ $sortUrl('name') }}" class="brand-list-sort">Brand <span aria-hidden="true">{{ $currentSort === 'name' ? ($currentDirection === 'asc' ? '↑' : '↓') : '↕' }}</span></a></th>
                             <th scope="col" class="brand-list-col-secondary">Category Coverage</th>
@@ -148,7 +148,7 @@
                             @endphp
                             <tr data-row-id="{{ $brand->getKey() }}">
                                 <td class="brand-list-brand-cell">
-                                    <div class="brand-list-identity">
+                                    <a href="{{ route('central.brands.show', $brand, absolute: false) }}" class="brand-list-identity" aria-label="View {{ $brand->name }} brand">
                                         <span class="brand-list-logo-shell">
                                             <span @class(['brand-list-logo', 'has-logo' => $row->health->logo->url !== null]) data-logo-state="{{ $logoState->value }}">
                                                 @if ($row->health->logo->url)
@@ -168,7 +168,7 @@
                                                 <span class="brand-list-company">{{ $brand->ownership->organization->name }}</span>
                                             @endif
                                         </span>
-                                    </div>
+                                    </a>
                                 </td>
                                 <td class="brand-list-category-cell" data-mobile-label="Categories"><span class="brand-list-count">{{ $row->categoryCount > 0 ? trans_choice(':count category|:count categories', $row->categoryCount, ['count' => number_format($row->categoryCount)]) : 'No coverage' }}</span></td>
                                 <td class="brand-list-products-cell" data-mobile-label="Products"><strong class="brand-list-numeric">{{ number_format((int) $brand->products_count) }}</strong></td>

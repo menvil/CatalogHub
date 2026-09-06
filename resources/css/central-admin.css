@@ -573,6 +573,210 @@
     opacity: 0.55;
 }
 
+.brand-detail-page {
+    display: grid;
+    min-width: 0;
+    gap: 1.25rem;
+}
+
+.brand-detail-heading {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--color-admin-border);
+    padding-bottom: 1.25rem;
+}
+
+.brand-detail-heading-actions {
+    display: flex;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.brand-detail-layout {
+    display: grid;
+    min-width: 0;
+    grid-template-areas:
+        'profile'
+        'health'
+        'issues'
+        'portfolio'
+        'products'
+        'classification'
+        'provenance'
+        'lifecycle'
+        'record';
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.brand-detail-profile { grid-area: profile; }
+.brand-detail-health { grid-area: health; }
+.brand-detail-issues { grid-area: issues; }
+.brand-detail-portfolio { grid-area: portfolio; }
+.brand-detail-products { grid-area: products; }
+.brand-detail-classification { grid-area: classification; }
+.brand-detail-provenance { grid-area: provenance; }
+.brand-detail-lifecycle { grid-area: lifecycle; }
+.brand-detail-record { grid-area: record; }
+
+.brand-detail-profile-grid {
+    display: grid;
+    min-width: 0;
+    gap: 1.25rem;
+}
+
+.brand-detail-logo {
+    display: flex;
+    width: 100%;
+    min-height: 8rem;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid var(--color-admin-border);
+    border-radius: var(--radius-admin-card);
+    background: var(--color-admin-surface-muted);
+    padding: 1.25rem;
+}
+
+.brand-detail-profile-fields {
+    display: grid;
+    min-width: 0;
+    gap: 0 1.5rem;
+}
+
+.brand-detail-profile-field {
+    min-width: 0;
+    border-bottom: 1px solid var(--color-admin-border);
+    padding-block: 0.45rem;
+}
+
+.brand-detail-profile-field dt {
+    color: var(--color-admin-muted);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.brand-detail-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.brand-detail-metric {
+    min-width: 0;
+    border: 1px solid var(--color-admin-border);
+    border-radius: var(--radius-admin-input);
+    background: var(--color-admin-surface-muted);
+    padding: 0.75rem;
+    text-align: center;
+}
+
+.brand-detail-metric p {
+    margin-top: 0.25rem;
+    color: var(--color-admin-muted);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.brand-detail-category-chip {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-admin-badge);
+    background: var(--color-admin-info-soft);
+    padding: 0.35rem 0.6rem;
+    color: var(--color-admin-info);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.brand-detail-category-chip strong {
+    border-left: 1px solid color-mix(in srgb, var(--color-admin-info) 25%, transparent);
+    padding-left: 0.5rem;
+}
+
+.brand-detail-product-list {
+    min-width: 0;
+}
+
+.brand-detail-product-list > li {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--color-admin-border);
+    padding-block: 0.7rem;
+}
+
+.brand-detail-product-list > li:first-child { padding-top: 0; }
+.brand-detail-product-list > li:last-child { border-bottom: 0; padding-bottom: 0; }
+
+@media (width >= 40rem) {
+    .brand-detail-profile-grid {
+        grid-template-columns: 9rem minmax(0, 1fr);
+    }
+
+    .brand-detail-logo {
+        width: 9rem;
+        min-height: 9rem;
+        height: 9rem;
+    }
+
+    .brand-detail-profile-fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (width >= 80rem) {
+    .brand-detail-layout {
+        grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
+        grid-template-areas:
+            'profile health'
+            'portfolio issues'
+            'products classification'
+            'provenance lifecycle'
+            'provenance record';
+    }
+
+    .brand-detail-profile-fields {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (width < 40rem) {
+    .brand-detail-heading {
+        flex-direction: column;
+    }
+
+    .brand-detail-heading-actions,
+    .brand-detail-heading-actions > * {
+        width: 100%;
+    }
+
+    .brand-detail-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .brand-detail-metric:last-child {
+        grid-column: 1 / -1;
+    }
+
+    .brand-detail-product-list > li {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
 @media (width >= 23rem) {
     .brand-list-metrics {
         grid-template-columns: repeat(2, minmax(0, 1fr));

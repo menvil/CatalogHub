@@ -18,7 +18,7 @@ test('CA-014 empty desktop matches its v2 reference', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 })
     await signIn(page, 'central', 'super-admin@demo.cataloghub.test')
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
-    await page.goto('/admin/central/brands/20/media')
+    await page.goto('/admin/central/brands/24/media')
     await expect(page.getByText('No canonical logo assigned')).toBeVisible()
     await settle(page)
     await assertNoHorizontalOverflow(page)

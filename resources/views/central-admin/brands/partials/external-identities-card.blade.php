@@ -1,7 +1,7 @@
 <x-admin.card
     id="external-identities"
-    title="External identities"
-    description="External identities connect this canonical Brand to records in configured import sources."
+    title="Provenance"
+    description="External identities from configured import sources."
     data-screen-region="external-identities"
 >
     <x-slot:actions>
@@ -32,18 +32,17 @@
                     $externalUrlIsSafe = \App\Support\Presentation\SafeExternalRecordUrl::allows($identity->external_url);
                     $sourceIsActive = $source->status === 'active';
                 @endphp
-                <li class="grid min-w-0 gap-3 py-4 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center" data-external-identity-id="{{ $identity->getKey() }}">
-                    <div class="min-w-0 space-y-2">
+                <li class="grid min-w-0 gap-3 py-3 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center" data-external-identity-id="{{ $identity->getKey() }}">
+                    <div class="min-w-0">
                         <div class="flex min-w-0 flex-wrap items-center gap-2">
                             <span class="break-words text-sm font-semibold text-admin-text">{{ $source->name }}</span>
                             <x-admin.status-badge :label="ucfirst((string) $source->status)" :variant="$sourceIsActive ? 'success' : 'warning'" size="sm" />
                         </div>
-                        <p class="break-all font-foundation-mono text-xs text-admin-muted">{{ $source->code }}</p>
-                        <p class="break-all font-foundation-mono text-sm text-admin-text">{{ $identity->external_id }}</p>
+                        <p class="mt-1 break-all text-xs text-admin-muted"><span class="font-foundation-mono">{{ $source->code }}</span> · <span class="font-foundation-mono text-admin-text">{{ $identity->external_id }}</span></p>
                         @if ($identity->external_url === null)
-                            <p class="text-xs text-admin-muted">No external URL</p>
+                            <p class="mt-1 text-xs text-admin-muted">No external URL</p>
                         @elseif ($externalUrlIsSafe)
-                            <a href="{{ $identity->external_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex text-sm font-medium text-admin-primary underline decoration-admin-primary/30 underline-offset-2">Open record</a>
+                            <a href="{{ $identity->external_url }}" target="_blank" rel="noopener noreferrer" class="mt-1 inline-flex text-sm font-medium text-admin-primary underline decoration-admin-primary/30 underline-offset-2">Open record</a>
                         @else
                             <p class="text-xs text-admin-warning">External record URL is unavailable.</p>
                         @endif

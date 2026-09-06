@@ -5,7 +5,6 @@ import {
     restoreDefaultBrandTranslationLocales,
 } from '../Support/brand-translation-fixture.mjs'
 
-const samsungBrandId = 20
 const workspaceBrandId = 24
 
 test.afterEach(() => {
@@ -22,21 +21,21 @@ test('CA-012 and CA-015 complete the persisted Brand translation review workflow
 
     await signIn(page, 'central', foundationDemo.centralAdmin)
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
-    await page.goto(`/admin/central/brands/${samsungBrandId}`)
+    await page.goto(`/admin/central/brands/${workspaceBrandId}`)
 
     const quality = page.locator('[data-screen-region="quality-completeness"]')
     const issues = page.locator('[data-screen-region="quality-issues"]')
-    await expect(quality.locator('[data-screen-region="translation-summary"]')).toContainText('0 of 4 active locales complete')
+    await expect(quality.locator('[data-screen-region="translation-summary"]')).toContainText('2 of 4 active locales complete')
     await expect(issues).toContainText('German (de-DE) translation is missing')
-    await issues.locator(`a[href$="/brands/${samsungBrandId}/translations/de-DE"]`).click()
+    await issues.locator(`a[href$="/brands/${workspaceBrandId}/translations/de-DE"]`).click()
 
-    await expect(page).toHaveURL(new RegExp(`/admin/central/brands/${samsungBrandId}/translations/de-DE$`))
+    await expect(page).toHaveURL(new RegExp(`/admin/central/brands/${workspaceBrandId}/translations/de-DE$`))
     await expect(page.locator('[data-screen-id="CA-015"]')).toBeVisible()
     await expect(page.getByText('No translation row exists for this active locale. Nothing is persisted until Save.').first()).toBeVisible()
     await expect(page.getByLabel('Localized name')).toHaveValue('')
     await expect(page.getByText('Canonical name', { exact: true })).toBeVisible()
     await page.getByRole('button', { name: 'Copy from Source', exact: true }).click()
-    await expect(page.getByLabel('Localized name')).toHaveValue('Samsung')
+    await expect(page.getByLabel('Localized name')).toHaveValue('Zotac')
     await page.getByLabel('Tagline').fill('Technologie für jeden')
     await page.getByLabel('Short description').fill('Technologie und Elektronik für den Alltag.')
     await page.locator('#status').selectOption('human_reviewed')
@@ -53,7 +52,7 @@ test('CA-012 and CA-015 complete the persisted Brand translation review workflow
     await expect(issues).not.toContainText('German (de-DE) translation is missing')
     await expect(issues).not.toContainText('German (de-DE) translation is outdated')
 
-    await page.goto(`/admin/central/brands/${samsungBrandId}/translations/de-DE`)
+    await page.goto(`/admin/central/brands/${workspaceBrandId}/translations/de-DE`)
     await page.getByRole('button', { name: 'Mark outdated', exact: true }).click()
     await expect(page.getByText('Translation marked outdated.', { exact: true })).toBeVisible()
     await expect(page.getByLabel('Tagline')).toHaveValue('Technologie für jeden')
@@ -62,7 +61,7 @@ test('CA-012 and CA-015 complete the persisted Brand translation review workflow
     await page.getByRole('tab', { name: 'Overview', exact: true }).click()
     await expect(issues).toContainText('German (de-DE) translation is outdated')
 
-    await page.goto(`/admin/central/brands/${samsungBrandId}/translations/de-DE`)
+    await page.goto(`/admin/central/brands/${workspaceBrandId}/translations/de-DE`)
     await page.getByLabel('Tagline').fill('Korrigierte Technologie für jeden')
     await page.locator('#status').selectOption('human_reviewed')
     await page.locator('#brand-translation-form').getByRole('button', { name: 'Save translation', exact: true }).click()

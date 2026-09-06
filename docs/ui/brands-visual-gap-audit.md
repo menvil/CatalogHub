@@ -49,7 +49,7 @@ Before Phase 17, desktop rendered all approved data but as a long succession of 
 | Lifecycle actions | Correct actions in a separate card | Draft / Active / Archived actions | B | Phase 17 | Preserve approved transitions; do not copy publication controls. |
 | Published, Synced, publication status and Sites tab | No equivalent | Future SiteBrand/projection | C | Deferred | Intentionally absent; these are not lifecycle. |
 | Hero, dark/light logos and media completeness | Only exact global primary `brand_logo` | Future/unsupported media roles | C | Deferred | No fake slots or speculative Shared Media roles. |
-| Recent Products, price/rating snapshots | Count and category coverage only | Product-management/read-model concerns beyond Brand overview | C | Deferred | CA-012 does not become Product management. |
+| Recent Products, price/rating snapshots | Bounded real Recent Products; no decorative metrics | Current Product read model; no approved rating/price Brand metrics | Converged / C | Phase 18.2 / Deferred | Five current Products ordered deterministically; rating/price remain intentionally absent. |
 | Field source/confidence/history | External identity links only | Future field-level provenance | C | Deferred | Do not infer canonical auto-update or matching confidence. |
 
 ## CA-013 — Brand Create / Edit
@@ -106,6 +106,12 @@ Intentional divergences are architectural: lifecycle remains Draft/Active/Archiv
 CA-011 A/B/D work is closed. The final screen uses the original prototype—not the former regression baseline—as its hierarchy and density target. The reviewed result has five database-derived KPIs, a six-control operational filter grid with its conditional global Clear action in the rightmost available grid cell, larger linked logo-led identity rows, grouped Product and Category context, explainable active-Locale translation coverage, a separate authoritative Quality column, viewport-safe overflow actions, and bounded pagination. The table header uses the compact spacing and muted surface of the shared UI data-table example. The `1440x1000`, `1024x900`, `768x1024`, and `390x844` references were reviewed against the original and pre-polish Phase 18.1 result before their `brands-list-v3` baselines were approved.
 
 Intentional differences remain explicit: Sites requires a future Site Brand projection; `Needs Review` is derived `Needs attention`; Language/Market is active-Locale Translation; numeric Media is omitted because only canonical logo identity has an approved contract; checkboxes wait for an approved bulk workflow; monthly trends wait for historical analytics; and the global shell remains outside screen ownership. The stable Imports destination is Product-oriented, so no misleading Brand import action is shown.
+
+## Phase 18.2 CA-012 convergence decision
+
+CA-012 A/B/D work is closed. The final screen maps the prototype into a strong name/slug/lifecycle/Quality header, Overview/Media/Translations navigation, a dense logo-led Brand profile, an honest Product Portfolio, five bounded Recent Products, separate derived Categories and editorial Tags, provenance-backed External identities, authoritative Brand Health and actionable Issues, plus compact Lifecycle and Record operations. The rich Samsung acceptance fixture persists every displayed relation and intentionally retains one Missing and one Outdated active-Locale translation so the overview explains real operational work.
+
+The responsive grid uses the main/operations dashboard at 1440, a stable single column at 1024/768, and the explicit mobile priority Profile → Health → Issues → Portfolio → Recent Products → Classification → Provenance → Lifecycle → Record at 390. Published/Synced, Publication Status, Sites/Site Coverage, Versions, hero/banner media, rating/price/SEO metrics, source-feed internals and a category breadcrumb remain intentional architectural divergences.
 
 ## Remaining bounded backlog
 

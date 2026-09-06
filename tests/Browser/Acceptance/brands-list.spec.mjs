@@ -21,7 +21,7 @@ test('CA-011 exposes the persisted operational read model and discovery controls
     await expect(page.locator('[data-screen-id="CA-011"][data-fixture-version="brands-list-v3"]')).toBeVisible()
     await expect(metric(page, 'total-brands')).toContainText('27')
     await expect(metric(page, 'active')).toContainText('14')
-    await expect(metric(page, 'with-logos')).toContainText('9')
+    await expect(metric(page, 'with-logos')).toContainText('10')
     await expect(metric(page, 'missing-translations')).toContainText('22')
     await expect(metric(page, 'needs-attention')).toContainText('24')
 

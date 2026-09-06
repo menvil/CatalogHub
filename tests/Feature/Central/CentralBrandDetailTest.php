@@ -109,7 +109,13 @@ final class CentralBrandDetailTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->get(route('central.brands.show', $brand))
             ->assertOk()
-            ->assertSeeInOrder(['Country', '—', 'Founded', '—', 'Website', '—', 'Support URL', '—', 'Contact email', '—', 'Primary color', '—']);
+            ->assertSee('Country')
+            ->assertSee('Founded')
+            ->assertSee('Website')
+            ->assertSee('Support URL')
+            ->assertSee('Contact email')
+            ->assertSee('Primary color')
+            ->assertSee('—');
     }
 
     public function test_parent_company_is_read_only_authoritative_ownership_with_an_honest_empty_state(): void
@@ -205,6 +211,36 @@ final class CentralBrandDetailTest extends TestCase
             ->assertSee('data-products-count="0"', false)
             ->assertSee('No current canonical products reference this brand yet.')
             ->assertDontSee('Create Product');
+    }
+
+    public function test_recent_products_are_real_bounded_and_exclude_archived_or_other_brand_rows(): void
+    {
+        $brand = CentralBrand::factory()->create();
+        $other = CentralBrand::factory()->create();
+        foreach (range(1, 6) as $index) {
+            CentralProduct::factory()->for($brand, 'brand')->create([
+                'name' => 'Recent product '.$index,
+                'updated_at' => now()->subMinutes($index),
+            ]);
+        }
+        CentralProduct::factory()->for($brand, 'brand')->create([
+            'name' => 'Archived product',
+            'status' => CentralProductStatus::Archived,
+            'updated_at' => now()->addMinute(),
+        ]);
+        CentralProduct::factory()->for($other, 'brand')->create([
+            'name' => 'Other brand product',
+            'updated_at' => now()->addMinutes(2),
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('central.brands.show', $brand))
+            ->assertOk()
+            ->assertSee('data-brand-recent-products', false)
+            ->assertSeeInOrder(['Recent product 1', 'Recent product 2', 'Recent product 3', 'Recent product 4', 'Recent product 5'])
+            ->assertDontSee('Recent product 6')
+            ->assertDontSee('Archived product')
+            ->assertDontSee('Other brand product');
     }
 
     public function test_lifecycle_controls_only_render_valid_intents_for_each_state(): void

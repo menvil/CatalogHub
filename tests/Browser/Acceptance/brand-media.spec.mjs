@@ -5,8 +5,8 @@ import {
     signIn,
 } from '../Support/acceptance.mjs'
 
-const samsungBrandId = 20
-const detailUrl = `/admin/central/brands/${samsungBrandId}`
+const logoWorkflowBrandId = 24
+const detailUrl = `/admin/central/brands/${logoWorkflowBrandId}`
 const mediaUrl = `${detailUrl}/media`
 
 test('CA-012 and CA-014 persist the complete Brand logo repair, replace, and remove journey', async ({ page }) => {
@@ -28,7 +28,7 @@ test('CA-012 and CA-014 persist the complete Brand logo repair, replace, and rem
 
     await page.locator('#logo').setInputFiles('tests/Fixtures/media/brand-logo-a.png')
     await page.locator('[data-logo-upload-form] button[type="submit"]').click()
-    const preview = page.getByAltText('Samsung logo')
+    const preview = page.getByAltText('Zotac logo')
     await expect(preview).toBeVisible()
     await expect(page.getByRole('definition').filter({ hasText: 'brand-logo-a.png' })).toBeVisible()
     await expect(page.getByText('Brand logo updated.', { exact: true })).toBeVisible()
@@ -37,7 +37,7 @@ test('CA-012 and CA-014 persist the complete Brand logo repair, replace, and rem
     await page.goto(detailUrl)
     await expect(page.locator('[data-quality-issue-code="brand_logo_missing"]')).toHaveCount(0)
     await expect(page.locator('[data-quality-issue-code="brand_logo_unusable"]')).toHaveCount(0)
-    await expect(page.getByAltText('Samsung logo')).toBeVisible()
+    await expect(page.getByAltText('Zotac logo')).toBeVisible()
 
     await page.getByRole('tab', { name: 'Media', exact: true }).click()
     await expect(preview).toBeVisible()
@@ -57,7 +57,7 @@ test('CA-012 and CA-014 persist the complete Brand logo repair, replace, and rem
     await expect(preview).not.toHaveAttribute('src', firstSource ?? '')
 
     await page.getByRole('button', { name: 'Remove assignment', exact: true }).click()
-    const dialog = page.getByRole('dialog', { name: 'Remove the canonical logo from Samsung?' })
+    const dialog = page.getByRole('dialog', { name: 'Remove the canonical logo from Zotac?' })
     await expect(dialog).toBeVisible()
     await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
     await expect(dialog).toBeHidden()

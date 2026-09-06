@@ -56,8 +56,43 @@ final class BrandTranslationFixture
             ->delete();
 
         $sourceHash = app(TranslationSourceHashService::class)->forBrand($workspaceBrand);
+        $brandSourceHash = app(TranslationSourceHashService::class)->forBrand($brand);
         $actor = User::query()->where('email', 'translator@demo.cataloghub.test')->firstOrFail();
         $locales = Locale::query()->get()->keyBy('code');
+
+        self::translation(
+            id: 1501511,
+            brand: $brand,
+            locale: $locales->get('en-US'),
+            sourceHash: $brandSourceHash,
+            status: TranslationStatus::Approved,
+            actor: $actor,
+            name: 'Samsung',
+            tagline: 'Together for tomorrow.',
+            shortDescription: 'Global consumer electronics and technology brand.',
+        );
+        self::translation(
+            id: 1501512,
+            brand: $brand,
+            locale: $locales->get('en-DE'),
+            sourceHash: $brandSourceHash,
+            status: TranslationStatus::HumanReviewed,
+            actor: null,
+            name: 'Samsung Germany',
+            tagline: 'Technology for connected living.',
+            shortDescription: 'Human-reviewed regional Brand copy.',
+        );
+        self::translation(
+            id: 1501513,
+            brand: $brand,
+            locale: $locales->get('de-DE'),
+            sourceHash: $brandSourceHash,
+            status: TranslationStatus::Outdated,
+            actor: null,
+            name: 'Samsung',
+            tagline: 'Gemeinsam für morgen.',
+            shortDescription: 'Veraltete deutsche Markenbeschreibung zur Überprüfung.',
+        );
 
         $approved = self::translation(
             id: 1501501,

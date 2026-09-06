@@ -27,6 +27,7 @@ test('CA-011 exposes a right-aligned global clear contract with explicit respons
     assert.ok(!view.match(/name="country"[^>]+clearable/))
     assert.ok(view.indexOf('data-brand-active-filter-count') < view.indexOf('</form>'), 'Global Clear must share the filter grid')
     assert.ok(view.includes('<thead class="bg-admin-surface-muted text-admin-muted">'), 'Table header must use the shared data-table surface')
+    assert.match(css, /\.brand-list-table th \{[\s\S]*?padding-block: 0\.5rem;/, 'Table header must retain the shared py-2 density')
 
     for (const contract of [
         '@media (width >= 40rem)',

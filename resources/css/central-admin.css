@@ -260,9 +260,7 @@
 }
 
 .brand-list-table th {
-    height: 3.25rem;
-    padding-block: 1rem;
-    font-size: 0.875rem;
+    padding-block: 0.5rem;
     font-weight: 600;
     white-space: nowrap;
 }

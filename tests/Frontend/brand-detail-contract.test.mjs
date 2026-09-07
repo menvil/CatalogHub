@@ -20,7 +20,18 @@ test('CA-012 composes real Brand overview regions without prototype-only domains
 })
 
 test('CA-012 defines deliberate desktop and mobile region order', () => {
-    assert.match(css, /grid-template-areas:\s*'profile'\s*'health'\s*'issues'\s*'portfolio'\s*'products'\s*'classification'\s*'provenance'\s*'lifecycle'\s*'record'/)
-    assert.match(css, /@media \(width >= 80rem\)[\s\S]*'profile health'[\s\S]*'portfolio issues'[\s\S]*'products classification'/)
+    assert.match(view, /data-brand-detail-main[\s\S]*brand-detail-profile[\s\S]*brand-detail-portfolio[\s\S]*brand-detail-products[\s\S]*brand-detail-provenance/)
+    assert.match(view, /data-brand-detail-rail[\s\S]*brand-detail-health[\s\S]*brand-detail-issues[\s\S]*brand-detail-classification[\s\S]*brand-detail-lifecycle[\s\S]*brand-detail-record/)
+    assert.match(css, /\.brand-detail-profile \{ order: 1; \}[\s\S]*\.brand-detail-health \{ order: 2; \}[\s\S]*\.brand-detail-record \{ order: 9; \}/)
+    assert.match(css, /@media \(width >= 80rem\)[\s\S]*\.brand-detail-main,[\s\S]*\.brand-detail-rail \{[\s\S]*display: flex;/)
     assert.match(view, /brand-detail-logo[\s\S]*object-contain/)
+})
+
+test('CA-012 keeps portfolio summary separate from Classification chips', () => {
+    const portfolio = view.slice(view.indexOf('brand-detail-portfolio'), view.indexOf('brand-detail-products'))
+    const classification = view.slice(view.indexOf('brand-detail-classification'), view.indexOf('brand-detail-lifecycle'))
+
+    assert.doesNotMatch(portfolio, /data-brand-derived-categories|brand-detail-category-chip/)
+    assert.match(classification, /data-brand-derived-categories/)
+    assert.match(classification, /data-brand-tags/)
 })

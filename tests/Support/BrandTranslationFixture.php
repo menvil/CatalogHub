@@ -93,7 +93,17 @@ final class BrandTranslationFixture
             tagline: 'Gemeinsam für morgen.',
             shortDescription: 'Veraltete deutsche Markenbeschreibung zur Überprüfung.',
         );
-
+        self::translation(
+            id: 1501514,
+            brand: $brand,
+            locale: $locales->get('fr-FR'),
+            sourceHash: $brandSourceHash,
+            status: TranslationStatus::MachineTranslated,
+            actor: null,
+            name: 'Samsung',
+            tagline: 'Ensemble pour demain.',
+            shortDescription: 'Traduction automatique déterministe pour la marque de référence.',
+        );
         $approved = self::translation(
             id: 1501501,
             brand: $workspaceBrand,

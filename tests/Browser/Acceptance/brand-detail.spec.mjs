@@ -29,7 +29,7 @@ test('CA-012 derives complete and needs-attention quality states from persisted 
     await expect(quality).toContainText('Needs attention')
     await expect(quality).toContainText('80%')
     await expect(quality).toContainText('8 of 10 checks complete')
-    await expect(quality.locator('[data-screen-region="translation-summary"]')).toContainText('2 of 4 active locales complete')
+    await expect(quality.locator('[data-screen-region="translation-summary"]')).toContainText('3 of 4 active locales complete')
     await expect(page.getByAltText('Samsung logo')).toBeVisible()
     const germanIssue = issues.locator('[data-quality-issue-code]').filter({ hasText: 'German (de-DE) translation is outdated' })
     await expect(germanIssue).toBeVisible()
@@ -37,8 +37,12 @@ test('CA-012 derives complete and needs-attention quality states from persisted 
     await expect(page.locator('[data-screen-id="CA-015"]')).toBeVisible()
     await expect(page).toHaveURL(new RegExp(`/admin/central/brands/${activeBrandId}/translations/de-DE$`))
     await page.getByRole('tab', { name: 'Overview', exact: true }).click()
-    const frenchIssue = issues.locator('[data-quality-issue-code]').filter({ hasText: 'French (fr-FR) translation is missing' })
-    await expect(frenchIssue).toBeVisible()
+    const profileIssue = issues.locator('[data-quality-issue-code]').filter({ hasText: 'Support or contact information is missing' })
+    await expect(profileIssue).toBeVisible()
+    await profileIssue.getByRole('link', { name: 'Edit profile', exact: true }).click()
+    await expect(page.locator('[data-screen-id="CA-013"]')).toBeVisible()
+    await page.getByRole('link', { name: 'Cancel', exact: true }).click()
+    await expect(page.locator('[data-screen-id="CA-012"]')).toBeVisible()
     await expect(issues.locator('[data-quality-issue-code]')).toHaveCount(2)
     assertNoPageErrors()
 })
@@ -60,11 +64,11 @@ test('CA-012 supports list, detail, edit, and detail navigation', async ({ page 
     await expect(page.locator('[data-screen-region="general-information"]')).toContainText('South Korea (KR)')
     await expect(page.locator('[data-parent-company]')).toHaveText('Samsung Electronics Co., Ltd.')
     await expect(page.locator('[data-screen-region="translation-summary"]')).toContainText('active locales complete')
-    await expect(page.locator('[data-screen-region="usage"]')).toContainText('42')
-    await expect(page.locator('[data-screen-region="usage"]')).toContainText('Smartphones')
-    await expect(page.locator('[data-screen-region="recent-products"]')).toContainText('Samsung Galaxy S26')
+    await expect(page.locator('[data-screen-region="usage"]')).toContainText('8')
+    await expect(page.locator('[data-screen-region="usage"]')).not.toContainText('Smartphones')
+    await expect(page.locator('[data-screen-region="recent-products"]')).toContainText('Samsung Galaxy S26 Ultra')
     await expect(page.locator('[data-screen-region="recent-products"] [data-product-id]')).toHaveCount(5)
-    await page.locator('[data-screen-region="recent-products"]').getByRole('link', { name: 'Samsung Galaxy S26', exact: true }).click()
+    await page.locator('[data-screen-region="recent-products"]').getByRole('link', { name: 'Samsung Galaxy S26 Ultra', exact: true }).click()
     await expect(page).toHaveURL(/\/admin\/central\/central-products\//)
     await page.goBack()
     await expect(page.locator('[data-screen-id="CA-012"]')).toBeVisible()
@@ -153,13 +157,13 @@ test('CA-012 manages normalized Brand tags and shows direct current category cov
     const usage = page.locator('[data-screen-region="usage"]')
     await expect(classification.locator('[data-brand-tags]')).toContainText('Consumer Electronics')
     await expect(classification.locator('[data-brand-tags]')).toContainText('Premium')
-    await expect(usage).toContainText('Smartphones')
-    await expect(usage).toContainText('24')
-    await expect(usage).toContainText('Televisions')
-    await expect(usage).toContainText('12')
-    await expect(usage).toContainText('Tablets')
-    await expect(usage).toContainText('6')
-    await expect(usage).not.toContainText('Laptops')
+    await expect(classification.locator('[data-brand-derived-categories]')).toContainText('Smartphones')
+    await expect(classification.locator('[data-brand-derived-categories]')).toContainText('Televisions')
+    await expect(classification.locator('[data-brand-derived-categories]')).toContainText('Tablets')
+    await expect(classification.locator('[data-brand-derived-categories]')).toContainText('Laptops')
+    await expect(classification.locator('[data-brand-derived-categories]')).toContainText('Monitors')
+    await expect(usage).not.toContainText('Smartphones')
+    await expect(usage).not.toContainText('Televisions')
 
     await classification.getByRole('button', { name: 'Manage tags' }).click()
     const dialog = page.getByRole('dialog', { name: 'Manage tags' })
@@ -289,6 +293,55 @@ test('CA-012 manages external identity provenance with reversible modal editing'
     assertNoPageErrors()
 })
 
+test('CA-012 uses independent desktop stacks and stable responsive ordering', async ({ page }) => {
+    const assertNoPageErrors = observePageErrors(page)
+
+    await signIn(page, 'central', foundationDemo.centralAdmin)
+    await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
+
+    for (const viewport of [
+        { width: 1440, height: 1000 },
+        { width: 1280, height: 900 },
+        { width: 1024, height: 900 },
+        { width: 768, height: 1024 },
+        { width: 390, height: 844 },
+    ]) {
+        await page.setViewportSize(viewport)
+        await page.goto(`/admin/central/brands/${activeBrandId}`)
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+
+        if (viewport.width >= 1280) {
+            const main = await page.locator('[data-brand-detail-main]').boundingBox()
+            const rail = await page.locator('[data-brand-detail-rail]').boundingBox()
+            const issues = await page.locator('[data-screen-region="quality-issues"]').boundingBox()
+            const classification = await page.locator('[data-screen-region="classification"]').boundingBox()
+            expect(main).not.toBeNull()
+            expect(rail).not.toBeNull()
+            expect(rail.x).toBeGreaterThan(main.x + main.width)
+            expect(classification.y - (issues.y + issues.height)).toBeLessThanOrEqual(24)
+        } else {
+            const selectors = [
+                '[data-screen-region="brand-identity"]',
+                '[data-screen-region="quality-completeness"]',
+                '[data-screen-region="quality-issues"]',
+                '[data-screen-region="usage"]',
+                '[data-screen-region="recent-products"]',
+                '[data-screen-region="classification"]',
+                '[data-screen-region="external-identities"]',
+                '[data-screen-region="lifecycle"]',
+                '[data-screen-region="record-metadata"]',
+            ]
+            const order = []
+            for (const selector of selectors) {
+                order.push(await page.locator(selector).evaluate((element) => element.getBoundingClientRect().top))
+            }
+            expect(order).toEqual([...order].sort((left, right) => left - right))
+        }
+    }
+
+    assertNoPageErrors()
+})
+
 test('CA-012 remains usable and overflow-free at 390px', async ({ page }) => {
     const assertNoPageErrors = observePageErrors(page)
 
@@ -304,8 +357,8 @@ test('CA-012 remains usable and overflow-free at 390px', async ({ page }) => {
     await expect(page.getByAltText('Samsung logo')).toBeVisible()
     await expect(page.locator('[data-screen-region="quality-completeness"]')).toContainText('80%')
     await expect(page.locator('[data-screen-region="quality-issues"]')).toContainText('2 issues need attention')
-    await expect(page.locator('[data-screen-region="usage"]')).toContainText('42 current canonical products reference this brand.')
-    await expect(page.locator('[data-screen-region="recent-products"]')).toContainText('Samsung Galaxy S26')
+    await expect(page.locator('[data-screen-region="usage"]')).toContainText('8 current canonical products reference this brand.')
+    await expect(page.locator('[data-screen-region="recent-products"]')).toContainText('Samsung Galaxy S26 Ultra')
     await expect(page.locator('[data-screen-region="classification"]')).toBeVisible()
     await page.locator('[data-screen-region="classification"]').getByRole('button', { name: 'Manage tags' }).click()
     const tagDialog = page.getByRole('dialog', { name: 'Manage tags' })

@@ -598,31 +598,33 @@
 }
 
 .brand-detail-layout {
-    display: grid;
+    display: flex;
     min-width: 0;
-    grid-template-areas:
-        'profile'
-        'health'
-        'issues'
-        'portfolio'
-        'products'
-        'classification'
-        'provenance'
-        'lifecycle'
-        'record';
+    flex-direction: column;
     gap: 1.25rem;
     align-items: start;
 }
 
-.brand-detail-profile { grid-area: profile; }
-.brand-detail-health { grid-area: health; }
-.brand-detail-issues { grid-area: issues; }
-.brand-detail-portfolio { grid-area: portfolio; }
-.brand-detail-products { grid-area: products; }
-.brand-detail-classification { grid-area: classification; }
-.brand-detail-provenance { grid-area: provenance; }
-.brand-detail-lifecycle { grid-area: lifecycle; }
-.brand-detail-record { grid-area: record; }
+.brand-detail-main,
+.brand-detail-rail {
+    display: contents;
+}
+
+.brand-detail-profile { order: 1; }
+.brand-detail-health { order: 2; }
+.brand-detail-issues { order: 3; }
+.brand-detail-portfolio { order: 4; }
+.brand-detail-products { order: 5; }
+.brand-detail-classification { order: 6; }
+.brand-detail-provenance { order: 7; }
+.brand-detail-lifecycle { order: 8; }
+.brand-detail-record { order: 9; }
+
+.brand-detail-layout > *,
+.brand-detail-main > *,
+.brand-detail-rail > * {
+    width: 100%;
+}
 
 .brand-detail-profile-grid {
     display: grid;
@@ -722,13 +724,13 @@
 
 @media (width >= 40rem) {
     .brand-detail-profile-grid {
-        grid-template-columns: 9rem minmax(0, 1fr);
+        grid-template-columns: 10rem minmax(0, 1fr);
     }
 
     .brand-detail-logo {
-        width: 9rem;
-        min-height: 9rem;
-        height: 9rem;
+        width: 10rem;
+        min-height: 9.5rem;
+        height: 9.5rem;
     }
 
     .brand-detail-profile-fields {
@@ -738,13 +740,24 @@
 
 @media (width >= 80rem) {
     .brand-detail-layout {
-        grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
-        grid-template-areas:
-            'profile health'
-            'portfolio issues'
-            'products classification'
-            'provenance lifecycle'
-            'provenance record';
+        flex-direction: row;
+        align-items: flex-start;
+    }
+
+    .brand-detail-main,
+    .brand-detail-rail {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .brand-detail-main {
+        flex: 2.15 1 0;
+    }
+
+    .brand-detail-rail {
+        flex: 1 1 0;
     }
 
     .brand-detail-profile-fields {

@@ -1,7 +1,7 @@
 <x-admin.card
     id="external-identities"
-    title="Provenance"
-    description="External identities from configured import sources."
+    title="External identities"
+    description="Linked source records."
     data-screen-region="external-identities"
 >
     <x-slot:actions>

@@ -23,7 +23,7 @@ use RuntimeException;
 
 final class BrandDetailFixture
 {
-    public const VERSION = 'brand-detail-v8';
+    public const VERSION = 'brand-detail-v9';
 
     public const ACTIVE_BRAND_ID = 20;
 

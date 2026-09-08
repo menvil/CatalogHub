@@ -70,7 +70,7 @@
 @endsection
 
 @section('content')
-    <div class="brand-detail-page" data-brand-detail-fixture="brand-detail-v8">
+    <div class="brand-detail-page" data-brand-detail-fixture="brand-detail-v9">
         <header class="brand-detail-heading" data-screen-id="CA-012">
             <div class="min-w-0">
                 <div class="flex min-w-0 flex-wrap items-center gap-3">
@@ -89,47 +89,58 @@
             @can('catalog.brands.manage')
                 <div class="brand-detail-heading-actions" data-page-actions>
                     <x-ui.button :href="route('central.brands.edit', $brand, absolute: false)">Edit Brand</x-ui.button>
+                    @switch($brand->status)
+                        @case(\App\Enums\CentralBrandStatus::Draft)
+                            <x-ui.button variant="secondary" aria-haspopup="dialog" aria-controls="activate-brand-modal" data-admin-modal-open-target="activate-brand-modal">Activate Brand</x-ui.button>
+                            <x-ui.button variant="danger" aria-haspopup="dialog" aria-controls="archive-brand-modal" data-admin-modal-open-target="archive-brand-modal">Archive Brand</x-ui.button>
+                            @break
+                        @case(\App\Enums\CentralBrandStatus::Active)
+                            <x-ui.button variant="danger" aria-haspopup="dialog" aria-controls="archive-brand-modal" data-admin-modal-open-target="archive-brand-modal">Archive Brand</x-ui.button>
+                            @break
+                        @case(\App\Enums\CentralBrandStatus::Archived)
+                            <x-ui.button variant="secondary" aria-haspopup="dialog" aria-controls="restore-brand-modal" data-admin-modal-open-target="restore-brand-modal">Restore Brand</x-ui.button>
+                            @break
+                    @endswitch
                 </div>
             @endcan
         </header>
+
+        @if ($lifecycleError)
+            <p class="rounded-admin-input border border-admin-danger/30 bg-admin-danger-soft px-3 py-2 text-sm text-admin-text" role="alert" data-lifecycle-error>{{ $lifecycleError }}</p>
+        @endif
 
         @include('central-admin.brands.partials.subnav', ['active' => 'overview'])
 
         <div class="brand-detail-layout" data-admin-detail-layout>
             <div class="brand-detail-main" data-brand-detail-main>
-                <x-admin.card class="brand-detail-profile min-w-0" data-screen-region="brand-identity">
-                    <div class="flex min-w-0 flex-wrap items-start justify-between gap-3 border-b border-admin-border pb-3">
-                        <div>
-                            <p class="text-xs font-semibold uppercase tracking-wide text-admin-primary">Brand profile</p>
-                            <h2 class="mt-1 text-lg font-semibold text-admin-text">Identity and contact</h2>
-                        </div>
-                        @can('catalog.brands.manage')
-                            <a href="{{ route('central.brands.media', $brand, absolute: false) }}" class="inline-flex text-sm font-semibold text-admin-primary underline decoration-admin-primary/30 underline-offset-2">Manage logo</a>
-                        @endcan
-                    </div>
-
-                    <div class="brand-detail-profile-grid mt-admin-card">
-                        <div class="brand-detail-logo" data-logo-delivery-state="{{ $logo->state->value }}">
-                            @if ($logo->state === \App\Enums\MediaDeliveryState::Ready && $logo->url !== null)
-                                <img src="{{ $logo->url }}" alt="{{ $brand->name }} logo" class="h-full w-full object-contain">
-                            @elseif ($logo->state === \App\Enums\MediaDeliveryState::Missing || $logo->asset === null)
-                                <div class="text-center">
-                                    <p class="text-sm font-semibold text-admin-text">No logo</p>
-                                    <p class="mt-1 text-xs text-admin-muted">Global primary logo is not assigned.</p>
-                                </div>
-                            @else
-                                @php
-                                    $logoStateCopy = match ($logo->state) {
-                                        \App\Enums\MediaDeliveryState::Processing => 'The assigned logo is still processing.',
-                                        \App\Enums\MediaDeliveryState::Failed => 'Processing failed for the assigned logo.',
-                                        default => 'A logo is assigned, but no usable file is currently available.',
-                                    };
-                                @endphp
-                                <div class="text-center">
-                                    <p class="text-sm font-semibold text-admin-text">{{ $logo->state->label() }} logo</p>
-                                    <p class="mt-1 text-xs text-admin-muted">{{ $logoStateCopy }}</p>
-                                </div>
-                            @endif
+                <x-admin.card class="brand-detail-profile min-w-0" title="Identity and contact" data-screen-region="brand-identity">
+                    <div class="brand-detail-profile-grid">
+                        <div class="brand-detail-logo-column">
+                            <div class="brand-detail-logo" data-logo-delivery-state="{{ $logo->state->value }}">
+                                @if ($logo->state === \App\Enums\MediaDeliveryState::Ready && $logo->url !== null)
+                                    <img src="{{ $logo->url }}" alt="{{ $brand->name }} logo" class="h-full w-full object-contain">
+                                @elseif ($logo->state === \App\Enums\MediaDeliveryState::Missing || $logo->asset === null)
+                                    <div class="text-center">
+                                        <p class="text-sm font-semibold text-admin-text">No logo</p>
+                                        <p class="mt-1 text-xs text-admin-muted">Global primary logo is not assigned.</p>
+                                    </div>
+                                @else
+                                    @php
+                                        $logoStateCopy = match ($logo->state) {
+                                            \App\Enums\MediaDeliveryState::Processing => 'The assigned logo is still processing.',
+                                            \App\Enums\MediaDeliveryState::Failed => 'Processing failed for the assigned logo.',
+                                            default => 'A logo is assigned, but no usable file is currently available.',
+                                        };
+                                    @endphp
+                                    <div class="text-center">
+                                        <p class="text-sm font-semibold text-admin-text">{{ $logo->state->label() }} logo</p>
+                                        <p class="mt-1 text-xs text-admin-muted">{{ $logoStateCopy }}</p>
+                                    </div>
+                                @endif
+                            </div>
+                            @can('catalog.brands.manage')
+                                <a href="{{ route('central.brands.media', $brand, absolute: false) }}" class="mt-2 inline-flex text-sm font-semibold text-admin-primary underline decoration-admin-primary/30 underline-offset-2">Manage logo</a>
+                            @endcan
                         </div>
 
                         <dl class="brand-detail-profile-fields" data-screen-region="general-information">
@@ -177,30 +188,110 @@
                                 </div>
                             </div>
                         </dl>
+
+                        <section class="brand-detail-overview-summary" aria-labelledby="brand-summary-heading" data-screen-region="record-metadata">
+                            <h3 id="brand-summary-heading" class="text-sm font-semibold text-admin-text">Brand summary</h3>
+                            <div class="brand-detail-summary-metrics mt-3">
+                                <div>
+                                    <strong data-products-count="{{ $productsCount }}">{{ number_format($productsCount) }}</strong>
+                                    <span>Products</span>
+                                </div>
+                                <div>
+                                    <strong>{{ number_format($categoryCoverage->count()) }}</strong>
+                                    <span>Categories</span>
+                                </div>
+                                <div>
+                                    <strong>{{ $translationSummary->total === 0 ? '—' : $translationSummary->score().'%' }}</strong>
+                                    <span>Translations</span>
+                                </div>
+                            </div>
+                            @if ($translationSummary->total > 0)
+                                <div class="mt-3 h-1.5 overflow-hidden rounded-admin-badge bg-admin-surface-muted" role="progressbar" aria-label="Translation coverage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $translationSummary->score() }}">
+                                    <div class="h-full rounded-admin-badge bg-admin-primary" style="width: {{ $translationSummary->score() }}%"></div>
+                                </div>
+                            @endif
+                            <dl class="brand-detail-record-list mt-4">
+                                <div>
+                                    <dt>Created</dt>
+                                    <dd><x-ui.timestamp :value="$brand->created_at" timezone="UTC" /></dd>
+                                </div>
+                                <div>
+                                    <dt>Updated</dt>
+                                    <dd><x-ui.timestamp :value="$brand->updated_at" timezone="UTC" /></dd>
+                                </div>
+                                <div>
+                                    <dt>Record ID</dt>
+                                    <dd class="break-all font-foundation-mono">{{ $brand->getKey() }}</dd>
+                                </div>
+                            </dl>
+                        </section>
                     </div>
                 </x-admin.card>
 
-                <x-admin.card class="brand-detail-portfolio min-w-0" title="Product portfolio" data-screen-region="usage">
-                    <div class="brand-detail-metrics">
-                        <div class="brand-detail-metric">
-                            <strong class="text-2xl font-semibold text-admin-text" data-products-count="{{ $productsCount }}">{{ number_format($productsCount) }}</strong>
-                            <p>Products</p>
+                <div class="brand-detail-middle-grid">
+                    <x-admin.card class="brand-detail-portfolio min-w-0" title="Product portfolio" data-screen-region="usage">
+                        <div class="brand-detail-metrics">
+                            <div class="brand-detail-metric">
+                                <strong class="text-2xl font-semibold text-admin-text" data-products-count="{{ $productsCount }}">{{ number_format($productsCount) }}</strong>
+                                <p>Products</p>
+                            </div>
+                            <div class="brand-detail-metric">
+                                <strong class="text-2xl font-semibold text-admin-text">{{ number_format($categoryCoverage->count()) }}</strong>
+                                <p>Categories</p>
+                            </div>
+                            <div class="brand-detail-metric">
+                                <strong class="text-2xl font-semibold text-admin-text">{{ $translationSummary->total === 0 ? '—' : $translationSummary->score().'%' }}</strong>
+                                <p>Translations</p>
+                            </div>
                         </div>
-                        <div class="brand-detail-metric">
-                            <strong class="text-2xl font-semibold text-admin-text">{{ number_format($categoryCoverage->count()) }}</strong>
-                            <p>Categories</p>
+                        <p class="mt-3 text-sm text-admin-muted" data-product-usage-copy>
+                            @if ($productsCount === 0) No current canonical products reference this brand yet.
+                            @elseif ($productsCount === 1) 1 current canonical product references this brand.
+                            @else {{ number_format($productsCount) }} current canonical products reference this brand. @endif
+                        </p>
+                    </x-admin.card>
+
+                    <x-admin.card id="classification" class="brand-detail-classification min-w-0" title="Classification" data-screen-region="classification">
+                        <x-slot:actions>
+                            @can('catalog.brands.manage')
+                                <x-ui.button variant="secondary" aria-haspopup="dialog" aria-controls="manage-brand-tags-modal" data-admin-modal-open-target="manage-brand-tags-modal">Manage tags</x-ui.button>
+                            @endcan
+                        </x-slot:actions>
+                        <div>
+                            <h3 class="text-xs font-semibold uppercase tracking-wide text-admin-muted">Derived categories</h3>
+                            @if ($categoryCoverage->isEmpty())
+                                <p class="mt-2 text-sm text-admin-muted">No category coverage.</p>
+                            @else
+                                <ul class="mt-2 flex flex-wrap gap-2" data-brand-derived-categories>
+                                    @foreach ($categoryCoverage->take(5) as $coverage)
+                                        <li class="brand-detail-category-chip" data-category-id="{{ $coverage->categoryId }}">
+                                            <span>{{ $coverage->name }}</span>
+                                            <strong>{{ number_format($coverage->productsCount) }}</strong>
+                                        </li>
+                                    @endforeach
+                                    @if ($categoryCoverage->count() > 5)
+                                        <li class="rounded-admin-badge bg-admin-surface-muted px-2.5 py-1 text-xs font-medium text-admin-muted">+{{ $categoryCoverage->count() - 5 }} more</li>
+                                    @endif
+                                </ul>
+                            @endif
                         </div>
-                        <div class="brand-detail-metric">
-                            <strong class="text-2xl font-semibold text-admin-text">{{ $translationSummary->total === 0 ? '—' : $translationSummary->score().'%' }}</strong>
-                            <p>Translations</p>
+                        <div class="mt-admin-card border-t border-admin-border pt-admin-card">
+                            <h3 class="text-xs font-semibold uppercase tracking-wide text-admin-muted">Editorial tags</h3>
+                            @if ($brand->tags->isEmpty())
+                                <p class="mt-2 text-sm text-admin-muted">No tags have been assigned to this Brand.</p>
+                            @else
+                                <div class="mt-2 flex flex-wrap gap-2" data-brand-tags>
+                                    @foreach ($brand->tags->take(6) as $tag)
+                                        <span class="inline-flex max-w-full break-words rounded-admin-badge bg-admin-surface-muted px-2.5 py-1 text-xs font-medium text-admin-text ring-1 ring-inset ring-admin-border">{{ $tag->name }}</span>
+                                    @endforeach
+                                    @if ($brand->tags->count() > 6)
+                                        <span class="rounded-admin-badge bg-admin-surface-muted px-2.5 py-1 text-xs font-medium text-admin-muted">+{{ $brand->tags->count() - 6 }} more</span>
+                                    @endif
+                                </div>
+                            @endif
                         </div>
-                    </div>
-                    <p class="mt-3 text-sm text-admin-muted" data-product-usage-copy>
-                        @if ($productsCount === 0) No current canonical products reference this brand yet.
-                        @elseif ($productsCount === 1) 1 current canonical product references this brand.
-                        @else {{ number_format($productsCount) }} current canonical products reference this brand. @endif
-                    </p>
-                </x-admin.card>
+                    </x-admin.card>
+                </div>
 
                 <x-admin.card class="brand-detail-products min-w-0" title="Recent products" data-screen-region="recent-products">
                     @if ($recentProducts->isEmpty())
@@ -303,88 +394,6 @@
                     @endif
                 </x-admin.card>
 
-                <x-admin.card id="classification" class="brand-detail-classification min-w-0" title="Classification" data-screen-region="classification">
-                    <x-slot:actions>
-                        @can('catalog.brands.manage')
-                            <x-ui.button variant="secondary" aria-haspopup="dialog" aria-controls="manage-brand-tags-modal" data-admin-modal-open-target="manage-brand-tags-modal">Manage tags</x-ui.button>
-                        @endcan
-                    </x-slot:actions>
-                    <div>
-                        <h3 class="text-xs font-semibold uppercase tracking-wide text-admin-muted">Derived categories</h3>
-                        @if ($categoryCoverage->isEmpty())
-                            <p class="mt-2 text-sm text-admin-muted">No category coverage.</p>
-                        @else
-                            <ul class="mt-2 flex flex-wrap gap-2" data-brand-derived-categories>
-                                @foreach ($categoryCoverage->take(5) as $coverage)
-                                    <li class="brand-detail-category-chip" data-category-id="{{ $coverage->categoryId }}">
-                                        <span>{{ $coverage->name }}</span>
-                                        <strong>{{ number_format($coverage->productsCount) }}</strong>
-                                    </li>
-                                @endforeach
-                                @if ($categoryCoverage->count() > 5)
-                                    <li class="rounded-admin-badge bg-admin-surface-muted px-2.5 py-1 text-xs font-medium text-admin-muted">+{{ $categoryCoverage->count() - 5 }} more</li>
-                                @endif
-                            </ul>
-                        @endif
-                    </div>
-                    <div class="mt-admin-card border-t border-admin-border pt-admin-card">
-                        <h3 class="text-xs font-semibold uppercase tracking-wide text-admin-muted">Editorial tags</h3>
-                        @if ($brand->tags->isEmpty())
-                            <p class="mt-2 text-sm text-admin-muted">No tags have been assigned to this Brand.</p>
-                        @else
-                            <div class="mt-2 flex flex-wrap gap-2" data-brand-tags>
-                                @foreach ($brand->tags->take(6) as $tag)
-                                    <span class="inline-flex max-w-full rounded-admin-badge bg-admin-surface-muted px-2.5 py-1 text-xs font-medium text-admin-text ring-1 ring-inset ring-admin-border">{{ $tag->name }}</span>
-                                @endforeach
-                                @if ($brand->tags->count() > 6)
-                                    <span class="rounded-admin-badge bg-admin-surface-muted px-2.5 py-1 text-xs font-medium text-admin-muted">+{{ $brand->tags->count() - 6 }} more</span>
-                                @endif
-                            </div>
-                        @endif
-                    </div>
-                </x-admin.card>
-
-                <x-admin.card class="brand-detail-lifecycle min-w-0" title="Lifecycle" data-screen-region="lifecycle">
-                    @if ($lifecycleError)
-                        <p class="mb-admin-card rounded-admin-input border border-admin-danger/30 bg-admin-danger-soft px-3 py-2 text-sm text-admin-text" role="alert" data-lifecycle-error>{{ $lifecycleError }}</p>
-                    @endif
-                    @can('catalog.brands.manage')
-                        @switch($brand->status)
-                            @case(\App\Enums\CentralBrandStatus::Draft)
-                                <p class="text-sm text-admin-muted">Draft brands are not yet available for normal catalog use.</p>
-                                <div class="mt-3 flex flex-wrap gap-2">
-                                    <x-ui.button aria-haspopup="dialog" aria-controls="activate-brand-modal" data-admin-modal-open-target="activate-brand-modal">Activate Brand</x-ui.button>
-                                    <x-ui.button variant="danger" aria-haspopup="dialog" aria-controls="archive-brand-modal" data-admin-modal-open-target="archive-brand-modal">Archive Brand</x-ui.button>
-                                </div>
-                                @break
-                            @case(\App\Enums\CentralBrandStatus::Active)
-                                <p class="text-sm text-admin-muted">Active brands are available for normal catalog use.</p>
-                                <x-ui.button variant="danger" class="mt-3" aria-haspopup="dialog" aria-controls="archive-brand-modal" data-admin-modal-open-target="archive-brand-modal">Archive Brand</x-ui.button>
-                                @break
-                            @case(\App\Enums\CentralBrandStatus::Archived)
-                                <p class="text-sm text-admin-muted">Archived references are retained. Restore returns this Brand to Draft.</p>
-                                <x-ui.button class="mt-3" aria-haspopup="dialog" aria-controls="restore-brand-modal" data-admin-modal-open-target="restore-brand-modal">Restore Brand</x-ui.button>
-                                @break
-                        @endswitch
-                    @endcan
-                </x-admin.card>
-
-                <x-admin.card class="brand-detail-record min-w-0" title="Record" data-screen-region="record-metadata">
-                    <dl class="grid grid-cols-2 gap-admin-field">
-                        <div class="min-w-0">
-                            <dt class="text-xs font-medium uppercase tracking-wide text-admin-muted">Record ID</dt>
-                            <dd class="mt-1 break-all font-foundation-mono text-sm text-admin-text">{{ $brand->getKey() }}</dd>
-                        </div>
-                        <div class="min-w-0">
-                            <dt class="text-xs font-medium uppercase tracking-wide text-admin-muted">Created</dt>
-                            <dd class="mt-1"><x-ui.timestamp :value="$brand->created_at" timezone="UTC" /></dd>
-                        </div>
-                        <div class="col-span-2 min-w-0">
-                            <dt class="text-xs font-medium uppercase tracking-wide text-admin-muted">Updated</dt>
-                            <dd class="mt-1"><x-ui.timestamp :value="$brand->updated_at" timezone="UTC" /></dd>
-                        </div>
-                    </dl>
-                </x-admin.card>
             </aside>
         </div>
 

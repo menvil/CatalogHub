@@ -606,7 +606,8 @@
 }
 
 .brand-detail-main,
-.brand-detail-rail {
+.brand-detail-rail,
+.brand-detail-middle-grid {
     display: contents;
 }
 
@@ -614,15 +615,14 @@
 .brand-detail-health { order: 2; }
 .brand-detail-issues { order: 3; }
 .brand-detail-portfolio { order: 4; }
-.brand-detail-products { order: 5; }
-.brand-detail-classification { order: 6; }
+.brand-detail-classification { order: 5; }
+.brand-detail-products { order: 6; }
 .brand-detail-provenance { order: 7; }
-.brand-detail-lifecycle { order: 8; }
-.brand-detail-record { order: 9; }
 
 .brand-detail-layout > *,
 .brand-detail-main > *,
-.brand-detail-rail > * {
+.brand-detail-rail > *,
+.brand-detail-middle-grid > * {
     width: 100%;
 }
 
@@ -634,8 +634,9 @@
 
 .brand-detail-logo {
     display: flex;
-    width: 100%;
+    width: min(100%, 14rem);
     min-height: 8rem;
+    margin-inline: auto;
     align-items: center;
     justify-content: center;
     overflow: hidden;
@@ -643,6 +644,11 @@
     border-radius: var(--radius-admin-card);
     background: var(--color-admin-surface-muted);
     padding: 1.25rem;
+}
+
+.brand-detail-logo-column {
+    min-width: 0;
+    text-align: center;
 }
 
 .brand-detail-profile-fields {
@@ -663,6 +669,68 @@
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
+}
+
+.brand-detail-overview-summary {
+    min-width: 0;
+    border-top: 1px solid var(--color-admin-border);
+    padding-top: 1rem;
+}
+
+.brand-detail-summary-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.brand-detail-summary-metrics > div {
+    min-width: 0;
+    text-align: center;
+}
+
+.brand-detail-summary-metrics strong,
+.brand-detail-summary-metrics span {
+    display: block;
+}
+
+.brand-detail-summary-metrics strong {
+    color: var(--color-admin-text);
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.brand-detail-summary-metrics span {
+    margin-top: 0.125rem;
+    color: var(--color-admin-muted);
+    font-size: 0.6875rem;
+}
+
+.brand-detail-record-list {
+    display: grid;
+    min-width: 0;
+    gap: 0.65rem;
+}
+
+.brand-detail-record-list > div {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: 4rem minmax(0, 1fr);
+    gap: 0.5rem;
+    align-items: baseline;
+}
+
+.brand-detail-record-list dt {
+    color: var(--color-admin-muted);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.brand-detail-record-list dd {
+    min-width: 0;
+    color: var(--color-admin-text);
+    font-size: 0.75rem;
 }
 
 .brand-detail-metrics {
@@ -736,6 +804,10 @@
     .brand-detail-profile-fields {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .brand-detail-overview-summary {
+        grid-column: 1 / -1;
+    }
 }
 
 @media (width >= 80rem) {
@@ -760,8 +832,32 @@
         flex: 1 1 0;
     }
 
-    .brand-detail-profile-fields {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+    .brand-detail-middle-grid {
+        display: grid;
+        min-width: 0;
+        order: 2;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1.25rem;
+        align-items: stretch;
+    }
+
+    .brand-detail-middle-grid > [data-admin-card] {
+        height: 100%;
+    }
+
+    .brand-detail-profile-grid {
+        grid-template-columns: 10rem minmax(18rem, 1.6fr) minmax(12rem, 0.9fr);
+    }
+
+    .brand-detail-products { order: 3; }
+    .brand-detail-provenance { order: 4; }
+
+    .brand-detail-overview-summary {
+        grid-column: auto;
+        border-top: 0;
+        border-left: 1px solid var(--color-admin-border);
+        padding-top: 0;
+        padding-left: 1rem;
     }
 }
 
@@ -773,6 +869,11 @@
     .brand-detail-heading-actions,
     .brand-detail-heading-actions > * {
         width: 100%;
+    }
+
+    .brand-detail-heading-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .brand-detail-metrics {

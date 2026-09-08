@@ -61,8 +61,17 @@ test('CA-012 supports list, detail, edit, and detail navigation', async ({ page 
     await expect(page.locator('[data-screen-id="CA-012"]')).toContainText('Samsung')
     await expect(page.getByText('CA-012', { exact: true })).toHaveCount(0)
     await expect(page.locator('[data-screen-region="status-context"]')).toContainText('Active')
-    await expect(page.locator('[data-screen-region="general-information"]')).toContainText('South Korea (KR)')
+    const overview = page.locator('[data-screen-region="brand-identity"]')
+    await expect(overview.getByRole('heading', { name: 'Identity and contact', exact: true })).toBeVisible()
+    await expect(overview).not.toContainText('Brand profile')
+    await expect(overview.locator('.brand-detail-logo-column').getByRole('link', { name: 'Manage logo', exact: true })).toBeVisible()
+    await expect(overview.locator('[data-screen-region="general-information"]')).toContainText('South Korea (KR)')
+    await expect(overview.locator('[data-screen-region="record-metadata"]')).toContainText('Record ID')
+    await expect(overview.locator('[data-screen-region="record-metadata"]')).toContainText('Created')
+    await expect(overview.locator('[data-screen-region="record-metadata"]')).toContainText('Updated')
     await expect(page.locator('[data-parent-company]')).toHaveText('Samsung Electronics Co., Ltd.')
+    await expect(page.locator('[data-page-actions]').getByRole('button', { name: 'Archive Brand', exact: true })).toBeVisible()
+    await expect(page.locator('[data-screen-region="lifecycle"]')).toHaveCount(0)
     await expect(page.locator('[data-screen-region="translation-summary"]')).toContainText('active locales complete')
     await expect(page.locator('[data-screen-region="usage"]')).toContainText('8')
     await expect(page.locator('[data-screen-region="usage"]')).not.toContainText('Smartphones')
@@ -309,27 +318,30 @@ test('CA-012 uses independent desktop stacks and stable responsive ordering', as
         await page.setViewportSize(viewport)
         await page.goto(`/admin/central/brands/${activeBrandId}`)
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+        const overviewColumnCount = await page.locator('.brand-detail-profile-grid').evaluate((element) => (
+            getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length
+        ))
+        expect(overviewColumnCount).toBe(viewport.width >= 1280 ? 3 : viewport.width >= 640 ? 2 : 1)
 
         if (viewport.width >= 1280) {
             const main = await page.locator('[data-brand-detail-main]').boundingBox()
             const rail = await page.locator('[data-brand-detail-rail]').boundingBox()
-            const issues = await page.locator('[data-screen-region="quality-issues"]').boundingBox()
+            const portfolio = await page.locator('[data-screen-region="usage"]').boundingBox()
             const classification = await page.locator('[data-screen-region="classification"]').boundingBox()
             expect(main).not.toBeNull()
             expect(rail).not.toBeNull()
             expect(rail.x).toBeGreaterThan(main.x + main.width)
-            expect(classification.y - (issues.y + issues.height)).toBeLessThanOrEqual(24)
+            expect(Math.abs(classification.y - portfolio.y)).toBeLessThanOrEqual(1)
+            await expect(page.locator('[data-brand-detail-rail] > [data-admin-card]')).toHaveCount(2)
         } else {
             const selectors = [
                 '[data-screen-region="brand-identity"]',
                 '[data-screen-region="quality-completeness"]',
                 '[data-screen-region="quality-issues"]',
                 '[data-screen-region="usage"]',
-                '[data-screen-region="recent-products"]',
                 '[data-screen-region="classification"]',
+                '[data-screen-region="recent-products"]',
                 '[data-screen-region="external-identities"]',
-                '[data-screen-region="lifecycle"]',
-                '[data-screen-region="record-metadata"]',
             ]
             const order = []
             for (const selector of selectors) {
@@ -358,7 +370,6 @@ test('CA-012 remains usable and overflow-free at 390px', async ({ page }) => {
     await expect(page.locator('[data-screen-region="quality-completeness"]')).toContainText('80%')
     await expect(page.locator('[data-screen-region="quality-issues"]')).toContainText('2 issues need attention')
     await expect(page.locator('[data-screen-region="usage"]')).toContainText('8 current canonical products reference this brand.')
-    await expect(page.locator('[data-screen-region="recent-products"]')).toContainText('Samsung Galaxy S26 Ultra')
     await expect(page.locator('[data-screen-region="classification"]')).toBeVisible()
     await page.locator('[data-screen-region="classification"]').getByRole('button', { name: 'Manage tags' }).click()
     const tagDialog = page.getByRole('dialog', { name: 'Manage tags' })
@@ -379,8 +390,11 @@ test('CA-012 remains usable and overflow-free at 390px', async ({ page }) => {
         return rect.left >= 0 && rect.right <= window.innerWidth && rect.top >= 0 && rect.bottom <= window.innerHeight
     })).toBe(true)
     await identityDialog.getByRole('button', { name: 'Cancel' }).click()
-    await expect(page.locator('[data-screen-region="record-metadata"]')).toBeVisible()
-    await expect(page.locator('[data-screen-region="lifecycle"]')).toBeVisible()
+    const overview = page.locator('[data-screen-region="brand-identity"]')
+    await expect(overview.locator('[data-screen-region="record-metadata"]')).toBeVisible()
+    await expect(overview).toContainText('Record ID')
+    await expect(page.locator('[data-screen-region="lifecycle"]')).toHaveCount(0)
+    await expect(page.locator('[data-screen-region="recent-products"]')).toContainText('Samsung Galaxy S26 Ultra')
     await expect(page.getByRole('button', { name: 'Archive Brand', exact: true })).toBeVisible()
     await expect.poll(
         () => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),

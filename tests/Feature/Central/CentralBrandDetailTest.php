@@ -196,7 +196,8 @@ final class CentralBrandDetailTest extends TestCase
             ->get(route('central.brands.show', $brand))
             ->assertOk()
             ->assertSee('data-products-count="3"', false)
-            ->assertSee('3 current canonical products reference this brand.')
+            ->assertSee('Brand summary')
+            ->assertDontSee('Product portfolio')
             ->assertDontSee('Product List');
 
         /** @var CentralBrand $viewBrand */
@@ -213,7 +214,8 @@ final class CentralBrandDetailTest extends TestCase
             ->get(route('central.brands.show', $brand))
             ->assertOk()
             ->assertSee('data-products-count="0"', false)
-            ->assertSee('No current canonical products reference this brand yet.')
+            ->assertSee('Brand summary')
+            ->assertDontSee('Product portfolio')
             ->assertDontSee('Create Product');
     }
 

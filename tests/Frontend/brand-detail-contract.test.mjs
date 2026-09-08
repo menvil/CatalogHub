@@ -14,7 +14,7 @@ test('CA-012 composes real Brand overview regions without prototype-only domains
     }
 
     assert.doesNotMatch(view, /Canonical identity/)
-    assert.doesNotMatch(view, />Brand profile<|data-screen-region="lifecycle"|class="brand-detail-(?:lifecycle|record) min-w-0"/)
+    assert.doesNotMatch(view, />Brand profile<|>Product portfolio<|>Brand health<|data-screen-region="lifecycle"|class="brand-detail-(?:lifecycle|record|portfolio|health) min-w-0"/)
     assert.doesNotMatch(view, />Published<|>Synced<|Sites tab|Site coverage|Hero banner/)
     assert.match(view, /CentralBrandQualityIssueCode::TranslationOutdated/)
     assert.match(view, /filament\.central\.resources\.central-products\.view/)
@@ -22,20 +22,23 @@ test('CA-012 composes real Brand overview regions without prototype-only domains
 })
 
 test('CA-012 defines deliberate desktop and mobile region order', () => {
-    assert.match(view, /data-brand-detail-main[\s\S]*brand-detail-profile[\s\S]*brand-detail-middle-grid[\s\S]*brand-detail-portfolio[\s\S]*brand-detail-classification[\s\S]*brand-detail-products[\s\S]*brand-detail-provenance/)
-    assert.match(view, /data-brand-detail-rail[\s\S]*brand-detail-health[\s\S]*brand-detail-issues/)
-    assert.match(css, /\.brand-detail-profile \{ order: 1; \}[\s\S]*\.brand-detail-health \{ order: 2; \}[\s\S]*\.brand-detail-provenance \{ order: 7; \}/)
+    assert.match(view, /data-brand-detail-main[\s\S]*brand-detail-profile[\s\S]*brand-detail-classification[\s\S]*brand-detail-products[\s\S]*brand-detail-provenance/)
+    assert.match(view, /data-brand-detail-rail[\s\S]*brand-detail-issues/)
+    assert.match(css, /\.brand-detail-profile \{ order: 1; \}[\s\S]*\.brand-detail-issues \{ order: 2; \}[\s\S]*\.brand-detail-provenance \{ order: 4; \}/)
     assert.match(css, /@media \(width >= 80rem\)[\s\S]*\.brand-detail-main,[\s\S]*\.brand-detail-rail \{[\s\S]*display: flex;/)
-    assert.match(css, /@media \(width >= 80rem\)[\s\S]*\.brand-detail-middle-grid \{[\s\S]*grid-template-columns: repeat\(2/)
     assert.match(view, /brand-detail-logo-column[\s\S]*brand-detail-logo[\s\S]*object-contain[\s\S]*Manage logo[\s\S]*brand-detail-profile-fields/)
-    assert.match(view, /brand-detail-profile[\s\S]*data-screen-region="record-metadata"[\s\S]*brand-detail-middle-grid/)
+    assert.match(view, /brand-detail-profile[\s\S]*brand-detail-profile-fields[\s\S]*brand-detail-classification[\s\S]*Brand summary[\s\S]*data-screen-region="quality-completeness"[\s\S]*data-screen-region="translation-summary"[\s\S]*data-screen-region="record-metadata"[\s\S]*brand-detail-products/)
 })
 
-test('CA-012 keeps portfolio summary separate from Classification chips', () => {
-    const portfolio = view.slice(view.indexOf('brand-detail-portfolio'), view.indexOf('brand-detail-classification'))
-    const classification = view.slice(view.indexOf('brand-detail-classification'), view.indexOf('brand-detail-products'))
+test('CA-012 consolidates summary and health while Classification stays inside identity', () => {
+    const summary = view.slice(view.indexOf('brand-detail-overview-summary'), view.indexOf('brand-detail-products'))
+    const classification = view.slice(view.indexOf('brand-detail-classification'), view.indexOf('brand-detail-overview-summary'))
 
-    assert.doesNotMatch(portfolio, /data-brand-derived-categories|brand-detail-category-chip/)
+    assert.match(summary, /data-products-count[\s\S]*data-brand-quality-score[\s\S]*Translation coverage[\s\S]*Record ID/)
+    assert.doesNotMatch(summary, /data-brand-derived-categories|brand-detail-category-chip/)
     assert.match(classification, /data-brand-derived-categories/)
     assert.match(classification, /data-brand-tags/)
+    assert.doesNotMatch(view, /brand-detail-middle-grid|brand-detail-portfolio|brand-detail-health/)
+    assert.equal(view.match(/data-products-count=/g)?.length, 1)
+    assert.equal(view.match(/data-brand-quality-score=/g)?.length, 1)
 })

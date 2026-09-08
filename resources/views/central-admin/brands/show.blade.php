@@ -143,6 +143,7 @@
                             @endcan
                         </div>
 
+                        <div class="brand-detail-identity-column">
                         <dl class="brand-detail-profile-fields" data-screen-region="general-information">
                             <div class="brand-detail-profile-field" data-screen-region="parent-company">
                                 <dt>Parent Company</dt>
@@ -189,9 +190,54 @@
                             </div>
                         </dl>
 
-                        <section class="brand-detail-overview-summary" aria-labelledby="brand-summary-heading" data-screen-region="record-metadata">
+                        <section id="classification" class="brand-detail-classification mt-admin-card border-t border-admin-border pt-admin-card" aria-labelledby="classification-heading" data-screen-region="classification">
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <h3 id="classification-heading" class="text-sm font-semibold text-admin-text">Classification</h3>
+                                @can('catalog.brands.manage')
+                                    <x-ui.button variant="secondary" aria-haspopup="dialog" aria-controls="manage-brand-tags-modal" data-admin-modal-open-target="manage-brand-tags-modal">Manage tags</x-ui.button>
+                                @endcan
+                            </div>
+                            <div class="brand-detail-classification-grid mt-4">
+                                <div>
+                                    <h3 class="text-xs font-semibold uppercase tracking-wide text-admin-muted">Derived categories</h3>
+                                    @if ($categoryCoverage->isEmpty())
+                                        <p class="mt-2 text-sm text-admin-muted">No category coverage.</p>
+                                    @else
+                                        <ul class="mt-2 flex flex-wrap gap-2" data-brand-derived-categories>
+                                            @foreach ($categoryCoverage->take(5) as $coverage)
+                                                <li class="brand-detail-category-chip" data-category-id="{{ $coverage->categoryId }}">
+                                                    <span>{{ $coverage->name }}</span>
+                                                    <strong>{{ number_format($coverage->productsCount) }}</strong>
+                                                </li>
+                                            @endforeach
+                                            @if ($categoryCoverage->count() > 5)
+                                                <li class="rounded-admin-badge bg-admin-surface-muted px-2.5 py-1 text-xs font-medium text-admin-muted">+{{ $categoryCoverage->count() - 5 }} more</li>
+                                            @endif
+                                        </ul>
+                                    @endif
+                                </div>
+                                <div>
+                                    <h3 class="text-xs font-semibold uppercase tracking-wide text-admin-muted">Editorial tags</h3>
+                                    @if ($brand->tags->isEmpty())
+                                        <p class="mt-2 text-sm text-admin-muted">No tags have been assigned to this Brand.</p>
+                                    @else
+                                        <div class="mt-2 flex flex-wrap gap-2" data-brand-tags>
+                                            @foreach ($brand->tags->take(6) as $tag)
+                                                <span class="inline-flex max-w-full break-words rounded-admin-badge bg-admin-surface-muted px-2.5 py-1 text-xs font-medium text-admin-text ring-1 ring-inset ring-admin-border">{{ $tag->name }}</span>
+                                            @endforeach
+                                            @if ($brand->tags->count() > 6)
+                                                <span class="rounded-admin-badge bg-admin-surface-muted px-2.5 py-1 text-xs font-medium text-admin-muted">+{{ $brand->tags->count() - 6 }} more</span>
+                                            @endif
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </section>
+                        </div>
+
+                        <section class="brand-detail-overview-summary" aria-labelledby="brand-summary-heading">
                             <h3 id="brand-summary-heading" class="text-sm font-semibold text-admin-text">Brand summary</h3>
-                            <div class="brand-detail-summary-metrics mt-3">
+                            <div class="brand-detail-summary-metrics mt-3" data-screen-region="usage">
                                 <div>
                                     <strong data-products-count="{{ $productsCount }}">{{ number_format($productsCount) }}</strong>
                                     <span>Products</span>
@@ -200,17 +246,46 @@
                                     <strong>{{ number_format($categoryCoverage->count()) }}</strong>
                                     <span>Categories</span>
                                 </div>
+                            </div>
+
+                            <div class="brand-detail-summary-health mt-4 border-t border-admin-border pt-4" data-screen-region="quality-completeness">
                                 <div>
-                                    <strong>{{ $translationSummary->total === 0 ? '—' : $translationSummary->score().'%' }}</strong>
-                                    <span>Translations</span>
+                                    <div class="flex items-end justify-between gap-3">
+                                        <div>
+                                            <p class="text-3xl font-semibold text-admin-text" data-brand-quality-score="{{ $quality->score }}">{{ $quality->score }}%</p>
+                                            <p class="mt-1 text-xs font-medium text-admin-muted">{{ $quality->completedChecks }} of {{ $quality->totalChecks }} checks complete</p>
+                                        </div>
+                                        <x-admin.status-badge :label="$quality->state->label()" :variant="$quality->state->badgeVariant()" size="sm" />
+                                    </div>
+                                    <div class="mt-3 h-2 overflow-hidden rounded-admin-badge bg-admin-surface-muted" role="progressbar" aria-label="Brand completeness" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $quality->score }}">
+                                        <div class="h-full rounded-admin-badge {{ $quality->state === \App\Enums\CentralBrandQualityState::Complete ? 'bg-admin-success' : 'bg-admin-warning' }}" style="width: {{ $quality->score }}%"></div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 border-t border-admin-border pt-4" data-screen-region="translation-summary">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div>
+                                            <p class="text-sm font-semibold text-admin-text">Translation coverage</p>
+                                            <p class="mt-1 text-xs text-admin-muted">{{ $translationSummary->complete() }} of {{ $translationSummary->total }} active locales complete</p>
+                                        </div>
+                                        <strong class="text-xl font-semibold text-admin-text">{{ $translationSummary->total === 0 ? '—' : $translationSummary->score().'%' }}</strong>
+                                    </div>
+                                    @if ($translationSummary->total > 0)
+                                        <div class="mt-3 flex flex-wrap gap-2 text-xs">
+                                            @if ($translationSummary->approved > 0)<span class="rounded-admin-input bg-admin-success-soft px-2 py-1 text-admin-success">Approved {{ $translationSummary->approved }}</span>@endif
+                                            @if ($translationSummary->humanReviewed > 0)<span class="rounded-admin-input bg-admin-surface-muted px-2 py-1 text-admin-muted">Reviewed {{ $translationSummary->humanReviewed }}</span>@endif
+                                            @if ($translationSummary->machineTranslated > 0)<span class="rounded-admin-input bg-admin-info-soft px-2 py-1 text-admin-info">Machine {{ $translationSummary->machineTranslated }}</span>@endif
+                                            @if ($translationSummary->missing > 0)<span class="rounded-admin-input bg-admin-warning-soft px-2 py-1 text-admin-warning">Missing {{ $translationSummary->missing }}</span>@endif
+                                            @if ($translationSummary->outdated > 0)<span class="rounded-admin-input bg-admin-warning-soft px-2 py-1 text-admin-warning">Outdated {{ $translationSummary->outdated }}</span>@endif
+                                        </div>
+                                    @endif
+                                    @can('translations.manage')
+                                        <a href="{{ route('central.brands.translations.index', $brand, absolute: false) }}" class="mt-3 inline-flex text-sm font-semibold text-admin-primary underline decoration-admin-primary/30 underline-offset-2">Review translations</a>
+                                    @endcan
                                 </div>
                             </div>
-                            @if ($translationSummary->total > 0)
-                                <div class="mt-3 h-1.5 overflow-hidden rounded-admin-badge bg-admin-surface-muted" role="progressbar" aria-label="Translation coverage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $translationSummary->score() }}">
-                                    <div class="h-full rounded-admin-badge bg-admin-primary" style="width: {{ $translationSummary->score() }}%"></div>
-                                </div>
-                            @endif
-                            <dl class="brand-detail-record-list mt-4">
+
+                            <dl class="brand-detail-record-list mt-4 border-t border-admin-border pt-4" data-screen-region="record-metadata">
                                 <div>
                                     <dt>Created</dt>
                                     <dd><x-ui.timestamp :value="$brand->created_at" timezone="UTC" /></dd>
@@ -226,72 +301,8 @@
                             </dl>
                         </section>
                     </div>
+
                 </x-admin.card>
-
-                <div class="brand-detail-middle-grid">
-                    <x-admin.card class="brand-detail-portfolio min-w-0" title="Product portfolio" data-screen-region="usage">
-                        <div class="brand-detail-metrics">
-                            <div class="brand-detail-metric">
-                                <strong class="text-2xl font-semibold text-admin-text" data-products-count="{{ $productsCount }}">{{ number_format($productsCount) }}</strong>
-                                <p>Products</p>
-                            </div>
-                            <div class="brand-detail-metric">
-                                <strong class="text-2xl font-semibold text-admin-text">{{ number_format($categoryCoverage->count()) }}</strong>
-                                <p>Categories</p>
-                            </div>
-                            <div class="brand-detail-metric">
-                                <strong class="text-2xl font-semibold text-admin-text">{{ $translationSummary->total === 0 ? '—' : $translationSummary->score().'%' }}</strong>
-                                <p>Translations</p>
-                            </div>
-                        </div>
-                        <p class="mt-3 text-sm text-admin-muted" data-product-usage-copy>
-                            @if ($productsCount === 0) No current canonical products reference this brand yet.
-                            @elseif ($productsCount === 1) 1 current canonical product references this brand.
-                            @else {{ number_format($productsCount) }} current canonical products reference this brand. @endif
-                        </p>
-                    </x-admin.card>
-
-                    <x-admin.card id="classification" class="brand-detail-classification min-w-0" title="Classification" data-screen-region="classification">
-                        <x-slot:actions>
-                            @can('catalog.brands.manage')
-                                <x-ui.button variant="secondary" aria-haspopup="dialog" aria-controls="manage-brand-tags-modal" data-admin-modal-open-target="manage-brand-tags-modal">Manage tags</x-ui.button>
-                            @endcan
-                        </x-slot:actions>
-                        <div>
-                            <h3 class="text-xs font-semibold uppercase tracking-wide text-admin-muted">Derived categories</h3>
-                            @if ($categoryCoverage->isEmpty())
-                                <p class="mt-2 text-sm text-admin-muted">No category coverage.</p>
-                            @else
-                                <ul class="mt-2 flex flex-wrap gap-2" data-brand-derived-categories>
-                                    @foreach ($categoryCoverage->take(5) as $coverage)
-                                        <li class="brand-detail-category-chip" data-category-id="{{ $coverage->categoryId }}">
-                                            <span>{{ $coverage->name }}</span>
-                                            <strong>{{ number_format($coverage->productsCount) }}</strong>
-                                        </li>
-                                    @endforeach
-                                    @if ($categoryCoverage->count() > 5)
-                                        <li class="rounded-admin-badge bg-admin-surface-muted px-2.5 py-1 text-xs font-medium text-admin-muted">+{{ $categoryCoverage->count() - 5 }} more</li>
-                                    @endif
-                                </ul>
-                            @endif
-                        </div>
-                        <div class="mt-admin-card border-t border-admin-border pt-admin-card">
-                            <h3 class="text-xs font-semibold uppercase tracking-wide text-admin-muted">Editorial tags</h3>
-                            @if ($brand->tags->isEmpty())
-                                <p class="mt-2 text-sm text-admin-muted">No tags have been assigned to this Brand.</p>
-                            @else
-                                <div class="mt-2 flex flex-wrap gap-2" data-brand-tags>
-                                    @foreach ($brand->tags->take(6) as $tag)
-                                        <span class="inline-flex max-w-full break-words rounded-admin-badge bg-admin-surface-muted px-2.5 py-1 text-xs font-medium text-admin-text ring-1 ring-inset ring-admin-border">{{ $tag->name }}</span>
-                                    @endforeach
-                                    @if ($brand->tags->count() > 6)
-                                        <span class="rounded-admin-badge bg-admin-surface-muted px-2.5 py-1 text-xs font-medium text-admin-muted">+{{ $brand->tags->count() - 6 }} more</span>
-                                    @endif
-                                </div>
-                            @endif
-                        </div>
-                    </x-admin.card>
-                </div>
 
                 <x-admin.card class="brand-detail-products min-w-0" title="Recent products" data-screen-region="recent-products">
                     @if ($recentProducts->isEmpty())
@@ -328,42 +339,6 @@
             </div>
 
             <aside class="brand-detail-rail" aria-label="Brand operations" data-brand-detail-rail>
-                <x-admin.card class="brand-detail-health min-w-0" title="Brand health" data-screen-region="quality-completeness">
-                    <div class="space-y-admin-card">
-                        <div class="flex items-end justify-between gap-4">
-                            <div>
-                                <p class="text-4xl font-semibold text-admin-text" data-brand-quality-score="{{ $quality->score }}">{{ $quality->score }}%</p>
-                                <p class="mt-1 text-xs font-medium text-admin-muted">{{ $quality->completedChecks }} of {{ $quality->totalChecks }} checks complete</p>
-                            </div>
-                            <x-admin.status-badge :label="$quality->state->label()" :variant="$quality->state->badgeVariant()" size="sm" />
-                        </div>
-                        <div class="h-2 overflow-hidden rounded-admin-badge bg-admin-surface-muted" role="progressbar" aria-label="Brand completeness" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $quality->score }}">
-                            <div class="h-full rounded-admin-badge {{ $quality->state === \App\Enums\CentralBrandQualityState::Complete ? 'bg-admin-success' : 'bg-admin-warning' }}" style="width: {{ $quality->score }}%"></div>
-                        </div>
-                        <div class="border-t border-admin-border pt-admin-card" data-screen-region="translation-summary">
-                            <div class="flex items-center justify-between gap-3">
-                                <div>
-                                    <p class="text-sm font-semibold text-admin-text">Translation coverage</p>
-                                    <p class="mt-1 text-xs text-admin-muted">{{ $translationSummary->complete() }} of {{ $translationSummary->total }} active locales complete</p>
-                                </div>
-                                <strong class="text-xl font-semibold text-admin-text">{{ $translationSummary->total === 0 ? '—' : $translationSummary->score().'%' }}</strong>
-                            </div>
-                            @if ($translationSummary->total > 0)
-                                <div class="mt-3 flex flex-wrap gap-2 text-xs">
-                                    @if ($translationSummary->approved > 0)<span class="rounded-admin-input bg-admin-success-soft px-2 py-1 text-admin-success">Approved {{ $translationSummary->approved }}</span>@endif
-                                    @if ($translationSummary->humanReviewed > 0)<span class="rounded-admin-input bg-admin-surface-muted px-2 py-1 text-admin-muted">Reviewed {{ $translationSummary->humanReviewed }}</span>@endif
-                                    @if ($translationSummary->machineTranslated > 0)<span class="rounded-admin-input bg-admin-info-soft px-2 py-1 text-admin-info">Machine {{ $translationSummary->machineTranslated }}</span>@endif
-                                    @if ($translationSummary->missing > 0)<span class="rounded-admin-input bg-admin-warning-soft px-2 py-1 text-admin-warning">Missing {{ $translationSummary->missing }}</span>@endif
-                                    @if ($translationSummary->outdated > 0)<span class="rounded-admin-input bg-admin-warning-soft px-2 py-1 text-admin-warning">Outdated {{ $translationSummary->outdated }}</span>@endif
-                                </div>
-                            @endif
-                            @can('translations.manage')
-                                <a href="{{ route('central.brands.translations.index', $brand, absolute: false) }}" class="mt-3 inline-flex text-sm font-semibold text-admin-primary underline decoration-admin-primary/30 underline-offset-2">Review translations</a>
-                            @endcan
-                        </div>
-                    </div>
-                </x-admin.card>
-
                 <x-admin.card class="brand-detail-issues min-w-0" title="Issues" data-screen-region="quality-issues">
                     @if ($qualityIssues->isEmpty())
                         <p class="text-sm font-medium text-admin-success">No open Brand quality issues.</p>

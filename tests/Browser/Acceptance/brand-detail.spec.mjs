@@ -326,20 +326,14 @@ test('CA-012 uses independent desktop stacks and stable responsive ordering', as
         if (viewport.width >= 1280) {
             const main = await page.locator('[data-brand-detail-main]').boundingBox()
             const rail = await page.locator('[data-brand-detail-rail]').boundingBox()
-            const portfolio = await page.locator('[data-screen-region="usage"]').boundingBox()
-            const classification = await page.locator('[data-screen-region="classification"]').boundingBox()
             expect(main).not.toBeNull()
             expect(rail).not.toBeNull()
             expect(rail.x).toBeGreaterThan(main.x + main.width)
-            expect(Math.abs(classification.y - portfolio.y)).toBeLessThanOrEqual(1)
-            await expect(page.locator('[data-brand-detail-rail] > [data-admin-card]')).toHaveCount(2)
+            await expect(page.locator('[data-brand-detail-rail] > [data-admin-card]')).toHaveCount(1)
         } else {
             const selectors = [
                 '[data-screen-region="brand-identity"]',
-                '[data-screen-region="quality-completeness"]',
                 '[data-screen-region="quality-issues"]',
-                '[data-screen-region="usage"]',
-                '[data-screen-region="classification"]',
                 '[data-screen-region="recent-products"]',
                 '[data-screen-region="external-identities"]',
             ]
@@ -349,6 +343,13 @@ test('CA-012 uses independent desktop stacks and stable responsive ordering', as
             }
             expect(order).toEqual([...order].sort((left, right) => left - right))
         }
+
+        const overview = page.locator('[data-screen-region="brand-identity"]')
+        await expect(overview.locator('[data-screen-region="quality-completeness"]')).toBeVisible()
+        await expect(overview.locator('[data-screen-region="usage"]')).toBeVisible()
+        await expect(overview.locator('[data-screen-region="classification"]')).toBeVisible()
+        await expect(page.getByRole('heading', { name: 'Product portfolio', exact: true })).toHaveCount(0)
+        await expect(page.getByRole('heading', { name: 'Brand health', exact: true })).toHaveCount(0)
     }
 
     assertNoPageErrors()
@@ -369,7 +370,8 @@ test('CA-012 remains usable and overflow-free at 390px', async ({ page }) => {
     await expect(page.getByAltText('Samsung logo')).toBeVisible()
     await expect(page.locator('[data-screen-region="quality-completeness"]')).toContainText('80%')
     await expect(page.locator('[data-screen-region="quality-issues"]')).toContainText('2 issues need attention')
-    await expect(page.locator('[data-screen-region="usage"]')).toContainText('8 current canonical products reference this brand.')
+    await expect(page.locator('[data-screen-region="usage"]')).toContainText('8')
+    await expect(page.locator('[data-screen-region="usage"]')).toContainText('Products')
     await expect(page.locator('[data-screen-region="classification"]')).toBeVisible()
     await page.locator('[data-screen-region="classification"]').getByRole('button', { name: 'Manage tags' }).click()
     const tagDialog = page.getByRole('dialog', { name: 'Manage tags' })

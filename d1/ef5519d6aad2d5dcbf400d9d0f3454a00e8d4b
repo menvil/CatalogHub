@@ -1,0 +1,81 @@
+resources/views/central-admin/brands/_form.blade.php
+  s_b98890b5b17cb5::t_b73f095645f444 21-22,24-26,28-33,35-69,71-76,78-159,161,163-166,168-226,231-249,252-273
+docs/ui/screens/CA-013-brand-create-edit.md
+  s_b98890b5b17cb5::t_b95bb80c2f53fe 7-9,13,15,18,24-26,30,46-48,50,52,56
+resources/views/central-admin/brands/create.blade.php
+  s_b98890b5b17cb5::t_b73f095645f444 12,19-24
+tests/Visual/baselines/ca-013__create__1440x1000.png.sha256
+  s_b98890b5b17cb5::t_a4b272cbe80fa1 1
+tests/Browser/Acceptance/brand-detail.spec.mjs
+  s_b98890b5b17cb5::t_e1ae09dd6db196 44,89,113
+tests/Visual/baselines/ca-013__ownership-picker__1440x1000.png.sha256
+  s_b98890b5b17cb5::t_a4b272cbe80fa1 1
+tests/Feature/Central/CentralBrandFormTest.php
+  s_b98890b5b17cb5::t_84e8b30427d182 76,343
+tests/Visual/BrandFormVisualTest.php
+  s_b98890b5b17cb5::t_fcfdce28548fee 18-20,53,62,65,67,69
+tests/Visual/baselines/ca-013__create__390x844.png.sha256
+  s_b98890b5b17cb5::t_a4b272cbe80fa1 1
+tests/Feature/Security/SecurityHeadersTest.php
+  s_b98890b5b17cb5::t_5adaaafa1169fa 5,10-11
+tests/Browser/Acceptance/brand-create-edit.spec.mjs
+  s_b98890b5b17cb5::t_f3c4e043bde6ec 8
+  s_b98890b5b17cb5::t_370c3ab71dd8df 11,13-15,77,133-135,149,165,171,213,232-234,258,261,269,272-273,277,280,285,288,292-293,306,308,313,315,322,324,326,332,334,336,338
+  s_b98890b5b17cb5::t_4fe29a0d52b4ea 12
+  s_b98890b5b17cb5::t_39524d543f9ba9 81
+  s_b98890b5b17cb5::t_d89b17cf45e5e1 211
+tests/Visual/baselines/ca-013__edit__1024x1000.png.sha256
+  s_b98890b5b17cb5::t_a4b272cbe80fa1 1
+tests/Visual/baselines/ca-013__edit__768x1024.png.sha256
+  s_b98890b5b17cb5::t_a4b272cbe80fa1 1
+docs/ui/fixtures.md
+  s_b98890b5b17cb5::t_4a012d5a1dcd4c 10
+tests/Visual/playwright/brand-create-edit.visual.spec.mjs
+  s_b98890b5b17cb5::t_f3c4e043bde6ec 6,11-12
+  s_b98890b5b17cb5::t_9f3f93fdac96c8 31
+  s_b98890b5b17cb5::t_fcfdce28548fee 7-9,25,28-30,32-33,36
+resources/views/components/ui/form/searchable-select.blade.php
+  s_b98890b5b17cb5::t_b73f095645f444 43-44,58,69,72,74
+tests/Visual/baselines/ca-013__edit__390x844.png.sha256
+  s_b98890b5b17cb5::t_a4b272cbe80fa1 1
+tests/Feature/Central/CentralBrandProfileFormTest.php
+  s_b98890b5b17cb5::t_370c3ab71dd8df 83
+tests/Visual/baselines/ca-013__validation__1440x1000.png.sha256
+  s_b98890b5b17cb5::t_a4b272cbe80fa1 1
+tests/Feature/Central/CentralBrandOwnershipTest.php
+  s_b98890b5b17cb5::t_84e8b30427d182 27-29,32,45
+resources/js/admin/searchable-select.js
+  s_b98890b5b17cb5::t_b73f095645f444 10,194,202
+tests/Visual/baselines/ca-013__edit__1440x1000.png.sha256
+  s_b98890b5b17cb5::t_a4b272cbe80fa1 1
+docs/ui/visual-references.json
+  s_b98890b5b17cb5::t_a4b272cbe80fa1 34-41
+docs/ui/brands-visual-gap-audit.md
+  s_b98890b5b17cb5::t_b95bb80c2f53fe 57,61-65
+tests/Frontend/brand-form-contract.test.mjs
+  s_b98890b5b17cb5::t_b95bb80c2f53fe 1-58
+tests/Support/BrandFormFixture.php
+  s_b98890b5b17cb5::t_f3c4e043bde6ec 21,31-32,44
+  s_b98890b5b17cb5::t_3d0dac57be5b91 46-47,64-69,83,111,124,131
+  s_b98890b5b17cb5::t_84e8b30427d182 19,33-41,50
+tests/Unit/Architecture/RouteInventoryTest.php
+  s_b98890b5b17cb5::t_5adaaafa1169fa 8,14-15
+resources/views/central-admin/brands/edit.blade.php
+  s_b98890b5b17cb5::t_b73f095645f444 27,36-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "d1ef5519d6aad2d5dcbf400d9d0f3454a00e8d4b",
+  "prompts": {},
+  "sessions": {
+    "s_b98890b5b17cb5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0862e-92ed-7711-b946-3125fc59c23f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

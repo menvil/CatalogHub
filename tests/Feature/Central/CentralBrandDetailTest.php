@@ -219,36 +219,6 @@ final class CentralBrandDetailTest extends TestCase
             ->assertDontSee('Create Product');
     }
 
-    public function test_recent_products_are_real_bounded_and_exclude_archived_or_other_brand_rows(): void
-    {
-        $brand = CentralBrand::factory()->create();
-        $other = CentralBrand::factory()->create();
-        foreach (range(1, 6) as $index) {
-            CentralProduct::factory()->for($brand, 'brand')->create([
-                'name' => 'Recent product '.$index,
-                'updated_at' => now()->subMinutes($index),
-            ]);
-        }
-        CentralProduct::factory()->for($brand, 'brand')->create([
-            'name' => 'Archived product',
-            'status' => CentralProductStatus::Archived,
-            'updated_at' => now()->addMinute(),
-        ]);
-        CentralProduct::factory()->for($other, 'brand')->create([
-            'name' => 'Other brand product',
-            'updated_at' => now()->addMinutes(2),
-        ]);
-
-        $this->actingAs(User::factory()->create())
-            ->get(route('central.brands.show', $brand))
-            ->assertOk()
-            ->assertSee('data-brand-recent-products', false)
-            ->assertSeeInOrder(['Recent product 1', 'Recent product 2', 'Recent product 3', 'Recent product 4', 'Recent product 5'])
-            ->assertDontSee('Recent product 6')
-            ->assertDontSee('Archived product')
-            ->assertDontSee('Other brand product');
-    }
-
     public function test_lifecycle_controls_only_render_valid_intents_for_each_state(): void
     {
         $user = User::factory()->create();

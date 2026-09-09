@@ -33,7 +33,6 @@ final class CentralBrandDetailController extends Controller
             'quality' => $qualityData->summary,
             'translationSummary' => $qualityData->translations,
             'categoryCoverage' => $coverage->forBrand($brand),
-            'recentProducts' => $query->recentProducts($brand),
             'activeImportSources' => $externalIdentities->activeSources(),
             'countryName' => $brand->country === null
                 ? null

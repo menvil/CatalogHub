@@ -69,38 +69,4 @@ final class CentralBrandDetailQueryTest extends TestCase
         self::assertTrue($loaded->relationLoaded('ownership'));
         self::assertNull($loaded->ownership);
     }
-
-    public function test_recent_products_are_bounded_current_eager_loaded_and_deterministic(): void
-    {
-        $brand = CentralBrand::factory()->create();
-        $other = CentralBrand::factory()->create();
-
-        foreach (range(1, 7) as $index) {
-            CentralProduct::factory()->for($brand, 'brand')->create([
-                'name' => 'Current product '.$index,
-                'updated_at' => now()->subDays($index),
-            ]);
-        }
-        CentralProduct::factory()->for($brand, 'brand')->create([
-            'name' => 'Archived newest product',
-            'status' => CentralProductStatus::Archived,
-            'updated_at' => now()->addDay(),
-        ]);
-        CentralProduct::factory()->for($other, 'brand')->create([
-            'name' => 'Other brand product',
-            'updated_at' => now()->addDays(2),
-        ]);
-
-        $measured = DatabaseQueryCounter::measure(
-            fn () => app(CentralBrandDetailQuery::class)->recentProducts($brand),
-        );
-
-        self::assertLessThanOrEqual(2, $measured['count']);
-        self::assertSame(5, $measured['result']->count());
-        self::assertSame('Current product 1', $measured['result']->first()->name);
-        self::assertSame('Current product 5', $measured['result']->last()->name);
-        self::assertTrue($measured['result']->every(
-            static fn (CentralProduct $product): bool => $product->relationLoaded('category'),
-        ));
-    }
 }

@@ -75,12 +75,7 @@ test('CA-012 supports list, detail, edit, and detail navigation', async ({ page 
     await expect(page.locator('[data-screen-region="translation-summary"]')).toContainText('active locales complete')
     await expect(page.locator('[data-screen-region="usage"]')).toContainText('8')
     await expect(page.locator('[data-screen-region="usage"]')).not.toContainText('Smartphones')
-    await expect(page.locator('[data-screen-region="recent-products"]')).toContainText('Samsung Galaxy S26 Ultra')
-    await expect(page.locator('[data-screen-region="recent-products"] [data-product-id]')).toHaveCount(5)
-    await page.locator('[data-screen-region="recent-products"]').getByRole('link', { name: 'Samsung Galaxy S26 Ultra', exact: true }).click()
-    await expect(page).toHaveURL(/\/admin\/central\/central-products\//)
-    await page.goBack()
-    await expect(page.locator('[data-screen-id="CA-012"]')).toBeVisible()
+    await expect(page.locator('[data-screen-region="recent-products"]')).toHaveCount(0)
     await expect(page.locator('[data-brand-tags]')).toContainText('Premium')
     await expect(page.locator('[data-screen-region="external-identities"]')).toContainText('Manufacturer API')
     await page.getByRole('link', { name: 'Edit Brand', exact: true }).click()
@@ -334,7 +329,6 @@ test('CA-012 uses independent desktop stacks and stable responsive ordering', as
             const selectors = [
                 '[data-screen-region="brand-identity"]',
                 '[data-screen-region="quality-issues"]',
-                '[data-screen-region="recent-products"]',
                 '[data-screen-region="external-identities"]',
             ]
             const order = []
@@ -396,7 +390,7 @@ test('CA-012 remains usable and overflow-free at 390px', async ({ page }) => {
     await expect(overview.locator('[data-screen-region="record-metadata"]')).toBeVisible()
     await expect(overview).toContainText('Record ID')
     await expect(page.locator('[data-screen-region="lifecycle"]')).toHaveCount(0)
-    await expect(page.locator('[data-screen-region="recent-products"]')).toContainText('Samsung Galaxy S26 Ultra')
+    await expect(page.locator('[data-screen-region="recent-products"]')).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Archive Brand', exact: true })).toBeVisible()
     await expect.poll(
         () => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),

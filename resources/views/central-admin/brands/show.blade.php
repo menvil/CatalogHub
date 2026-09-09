@@ -183,14 +183,14 @@
                                         @else {{ $brand->support_url }} @endif
                                     </dd>
                                 </div>
-                                <div class="brand-detail-profile-field">
+                                <div class="brand-detail-profile-field brand-detail-profile-field--terminal">
                                     <dt>Contact email</dt>
                                     <dd class="mt-1 break-all text-sm text-admin-text">{{ $brand->contact_email ?? '—' }}</dd>
                                 </div>
                             </div>
                         </dl>
 
-                        <section id="classification" class="brand-detail-classification mt-admin-card border-t border-admin-border pt-admin-card" aria-labelledby="classification-heading" data-screen-region="classification">
+                        <section id="classification" class="brand-detail-classification mt-admin-card" aria-labelledby="classification-heading" data-screen-region="classification">
                             <div class="flex flex-wrap items-center justify-between gap-3">
                                 <h3 id="classification-heading" class="text-sm font-semibold text-admin-text">Classification</h3>
                                 @can('catalog.brands.manage')
@@ -302,35 +302,6 @@
                         </section>
                     </div>
 
-                </x-admin.card>
-
-                <x-admin.card class="brand-detail-products min-w-0" title="Recent products" data-screen-region="recent-products">
-                    @if ($recentProducts->isEmpty())
-                        <p class="text-sm text-admin-muted">No current products reference this Brand.</p>
-                    @else
-                        <ul class="brand-detail-product-list" data-brand-recent-products>
-                            @foreach ($recentProducts as $product)
-                                @php $productStatusVariant = $product->status->color() === 'gray' ? 'neutral' : $product->status->color(); @endphp
-                                <li data-product-id="{{ $product->getKey() }}">
-                                    <div class="min-w-0">
-                                        @can('catalog.products.manage')
-                                            <a href="{{ route('filament.central.resources.central-products.view', $product, absolute: false) }}" class="break-words text-sm font-semibold text-admin-text hover:text-admin-primary">{{ $product->name }}</a>
-                                        @else
-                                            <p class="break-words text-sm font-semibold text-admin-text">{{ $product->name }}</p>
-                                        @endcan
-                                        <p class="mt-1 flex min-w-0 flex-wrap gap-x-2 gap-y-1 text-xs text-admin-muted">
-                                            <span class="break-all font-foundation-mono">{{ $product->model ?: $product->slug }}</span>
-                                            <span>{{ $product->category?->name ?? 'Uncategorized' }}</span>
-                                        </p>
-                                    </div>
-                                    <div class="flex shrink-0 items-center gap-3">
-                                        <x-admin.status-badge :label="$product->status->label()" :variant="$productStatusVariant" size="sm" />
-                                        <x-ui.timestamp :value="$product->updated_at" timezone="UTC" />
-                                    </div>
-                                </li>
-                            @endforeach
-                        </ul>
-                    @endif
                 </x-admin.card>
 
                 <div class="brand-detail-provenance min-w-0">

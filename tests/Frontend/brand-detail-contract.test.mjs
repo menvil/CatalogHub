@@ -29,6 +29,7 @@ test('CA-012 defines deliberate desktop and mobile region order', () => {
     assert.match(view, /brand-detail-logo-column[\s\S]*brand-detail-logo[\s\S]*object-contain[\s\S]*Manage logo[\s\S]*brand-detail-profile-fields/)
     assert.match(view, /brand-detail-profile-field--terminal[\s\S]*Contact email/)
     assert.match(css, /\.brand-detail-profile-field--terminal \{[\s\S]*border-bottom: 0;/)
+    assert.match(view, /brand-detail-classification mt-admin-card border-t border-admin-border pt-admin-card/)
     assert.match(view, /brand-detail-profile[\s\S]*brand-detail-profile-fields[\s\S]*brand-detail-classification[\s\S]*Brand summary[\s\S]*data-screen-region="quality-completeness"[\s\S]*data-screen-region="translation-summary"[\s\S]*data-screen-region="record-metadata"[\s\S]*brand-detail-provenance/)
 })
 

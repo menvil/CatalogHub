@@ -190,7 +190,7 @@
                             </div>
                         </dl>
 
-                        <section id="classification" class="brand-detail-classification mt-admin-card" aria-labelledby="classification-heading" data-screen-region="classification">
+                        <section id="classification" class="brand-detail-classification mt-admin-card border-t border-admin-border pt-admin-card" aria-labelledby="classification-heading" data-screen-region="classification">
                             <div class="flex flex-wrap items-center justify-between gap-3">
                                 <h3 id="classification-heading" class="text-sm font-semibold text-admin-text">Classification</h3>
                                 @can('catalog.brands.manage')

@@ -38,7 +38,7 @@ final class CentralBrandFormRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255'],
-            'website_url' => ['nullable', 'string', 'max:255'],
+            'website_url' => ['nullable', 'string', 'url:http,https', 'max:255'],
             'country_id' => ['nullable', 'integer', $countryExists],
             'founded_year' => [
                 'nullable',

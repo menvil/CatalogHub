@@ -14,6 +14,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\CountryReference;
 use Tests\TestCase;
@@ -57,7 +58,7 @@ final class CentralBrandFormTest extends TestCase
             ->assertSee('data-admin-form-leave-warning="false"', false)
             ->assertSee('Create Brand')
             ->assertSee('Create a canonical brand in the central catalog.')
-            ->assertSeeInOrder(['Dashboard', 'Brands', 'Create'])
+            ->assertSeeInOrder(['Central Admin', 'Brands', 'Create'])
             ->assertSee('data-admin-form-state', false)
             ->assertSee('action="/admin/central/brands"', false)
             ->assertSee('name="_token"', false)
@@ -73,7 +74,7 @@ final class CentralBrandFormTest extends TestCase
             ->assertSee('South Korea (KR)')
             ->assertSee('autocomplete="organization"', false)
             ->assertDontSee('name="country_code"', false)
-            ->assertSee('Leave blank to generate it from the Brand name.')
+            ->assertSee('Optional; generated from the name.')
             ->assertSee('New Brands are created as Draft')
             ->assertSee('Cancel')
             ->assertDontSee('name="status"', false)
@@ -215,6 +216,23 @@ final class CentralBrandFormTest extends TestCase
         $this->assertNull($input->countryId);
     }
 
+    public function test_form_request_rejects_unsupported_website_scheme(): void
+    {
+        $request = CentralBrandFormRequest::create('/admin/central/brands', 'POST', [
+            'name' => 'Samsung',
+            'website_url' => 'ftp://example.com',
+        ]);
+        $request->setContainer($this->app);
+        $request->setRedirector($this->app->make(Redirector::class));
+
+        try {
+            $request->validateResolved();
+            self::fail('Expected the FormRequest to reject an unsupported website scheme.');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('website_url', $exception->errors());
+        }
+    }
+
     #[DataProvider('invalidCreatePayloadProvider')]
     public function test_store_maps_representative_validation_failures_to_fields(
         array $payload,
@@ -330,7 +348,7 @@ final class CentralBrandFormTest extends TestCase
             ->assertDontSee('Germany (DE)');
     }
 
-    public function test_edit_breadcrumb_and_cancel_return_to_brand_detail_while_create_cancel_returns_to_list(): void
+    public function test_brand_form_breadcrumbs_are_consistent_and_cancel_destinations_remain_explicit(): void
     {
         $brand = CentralBrand::factory()->create(['name' => 'Samsung']);
         $user = User::factory()->create();
@@ -339,12 +357,13 @@ final class CentralBrandFormTest extends TestCase
             ->get(route('central.brands.edit', $brand))
             ->assertOk()
             ->assertSee('href="'.route('central.brands.show', $brand, absolute: false).'"', false)
-            ->assertSeeInOrder(['Brands', 'Samsung', 'Edit'])
-            ->assertSee('Cancel');
+            ->assertSeeInOrder(['Central Admin', 'Brands', 'Samsung', 'Edit'])
+            ->assertSee('Back to Overview');
         $this->assertCancelTargets($editResponse->getContent(), route('central.brands.show', $brand, absolute: false));
 
         $createResponse = $this->get(route('central.brands.create'))
             ->assertOk()
+            ->assertSeeInOrder(['Central Admin', 'Brands', 'Create'])
             ->assertSee('Cancel');
         $this->assertCancelTargets($createResponse->getContent(), route('central.brands.index', absolute: false));
     }
@@ -371,7 +390,7 @@ final class CentralBrandFormTest extends TestCase
             ]);
 
         $response
-            ->assertRedirect(route('central.brands.edit', $brand))
+            ->assertRedirect(route('central.brands.index'))
             ->assertSessionHas('success', 'Brand updated.');
 
         $brand->refresh();
@@ -383,10 +402,10 @@ final class CentralBrandFormTest extends TestCase
         $this->assertSame('samsung electronics', $brand->normalized_name);
         $this->assertNotSame(str_repeat('0', 64), $brand->normalized_name_hash);
 
-        $this->get(route('central.brands.edit', $brand))
+        $this->get(route('central.brands.index'))
             ->assertOk()
             ->assertSee('Brand updated.');
-        $this->get(route('central.brands.edit', $brand))
+        $this->get(route('central.brands.index'))
             ->assertOk()
             ->assertDontSee('Brand updated.');
     }
@@ -407,7 +426,7 @@ final class CentralBrandFormTest extends TestCase
                 'slug' => $status->value.'-original',
                 'website_url' => '',
                 'country_id' => '',
-            ])->assertRedirect(route('central.brands.edit', $brand));
+            ])->assertRedirect(route('central.brands.index'));
 
             $this->assertSame($status, $brand->fresh()->status);
             $this->assertSame($status->label().' Updated', $brand->fresh()->name);
@@ -428,7 +447,7 @@ final class CentralBrandFormTest extends TestCase
                 'name' => 'Samsung Electronics',
                 'slug' => 'samsung',
             ])
-            ->assertRedirect(route('central.brands.edit', $brand));
+            ->assertRedirect(route('central.brands.index'));
 
         $brand->refresh();
         $this->assertSame('Samsung Electronics', $brand->name);
@@ -453,7 +472,7 @@ final class CentralBrandFormTest extends TestCase
                 'website_url' => '',
                 'country_id' => '',
             ])
-            ->assertRedirect(route('central.brands.edit', $brand));
+            ->assertRedirect(route('central.brands.index'));
 
         $brand->refresh();
         $this->assertNull($brand->website_url);

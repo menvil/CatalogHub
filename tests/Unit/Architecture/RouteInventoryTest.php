@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Tests\Unit\Architecture;
 
 use Filament\Facades\Filament;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Route;
 use Tests\TestCase;
 
 final class RouteInventoryTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_route_names_and_http_signatures_are_unique(): void
     {
         $routes = collect(app('router')->getRoutes()->getRoutes());

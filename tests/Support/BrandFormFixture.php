@@ -16,13 +16,11 @@ use Illuminate\Support\Facades\Storage;
 
 final class BrandFormFixture
 {
-    public const VERSION = 'brand-form-v4';
+    public const VERSION = 'brand-form-v5';
 
-    public const BRAND_ID = 13013;
+    public const BRAND_ID = 3;
 
     public const OWNERSHIP_BRAND_ID = 13016;
-
-    public const OWNER_ORGANIZATION_ID = 1301601;
 
     public const ALTERNATIVE_ORGANIZATION_ID = 1301602;
 
@@ -30,8 +28,45 @@ final class BrandFormFixture
     {
         $timestamp = CarbonImmutable::parse('2026-08-13T10:00:00Z');
 
-        $brand = CentralBrand::factory()->create([
-            'id' => self::BRAND_ID,
+        $brand = CentralBrand::query()->findOrFail(self::BRAND_ID);
+        $brand->forceFill([
+            'name' => 'Apple',
+            'slug' => 'apple',
+            'status' => CentralBrandStatus::Active,
+            'website_url' => 'https://www.apple.com/',
+            'country_id' => CountryReference::id('US'),
+            'founded_year' => 1976,
+            'support_url' => 'https://support.apple.com/',
+            'contact_email' => 'contact@apple.example',
+            'primary_color' => '#000000',
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ])->saveOrFail();
+
+        self::createLegacyListRecord($timestamp);
+
+        self::createOrganization(
+            self::ALTERNATIVE_ORGANIZATION_ID,
+            'Apple Operations International',
+            $timestamp,
+        );
+
+        CentralBrand::factory()->create([
+            'id' => self::OWNERSHIP_BRAND_ID,
+            'name' => 'Zeta Ownership Journey Fixture',
+            'slug' => 'zeta-ownership-journey-fixture',
+            'status' => CentralBrandStatus::Draft,
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ]);
+
+        return $brand;
+    }
+
+    private static function createLegacyListRecord(CarbonImmutable $timestamp): void
+    {
+        $legacyBrand = CentralBrand::factory()->create([
+            'id' => 13013,
             'name' => 'Samsung Form Fixture',
             'slug' => 'samsung-form-fixture',
             'status' => CentralBrandStatus::Draft,
@@ -45,11 +80,8 @@ final class BrandFormFixture
             'updated_at' => $timestamp,
         ]);
 
-        $logoSource = base_path('tests/Fixtures/media/brand-logo-a.png');
+        $logoBytes = (string) file_get_contents(base_path('tests/Fixtures/media/brand-logo-a.png')).'CA013';
         $logoPath = 'media/originals/ca-013-samsung-logo.png';
-        // Keep the visual fixture distinct from CA-014 upload fixtures so Media
-        // deduplication cannot make browser acceptance depend on test order.
-        $logoBytes = (string) file_get_contents($logoSource).'CA013';
         Storage::disk('public')->put($logoPath, $logoBytes);
 
         $asset = new MediaAsset;
@@ -76,7 +108,7 @@ final class BrandFormFixture
             'id' => 1301301,
             'media_asset_id' => $asset->getKey(),
             'entity_type' => MediaAssignment::ENTITY_TYPE_CENTRAL_BRAND,
-            'entity_id' => $brand->getKey(),
+            'entity_id' => $legacyBrand->getKey(),
             'role' => MediaAssignment::ROLE_BRAND_LOGO,
             'position' => 0,
             'locale' => null,
@@ -89,35 +121,18 @@ final class BrandFormFixture
         ])->saveOrFail();
 
         $owner = self::createOrganization(
-            self::OWNER_ORGANIZATION_ID,
+            1301601,
             'Samsung Electronics Co., Ltd. — Global Corporate Holdings',
             $timestamp,
         );
-        self::createOrganization(
-            self::ALTERNATIVE_ORGANIZATION_ID,
-            'Samsung Group International',
-            $timestamp,
-        );
-
         $ownership = new CentralBrandOwnership;
         $ownership->forceFill([
             'id' => 1301601,
-            'central_brand_id' => $brand->getKey(),
+            'central_brand_id' => $legacyBrand->getKey(),
             'organization_id' => $owner->getKey(),
             'created_at' => $timestamp,
             'updated_at' => $timestamp,
         ])->saveOrFail();
-
-        CentralBrand::factory()->create([
-            'id' => self::OWNERSHIP_BRAND_ID,
-            'name' => 'Zeta Ownership Journey Fixture',
-            'slug' => 'zeta-ownership-journey-fixture',
-            'status' => CentralBrandStatus::Draft,
-            'created_at' => $timestamp,
-            'updated_at' => $timestamp,
-        ]);
-
-        return $brand;
     }
 
     private static function createOrganization(

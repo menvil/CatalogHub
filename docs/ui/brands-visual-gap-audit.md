@@ -54,15 +54,15 @@ Before Phase 17, desktop rendered all approved data but as a long succession of 
 
 ## CA-013 — Brand Create / Edit
 
-Desktop implements the approved canonical form and Phase 16 Organization ownership, but uses a more spacious generic form hierarchy. Mobile is usable and sequential, while the prototype's desktop density and contextual side rail are not yet represented.
+Phase 18.3 converges the approved canonical form and Phase 16 Organization ownership into one dense Brand information editor. The prototype remains a density/hierarchy reference, not a source of deprecated Brand domains.
 
 | Prototype region | Current desktop / mobile equivalent | Domain source | Gap | Phase | Notes |
 |---|---|---|---|---|---|
-| Compact canonical identity/profile sections | Correct fields in larger generic sections | Canonical Brand input | D | Phase 18 | Match grouping, widths and action placement at 1440; preserve logical mobile order. |
-| Parent Company selector | Approved Organization picker exists | `CentralBrandOwnership → Organization` | A | Phase 18 | Converge visual placement only; keep one owner and exact Organization semantics. |
-| Website/support/contact/color | Existing canonical controls | Canonical Brand fields | D | Phase 18 | Improve density and hierarchy without persistence changes. |
-| Tags in prototype form | Tags are currently managed from CA-012 | Existing editorial Tags | B | Phase 18 | Decide presentation using the existing tag action only; do not merge with categories. |
-| Publish/save controls | Save creates/updates; lifecycle is separate | Existing save plus CA-012 lifecycle | B | Phase 18 | Use Save/Create language; no Save & Publish shortcut. |
+| Compact canonical identity/profile sections | One Brand information card with four divided subsections and 3→2→1 responsive field grids | Canonical Brand input | A | Phase 18.3 | Header actions and compact rail keep most canonical data in the first desktop viewport. |
+| Parent Company selector | Embedded Company & origin row with Assign/Change plus contextual Create/Clear | `CentralBrandOwnership → Organization` | A | Phase 18.3 | Visual integration only; one owner and separate authoritative mutations remain exact. |
+| Website/support/contact/color | Compact internal subsections without redundant helper copy | Canonical Brand fields | A | Phase 18.3 | No persistence or validation changes. |
+| Tags in prototype form | Managed only from CA-012 Classification | Existing editorial Tags | B | Phase 18.3 | Intentionally not duplicated in CA-013. |
+| Publish/save controls | Create/Save in page header; lifecycle remains CA-012 | Existing save plus CA-012 lifecycle | A | Phase 18.3 | No sticky footer, Save Draft, preview, or publication shortcut. |
 | Description, SEO, visibility, site assignment | No canonical equivalent in Brand profile | Translation or future Site projection domains | C | Deferred | Must not become new Brand columns. |
 | Manual category assignment | No editor by design | Category coverage is derived from Products | C | Deferred | Prototype control conflicts with approved semantics. |
 | Arbitrary external identifier fields | External identities use configured namespaces | `CentralBrandExternalIdentity` | C | Deferred | Do not add free-form identifier columns to the profile. |
@@ -119,8 +119,6 @@ Only A/B/D work is eligible. Category C rows above are explicitly excluded.
 
 | Screen | Prototype region / class | Exact acceptance target |
 |---|---|---|
-| CA-013 | Canonical form and ownership composition (A/D) | Recompose existing fields and Organization picker into prototype-like desktop proportions; preserve current validation, persistence and mobile field order. |
-| CA-013 | Tags/save semantics mapping (B) | If Tags are surfaced, reuse the existing editorial tag action; label save actions without publication semantics. |
 | CA-014 | Primary-logo workspace (A/D) | Increase identity/preview hierarchy, compact real asset metadata and strengthen missing/unavailable states on desktop and mobile using only `brand_logo`. |
 | CA-015 | Locale health/status mapping (B/D) | Make all active locales and common statuses scannable, preserve exact-locale navigation and bound the selector at 390. |
 | CA-015 | Source/target editor and activity (A/D) | Match the prototype's two-column desktop balance for supported `BrandTranslation` fields and stack logically on mobile, with activity kept secondary. |

@@ -80,7 +80,7 @@ final class CentralBrandProfileFormTest extends TestCase
             ->assertSee('value="support@example.com"', false)
             ->assertSee('value="#1428A0"', false)
             ->assertSee('Samsung logo')
-            ->assertSee('Manage Media')
+            ->assertSee('Manage media')
             ->assertSee('href="'.route('central.brands.media', $brand, absolute: false).'"', false)
             ->assertSee('Archived')
             ->assertDontSee('name="status"', false)
@@ -102,7 +102,7 @@ final class CentralBrandProfileFormTest extends TestCase
         $this->patch(route('central.brands.update', $brand), [
             'name' => 'Samsung Electronics',
             'slug' => 'samsung',
-        ])->assertRedirect(route('central.brands.edit', $brand));
+        ])->assertRedirect(route('central.brands.index'));
 
         $retained = $brand->fresh();
         $this->assertSame([1938, 'https://example.com/support', 'support@example.com', '#1428A0'], [
@@ -119,7 +119,7 @@ final class CentralBrandProfileFormTest extends TestCase
             'support_url' => '',
             'contact_email' => '',
             'primary_color' => '',
-        ])->assertRedirect(route('central.brands.edit', $brand));
+        ])->assertRedirect(route('central.brands.index'));
 
         $cleared = $brand->fresh();
         foreach (['founded_year', 'support_url', 'contact_email', 'primary_color'] as $field) {
@@ -194,7 +194,7 @@ final class CentralBrandProfileFormTest extends TestCase
                 'contact_email' => 'hello@example.com',
                 'primary_color' => '#ff0000',
             ])
-            ->assertRedirect(route('central.brands.edit', $brand));
+            ->assertRedirect(route('central.brands.index'));
 
         $brand->refresh();
         $this->assertSame((int) now()->year, $brand->founded_year);

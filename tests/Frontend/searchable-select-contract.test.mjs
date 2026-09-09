@@ -4,6 +4,7 @@ import { resolve } from 'node:path'
 import test from 'node:test'
 
 const source = readFileSync(resolve(import.meta.dirname, '../../resources/js/admin/searchable-select.js'), 'utf8')
+const view = readFileSync(resolve(import.meta.dirname, '../../resources/views/components/ui/form/searchable-select.blade.php'), 'utf8')
 
 test('searchable select implements its keyboard and form-control contract', () => {
     for (const key of ['ArrowDown', 'ArrowUp', 'Enter', 'Escape']) {
@@ -20,7 +21,11 @@ test('searchable select implements its keyboard and form-control contract', () =
         'AbortController',
         'fetch(url',
         'url.searchParams.set',
+        'data-ui-searchable-select-toggle',
     ]) {
         assert.ok(source.includes(contract), `Missing searchable-select contract: ${contract}`)
     }
+
+    assert.ok(view.includes('data-ui-searchable-select-toggle'))
+    assert.ok(view.includes('cursor-pointer'))
 })

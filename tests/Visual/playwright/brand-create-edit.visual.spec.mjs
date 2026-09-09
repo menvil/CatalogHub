@@ -3,12 +3,13 @@ import { foundationDemo, observePageErrors, signIn } from '../../Browser/Support
 
 const states = [
     { mode: 'create', state: 'create', name: 'ca-013__create__1440x1000.png', width: 1440, height: 1000, url: '/admin/central/brands/create', maxDiffPixelRatio: 0.02 },
+    { mode: 'edit', state: 'edit', name: 'ca-013__edit__1440x1000.png', width: 1440, height: 1000, url: '/admin/central/brands/3/edit', maxDiffPixelRatio: 0.02 },
+    { mode: 'edit', state: 'validation', name: 'ca-013__validation__1440x1000.png', width: 1440, height: 1000, url: '/admin/central/brands/3/edit', maxDiffPixelRatio: 0.02 },
+    { mode: 'edit', state: 'edit', name: 'ca-013__edit__1024x1000.png', width: 1024, height: 1000, url: '/admin/central/brands/3/edit', maxDiffPixelRatio: 0.025 },
+    { mode: 'edit', state: 'edit', name: 'ca-013__edit__768x1024.png', width: 768, height: 1024, url: '/admin/central/brands/3/edit', maxDiffPixelRatio: 0.035 },
     { mode: 'create', state: 'create', name: 'ca-013__create__390x844.png', width: 390, height: 844, url: '/admin/central/brands/create', maxDiffPixelRatio: 0.065 },
-    { mode: 'edit', state: 'edit', name: 'ca-013__edit__1440x1000.png', width: 1440, height: 1000, url: '/admin/central/brands/13013/edit', maxDiffPixelRatio: 0.02 },
-    { mode: 'edit', state: 'edit', name: 'ca-013__edit__390x844.png', width: 390, height: 844, url: '/admin/central/brands/13013/edit', maxDiffPixelRatio: 0.065 },
-    { mode: 'edit', state: 'ownership-populated', name: 'ca-013__ownership-populated__1440x1000.png', width: 1440, height: 1000, url: '/admin/central/brands/13013/edit', maxDiffPixelRatio: 0.02 },
-    { mode: 'edit', state: 'ownership-populated', name: 'ca-013__ownership-populated__390x844.png', width: 390, height: 844, url: '/admin/central/brands/13013/edit', maxDiffPixelRatio: 0.065 },
-    { mode: 'edit', state: 'ownership-picker', name: 'ca-013__ownership-picker__1440x1000.png', width: 1440, height: 1000, url: '/admin/central/brands/13013/edit', maxDiffPixelRatio: 0.02 },
+    { mode: 'edit', state: 'edit', name: 'ca-013__edit__390x844.png', width: 390, height: 844, url: '/admin/central/brands/3/edit', maxDiffPixelRatio: 0.065 },
+    { mode: 'edit', state: 'ownership-picker', name: 'ca-013__ownership-picker__1440x1000.png', width: 1440, height: 1000, url: '/admin/central/brands/3/edit', maxDiffPixelRatio: 0.02 },
 ]
 
 for (const state of states) {
@@ -21,21 +22,18 @@ for (const state of states) {
         await page.goto(state.url)
         await expect(page.locator(`[data-brand-form-mode="${state.mode}"]`)).toBeVisible()
         if (state.state === 'ownership-picker') {
-            await page.locator('[data-screen-region="parent-company"]').getByRole('button', { name: 'Change Parent Company', exact: true }).click()
+            await page.locator('[data-screen-region="parent-company"]').getByRole('button', { name: 'Change', exact: true }).click()
             const dialog = page.getByRole('dialog', { name: 'Manage Parent Company' })
             const picker = dialog.getByRole('combobox', { name: 'Organization' })
-            await picker.fill('Samsung')
-            await expect(dialog.getByRole('option', { name: 'Samsung Group International — Organization #1301602', exact: true })).toBeVisible()
+            await picker.fill('Apple Operations')
+            await expect(dialog.getByRole('option', { name: 'Apple Operations International — Organization #1301602', exact: true })).toBeVisible()
+        } else if (state.state === 'validation') {
+            await page.getByLabel('Website').fill('ftp://invalid.example.test')
+            await page.getByRole('button', { name: 'Save changes', exact: true }).click()
+            await expect(page.locator('#brand-website-error')).toBeVisible()
         }
         await page.evaluate(() => document.fonts.ready)
-        if (state.state === 'ownership-populated') {
-            const ownershipTop = await page.locator('[data-screen-region="parent-company"]').evaluate(
-                (element) => element.getBoundingClientRect().top,
-            )
-            await page.addStyleTag({ content: `body { transform: translateY(-${Math.max(0, ownershipTop - 120)}px); }` })
-        } else {
-            await page.evaluate(() => window.scrollTo(0, 0))
-        }
+        await page.evaluate(() => window.scrollTo(0, 0))
         await page.addStyleTag({
             content: `
                 *, *::before, *::after {

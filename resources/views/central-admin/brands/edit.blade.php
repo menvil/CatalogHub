@@ -1,7 +1,7 @@
 @extends('layouts.central-admin', ['activeNav' => 'brands', 'pageTitle' => 'Edit Brand'])
 
 @section('breadcrumbs')
-    <a href="{{ route('filament.central.pages.home', absolute: false) }}" class="font-medium hover:text-admin-text">Dashboard</a>
+    <a href="{{ route('filament.central.pages.home', absolute: false) }}" class="font-medium hover:text-admin-text">Central Admin</a>
     <span aria-hidden="true">/</span>
     <a href="{{ route('central.brands.index', absolute: false) }}" class="font-medium hover:text-admin-text">Brands</a>
     <span aria-hidden="true">/</span>
@@ -24,7 +24,7 @@
         $requestedOrganizationName = $createOwnerOpen ? old('organization_name') : '';
         $organizationName = is_scalar($requestedOrganizationName) ? (string) $requestedOrganizationName : '';
     @endphp
-    <div class="space-y-admin-section" data-brand-form-fixture="brand-form-v4" data-brand-form-mode="edit">
+    <div class="space-y-admin-section" data-brand-form-fixture="brand-form-v5" data-brand-form-mode="edit">
         <x-admin.page-header
             screen-id="CA-013"
             :show-screen-id="false"
@@ -33,7 +33,8 @@
             :breadcrumbs="[]"
         >
             <x-slot:actions>
-                <x-ui.button variant="secondary" :href="route('central.brands.show', $brand, absolute: false)">Back to Overview</x-ui.button>
+                <x-ui.button variant="secondary" :href="route('central.brands.show', $brand, absolute: false)" data-brand-form-cancel>Back to Overview</x-ui.button>
+                <x-ui.button type="submit" form="brand-form">Save changes</x-ui.button>
             </x-slot:actions>
         </x-admin.page-header>
 
@@ -43,8 +44,6 @@
                 'brand' => $brand,
                 'action' => route('central.brands.update', $brand, absolute: false),
                 'method' => 'patch',
-                'submitLabel' => 'Save changes',
-                'cancelUrl' => route('central.brands.show', $brand, absolute: false),
             ])
         </div>
 

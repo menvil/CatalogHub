@@ -1,0 +1,66 @@
+tests/Visual/baselines/ca-013__edit__1024x1000.png.sha256
+  s_b98890b5b17cb5::t_07318ab18c6adb 1
+resources/views/central-admin/brands/_form.blade.php
+  s_b98890b5b17cb5::t_ef45c0a7beb959 84
+tests/Frontend/brand-form-contract.test.mjs
+  s_b98890b5b17cb5::t_6c1cf0cedcf37d 19
+tests/Feature/Central/CentralBrandFormTest.php
+  s_b98890b5b17cb5::t_85c9cec5d70a2b 375,387,390,411,432,457
+  s_b98890b5b17cb5::t_9bf3df54fc747f 60,333,342,348
+resources/views/central-admin/brands/edit.blade.php
+  s_b98890b5b17cb5::t_ef45c0a7beb959 4
+tests/Frontend/searchable-select-contract.test.mjs
+  s_b98890b5b17cb5::t_9bf3df54fc747f 7,24,28-30
+tests/Visual/baselines/ca-013__create__390x844.png.sha256
+  s_b98890b5b17cb5::t_07318ab18c6adb 1
+resources/js/admin/searchable-select.js
+  s_b98890b5b17cb5::t_f5ee9e3b1aad9b 250
+  s_b98890b5b17cb5::t_ef45c0a7beb959 247-249,251-252
+tests/Browser/Acceptance/brand-create-edit.spec.mjs
+  s_b98890b5b17cb5::t_415dea1c0ebd2c 77-80
+  s_b98890b5b17cb5::t_6c1cf0cedcf37d 270-274
+  s_b98890b5b17cb5::t_85c9cec5d70a2b 101,103,109,111,171,173,205,207
+tests/Visual/baselines/ca-013__edit__768x1024.png.sha256
+  s_b98890b5b17cb5::t_07318ab18c6adb 1
+resources/css/central-admin.css
+  s_b98890b5b17cb5::t_ef45c0a7beb959 490-507
+resources/views/central-admin/brands/create.blade.php
+  s_b98890b5b17cb5::t_ef45c0a7beb959 4
+tests/Visual/baselines/ca-013__ownership-picker__1440x1000.png.sha256
+  s_b98890b5b17cb5::t_07318ab18c6adb 1
+resources/views/components/ui/form/searchable-select.blade.php
+  s_b98890b5b17cb5::t_ef45c0a7beb959 62-68,70,75
+docs/ui/screens/CA-013-brand-create-edit.md
+  s_b98890b5b17cb5::t_85c9cec5d70a2b 24
+  s_b98890b5b17cb5::t_6c1cf0cedcf37d 30,48
+tests/Visual/baselines/ca-013__create__1440x1000.png.sha256
+  s_b98890b5b17cb5::t_07318ab18c6adb 1
+tests/Visual/baselines/ca-013__validation__1440x1000.png.sha256
+  s_b98890b5b17cb5::t_07318ab18c6adb 1
+app/Http/Controllers/CentralAdmin/CentralBrandFormController.php
+  s_b98890b5b17cb5::t_ef45c0a7beb959 70
+tests/Feature/Central/CentralBrandProfileFormTest.php
+  s_b98890b5b17cb5::t_85c9cec5d70a2b 105,122,197
+tests/Visual/baselines/ca-013__edit__1440x1000.png.sha256
+  s_b98890b5b17cb5::t_07318ab18c6adb 1
+tests/Visual/baselines/ca-013__edit__390x844.png.sha256
+  s_b98890b5b17cb5::t_07318ab18c6adb 1
+docs/ui/visual-references.json
+  s_b98890b5b17cb5::t_07318ab18c6adb 34-41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "32916cdd98bc924e0c7a7a2fe72bf97321fb5518",
+  "prompts": {},
+  "sessions": {
+    "s_b98890b5b17cb5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0862e-92ed-7711-b946-3125fc59c23f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

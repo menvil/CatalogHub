@@ -1,58 +1,80 @@
 ---
 screen_id: CA-014
 context: central-admin
-purpose: Manage a Brand's canonical global identity media through Shared Media Core.
+purpose: Manage the one canonical global primary Brand logo through Shared Media Core.
 roles: authorized Central Admin catalog user
 route: /admin/central/brands/{brand}/media (GET); /admin/central/brands/{brand}/media/logo (POST, DELETE); /admin/central/brands/{brand}/media/logo/assign (POST)
-viewports: desktop=1440x1000;mobile=390x844
-fixture: brand-media-v2
-regions: central-shell;breadcrumbs;page-header;brand-tabs;current-identity;asset-information;generated-variants;upload-form;bounded-asset-selector;confirmation-modal;flash-feedback
-actions: upload-logo;replace-logo;assign-existing-logo;remove-logo;confirm;cancel
-states: no-asset;ready;processing;failed;unavailable;validation-error
-permissions: catalog.brands.manage; media.manage additionally gates Media Library selection
-responsive: Preview, metadata, variant cards, forms, long filenames and semantic identifiers wrap without page-level horizontal overflow at 390px.
-out_of_scope: svg;additional-brand-roles;localized-media;site-media;market-media;publication;generic-dam;variant-retry;orphan-purge
-reference_version: v2
+viewports: desktop=1440x1000,1280;intermediate=1024;tablet=768x1024;mobile=390x844
+fixture: brand-media-v3
+regions: central-shell;breadcrumbs;page-header;brand-tabs;primary-logo;asset-details;variants;replacement-modal;bounded-shared-media-picker;confirmation-modal;flash-feedback
+actions: upload-logo;replace-logo;choose-shared-media;assign-existing-logo;remove-assignment;confirm;cancel
+states: no-logo;ready;processing;failed;unavailable;validation-error;picker-open
+permissions: catalog.brands.manage; media.manage additionally gates Shared Media selection and MediaAsset destination
+responsive: The main/rail layout becomes one column below 1280px; mobile order is Primary logo, actions, Asset details, then Variants. The picker remains a separate modal with 4/3/2/1-column results and no page-level overflow.
+out_of_scope: svg;additional-brand-roles;dark-light;hero-og;localized-media;site-media;market-media;media-completeness;alt-text;edit-image;asset-deletion;generic-dam;variant-retry;orphan-purge
+reference_version: final-convergence-v3
 ---
 
-# CA-014 — Brand Media / Identity
+# CA-014 — Brand Media / Logo
 
-CA-014 is the mutation workspace for canonical Brand identity media. Phase 14 supports exactly one semantic role: `brand_logo`. The repository contract and approved executable design do not establish another Brand role, so wordmark, symbol, dark/light, hero, OG and similar speculative roles are not created.
+CA-014 is the finished Brand logo workspace. Its primary task is deliberately narrow: inspect the current logo and, when necessary, replace it with a secure upload or a compatible existing `MediaAsset`. The screen is no longer presented as an always-open Shared Media warehouse. The approved Brand domain still contains exactly one media role: `brand_logo`.
 
 ## Canonical assignment
 
-`CentralBrandMediaQuery` is the authoritative selector shared by CA-012, CA-014 and derived Brand Quality. The primary logo is the one `MediaAssignment` with:
+`CentralBrandMediaQuery` remains the authoritative selector shared by CA-012, CA-014, and derived Brand Quality. The logo is the one `MediaAssignment` with:
 
 - `entity_type = central_brand` and the target Brand ID;
 - `role = brand_logo`;
-- `locale`, `site_id` and `market_id` all null;
+- null `locale`, `site_id`, and `market_id`;
 - `visibility = global`;
-- `is_primary = true`.
+- `is_primary = true` and position zero.
 
-The database primary-per-context uniqueness constraint prevents competing primary assignments for the same entity, role and context. Mutation Actions lock the Brand and existing context assignment, normalize the canonical assignment to position zero/global, and never rely on the UI to choose an arbitrary row.
+The database uniqueness constraint and transactionally locked Actions prevent competing primaries. CA-014 adds no Brand columns, media tables, uploader, storage, assignment role, locale, Site, or market projection.
 
-## Workspace and states
+## Final workspace composition
 
-The screen presents the current assignment, a real usable preview or an honest empty/unavailable state, safe master metadata, and the existing `brand_logo_128`, `brand_logo_256`, and `brand_logo_512` variants. Variants are read-only Shared Media outputs; their real status, dimensions and safe delivery action are shown without synthesizing missing variants or exposing storage paths.
+The page header follows CA-012/013 with Brand breadcrumbs, `Brand Media`, the exact Brand-aware Shared Media subtitle, `View Brand`, and only Overview / Media / Translations navigation. Desktop uses a wide `Primary logo` card and a narrow right rail. The preview is a contained, wordmark-safe neutral stage (`object-fit: contain`) rather than a cropped or oversized media canvas. Compact Global, Primary, and real delivery-state badges live in the card header.
 
-Delivery distinguishes no assignment, ready, processing, failed, and unavailable. An assigned active asset is usable only when `BrandLogoPresenter` can resolve a ready semantic variant or its stored master. Missing storage, a non-active asset, or no deliverable master/variant produces an unavailable state rather than a broken `<img>`.
+The action row contains the primary `Replace logo`, secondary `Choose from Shared Media`, and a visually secondary danger `Remove assignment`. The upload form and asset library are absent from the default page flow. Asset details show only filename, MIME, dimensions, size, status, source, timestamps, public UUID, and the readable `Brand · Primary logo` assignment. Storage paths, object keys, buckets, signed-URL internals, and credentials are never rendered. `Open MediaAsset` uses the existing safe admin destination.
 
-## Upload, replace, reuse and remove
+Variants are a compact read-only rail section. Existing `brand_logo_128`, `brand_logo_256`, and `brand_logo_512` records show purpose, dimensions, format, state, and a safe open link when deliverable. Absence is a small `No generated variants yet` state. A usable normalized master remains Ready while asynchronous variants are absent or processing; variant absence never becomes logo failure.
 
-Upload and replace pass the browser file through the shared `MediaService` secure ingest pipeline. Accepted input is JPEG, PNG or WebP, with a maximum 20 MiB, 8000 pixels per side, and 16 million pixels. Detection uses decoded content, not the client extension or MIME. GIF, SVG, AVIF, corrupt data and mismatched content are rejected. Shared Media has no approved SVG sanitizer, so SVG remains deferred.
+Below 1280px the rail moves beneath Primary logo before it becomes too narrow. At mobile width the order is header, tabs, Primary logo, actions, Asset details, then Variants. Dialogs are viewport-bounded, scroll internally, trap focus through the established modal runtime, close with Escape, and return focus to their trigger.
 
-Ingest completes before assignment mutation. A validation, decode, storage or persistence failure leaves the previous assignment and usable logo intact. Successful replace transactionally updates the canonical assignment and then attempts to queue the existing Brand Logo variant profile. A post-commit dispatch failure remains a runtime failure and is never reported as an assignment rollback. Replacement and removal do not physically delete the prior/shared `MediaAsset`; lifecycle and orphan cleanup remain Shared Media responsibilities.
+## Upload and atomic replacement
 
-Actors who also have the existing `media.manage` permission receive a bounded, server-paginated selector for active, available compatible raster assets. It accepts only a semantic MediaAsset ID and revalidates type, status, MIME and delivery server-side. This is not a generic DAM, folder browser or bulk media workflow. Actors with only `catalog.brands.manage` retain upload/replace/remove access but do not see the Media Library selector.
+`Replace logo` (or `Upload logo` in the empty state) opens the repository modal pattern around the existing `UploadCentralBrandLogoAction`. The accepted contract remains JPEG, PNG, or WebP; maximum 20 MiB, 8000 pixels per side, and 16 megapixels. Detection is based on decoded content rather than filename or client MIME. SVG, GIF, AVIF, corrupt data, and mismatched content are not promised or accepted.
 
-Remove requires confirmation and deletes only the exact canonical assignment. Cancel clears dialog state without mutation. Removing a logo does not change Brand lifecycle and is permitted for Active Brands.
+Shared `MediaService` ingest and secure validation complete before the canonical assignment changes. Any validation, decode, storage, persistence, or audit failure preserves the old assignment and keeps the replacement modal usable with an associated inline error. A successful assignment is the only point at which success is reported. A post-commit variant-dispatch failure remains visible and is not described as a rolled-back assignment. Replacement retains the old `MediaAsset` and stored file.
 
-## Quality and audit
+## Shared Media reuse and query behavior
 
-The screen links directly to Phase 13 derived-quality semantics. No assignment yields `brand_logo_missing`; an assignment without usable delivery yields `brand_logo_unusable`; a successful repair removes the issue on the next CA-012 read; removal restores `brand_logo_missing`. There is no stored score recalculation.
+`Choose from Shared Media` is available only under the existing `media.manage` permission. The default CA-014 request does not execute the library query or serialize candidate cards. The explicit `picker=1` request lazily opens a wide, focus-managed modal and runs the existing stable server pagination at six compatible assets per page. Search remains bounded to filename, checksum, and numeric asset ID.
 
-Initial assignment and replace emit `catalog.brand.logo.assigned`; remove emits `catalog.brand.logo.removed`. Audit is in the mutation transaction, no-op assignment emits nothing, and failure rolls the mutation back. A repair from a non-canonical context records `media_asset_id = null` before and the assigned asset ID after, representing the semantic creation of the canonical assignment. Payloads otherwise contain only the semantic role and MediaAsset ID—never paths, signed URLs, credentials or temporary upload metadata.
+Cards use the existing safe URL resolver and show only thumbnail, filename, MIME, dimensions, and `Use as logo`. The assigned asset has `aria-current=true`, a visible `Current` marker, and a disabled `Current logo` action. Server-side assignment revalidates raster type, active status, allowed MIME, and physical delivery. After success the redirect drops picker state, returning to the compact workspace with updated preview, details, and variants. Candidate variants are eager-loaded in one relation query; the page does not introduce an N+1.
 
-## Deferred
+## Delivery and empty states
 
-Localized/site/market assignments, Site publication or synchronization, additional Brand identity roles, external URL acquisition, SVG, generic Media Library/DAM expansion, manual variant editing/retry, and physical asset cleanup are outside CA-014 Phase 14.
+- Ready displays the best ready semantic variant, then the normalized master fallback.
+- Processing states that the assignment remains while a usable file becomes available; it never claims Ready.
+- Failed and Unavailable explain the real condition and leave Replace / Choose recovery actions visible.
+- No logo uses `No primary logo assigned`, immediate Upload and Choose actions, a compact neutral Asset details state, and a compact Variants state.
+
+The deterministic primary fixture is an Apple-like active Brand backed by a persisted transparent PNG `MediaAsset`, exact canonical assignment, real dimensions/size/source/timestamps, generated variants, and five compatible picker candidates. Separate coverage records the empty state, picker-open state, tablet, and mobile layouts. No screenshot-only metadata is hardcoded in the view.
+
+## Permissions, removal, and audit
+
+Existing authorization is unchanged. Actors allowed to open the Brand workspace see safe current media and metadata. `catalog.brands.manage` continues to gate upload/replace/remove; `media.manage` additionally gates library selection and the generic MediaAsset destination. No new permission exists.
+
+Remove requires the established confirmation modal and deletes only the exact canonical `MediaAssignment`. Its copy explicitly states that the Shared Media asset and files remain available. CA-014 never offers Brand-specific asset deletion. Assign/replace continue to emit `catalog.brand.logo.assigned`; removal emits `catalog.brand.logo.removed`; no-op assignment emits no audit record. Audit payloads contain semantic IDs and role only, never storage internals.
+
+## Intentional prototype divergences
+
+- Multiple media/logo roles: deferred; the Brand domain has only `brand_logo`.
+- Dark / Light, wordmark, favicon, app icon, hero, OG, social, localized assets: not implemented.
+- Media Completeness and required-role counts: not authoritative for the current Brand model.
+- Site assignments: no `SiteBrand` or Brand-media projection domain exists.
+- Alt text completeness/editor: not part of the CA-014 contract.
+- Edit image and manual variant generation/retry: not part of the current workflow.
+- Delete asset: CA-014 manages assignment, not Shared Media asset deletion.
+- Generic library management, tagging, bulk actions, arbitrary role assignment, and asset cleanup remain outside this focused workspace.

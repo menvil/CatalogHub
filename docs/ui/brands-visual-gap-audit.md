@@ -2,7 +2,7 @@
 
 Audit date: 2026-09-02. Baseline: `develop` at `8e51ab9` after Brands Phase 17. Prototype reference version: `brand-prototype-v1`.
 
-This audit compares the original Brand prototypes with the current desktop implementation and its responsive mobile composition. The PNGs in `pictures/1. Central Admin/1.3. Brands/` are the design source; `tests/Visual/baselines/` are regression evidence only. Every row is classified once: **A** implement from an approved domain source, **B** map prototype language to existing semantics, **C** intentional future-domain gap, or **D** pure composition/visual debt. Phase 18.1 closes the eligible CA-011 A/B/D work.
+This audit compares the original Brand prototypes with the current desktop implementation and its responsive mobile composition. The PNGs in `pictures/1. Central Admin/1.3. Brands/` are the design source; `tests/Visual/baselines/` are regression evidence only. Every row is classified once: **A** implement from an approved domain source, **B** map prototype language to existing semantics, **C** intentional future-domain gap, or **D** pure composition/visual debt. Phases 18.1–18.4 close the eligible CA-011 through CA-014 A/B/D work.
 
 ## Prototype references
 
@@ -69,16 +69,16 @@ Phase 18.3 converges the approved canonical form and Phase 16 Organization owner
 
 ## CA-014 — Brand Media / Logo
 
-Current desktop/mobile is an honest single-role workspace with upload/replace/remove and delivery state. The prototype is a multi-role DAM board; most of that apparent fidelity would require unapproved media domains.
+Phase 18.4 converges the honest single-role implementation into a focused Brand logo manager. The prototype remains a hierarchy and polish reference rather than authority for its multi-role DAM domain.
 
 | Prototype region | Current desktop / mobile equivalent | Domain source | Gap | Phase | Notes |
 |---|---|---|---|---|---|
-| Primary logo preview and controls | Exact `brand_logo` workspace exists | Shared Media Core assignment and variants | D | Phase 18 | Tighten identity framing, preview scale and metadata density. |
-| Missing/unavailable media health | Honest empty and unusable states exist | Media assignment usability + derived Quality | A | Phase 18 | Align state prominence and route back to overview health. |
-| Responsive asset metadata/actions | Safe stacking exists but is vertically loose | Existing Media asset/variant read model | D | Phase 18 | Bound long names and keep controls visible at 390. |
+| Primary logo preview and controls | Contained preview, real state badges, primary Replace and secondary assignment removal | Shared Media Core assignment and variants | Converged (A/D) | Phase 18.4 | Upload is modal; no uploader or large destructive action remains permanently open. |
+| Missing/unavailable media health | Polished no-logo, Processing, Failed and Unavailable states with existing recovery actions | Media assignment usability + derived Quality | Implemented (A) | Phase 18.4 | Missing variants never override a usable normalized master. |
+| Responsive asset metadata/actions | Compact details/variants rail; single-column before 1280px; explicit tablet/mobile coverage | Existing Media asset/variant read model | Converged (D) | Phase 18.4 | Long values wrap and controls remain usable at 390px. |
 | Wordmark, symbol, dark/light, hero and OG slots | No equivalent | Unsupported Brand media roles | C | Deferred | Do not render placeholders that imply role support. |
 | Localized/site media | No equivalent | Future localized/site media | C | Deferred | Remains outside global canonical media. |
-| Generic library/DAM browser | Existing bounded upload/selection workflow only | Generic DAM redesign | C | Deferred | Phase 18 does not redesign DAM. |
+| Generic library/DAM browser | Lazy bounded Shared Media picker only | Existing compatible-asset selector; generic DAM redesign | Adapted / C | Phase 18.4 / Deferred | Initial page does not query/render the library; generic management remains elsewhere. |
 
 ## CA-015 — Brand Translations
 
@@ -113,12 +113,19 @@ CA-012 A/B/D work is closed. The final screen maps the prototype into a strong n
 
 The `brand-detail-v9` Samsung acceptance fixture persists its logo, ownership, five Tags, two External identities, eight realistically named Products across five derived Categories and four mixed-status translations. Its intentionally absent support/contact pair and outdated German translation produce two real authoritative issues and 80% Quality; archived Sony remains the separate 100% Complete state. The responsive composition uses the main/operations dashboard at 1440/1280, a stable two-column internal overview at 1024/768, and the explicit mobile priority Identity with integrated Summary/Classification → Issues → External identities at 390. Published/Synced, Publication Status, Sites/Site Coverage, Versions, hero/banner media, a Recent Products overview list, rating/price/SEO metrics, source-feed internals and a category breadcrumb remain intentional architectural divergences.
 
+## Phase 18.4 CA-014 convergence decision
+
+CA-014 A/B/D work is closed. Before convergence, a tall preview, permanently open uploader, full-width empty Variants card, always-rendered six-card media selector, and prominent red removal control made the page read as a technical file warehouse. The final `brand-media-v3` composition places a contained canonical logo and its three compact real badges first, keeps Replace / Choose / Remove in one action row, and moves safe Asset details plus read-only Variants into a narrow rail. Empty, Processing, Failed, and Unavailable are explicit delivery states with the same replacement recovery actions.
+
+The Shared Media selector is now a viewport-bounded modal, loaded only for an explicit `picker=1` request. It retains stable six-item server pagination, existing filename/checksum/numeric-ID search, eager variant loading, safe URL resolution, server-side compatibility checks, a visible `Current`/`aria-current` state, and no-op prevention. Upload remains the existing secure Shared Media ingest in a focus-managed modal; assignment changes only after success, while failed replacement preserves the prior logo and old assets survive replacement/removal.
+
+The reviewed 1440×1000 final frame shows the complete Primary logo card and nearly all Asset details without scrolling; 768×1024 and 390×844 preserve the mobile order and have no horizontal overflow. The separate 1440×1000 picker frame verifies a compact four-column card grid. Dark/light logos, wordmarks as a separate role, favicon, hero, OG, localized or Site media, Media Completeness, alt-text completeness, Edit Image, and Delete Asset remain intentional architectural divergences. CA-014 manages one exact global primary `brand_logo` assignment and never deletes the Shared Media asset.
+
 ## Remaining bounded backlog
 
 Only A/B/D work is eligible. Category C rows above are explicitly excluded.
 
 | Screen | Prototype region / class | Exact acceptance target |
 |---|---|---|
-| CA-014 | Primary-logo workspace (A/D) | Increase identity/preview hierarchy, compact real asset metadata and strengthen missing/unavailable states on desktop and mobile using only `brand_logo`. |
 | CA-015 | Locale health/status mapping (B/D) | Make all active locales and common statuses scannable, preserve exact-locale navigation and bound the selector at 390. |
 | CA-015 | Source/target editor and activity (A/D) | Match the prototype's two-column desktop balance for supported `BrandTranslation` fields and stack logically on mobile, with activity kept secondary. |

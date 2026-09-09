@@ -22,4 +22,5 @@ test('modal close restores persisted generic form controls and clears validation
     assert.ok(selectSource.includes("event.target.matches('[data-ui-select-native]')"))
     assert.ok(selectSource.includes('positionSelectMenu'), 'Custom selects must choose a viewport-safe menu direction')
     assert.ok(selectSource.includes("menu.dataset.placement = opensAbove ? 'top' : 'bottom'"))
+    assert.ok(modalSource.includes("element.hasAttribute('autofocus')"), 'Dialogs must honor an explicit initial focus target')
 })

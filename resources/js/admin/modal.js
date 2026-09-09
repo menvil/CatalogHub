@@ -34,7 +34,10 @@ export function bootAdminModals() {
         const existingIndex = modalOpeningOrder.indexOf(modal);
         if (existingIndex !== -1) modalOpeningOrder.splice(existingIndex, 1);
         modalOpeningOrder.push(modal);
-        const focusTarget = focusableElements(modal)[0] ?? dialogFor(modal);
+        const elements = focusableElements(modal);
+        const focusTarget = elements.find((element) => element.hasAttribute('autofocus'))
+            ?? elements[0]
+            ?? dialogFor(modal);
 
         if (! focusTarget.hasAttribute('tabindex')) {
             focusTarget.setAttribute('tabindex', '-1');

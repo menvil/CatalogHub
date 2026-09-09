@@ -185,7 +185,7 @@ final class CentralBrandMediaTest extends TestCase
             ->get(route('central.brands.media', $brand))
             ->assertOk()
             ->assertSee('The assignment exists, but neither a ready semantic variant nor the normalized master can be delivered.')
-            ->assertDontSee('No canonical logo assigned');
+            ->assertDontSee('No primary logo assigned');
 
         $this->get(route('central.brands.show', $brand))
             ->assertOk()
@@ -304,8 +304,8 @@ final class CentralBrandMediaTest extends TestCase
         $this->actingAs($brandOnlyManager)
             ->get(route('central.brands.media', $brand))
             ->assertOk()
-            ->assertSee('Upload a primary logo')
-            ->assertDontSee('Reuse an existing MediaAsset');
+            ->assertSee('Upload logo')
+            ->assertDontSee('Choose from Shared Media');
         $this->actingAs($brandOnlyManager)
             ->post(route('central.brands.media.logo.assign', $brand), ['media_asset_id' => $missing->id])
             ->assertForbidden();
@@ -449,7 +449,7 @@ final class CentralBrandMediaTest extends TestCase
         $this->actingAs(User::factory()->centralAdmin()->create())
             ->get(route('central.brands.media', $brand))
             ->assertOk()
-            ->assertSee('Brand Media / Identity')
+            ->assertSee('Brand Media')
             ->assertSee('Processing')
             ->assertSee('Failed')
             ->assertSee('brand_logo_128')
@@ -462,6 +462,43 @@ final class CentralBrandMediaTest extends TestCase
             ->assertSee('data-logo-delivery-state="processing"', false)
             ->assertSee('The assigned logo is still processing.')
             ->assertDontSee('>No logo<', false);
+    }
+
+    public function test_shared_media_candidates_are_loaded_only_when_the_bounded_picker_is_open(): void
+    {
+        Storage::fake('public');
+        $brand = CentralBrand::factory()->create();
+        $current = MediaAsset::factory()->create([
+            'original_filename' => 'current-logo.png',
+            'disk' => 'public',
+            'original_path' => 'media/originals/current-logo.png',
+            'mime_type' => 'image/png',
+            'status' => 'active',
+        ]);
+        $candidate = MediaAsset::factory()->create([
+            'original_filename' => 'picker-only-candidate.png',
+            'disk' => 'public',
+            'original_path' => 'media/originals/picker-only-candidate.png',
+            'mime_type' => 'image/png',
+            'status' => 'active',
+        ]);
+        Storage::disk('public')->put($current->original_path, 'current');
+        Storage::disk('public')->put($candidate->original_path, 'candidate');
+        app(SetCentralBrandLogoAction::class)->execute(User::factory()->create(), $brand, $current);
+        $manager = User::factory()->centralAdmin()->create();
+
+        $this->actingAs($manager)
+            ->get(route('central.brands.media', $brand))
+            ->assertOk()
+            ->assertDontSee('data-screen-region="shared-media-picker"', false)
+            ->assertDontSee('picker-only-candidate.png');
+
+        $this->get(route('central.brands.media', ['brand' => $brand, 'picker' => 1]))
+            ->assertOk()
+            ->assertSee('data-screen-region="shared-media-picker"', false)
+            ->assertSee('picker-only-candidate.png')
+            ->assertSee('aria-current="true"', false)
+            ->assertSee('Current logo');
     }
 
     private function gifBytes(): string

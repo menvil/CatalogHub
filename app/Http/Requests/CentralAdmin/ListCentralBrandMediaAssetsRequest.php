@@ -17,9 +17,15 @@ final class ListCentralBrandMediaAssetsRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'picker' => ['nullable', 'in:1'],
             'asset_search' => ['nullable', 'string', 'max:255'],
             'asset_page' => ['nullable', 'integer', 'min:1'],
         ];
+    }
+
+    public function pickerOpen(): bool
+    {
+        return $this->validated('picker') === '1';
     }
 
     public function assetSearch(): string

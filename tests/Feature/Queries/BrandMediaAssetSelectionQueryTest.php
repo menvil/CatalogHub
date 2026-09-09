@@ -8,6 +8,7 @@ use App\Models\MediaAsset;
 use App\Queries\Media\MediaLibraryQuery;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 final class BrandMediaAssetSelectionQueryTest extends TestCase
@@ -32,7 +33,13 @@ final class BrandMediaAssetSelectionQueryTest extends TestCase
         MediaAsset::factory()->create(['type' => 'image', 'status' => 'active', 'mime_type' => 'image/gif']);
 
         $query = app(MediaLibraryQuery::class);
+        DB::enableQueryLog();
         $first = $query->paginateCompatibleImages('', perPage: 3, page: 1);
+        foreach ($first as $candidate) {
+            $candidate->variants->count();
+        }
+        self::assertCount(3, DB::getQueryLog(), 'Pagination and eager variant loading must remain a fixed three-query read.');
+        DB::disableQueryLog();
         $second = $query->paginateCompatibleImages('', perPage: 3, page: 2);
         $search = $query->paginateCompatibleImages('candidate-2', perPage: 3, page: 1);
 

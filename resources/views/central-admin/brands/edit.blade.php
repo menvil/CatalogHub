@@ -1,7 +1,7 @@
 @extends('layouts.central-admin', ['activeNav' => 'brands', 'pageTitle' => 'Edit Brand'])
 
 @section('breadcrumbs')
-    <a href="{{ route('filament.central.pages.home', absolute: false) }}" class="font-medium hover:text-admin-text">Dashboard</a>
+    <a href="{{ route('filament.central.pages.home', absolute: false) }}" class="font-medium hover:text-admin-text">Central Admin</a>
     <span aria-hidden="true">/</span>
     <a href="{{ route('central.brands.index', absolute: false) }}" class="font-medium hover:text-admin-text">Brands</a>
     <span aria-hidden="true">/</span>

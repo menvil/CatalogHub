@@ -67,7 +67,7 @@ final class CentralBrandFormController extends Controller
         $updateBrand->handle($actor, $brand, $request->brandInput());
 
         return redirect()
-            ->route('central.brands.edit', $brand)
+            ->route('central.brands.index')
             ->with('success', 'Brand updated.');
     }
 }

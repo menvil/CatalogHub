@@ -57,7 +57,7 @@ final class CentralBrandFormTest extends TestCase
             ->assertSee('data-admin-form-leave-warning="false"', false)
             ->assertSee('Create Brand')
             ->assertSee('Create a canonical brand in the central catalog.')
-            ->assertSeeInOrder(['Dashboard', 'Brands', 'Create'])
+            ->assertSeeInOrder(['Central Admin', 'Brands', 'Create'])
             ->assertSee('data-admin-form-state', false)
             ->assertSee('action="/admin/central/brands"', false)
             ->assertSee('name="_token"', false)
@@ -330,7 +330,7 @@ final class CentralBrandFormTest extends TestCase
             ->assertDontSee('Germany (DE)');
     }
 
-    public function test_edit_breadcrumb_and_cancel_return_to_brand_detail_while_create_cancel_returns_to_list(): void
+    public function test_brand_form_breadcrumbs_are_consistent_and_cancel_destinations_remain_explicit(): void
     {
         $brand = CentralBrand::factory()->create(['name' => 'Samsung']);
         $user = User::factory()->create();
@@ -339,12 +339,13 @@ final class CentralBrandFormTest extends TestCase
             ->get(route('central.brands.edit', $brand))
             ->assertOk()
             ->assertSee('href="'.route('central.brands.show', $brand, absolute: false).'"', false)
-            ->assertSeeInOrder(['Brands', 'Samsung', 'Edit'])
+            ->assertSeeInOrder(['Central Admin', 'Brands', 'Samsung', 'Edit'])
             ->assertSee('Back to Overview');
         $this->assertCancelTargets($editResponse->getContent(), route('central.brands.show', $brand, absolute: false));
 
         $createResponse = $this->get(route('central.brands.create'))
             ->assertOk()
+            ->assertSeeInOrder(['Central Admin', 'Brands', 'Create'])
             ->assertSee('Cancel');
         $this->assertCancelTargets($createResponse->getContent(), route('central.brands.index', absolute: false));
     }
@@ -371,7 +372,7 @@ final class CentralBrandFormTest extends TestCase
             ]);
 
         $response
-            ->assertRedirect(route('central.brands.edit', $brand))
+            ->assertRedirect(route('central.brands.index'))
             ->assertSessionHas('success', 'Brand updated.');
 
         $brand->refresh();
@@ -383,10 +384,10 @@ final class CentralBrandFormTest extends TestCase
         $this->assertSame('samsung electronics', $brand->normalized_name);
         $this->assertNotSame(str_repeat('0', 64), $brand->normalized_name_hash);
 
-        $this->get(route('central.brands.edit', $brand))
+        $this->get(route('central.brands.index'))
             ->assertOk()
             ->assertSee('Brand updated.');
-        $this->get(route('central.brands.edit', $brand))
+        $this->get(route('central.brands.index'))
             ->assertOk()
             ->assertDontSee('Brand updated.');
     }
@@ -407,7 +408,7 @@ final class CentralBrandFormTest extends TestCase
                 'slug' => $status->value.'-original',
                 'website_url' => '',
                 'country_id' => '',
-            ])->assertRedirect(route('central.brands.edit', $brand));
+            ])->assertRedirect(route('central.brands.index'));
 
             $this->assertSame($status, $brand->fresh()->status);
             $this->assertSame($status->label().' Updated', $brand->fresh()->name);
@@ -428,7 +429,7 @@ final class CentralBrandFormTest extends TestCase
                 'name' => 'Samsung Electronics',
                 'slug' => 'samsung',
             ])
-            ->assertRedirect(route('central.brands.edit', $brand));
+            ->assertRedirect(route('central.brands.index'));
 
         $brand->refresh();
         $this->assertSame('Samsung Electronics', $brand->name);
@@ -453,7 +454,7 @@ final class CentralBrandFormTest extends TestCase
                 'website_url' => '',
                 'country_id' => '',
             ])
-            ->assertRedirect(route('central.brands.edit', $brand));
+            ->assertRedirect(route('central.brands.index'));
 
         $brand->refresh();
         $this->assertNull($brand->website_url);

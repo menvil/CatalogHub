@@ -16,6 +16,7 @@ test('CA-013 composes one canonical information surface with internal subsection
         'data-screen-region="identity-fields"',
         'data-screen-region="company-origin"',
         'data-screen-region="parent-company"',
+        'brand-parent-company-control',
         'data-screen-region="online-presence"',
         'data-screen-region="visual-identity-fields"',
         'md:grid-cols-2 xl:grid-cols-3',

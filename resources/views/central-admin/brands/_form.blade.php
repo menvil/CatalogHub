@@ -81,7 +81,7 @@
                             <div class="grid min-w-0 gap-4 md:grid-cols-[minmax(0,2fr)_minmax(10rem,1fr)] md:items-start">
                                 <div class="min-w-0 space-y-1.5" data-screen-region="parent-company">
                                     <p class="text-sm font-medium text-admin-text">Parent Company</p>
-                                    <div class="flex min-w-0 flex-col gap-3 rounded-admin-input border border-admin-border bg-admin-surface-muted p-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div class="brand-parent-company-control flex min-w-0 items-center justify-between gap-2 rounded-admin-input border border-admin-border bg-admin-surface-muted">
                                         <div class="min-w-0">
                                             @if ($currentOwner !== null)
                                                 <p class="break-words text-sm font-semibold text-admin-text" data-current-parent-company>{{ $currentOwner->name }}</p>

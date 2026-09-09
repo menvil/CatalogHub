@@ -59,14 +59,20 @@
                     data-ui-searchable-select-input
                     data-search-placeholder="{{ $searchPlaceholder }}"
                 >
-                <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-admin-muted">
+                <button
+                    type="button"
+                    class="absolute inset-y-0 right-0 inline-flex w-10 cursor-pointer items-center justify-center rounded-r-admin-input text-admin-muted hover:text-admin-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-admin-primary disabled:cursor-not-allowed"
+                    aria-label="Open {{ $label }} options"
+                    data-ui-searchable-select-toggle
+                    @disabled($disabled)
+                >
                     <x-ui.icon name="chevron-down" decorative size="sm" data-ui-searchable-select-chevron />
-                </span>
+                </button>
             </div>
             @if ($clearable)
                 <button
                     type="button"
-                    class="absolute inset-y-1 right-8 inline-flex w-8 items-center justify-center rounded text-admin-muted hover:bg-admin-surface-muted hover:text-admin-text focus:outline-none focus:ring-2 focus:ring-admin-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+                    class="absolute inset-y-1 right-10 inline-flex w-8 cursor-pointer items-center justify-center rounded text-admin-muted hover:bg-admin-surface-muted hover:text-admin-text focus:outline-none focus:ring-2 focus:ring-admin-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
                     aria-label="Clear {{ $label }}"
                     data-ui-searchable-select-clear
                     @if ($selected === null) hidden @endif

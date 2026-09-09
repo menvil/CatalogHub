@@ -244,6 +244,14 @@ export function bootSearchableSelects() {
             if (root) choose(root, null)
             return
         }
+        const toggle = event.target.closest('[data-ui-searchable-select-toggle]')
+        if (toggle) {
+            const root = toggle.closest('[data-ui-searchable-select]')
+            const input = root ? elements(root).input : null
+            input?.focus()
+            if (root) open(root)
+            return
+        }
         document.querySelectorAll('[data-ui-searchable-select]').forEach((root) => {
             if (! root.contains(event.target)) close(root)
         })

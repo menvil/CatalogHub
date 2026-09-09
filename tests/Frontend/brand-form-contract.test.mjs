@@ -18,12 +18,15 @@ test('CA-013 composes one canonical information surface with internal subsection
         'data-screen-region="parent-company"',
         'brand-parent-company-control',
         'data-screen-region="online-presence"',
-        'data-screen-region="visual-identity-fields"',
         'md:grid-cols-2 xl:grid-cols-3',
     ]) {
         assert.ok(form.includes(contract), `Missing CA-013 composition contract: ${contract}`)
     }
 
+    const onlineSection = form.slice(form.indexOf('data-screen-region="online-presence"'), form.indexOf('</main>'))
+    assert.ok(onlineSection.includes('id="brand-primary-color"'), 'Primary color must share the final field grid instead of restoring a one-field subsection')
+    assert.ok(!form.includes('data-screen-region="visual-identity-fields"'))
+    assert.ok(!form.includes('>Visual identity</h3>'))
     assert.ok(!form.includes('sticky bottom-0'), 'CA-013 must not restore the oversized sticky footer')
     assert.ok(!form.includes('data-screen-region="form-actions"'))
 })

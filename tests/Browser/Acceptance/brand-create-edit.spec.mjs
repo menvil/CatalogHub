@@ -219,6 +219,10 @@ test('CA-013 edit sidebar presents the existing logo and delegates management to
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
     await page.goto(`/admin/central/brands/${formFixtureId}/edit`)
 
+    const currentParent = page.locator('[data-current-parent-company]')
+    await expect(currentParent).toHaveText('Apple Inc. · Organization #181100')
+    const parentLineHeight = await currentParent.evaluate((element) => element.getBoundingClientRect().height)
+    expect(parentLineHeight).toBeLessThanOrEqual(24)
     await expect(page.locator('[data-screen-region="logo-context"] img[alt$=" logo"]')).toBeVisible()
     await expect(page.locator('[data-screen-region="logo-context"] input[type="file"]')).toHaveCount(0)
     await page.getByRole('link', { name: 'Manage media', exact: true }).click()

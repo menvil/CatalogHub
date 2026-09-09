@@ -505,6 +505,12 @@
     font-size: 1rem;
 }
 
+.brand-status-card > header,
+.brand-status-card > div {
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+}
+
 .admin-row-actions-menu > summary {
     display: inline-flex;
     width: 2.25rem;

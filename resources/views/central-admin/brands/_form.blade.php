@@ -84,8 +84,7 @@
                                     <div class="brand-parent-company-control flex min-w-0 items-center justify-between gap-2 rounded-admin-input border border-admin-border bg-admin-surface-muted">
                                         <div class="min-w-0">
                                             @if ($currentOwner !== null)
-                                                <p class="break-words text-sm font-semibold text-admin-text" data-current-parent-company>{{ $currentOwner->name }}</p>
-                                                <p class="mt-1 break-words text-xs text-admin-muted">Organization #{{ $currentOwner->getKey() }}</p>
+                                                <p class="min-w-0 break-words text-sm text-admin-text" data-current-parent-company><span class="font-semibold">{{ $currentOwner->name }}</span><span class="whitespace-nowrap text-xs text-admin-muted" data-current-parent-company-reference> · Organization #{{ $currentOwner->getKey() }}</span></p>
                                             @else
                                                 <p class="text-sm font-medium text-admin-muted" data-parent-company-empty>No parent company</p>
                                             @endif
@@ -204,22 +203,13 @@
                                 maxlength="254"
                                 optional
                             />
-                        </div>
-                    </section>
 
-                    <section class="min-w-0 border-t border-admin-border pt-5" data-screen-region="visual-identity-fields">
-                        <div class="mb-4">
-                            <h3 class="text-sm font-semibold text-admin-text">Visual identity</h3>
-                        </div>
-
-                        <div class="max-w-sm">
                             <x-ui.form.color-input
                                 id="brand-primary-color"
                                 name="primary_color"
                                 label="Primary color"
                                 :value="$primaryColor"
                                 :error="$errors->first('primary_color')"
-                                help="Six-digit hex, for example #1428A0."
                                 optional
                             />
                         </div>
@@ -230,7 +220,7 @@
 
         <aside class="contents xl:order-2 xl:col-start-2 xl:row-start-1 xl:block xl:space-y-admin-section xl:sticky xl:top-6" data-screen-region="profile-sidebar">
             <div class="order-1 min-w-0" data-screen-region="status-context">
-                <x-admin.card title="Brand status" padding="sm">
+                <x-admin.card title="Brand status" padding="sm" class="brand-status-card">
                     <div class="flex items-center justify-between gap-admin-field">
                         <span class="text-sm font-medium text-admin-muted">Lifecycle</span>
                         @if ($editing)
@@ -240,7 +230,7 @@
                             <x-admin.status-badge label="Draft" variant="neutral" />
                         @endif
                     </div>
-                    <p class="mt-3 text-xs leading-5 text-admin-muted">
+                    <p class="mt-2 text-xs leading-4 text-admin-muted">
                         {{ $editing
                             ? 'Lifecycle changes are managed from Brand Overview.'
                             : 'New Brands are created as Draft.' }}

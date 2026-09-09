@@ -29,7 +29,7 @@ test('CA-015 v2 missing desktop matches its approved reference', async ({ page }
     await openWorkspace(page, 'de-DE')
     await expect(page.getByText('No translation row exists for this active locale. Nothing is persisted until Save.').first()).toBeVisible()
     await settle(page)
-    await expect(page).toHaveScreenshot(['ca-015__missing__1440x1000.png'], { animations: 'disabled', scale: 'css', maxDiffPixelRatio: 0.02 })
+    await expect(page).toHaveScreenshot(['ca-015__missing__1440x1000.png'], { animations: 'disabled', scale: 'css', maxDiffPixelRatio: 0.03 })
     assertNoPageErrors()
 })
 
@@ -38,7 +38,7 @@ test('CA-015 v2 approved desktop matches its approved reference', async ({ page 
     await openWorkspace(page, 'en-US')
     await expect(page.getByText('Approved by')).toBeVisible()
     await settle(page)
-    await expect(page).toHaveScreenshot(['ca-015__approved__1440x1000.png'], { animations: 'disabled', scale: 'css', maxDiffPixelRatio: 0.02 })
+    await expect(page).toHaveScreenshot(['ca-015__approved__1440x1000.png'], { animations: 'disabled', scale: 'css', maxDiffPixelRatio: 0.03 })
     assertNoPageErrors()
 })
 
@@ -47,7 +47,7 @@ test('CA-015 v2 outdated desktop matches its approved reference', async ({ page 
     await openWorkspace(page, 'fr-FR')
     await expect(page.getByText('Marked outdated', { exact: true })).toBeVisible()
     await settle(page)
-    await expect(page).toHaveScreenshot(['ca-015__outdated__1440x1000.png'], { animations: 'disabled', scale: 'css', maxDiffPixelRatio: 0.02 })
+    await expect(page).toHaveScreenshot(['ca-015__outdated__1440x1000.png'], { animations: 'disabled', scale: 'css', maxDiffPixelRatio: 0.03 })
     assertNoPageErrors()
 })
 

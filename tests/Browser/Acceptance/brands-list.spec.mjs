@@ -21,8 +21,8 @@ test('CA-011 exposes the persisted operational read model and discovery controls
     await expect(page.locator('[data-screen-id="CA-011"][data-fixture-version="brands-list-v3"]')).toBeVisible()
     await expect(metric(page, 'total-brands')).toContainText('27')
     await expect(metric(page, 'active')).toContainText('14')
-    await expect(metric(page, 'with-logos')).toContainText('9')
-    await expect(metric(page, 'missing-translations')).toContainText('22')
+    await expect(metric(page, 'with-logos')).toContainText('10')
+    await expect(metric(page, 'missing-translations')).toContainText('21')
     await expect(metric(page, 'needs-attention')).toContainText('24')
 
     const acer = page.locator('tr[data-row-id]').filter({ hasText: 'Acer' })
@@ -111,7 +111,7 @@ test('CA-011 searches, combines filters, sorts, paginates, and preserves navigat
     await expect(page).toHaveURL(/sort=products&direction=asc/)
     await page.getByRole('columnheader', { name: /Products/ }).getByRole('link').click()
     await expect(page).toHaveURL(/sort=products&direction=desc/)
-    await expect(page.locator('tbody tr[data-row-id]').first()).toContainText('Samsung')
+    await expect(page.locator('tbody tr[data-row-id]').first()).toContainText('Acer')
 
     await page.locator('#brands-per-page').selectOption('20')
     await page.getByRole('link', { name: 'Next page' }).click()

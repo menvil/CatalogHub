@@ -50,10 +50,9 @@ final class CentralBrandClassificationTest extends TestCase
             ->assertSee('data-screen-region="classification"', false)
             ->assertSee('Premium')
             ->assertSee('Manage tags')
-            ->assertSee('Current category coverage')
-            ->assertSee('Derived automatically from direct Category assignments')
+            ->assertSee('Derived categories')
+            ->assertSee('Editorial tags')
             ->assertSee('Smartphones')
-            ->assertSee('Archived')
             ->assertSee('2')
             ->assertDontSee('Assign categories')
             ->assertDontSee('Manage Brand Categories');
@@ -71,8 +70,8 @@ final class CentralBrandClassificationTest extends TestCase
             ->get(route('central.brands.show', $brand))
             ->assertOk()
             ->assertSee('No tags have been assigned to this Brand.')
-            ->assertSee('No category coverage yet.')
-            ->assertSee('Category coverage is derived automatically from Brand products.')
+            ->assertSee('No category coverage.')
+            ->assertSee('Derived categories')
             ->assertDontSee('Assign categories');
     }
 

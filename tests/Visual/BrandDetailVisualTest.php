@@ -14,6 +14,8 @@ final class BrandDetailVisualTest extends TestCase
         $root = dirname(__DIR__, 2);
         $names = [
             'ca-012__active__1440x1000',
+            'ca-012__active__1024x900',
+            'ca-012__active__768x1024',
             'ca-012__active__390x844',
             'ca-012__archived__1440x1000',
         ];
@@ -40,17 +42,19 @@ final class BrandDetailVisualTest extends TestCase
             static fn (array $reference): bool => $reference['screen_id'] === 'CA-012',
         ));
 
-        self::assertCount(3, $references);
+        self::assertCount(5, $references);
         $stateViewports = array_map(
             static fn (array $reference): string => $reference['state'].'@'.$reference['viewport'],
             $references,
         );
         sort($stateViewports);
         self::assertSame([
+            'active@1024x900',
             'active@1440x1000',
             'active@390x844',
+            'active@768x1024',
             'archived@1440x1000',
         ], $stateViewports);
-        self::assertSame(array_fill(0, 3, BrandDetailFixture::VERSION), array_column($references, 'fixture'));
+        self::assertSame(array_fill(0, 5, BrandDetailFixture::VERSION), array_column($references, 'fixture'));
     }
 }

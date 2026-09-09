@@ -4,30 +4,36 @@ context: central-admin
 purpose: Inspect a canonical Brand, its derived quality, lifecycle, classification, external provenance, metadata and usage.
 roles: authorized Central Admin catalog user
 route: /admin/central/brands/{brand} (GET); /admin/central/brands/{brand}/tags (PATCH); /admin/central/brands/{brand}/external-identities (POST); /admin/central/brands/{brand}/external-identities/{identity} (PATCH, DELETE); /admin/central/brands/{brand}/activate (POST); /admin/central/brands/{brand}/archive (POST); /admin/central/brands/{brand}/restore (POST)
-viewports: desktop=1440x1000;mobile=390x844
-fixture: brand-detail-v6
-regions: central-shell;breadcrumbs;page-header;status-context;brand-tabs;brand-identity;general-information;online-presence;parent-company;quality-completeness;translation-summary;external-identities;usage;category-coverage;classification;tags;quality-issues;record-metadata;lifecycle;tag-modal;external-identity-modal;confirmation-modal;flash-feedback
+viewports: desktop=1440x1000;tablet=768x1024;mobile=390x844
+fixture: brand-detail-v9
+regions: central-shell;breadcrumbs;page-header;status-context;brand-tabs;brand-identity;general-information;online-presence;parent-company;record-metadata;quality-completeness;translation-summary;usage;category-coverage;quality-issues;classification;external-identities;tag-modal;external-identity-modal;confirmation-modal;flash-feedback
 actions: edit-brand;edit-profile-issue;manage-logo-issue;edit-translation-issue;manage-tags;save-tags;cancel-tags;add-identity;edit-identity;remove-identity;activate-brand;archive-brand;restore-brand;confirm;cancel
 states: complete;needs-attention;draft;active;archived;tag-empty;coverage-empty;provenance-empty;no-active-import-sources;inactive-source;validation-error;status-action-error
 permissions: catalog.brands.manage;translations.manage for CA-015 navigation/issue/summary CTA
-responsive: Desktop uses an identity-first 8/4 dashboard grid across the full Central Admin workspace; mobile stacks identity, health, lifecycle and supporting context in reading order, keeps dialogs inside 390×844, wraps long Organization/external values, bounds coverage content, and prevents page-level overflow.
-out_of_scope: manual-brand-category-editing;field-level-provenance;source-management;translation-editing;product-list;site-projections;audit-history;global-tag-management;granular-brand-permissions;delete;hard-delete;soft-delete
-reference_version: v6-final
+responsive: Wide desktop uses independent 68/32 main and operational stacks and a three-column Identity overview; 1024 and 768 use a bounded single-column dashboard with a two-column internal overview; mobile uses a one-column overview and deliberately orders Identity with its integrated Summary/Classification, Issues and External identities, keeps dialogs inside 390×844, and prevents page-level overflow.
+out_of_scope: manual-brand-category-editing;field-level-provenance;source-management;translation-editing;brand-filtered-product-index;site-projections;audit-history;global-tag-management;granular-brand-permissions;delete;hard-delete;soft-delete
+reference_version: v10-final
 ---
 
 # CA-012 — Brand Detail
 
 ## Contract
 
-Brand Detail is the final canonical overview for a Central Brand. Its header shows the escaped canonical name, slug context, lifecycle, derived Quality state, and one primary `Edit Brand` action. Breadcrumbs are `Central Admin → Brands → {Brand name}`, with the current Brand rendered as plain text. Overview, Media and permission-aware Translations remain navigation—not dead prototype buttons.
+Brand Detail is the final canonical overview for a Central Brand. Its header shows the escaped canonical name, slug context, lifecycle, derived Quality state, primary `Edit Brand`, and only the lifecycle actions valid for the current state. Breadcrumbs are `Central Admin → Brands → {Brand name}`, with the current Brand rendered as plain text. Overview, Media and permission-aware Translations remain navigation—not dead prototype buttons.
 
-The 1440 composition follows the original CA-012 hierarchy without copying future domains. A dominant identity/profile surface contains the authoritative global primary logo, canonical name/slug, read-only Parent Company, Country, Founded, Website, Support URL, Contact email and Primary color. Parent Company comes only from `CentralBrandOwnership.organization`; an absent relation says `No Parent Company`, and CA-012 offers no ownership mutation. URLs pass through `SafePresentationUrl`; accepted HTTP(S) values are external links with `target=_blank` and `noopener noreferrer`, while unsafe legacy values remain escaped plain text. Null profile values use an em dash. Country translations retain exact locale → base language → canonical English fallback.
+The 1440 composition follows the original CA-012 hierarchy without copying future domains. A strong Brand header keeps lifecycle and derived Quality visibly separate; Edit and current-state lifecycle controls share the page action area. The dominant `Identity and contact` overview has three internal columns: contained canonical logo with its directly associated Manage logo link; compact read-only Parent Company/Country/Founded/color/web/contact fields; and one authoritative Brand summary. That summary consolidates Product/Category usage, Quality score/check progress, active-Locale Translation coverage and Created/Updated/Record ID. There is no duplicate Product Portfolio or Brand Health card, no technical `Brand profile` eyebrow and no separate Record card. Parent Company comes only from `CentralBrandOwnership.organization`; an absent relation says `No Parent Company`, and CA-012 offers no ownership mutation. URLs pass through `SafePresentationUrl`; accepted HTTP(S) values are external links with `target=_blank` and `noopener noreferrer`, while unsafe legacy values remain escaped plain text. Null profile values use an em dash. Country translations retain exact locale → base language → canonical English fallback.
 
-Brand health and lifecycle form the compact right rail. Product portfolio, derived Category coverage, editorial Tags, external identities, actionable Quality issues and secondary record metadata then use the desktop width as a dashboard rather than a vertical sequence of equally weighted generic cards. At 390×844 the regions stack in reading order and all opaque values wrap. Usage remains a database count of current non-archived Products and never loads or persists a Product collection/count on the Brand.
+Issues is the only independent operational-rail card. Identity overview—including Brand summary and Classification—followed by External identities forms the main stack. A tall main card does not create filler in the rail. Below the wide-desktop breakpoint the wrappers use `display: contents` and explicit region ordering to produce the stable 1024/768/mobile sequence documented in the frontmatter. Usage remains a database count of current non-archived Products and never persists a Product count on the Brand.
+
+## Product context
+
+Brand summary is the single snapshot surface. It shows current non-archived Product count and distinct derived Category count once; Translation coverage is presented once as part of the merged Quality/Translation health context. The removed Product Portfolio contributed no distinct information. Classification is integrated below the identity columns, separated by one full-width rule rather than a short Contact email field rule, and exclusively owns grouped derived Category chips/counts and editorial Tag chips, so taxonomy is not repeated and no Brand↔Category mutation is implied.
+
+Recent Products is intentionally absent from the Overview. It repeated Product context without an approved Brand-filtered Product destination, while Brand summary and Classification already expose the actionable Product count and derived Category coverage. CA-012 therefore performs no separate recent-Product or Category eager-load. The deterministic Product fixture remains persisted because it authoritatively drives those two derived summaries. There is no `View all products` CTA or Products tab because the current Product index does not expose an approved URL-stable Brand filter.
 
 ## Quality / Completeness
 
-The Quality / Completeness card renders the authoritative derived `CentralBrandQualitySummary`: Complete or Needs attention, integer percentage, completed/total checks, and each unresolved issue. Every applicable check is equally weighted. The six base checks are country, website, founded year, support URL or contact email, primary color, and a usable exact global primary `brand_logo`. Every active Locale adds one translation check; inactive Locales do not affect the denominator. The exact formula and issue codes are documented in `docs/architecture/brand-quality.md`.
+The Quality portion of Brand summary renders the authoritative derived `CentralBrandQualitySummary`: Complete or Needs attention, integer percentage and completed/total checks. Issues remains the separate corrective operational card. Every applicable check is equally weighted. The six base checks are country, website, founded year, support URL or contact email, primary color, and a usable exact global primary `brand_logo`. Every active Locale adds one translation check; inactive Locales do not affect the denominator. The exact formula and issue codes are documented in `docs/architecture/brand-quality.md`.
 
 Each issue carries readable label/copy and an existing editor destination: canonical profile → CA-013, logo → CA-014, and selected active Locale → CA-015. The CTA is rendered only when the current actor has its existing permission. In particular, a catalog editor without `translations.manage` still sees missing/outdated translation issues but receives no CA-015 mutation link. Overview itself remains read-only: evaluation creates no Translation or MediaAssignment, writes no Brand/status/timestamp, dispatches no job, and records no audit event.
 
@@ -39,9 +45,9 @@ The same already-bounded locale read produces a read-only translation summary: t
 
 Classification groups two intentionally different concepts. Tags are explicit editorial state, displayed as neutral wrapping chips. `Manage tags` opens the shared modal with generic `x-ui.form.tag-input`: Enter/Add creates a chip, keyboard-operable `Remove {Tag}` controls remove one, hidden `tags[]` values submit, and Save is immediate explicit intent. Cancel or Escape closes without a native confirmation and restores the persisted reset snapshot, discarding unsaved chips, unfinished text, and client validation errors. Client normalization suppresses obvious duplicates and reports the 20-Tag limit; the server remains authoritative. PATCH success redirects to the same Detail `#classification` anchor with `Brand tags updated.`. Validation redirects back with old values, an immediately open dialog, and visible error; its reset snapshot remains the persisted Brand tags. Draft, Active, and Archived Brands are all manageable under `catalog.brands.manage`.
 
-Current Category coverage is read-only and states that it is derived automatically from direct Category assignments of current Brand Products. A single grouped query includes Draft and Active Products, excludes Archived Products, preserves the referenced Category status badge, counts exact Category assignments, and sorts count descending/name/ID. It offers no add/remove/checkbox/category assignment control. Tag empty copy is `No tags have been assigned to this Brand.`; coverage empty copy is `No category coverage yet.` plus the derived explanation.
+Current Category coverage is read-only and derived automatically from direct Category assignments of current Brand Products. A single grouped query includes Draft and Active Products, excludes Archived Products, counts exact Category assignments, and sorts count descending/name/ID. Classification shows the bounded Category chips with counts and offers no add/remove/checkbox/category assignment control. Tag empty copy is `No tags have been assigned to this Brand.`; coverage empty copy is `No category coverage.`.
 
-## External identities
+## Provenance / External identities
 
 External identities connect the canonical Brand to source-side records in configured `ImportSource` namespaces. The bounded eager-loaded list sorts by source name, source code, and opaque external ID. Each row shows the source name/code, active or inactive status, the external ID, and a safely presented `Open record` HTTP(S) link when one exists. Neither source configuration nor credentials are selected for the view or rendered. Existing inactive-source links remain visible and editable; only active sources are available for a new link.
 
@@ -49,22 +55,22 @@ Authorized Brand managers can add, edit, or unlink an identity. Add accepts an a
 
 With no links, the card says `No external identities are linked to this Brand.`. If active sources exist it offers Add identity; otherwise it also explains `No active import sources are available.` and does not offer source creation. Source management, automatic canonical updates, matching confidence, observation history, and field-level lineage are absent.
 
-The aside contains Record and Lifecycle cards. Record shows Status, deterministic absolute Created/Updated UTC timestamps, and Record ID. Lifecycle exposes only valid current-state intents through explicit CSRF POST forms and `x-admin.confirmation-modal`:
+The overview summary shows deterministic absolute Created/Updated UTC timestamps and Record ID alongside usage and health; there is no separate Record, Product Portfolio or Brand Health block. Lifecycle is represented once by the header badge and the valid current-state intents beside Edit Brand. Mutations continue to use explicit CSRF POST forms and `x-admin.confirmation-modal`:
 
 - Draft: Activate Brand and Archive Brand.
 - Active: Archive Brand.
 - Archived: Restore Brand, with copy explaining that restore returns to Draft and activation remains separate.
 
-Activate, Archive, and Restore delegate to `ActivateCentralBrandAction`, `ArchiveCentralBrandAction`, and `RestoreCentralBrandAction`. Successful commands redirect to the same detail route with the agreed flash message. A stale or malicious invalid transition preserves the action's `status` validation error, redirects to Detail, leaves persisted state unchanged, and presents the error inside Lifecycle.
+Activate, Archive, and Restore delegate to `ActivateCentralBrandAction`, `ArchiveCentralBrandAction`, and `RestoreCentralBrandAction`. Successful commands redirect to the same detail route with the agreed flash message. A stale or malicious invalid transition preserves the action's `status` validation error, redirects to Detail, leaves persisted state unchanged, and presents the error directly below the page header.
 
 The dedicated `catalog.brands.manage` permission protects canonical Brand reads and lifecycle commands. There is no generic status endpoint or status payload.
 
 ## States
 
-- `draft`: Draft description, Activate and Archive confirmations.
-- `active`: Active description and destructive Archive confirmation.
+- `draft`: lifecycle badge plus Activate and Archive header confirmations.
+- `active`: lifecycle badge plus destructive Archive header confirmation.
 - `archived`: historical canonical data remains visible; Restore confirmation explicitly describes Archived → Draft.
-- `status-action-error`: the Lifecycle card shows the status validation error returned by the Phase 2 action.
+- `status-action-error`: the page-level lifecycle alert shows the status validation error returned by the Phase 2 action.
 - `tag-empty`: explanatory copy and Manage tags remain visible.
 - `coverage-empty`: explanatory derived copy appears without an assignment CTA.
 - `tag-validation-error`: the editor reopens with old chip input and an associated error.
@@ -76,11 +82,11 @@ The dedicated `catalog.brands.manage` permission protects canonical Brand reads 
 
 ## Visual reference
 
-The active desktop/mobile and archived desktop `CA-012` entries in `docs/ui/visual-references.json` use `brand-detail-v6`. Active Samsung is the deterministic populated Needs attention state and now has a real Phase 16 ownership relation to Samsung Electronics Co., Ltd.; its canonical profile is complete while its global primary logo and active-locale translations are missing. Archived Sony is the deterministic Complete state with no Parent Company, a full canonical profile, usable Shared Media logo master, and current translations for every active Locale. Samsung reports 42 current Products and derives Smartphones 24, Televisions 12, and Tablets 6 from them while the archived-only Laptop is absent from both usage and coverage; it assigns deterministic Tags through real storage and renders actual active/inactive ImportSource identity rows. These final Phase 17 references were accepted only after side-by-side review against the immutable CA-012 prototype. Persisted repair journeys, confirmation dialogs, feedback, and full mutation sequences remain browser acceptance rather than extra baselines.
+The active desktop/tablet/mobile and archived-complete desktop `CA-012` entries in `docs/ui/visual-references.json` use `brand-detail-v9`. Active Samsung is the primary rich deterministic Needs attention state: usable canonical logo, Samsung Electronics Co., Ltd. ownership, Country/founded/website/color, five persisted editorial Tags, two real External identities, eight current realistically named Products across five derived Categories, and four active Locales split into Approved, Human reviewed, Machine translated and Outdated. Support/contact is intentionally absent to exercise the existing combined profile check. Quality therefore derives as 80% (8/10), with exactly one Profile issue and one exact-locale outdated Translation issue. Archived Sony remains the secondary deterministic fully populated, Organization-owned 100% Complete/no-issues state with usable logo and current translations for every active Locale. References were accepted only after side-by-side review against the immutable prototype, the prior separate Portfolio/Health/Recent Products composition and the final consolidated Brand summary.
 
 ## Explicit non-goals
 
-No source CRUD/configuration, field-level provenance, source observation history, inline media/translation/ownership mutation, Product list/filtering, Site publication/projections, audit history, granular Brand permissions, Brand deletion, or soft deletion is introduced on CA-012. Published and Synced are not lifecycle states. Hero, wordmark, symbol, dark/light, OG and localized/site media remain unsupported rather than appearing as false placeholders. There is no standalone quality workflow, persisted score, bulk quality management, or CA-011 redesign.
+No source CRUD/configuration, field-level provenance, source observation history, inline media/translation/ownership mutation, Brand-filtered Product index, Site publication/projections, audit history, granular Brand permissions, Brand deletion, or soft deletion is introduced on CA-012. Published and Synced are not lifecycle states. Sites/Versions tabs and Site Coverage remain deferred. Hero, wordmark, symbol, dark/light, OG and localized/site media remain unsupported rather than appearing as false placeholders. Rating, Price Coverage and SEO Performance are absent without authoritative Brand-level sources. There is no standalone quality workflow, persisted score, bulk quality management, or CA-011 redesign.
 
 ## Brand logo and navigation
 

@@ -70,6 +70,9 @@ final class CentralBrandDetailTest extends TestCase
             ->assertSee('data-screen-id="CA-012"', false)
             ->assertDontSee('>CA-012<', false)
             ->assertSee('data-admin-detail-layout', false)
+            ->assertSee('data-screen-region="record-metadata"', false)
+            ->assertDontSee('data-screen-region="lifecycle"', false)
+            ->assertDontSee('>Brand profile<', false)
             ->assertSeeInOrder(['Dashboard', 'Brands', 'Samsung'])
             ->assertSee('Canonical brand in the central catalog.')
             ->assertSee('Samsung')
@@ -87,6 +90,7 @@ final class CentralBrandDetailTest extends TestCase
             ->assertSee('2026-08-24 13:30 UTC')
             ->assertSee((string) $brand->getKey())
             ->assertSee('Edit Brand')
+            ->assertSeeInOrder(['Edit Brand', 'Archive Brand'])
             ->assertSee('href="'.route('central.brands.edit', $brand, absolute: false).'"', false)
             ->assertDontSee('internal-only-identity')
             ->assertDontSee(str_repeat('a', 64))
@@ -109,7 +113,13 @@ final class CentralBrandDetailTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->get(route('central.brands.show', $brand))
             ->assertOk()
-            ->assertSeeInOrder(['Country', '—', 'Founded', '—', 'Website', '—', 'Support URL', '—', 'Contact email', '—', 'Primary color', '—']);
+            ->assertSee('Country')
+            ->assertSee('Founded')
+            ->assertSee('Website')
+            ->assertSee('Support URL')
+            ->assertSee('Contact email')
+            ->assertSee('Primary color')
+            ->assertSee('—');
     }
 
     public function test_parent_company_is_read_only_authoritative_ownership_with_an_honest_empty_state(): void
@@ -186,7 +196,8 @@ final class CentralBrandDetailTest extends TestCase
             ->get(route('central.brands.show', $brand))
             ->assertOk()
             ->assertSee('data-products-count="3"', false)
-            ->assertSee('3 current canonical products reference this brand.')
+            ->assertSee('Brand summary')
+            ->assertDontSee('Product portfolio')
             ->assertDontSee('Product List');
 
         /** @var CentralBrand $viewBrand */
@@ -203,7 +214,8 @@ final class CentralBrandDetailTest extends TestCase
             ->get(route('central.brands.show', $brand))
             ->assertOk()
             ->assertSee('data-products-count="0"', false)
-            ->assertSee('No current canonical products reference this brand yet.')
+            ->assertSee('Brand summary')
+            ->assertDontSee('Product portfolio')
             ->assertDontSee('Create Product');
     }
 

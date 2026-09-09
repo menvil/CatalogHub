@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Support;
 
 use App\Enums\CentralProductStatus;
+use App\Models\CentralCatalog\CatalogTag;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralBrandOwnership;
 use App\Models\CentralCatalog\CentralCategory;
@@ -22,7 +23,7 @@ use RuntimeException;
 
 final class BrandDetailFixture
 {
-    public const VERSION = 'brand-detail-v6';
+    public const VERSION = 'brand-detail-v9';
 
     public const ACTIVE_BRAND_ID = 20;
 
@@ -52,8 +53,8 @@ final class BrandDetailFixture
             'website_url' => 'https://www.samsung.com/',
             'country_id' => CountryReference::id('KR'),
             'founded_year' => 1938,
-            'support_url' => 'https://www.samsung.com/support/',
-            'contact_email' => 'support@example.com',
+            'support_url' => null,
+            'contact_email' => null,
             'primary_color' => '#1428A0',
             'updated_at' => CarbonImmutable::parse('2026-07-26T09:00:00Z'),
         ])->saveOrFail();
@@ -83,12 +84,37 @@ final class BrandDetailFixture
             'country_id' => CountryReference::id('JP'),
             'founded_year' => 1946,
             'support_url' => 'https://www.sony.com/electronics/support',
-            'contact_email' => null,
+            'contact_email' => 'catalog@sony.example',
             'primary_color' => '#000000',
             'updated_at' => CarbonImmutable::parse('2026-07-27T09:00:00Z'),
         ])->saveOrFail();
 
-        self::assignCompleteBrandLogo($archivedBrand);
+        $normalizedCompleteParentName = OrganizationNameNormalizer::search('Sony Group Corporation');
+        $completeParentCompany = new Organization;
+        $completeParentCompany->forceFill([
+            'id' => 120106,
+            'name' => 'Sony Group Corporation',
+            'normalized_name' => $normalizedCompleteParentName,
+            'normalized_name_prefix' => OrganizationNameNormalizer::prefixForNormalizedName($normalizedCompleteParentName),
+            'created_at' => CarbonImmutable::parse('2026-08-12T10:00:00Z'),
+            'updated_at' => CarbonImmutable::parse('2026-08-12T10:00:00Z'),
+        ])->saveOrFail();
+
+        $completeOwnership = new CentralBrandOwnership;
+        $completeOwnership->forceFill([
+            'id' => 120106,
+            'central_brand_id' => $archivedBrand->getKey(),
+            'organization_id' => $completeParentCompany->getKey(),
+            'created_at' => CarbonImmutable::parse('2026-08-12T10:00:00Z'),
+            'updated_at' => CarbonImmutable::parse('2026-08-12T10:00:00Z'),
+        ])->saveOrFail();
+
+        self::assignBrandLogo($activeBrand, 120109);
+        self::assignBrandLogo($archivedBrand, 120110);
+
+        $tags = collect(['Consumer Electronics', 'Innovation', 'Premium', 'Mobile', 'Display'])
+            ->map(static fn (string $name): CatalogTag => CatalogTag::factory()->create(['name' => $name]));
+        $activeBrand->tags()->attach($tags->pluck('id')->all());
 
         $manufacturerApi = new ImportSource;
         $manufacturerApi->forceFill([
@@ -134,6 +160,7 @@ final class BrandDetailFixture
             [120122, 'Televisions', 'televisions'],
             [120123, 'Tablets', 'tablets'],
             [120124, 'Laptops', 'laptops'],
+            [120125, 'Monitors', 'monitors'],
         ])->mapWithKeys(function (array $record): array {
             [$id, $name, $slug] = $record;
             $category = CentralCategory::factory()->create(['id' => $id, 'name' => $name, 'slug' => $slug]);
@@ -142,25 +169,18 @@ final class BrandDetailFixture
         });
 
         $products = [
-            ['Samsung Galaxy S26', 'SM-S942', 'samsung-galaxy-s26', 'smartphones', CentralProductStatus::Active],
-            ['Samsung Galaxy Tab S12', 'SM-X940', 'samsung-galaxy-tab-s12', 'tablets', CentralProductStatus::Active],
-            ['Samsung Neo QLED TV', 'QN90F', 'samsung-neo-qled-tv', 'televisions', CentralProductStatus::Draft],
-            ['Samsung Legacy Laptop', 'NP-OLD', 'samsung-legacy-laptop', 'laptops', CentralProductStatus::Archived],
+            ['Samsung Galaxy S26 Ultra', 'SM-S948', 'samsung-galaxy-s26-ultra', 'smartphones', CentralProductStatus::Active, '2026-08-15T14:00:00Z'],
+            ['Samsung Galaxy Z Fold 8', 'SM-F976', 'samsung-galaxy-z-fold-8', 'smartphones', CentralProductStatus::Active, '2026-08-15T13:15:00Z'],
+            ['Samsung Galaxy Tab S12 Ultra', 'SM-X946', 'samsung-galaxy-tab-s12-ultra', 'tablets', CentralProductStatus::Active, '2026-08-15T11:30:00Z'],
+            ['Samsung Neo QLED 8K QN990F', 'QN990F', 'samsung-neo-qled-8k-qn990f', 'televisions', CentralProductStatus::Draft, '2026-08-14T16:00:00Z'],
+            ['Samsung Odyssey OLED G9', 'G95SD', 'samsung-odyssey-oled-g9', 'monitors', CentralProductStatus::Active, '2026-08-12T09:00:00Z'],
+            ['Samsung OLED S95F', 'S95F', 'samsung-oled-s95f', 'televisions', CentralProductStatus::Active, '2026-08-10T15:45:00Z'],
+            ['Samsung Galaxy Book5 Pro', 'NP960XHA', 'samsung-galaxy-book5-pro', 'laptops', CentralProductStatus::Active, '2026-08-08T10:20:00Z'],
+            ['Samsung Galaxy Book5 Edge', 'NP940XMA', 'samsung-galaxy-book5-edge', 'laptops', CentralProductStatus::Active, '2026-08-06T08:10:00Z'],
+            ['Samsung Galaxy Note 8', 'SM-N950', 'samsung-galaxy-note-8', 'smartphones', CentralProductStatus::Archived, '2026-08-16T09:00:00Z'],
         ];
 
-        foreach ([['smartphones', 23], ['televisions', 11], ['tablets', 5]] as [$slug, $additional]) {
-            for ($index = 1; $index <= $additional; $index++) {
-                $products[] = [
-                    "Samsung {$slug} fixture {$index}",
-                    strtoupper(substr($slug, 0, 3)).'-'.$index,
-                    "samsung-{$slug}-fixture-{$index}",
-                    $slug,
-                    CentralProductStatus::Active,
-                ];
-            }
-        }
-
-        foreach ($products as $offset => [$name, $model, $slug, $categorySlug, $status]) {
+        foreach ($products as $offset => [$name, $model, $slug, $categorySlug, $status, $updatedAt]) {
             $product = new CentralProduct;
             $product->forceFill([
                 'id' => 1201201 + $offset,
@@ -172,27 +192,27 @@ final class BrandDetailFixture
                 'status' => $status,
                 'version' => 1,
                 'created_at' => CarbonImmutable::parse('2026-08-09T10:00:00Z'),
-                'updated_at' => CarbonImmutable::parse('2026-08-09T10:00:00Z'),
+                'updated_at' => CarbonImmutable::parse($updatedAt),
             ])->saveOrFail();
         }
     }
 
-    private static function assignCompleteBrandLogo(CentralBrand $brand): void
+    private static function assignBrandLogo(CentralBrand $brand, int $id): void
     {
         $timestamp = CarbonImmutable::parse('2026-08-12T10:00:00Z');
-        $logoPath = 'media/originals/ca-012-complete-sony-logo.png';
-        $logoBytes = (string) file_get_contents(base_path('tests/Fixtures/media/brand-logo-a.png')).'CA012-PHASE13';
+        $logoPath = 'media/originals/ca-012-'.$brand->slug.'-logo.png';
+        $logoBytes = (string) file_get_contents(base_path('tests/Fixtures/media/brand-logo-a.png')).'CA012-'.$brand->slug;
         Storage::disk('public')->put($logoPath, $logoBytes);
 
         $asset = new MediaAsset;
         $asset->forceFill([
-            'id' => 120110,
-            'uuid' => '00000000-0000-4000-8000-000000120110',
+            'id' => $id,
+            'uuid' => sprintf('00000000-0000-4000-8000-%012d', $id),
             'type' => 'image',
             'source' => 'fixture',
             'disk' => 'public',
             'original_path' => $logoPath,
-            'original_filename' => 'sony-logo.png',
+            'original_filename' => $brand->slug.'-logo.png',
             'mime_type' => 'image/png',
             'file_size' => strlen($logoBytes),
             'width' => 320,
@@ -205,7 +225,7 @@ final class BrandDetailFixture
 
         $assignment = new MediaAssignment;
         $assignment->forceFill([
-            'id' => 120110,
+            'id' => $id,
             'media_asset_id' => $asset->getKey(),
             'entity_type' => MediaAssignment::ENTITY_TYPE_CENTRAL_BRAND,
             'entity_id' => $brand->getKey(),

@@ -258,7 +258,7 @@ final class CentralBrandTranslationTest extends TestCase
             ->assertOk()
             ->assertSee('Overview')
             ->assertSee('Media')
-            ->assertSee('Translations')
+            ->assertSee('Translation coverage')
             ->assertDontSee('href="'.route('central.brands.translations.index', $brand, absolute: false).'"', false)
             ->assertDontSee('Review translations');
 

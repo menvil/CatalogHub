@@ -80,7 +80,7 @@ final class CentralBrandProfileFormTest extends TestCase
             ->assertSee('value="support@example.com"', false)
             ->assertSee('value="#1428A0"', false)
             ->assertSee('Samsung logo')
-            ->assertSee('Manage Media')
+            ->assertSee('Manage media')
             ->assertSee('href="'.route('central.brands.media', $brand, absolute: false).'"', false)
             ->assertSee('Archived')
             ->assertDontSee('name="status"', false)

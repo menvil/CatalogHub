@@ -41,7 +41,7 @@ test('CA-012 derives complete and needs-attention quality states from persisted 
     await expect(profileIssue).toBeVisible()
     await profileIssue.getByRole('link', { name: 'Edit profile', exact: true }).click()
     await expect(page.locator('[data-screen-id="CA-013"]')).toBeVisible()
-    await page.getByRole('link', { name: 'Cancel', exact: true }).click()
+    await page.getByRole('link', { name: 'Back to Overview', exact: true }).click()
     await expect(page.locator('[data-screen-id="CA-012"]')).toBeVisible()
     await expect(issues.locator('[data-quality-issue-code]')).toHaveCount(2)
     assertNoPageErrors()
@@ -86,7 +86,7 @@ test('CA-012 supports list, detail, edit, and detail navigation', async ({ page 
     await expect(page.locator('#brand-form')).toHaveAttribute('data-admin-form-leave-warning', 'false')
     await expect(page.locator('#brand-name')).toHaveValue('Samsung')
     await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Samsung')
-    await page.getByRole('link', { name: 'Cancel', exact: true }).click()
+    await page.getByRole('link', { name: 'Back to Overview', exact: true }).click()
 
     await expect(page).toHaveURL(new RegExp(`/admin/central/brands/${activeBrandId}$`))
     await expect(page.locator('[data-screen-id="CA-012"]')).toBeVisible()
@@ -110,7 +110,7 @@ test('CA-012 completes the explicit lifecycle workflow and archive cancellation'
     const profileIssue = page.locator('[data-screen-region="quality-issues"] [data-quality-issue-code]').filter({ hasText: 'Website is missing' })
     await profileIssue.getByRole('link', { name: 'Edit profile', exact: true }).click()
     await expect(page.locator('[data-screen-id="CA-013"]')).toBeVisible()
-    await page.getByRole('link', { name: 'Cancel', exact: true }).click()
+    await page.getByRole('link', { name: 'Back to Overview', exact: true }).click()
     await expect(page.locator('[data-screen-id="CA-012"]')).toBeVisible()
 
     await page.getByRole('button', { name: 'Activate Brand', exact: true }).click()

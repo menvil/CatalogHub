@@ -73,7 +73,7 @@ final class CentralBrandFormTest extends TestCase
             ->assertSee('South Korea (KR)')
             ->assertSee('autocomplete="organization"', false)
             ->assertDontSee('name="country_code"', false)
-            ->assertSee('Leave blank to generate it from the Brand name.')
+            ->assertSee('Optional; generated from the name.')
             ->assertSee('New Brands are created as Draft')
             ->assertSee('Cancel')
             ->assertDontSee('name="status"', false)
@@ -340,7 +340,7 @@ final class CentralBrandFormTest extends TestCase
             ->assertOk()
             ->assertSee('href="'.route('central.brands.show', $brand, absolute: false).'"', false)
             ->assertSeeInOrder(['Brands', 'Samsung', 'Edit'])
-            ->assertSee('Cancel');
+            ->assertSee('Back to Overview');
         $this->assertCancelTargets($editResponse->getContent(), route('central.brands.show', $brand, absolute: false));
 
         $createResponse = $this->get(route('central.brands.create'))

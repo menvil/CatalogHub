@@ -24,12 +24,12 @@ final class CentralBrandOwnershipTest extends TestCase
 
         $this->get(route('central.brands.edit', $brand))
             ->assertOk()
-            ->assertSee('No Parent Company assigned')
-            ->assertSee('Assign existing Organization')
-            ->assertSee('Create new Organization');
+            ->assertSee('No parent company')
+            ->assertSee('Assign')
+            ->assertSee('Create Organization');
         $this->get(route('central.brands.create'))
             ->assertOk()
-            ->assertDontSee('Ownership / Parent Company');
+            ->assertDontSee('Parent Company');
 
         $organization = Organization::factory()->create([
             'name' => str_repeat('Long Parent Company ', 10).'株式会社',
@@ -42,7 +42,7 @@ final class CentralBrandOwnershipTest extends TestCase
         $this->get(route('central.brands.edit', $brand))
             ->assertOk()
             ->assertSee($organization->name)
-            ->assertSee('Change Parent Company')
+            ->assertSee('Change')
             ->assertSee('Clear Parent Company');
     }
 

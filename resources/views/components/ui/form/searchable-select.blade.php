@@ -40,8 +40,8 @@
             @endforeach
         </select>
 
-        <div class="flex min-w-0 items-stretch">
-            <div class="relative min-w-0 flex-1">
+        <div class="relative min-w-0">
+            <div class="relative min-w-0">
                 <input
                     id="{{ $id }}-combobox"
                     type="text"
@@ -55,7 +55,7 @@
                     @if (filled($error)) aria-invalid="true" @endif
                     @if ($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                     @disabled($disabled)
-                    {{ $attributes->except('aria-describedby')->class('block min-h-10 w-full truncate rounded-admin-input border border-admin-border bg-admin-surface py-2 pl-3 pr-10 text-sm text-admin-text placeholder:text-admin-muted focus:border-admin-primary focus:outline-none focus:ring-2 focus:ring-admin-primary/20 disabled:cursor-not-allowed disabled:opacity-60') }}
+                    {{ $attributes->except('aria-describedby')->class(['block min-h-10 w-full truncate rounded-admin-input border border-admin-border bg-admin-surface py-2 pl-3 text-sm text-admin-text placeholder:text-admin-muted focus:border-admin-primary focus:outline-none focus:ring-2 focus:ring-admin-primary/20 disabled:cursor-not-allowed disabled:opacity-60', 'pr-20' => $clearable, 'pr-10' => ! $clearable]) }}
                     data-ui-searchable-select-input
                     data-search-placeholder="{{ $searchPlaceholder }}"
                 >
@@ -66,11 +66,12 @@
             @if ($clearable)
                 <button
                     type="button"
-                    class="ml-2 min-h-10 shrink-0 rounded-admin-input border border-admin-border px-3 text-sm text-admin-muted hover:bg-admin-surface-muted focus:outline-none focus:ring-2 focus:ring-admin-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+                    class="absolute inset-y-1 right-8 inline-flex w-8 items-center justify-center rounded text-admin-muted hover:bg-admin-surface-muted hover:text-admin-text focus:outline-none focus:ring-2 focus:ring-admin-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
                     aria-label="Clear {{ $label }}"
                     data-ui-searchable-select-clear
+                    @if ($selected === null) hidden @endif
                     @disabled($disabled)
-                >Clear</button>
+                ><x-ui.icon name="x-mark" decorative size="sm" /></button>
             @endif
         </div>
 

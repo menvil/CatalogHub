@@ -7,6 +7,7 @@ function elements(root) {
         empty: root.querySelector('[data-ui-searchable-select-empty]'),
         loading: root.querySelector('[data-ui-searchable-select-loading]'),
         status: root.querySelector('[data-ui-searchable-select-status]'),
+        clear: root.querySelector('[data-ui-searchable-select-clear]'),
     }
 }
 
@@ -190,7 +191,7 @@ function filter(root, query) {
 }
 
 function choose(root, option) {
-    const { input, native, options } = elements(root)
+    const { input, native, options, clear } = elements(root)
     if (! input || ! native) return
     cancelRemoteSearch(root)
     const value = option?.dataset.value ?? ''
@@ -198,6 +199,7 @@ function choose(root, option) {
     native.value = value
     root.dataset.selectedLabel = label
     input.value = label
+    if (clear) clear.hidden = value === ''
     options.forEach((candidate) => candidate.setAttribute('aria-selected', candidate === option ? 'true' : 'false'))
     native.dispatchEvent(new Event('input', { bubbles: true }))
     native.dispatchEvent(new Event('change', { bubbles: true }))

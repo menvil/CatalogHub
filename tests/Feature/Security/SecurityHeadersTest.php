@@ -2,10 +2,13 @@
 
 namespace Tests\Feature\Security;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class SecurityHeadersTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_it_adds_baseline_security_headers_to_web_responses(): void
     {
         $this->get('/')

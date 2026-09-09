@@ -15,9 +15,10 @@ final class BrandFormVisualTest extends TestCase
             'ca-013__create__1440x1000',
             'ca-013__create__390x844',
             'ca-013__edit__1440x1000',
+            'ca-013__validation__1440x1000',
+            'ca-013__edit__1024x1000',
+            'ca-013__edit__768x1024',
             'ca-013__edit__390x844',
-            'ca-013__ownership-populated__1440x1000',
-            'ca-013__ownership-populated__390x844',
             'ca-013__ownership-picker__1440x1000',
         ];
 
@@ -49,7 +50,7 @@ final class BrandFormVisualTest extends TestCase
             static fn (array $reference): bool => $reference['screen_id'] === 'CA-013',
         ));
 
-        self::assertCount(7, $references);
+        self::assertCount(8, $references);
         $stateViewports = array_map(
             static fn (array $reference): string => $reference['state'].'@'.$reference['viewport'],
             $references,
@@ -58,13 +59,14 @@ final class BrandFormVisualTest extends TestCase
         self::assertSame([
             'create@1440x1000',
             'create@390x844',
+            'edit@1024x1000',
             'edit@1440x1000',
             'edit@390x844',
+            'edit@768x1024',
             'ownership-picker@1440x1000',
-            'ownership-populated@1440x1000',
-            'ownership-populated@390x844',
+            'validation@1440x1000',
         ], $stateViewports);
-        self::assertSame(array_fill(0, 7, 'brand-form-v4'), array_column($references, 'fixture'));
+        self::assertSame(array_fill(0, 8, 'brand-form-v5'), array_column($references, 'fixture'));
         foreach ($references as $reference) {
             self::assertSame(
                 hash_file('sha256', "{$root}/{$reference['path']}"),

@@ -14,6 +14,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\CountryReference;
 use Tests\TestCase;
@@ -213,6 +214,23 @@ final class CentralBrandFormTest extends TestCase
         $this->assertNull($input->slug);
         $this->assertNull($input->websiteUrl);
         $this->assertNull($input->countryId);
+    }
+
+    public function test_form_request_rejects_unsupported_website_scheme(): void
+    {
+        $request = CentralBrandFormRequest::create('/admin/central/brands', 'POST', [
+            'name' => 'Samsung',
+            'website_url' => 'ftp://example.com',
+        ]);
+        $request->setContainer($this->app);
+        $request->setRedirector($this->app->make(Redirector::class));
+
+        try {
+            $request->validateResolved();
+            self::fail('Expected the FormRequest to reject an unsupported website scheme.');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('website_url', $exception->errors());
+        }
     }
 
     #[DataProvider('invalidCreatePayloadProvider')]

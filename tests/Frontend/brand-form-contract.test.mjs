@@ -25,6 +25,7 @@ test('CA-013 composes one canonical information surface with internal subsection
 
     const onlineSection = form.slice(form.indexOf('data-screen-region="online-presence"'), form.indexOf('</main>'))
     assert.ok(onlineSection.includes('id="brand-primary-color"'), 'Primary color must share the final field grid instead of restoring a one-field subsection')
+    assert.equal((form.match(/name="founded_year"/g) ?? []).length, 1, 'Founded year must use one shared field component')
     assert.ok(!form.includes('data-screen-region="visual-identity-fields"'))
     assert.ok(!form.includes('>Visual identity</h3>'))
     assert.ok(!form.includes('sticky bottom-0'), 'CA-013 must not restore the oversized sticky footer')

@@ -125,38 +125,24 @@
                                         </div>
                                     </div>
                                 </div>
-
-                                <x-ui.form.input
-                                    id="brand-founded-year"
-                                    name="founded_year"
-                                    type="number"
-                                    label="Founded year"
-                                    :value="$foundedYear"
-                                    :error="$errors->first('founded_year')"
-                                    placeholder="1976"
-                                    min="1000"
-                                    :max="\App\Support\Validation\CentralBrandProfileConstraints::maximumFoundedYear()"
-                                    inputmode="numeric"
-                                    optional
-                                />
-                            </div>
                         @else
                             <div class="max-w-xs">
-                                <x-ui.form.input
-                                    id="brand-founded-year"
-                                    name="founded_year"
-                                    type="number"
-                                    label="Founded year"
-                                    :value="$foundedYear"
-                                    :error="$errors->first('founded_year')"
-                                    placeholder="1976"
-                                    min="1000"
-                                    :max="\App\Support\Validation\CentralBrandProfileConstraints::maximumFoundedYear()"
-                                    inputmode="numeric"
-                                    optional
-                                />
-                            </div>
                         @endif
+
+                            <x-ui.form.input
+                                id="brand-founded-year"
+                                name="founded_year"
+                                type="number"
+                                label="Founded year"
+                                :value="$foundedYear"
+                                :error="$errors->first('founded_year')"
+                                placeholder="1976"
+                                min="1000"
+                                :max="\App\Support\Validation\CentralBrandProfileConstraints::maximumFoundedYear()"
+                                inputmode="numeric"
+                                optional
+                            />
+                        </div>
                     </section>
 
                     <section class="min-w-0 border-t border-admin-border pt-5" data-screen-region="online-presence">

@@ -1,0 +1,45 @@
+docs/ui/visual-references.json
+  s_6f254a5f242e0f::t_a1f449f2a79418 42-46
+docs/ui/brands-visual-gap-audit.md
+  s_6f254a5f242e0f::t_a8bcd64afb96a3 118,122
+docs/ui/screens/CA-014-brand-media-logo.md
+  s_6f254a5f242e0f::t_a8bcd64afb96a3 8-10,13,15,36,38,40,42,52,69
+tests/Visual/baselines/ca-014__picker-open__1440x1000.png.sha256
+  s_6f254a5f242e0f::t_a1f449f2a79418 1
+tests/Support/BrandMediaFixture.php
+  s_6f254a5f242e0f::t_8a9e9914d4c2b9 18
+tests/Visual/baselines/ca-014__empty__1440x1000.png.sha256
+  s_6f254a5f242e0f::t_a1f449f2a79418 1
+tests/Browser/Acceptance/brand-media.spec.mjs
+  s_6f254a5f242e0f::t_8a9e9914d4c2b9 63-67,74-75,93,96,99-101,103-104,106-107,110-116
+  s_6f254a5f242e0f::t_18833357a938f4 73
+resources/views/central-admin/brands/media.blade.php
+  s_6f254a5f242e0f::t_fb696a730e22fe 35,50-66,68-69,71,78,94,106-107,109,111-113,115-143,145-146,164-166,169-171,173-199,201-213,263,265
+tests/Visual/playwright/brand-media.visual.spec.mjs
+  s_6f254a5f242e0f::t_8a9e9914d4c2b9 35,40-46
+tests/Feature/Central/CentralBrandMediaTest.php
+  s_6f254a5f242e0f::t_8a9e9914d4c2b9 315
+  s_6f254a5f242e0f::t_7bd3df303b0275 43-47,50-51
+tests/Visual/baselines/ca-014__logo-ready__1440x1000.png.sha256
+  s_6f254a5f242e0f::t_a1f449f2a79418 1
+tests/Visual/baselines/ca-014__logo-ready__390x844.png.sha256
+  s_6f254a5f242e0f::t_a1f449f2a79418 1
+tests/Visual/baselines/ca-014__logo-ready__768x1024.png.sha256
+  s_6f254a5f242e0f::t_a1f449f2a79418 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "3d1411ea40621ce95a6d7cbc0051140ec1015468",
+  "prompts": {},
+  "sessions": {
+    "s_6f254a5f242e0f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a087d7-a88c-7121-80f8-f952db0fb8f8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

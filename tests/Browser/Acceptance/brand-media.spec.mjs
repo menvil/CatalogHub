@@ -84,13 +84,13 @@ test('CA-012 and CA-014 persist the complete Brand logo repair, replace, and rem
     assertNoPageErrors()
 })
 
-test('CA-014 loads the bounded Shared Media picker only on demand and closes it after assignment', async ({ page }) => {
+test('CA-014 expands the bounded Shared Media picker inline on demand and closes it after assignment', async ({ page }) => {
     const assertNoPageErrors = observePageErrors(page)
 
     await signIn(page, 'central', foundationDemo.centralAdmin)
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
     await page.goto('/admin/central/brands/14014/media')
-    await expect(page.locator('[data-brand-media-fixture="brand-media-v4"]')).toBeVisible()
+    await expect(page.locator('[data-brand-media-fixture="brand-media-v5"]')).toBeVisible()
     await expect(page.locator('[data-screen-region="shared-media-picker"]')).toHaveCount(0)
 
     for (const viewport of [{ width: 1280, height: 900 }, { width: 1024, height: 900 }]) {
@@ -114,9 +114,10 @@ test('CA-014 loads the bounded Shared Media picker only on demand and closes it 
     await expect(replaceDialog).toBeHidden()
 
     await page.getByRole('link', { name: 'Choose from media' }).click()
-    const picker = page.getByRole('dialog', { name: 'Choose from Shared Media' })
+    const picker = page.locator('[data-screen-region="shared-media-picker"]')
     await expect(picker).toBeVisible()
-    await expect(picker.getByRole('searchbox', { name: 'Search shared media' })).toBeFocused()
+    await expect(page.getByRole('link', { name: 'Close media picker' })).toHaveAttribute('aria-expanded', 'true')
+    await expect(picker.getByRole('searchbox', { name: 'Search shared media' })).toBeVisible()
     await expect(picker.locator('[data-media-asset-card]')).toHaveCount(6)
     await expect(picker.locator('[data-media-asset-card][aria-current="true"]')).toContainText('Current')
 
@@ -134,6 +135,7 @@ test('CA-014 loads the bounded Shared Media picker only on demand and closes it 
 
     await expect(page).toHaveURL(/\/admin\/central\/brands\/14014\/media$/)
     await expect(page.locator('[data-screen-region="shared-media-picker"]')).toHaveCount(0)
+    await expect(page.getByRole('link', { name: 'Open media picker' })).toHaveAttribute('aria-expanded', 'false')
     await expect(page.getByRole('definition').filter({ hasText: 'apple-wordmark-black.png' })).toBeVisible()
     await expect(page.getByText('Existing media asset assigned as the Brand logo.', { exact: true })).toBeVisible()
     assertNoPageErrors()

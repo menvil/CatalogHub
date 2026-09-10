@@ -32,7 +32,7 @@
         };
     @endphp
 
-    <div class="min-w-0 space-y-admin-section" data-brand-media-fixture="brand-media-v3">
+    <div class="min-w-0 space-y-admin-section" data-brand-media-fixture="brand-media-v4">
         <x-admin.page-header
             screen-id="CA-014"
             :show-screen-id="false"
@@ -47,35 +47,35 @@
 
         @include('central-admin.brands.partials.subnav', ['active' => 'media'])
 
-        <div class="grid min-w-0 items-start gap-admin-section xl:grid-cols-[minmax(0,1.6fr)_minmax(18rem,0.72fr)]" data-screen-region="brand-logo-workspace">
-            <x-admin.card
-                title="Primary logo"
-                description="The canonical global logo used across the central catalog."
-                data-screen-region="primary-logo"
-            >
-                <x-slot:actions>
-                    @if ($assignment)
-                        <x-admin.status-badge label="Global" variant="info" size="sm" />
-                        <x-admin.status-badge label="Primary" variant="neutral" size="sm" />
-                    @endif
-                    <x-admin.status-badge
-                        :label="$logo->state->label()"
-                        :variant="$logo->state->badgeVariant()"
-                        size="sm"
-                        data-logo-delivery-state="{{ $logo->state->value }}"
-                    />
-                </x-slot:actions>
+        <x-admin.card
+            title="Primary logo"
+            description="The canonical global logo used across the central catalog."
+            data-screen-region="brand-logo-workspace"
+        >
+            <x-slot:actions>
+                @if ($assignment)
+                    <x-admin.status-badge label="Global" variant="info" size="sm" />
+                    <x-admin.status-badge label="Primary" variant="neutral" size="sm" />
+                @endif
+                <x-admin.status-badge
+                    :label="$logo->state->label()"
+                    :variant="$logo->state->badgeVariant()"
+                    size="sm"
+                    data-logo-delivery-state="{{ $logo->state->value }}"
+                />
+            </x-slot:actions>
 
-                <div data-brand-media-role="brand_logo">
+            <div class="grid min-w-0 items-start gap-admin-section lg:grid-cols-[minmax(0,1.8fr)_minmax(15rem,0.82fr)]" data-brand-media-role="brand_logo">
+                <div class="min-w-0" data-screen-region="primary-logo">
                     @if ($logo->state === \App\Enums\MediaDeliveryState::Ready && $logo->url !== null)
-                        <div class="flex h-56 items-center justify-center overflow-hidden rounded-admin-card border border-admin-border bg-admin-surface-muted p-6 sm:h-60 lg:p-8" data-logo-preview>
+                        <div class="flex h-48 items-center justify-center overflow-hidden rounded-admin-card border border-admin-border bg-admin-surface-muted p-5 sm:h-56 lg:h-64 lg:p-8" data-logo-preview>
                             <img class="h-full w-full object-contain" src="{{ $logo->url }}" alt="{{ $brand->name }} logo">
                         </div>
                         <p class="mt-3 text-xs text-admin-muted">
                             Displaying {{ $logo->variantName ? str_replace('_', ' ', $logo->variantName) : 'the normalized master' }}.
                         </p>
                     @elseif ($logo->state === \App\Enums\MediaDeliveryState::Missing)
-                        <div class="flex min-h-56 items-center justify-center rounded-admin-card border border-dashed border-admin-border bg-admin-surface-muted px-6 py-10 text-center" data-logo-empty-state>
+                        <div class="flex min-h-48 items-center justify-center rounded-admin-card border border-dashed border-admin-border bg-admin-surface-muted px-6 py-8 text-center sm:min-h-56 lg:min-h-64" data-logo-empty-state>
                             <div class="max-w-md">
                                 <span class="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-admin-border bg-admin-surface text-xl text-admin-muted" aria-hidden="true">+</span>
                                 <h2 class="mt-4 text-base font-semibold text-admin-text">No primary logo assigned</h2>
@@ -91,7 +91,7 @@
                             };
                         @endphp
                         <div @class([
-                            'flex min-h-56 items-center justify-center rounded-admin-card border px-6 py-10 text-center',
+                            'flex min-h-48 items-center justify-center rounded-admin-card border px-6 py-8 text-center sm:min-h-56 lg:min-h-64',
                             'border-admin-danger/30 bg-admin-danger-soft' => $logo->state === \App\Enums\MediaDeliveryState::Failed,
                             'border-admin-warning/30 bg-admin-warning-soft' => $logo->state !== \App\Enums\MediaDeliveryState::Failed,
                         ]) data-logo-recovery-state>
@@ -102,45 +102,48 @@
                             </div>
                         </div>
                     @endif
+
+                    @can('catalog.brands.manage')
+                        <div class="mt-4 flex min-w-0 flex-col gap-admin-field border-t border-admin-border pt-4 sm:flex-row sm:flex-wrap sm:items-center" data-logo-actions>
+                            <x-ui.button
+                                class="w-full sm:w-auto"
+                                aria-haspopup="dialog"
+                                aria-controls="replace-brand-logo-modal"
+                                data-admin-modal-open-target="replace-brand-logo-modal"
+                            >{{ $asset ? 'Replace logo' : 'Upload logo' }}</x-ui.button>
+
+                            @can('media.manage')
+                                <x-ui.button
+                                    class="w-full sm:w-auto"
+                                    variant="secondary"
+                                    :href="route('central.brands.media', ['brand' => $brand, 'picker' => 1], absolute: false)"
+                                >Choose from media</x-ui.button>
+                            @endcan
+
+                            @if ($assignment)
+                                <details class="admin-row-actions-menu self-end sm:ml-auto sm:self-auto" data-admin-row-actions-menu>
+                                    <summary aria-label="More logo actions" aria-haspopup="menu"><span aria-hidden="true">⋮</span></summary>
+                                    <div role="menu" data-admin-row-actions-panel>
+                                        <button
+                                            type="button"
+                                            role="menuitem"
+                                            class="text-sm font-semibold text-admin-danger"
+                                            aria-haspopup="dialog"
+                                            aria-controls="remove-brand-logo-modal"
+                                            data-admin-modal-open-target="remove-brand-logo-modal"
+                                        >Remove logo from brand</button>
+                                    </div>
+                                </details>
+                            @endif
+                        </div>
+                    @endcan
                 </div>
 
-                @can('catalog.brands.manage')
-                    <div class="mt-5 flex min-w-0 flex-wrap items-center gap-admin-field border-t border-admin-border pt-4" data-logo-actions>
-                        <x-ui.button
-                            aria-haspopup="dialog"
-                            aria-controls="replace-brand-logo-modal"
-                            data-admin-modal-open-target="replace-brand-logo-modal"
-                        >{{ $asset ? 'Replace logo' : 'Upload logo' }}</x-ui.button>
-
-                        @can('media.manage')
-                            <x-ui.button
-                                variant="secondary"
-                                :href="route('central.brands.media', ['brand' => $brand, 'picker' => 1], absolute: false)"
-                            >Choose from Shared Media</x-ui.button>
-                        @endcan
-
-                        @if ($assignment)
-                            <button
-                                type="button"
-                                class="ml-auto inline-flex min-h-10 items-center justify-center rounded-admin-input border border-transparent px-3 py-2 text-sm font-semibold text-admin-danger hover:bg-admin-danger-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary"
-                                aria-haspopup="dialog"
-                                aria-controls="remove-brand-logo-modal"
-                                data-admin-modal-open-target="remove-brand-logo-modal"
-                            >Remove assignment</button>
-                        @endif
-                    </div>
-                @endcan
-            </x-admin.card>
-
-            <aside class="grid min-w-0 gap-admin-section" data-screen-region="asset-rail">
-                <x-admin.card
-                    title="Asset details"
-                    :description="$asset ? 'Safe metadata for the assigned Shared Media asset.' : null"
-                    padding="sm"
-                    data-screen-region="asset-details"
-                >
+                <aside class="min-w-0 border-t border-admin-border pt-5 lg:border-l lg:border-t-0 lg:pl-admin-card lg:pt-0" data-screen-region="asset-details">
+                    <h2 class="text-base font-semibold text-admin-text">Asset details</h2>
                     @if ($asset)
-                        <dl class="grid min-w-0 gap-y-3 text-sm sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-x-4 xl:grid-cols-1 xl:gap-x-0 2xl:grid-cols-[7rem_minmax(0,1fr)] 2xl:gap-x-3">
+                        <p class="mt-1 text-xs text-admin-muted">Safe metadata for the assigned Shared Media asset.</p>
+                        <dl class="mt-4 grid min-w-0 grid-cols-[6rem_minmax(0,1fr)] gap-x-3 gap-y-2 text-sm sm:grid-cols-[8rem_minmax(0,1fr)] lg:grid-cols-[5.5rem_minmax(0,1fr)] xl:grid-cols-[6.5rem_minmax(0,1fr)]">
                             <div class="contents"><dt class="text-xs font-medium text-admin-muted">Filename</dt><dd class="min-w-0 break-all font-medium text-admin-text">{{ $asset->original_filename ?: 'Unnamed media asset' }}</dd></div>
                             <div class="contents"><dt class="text-xs font-medium text-admin-muted">MIME type</dt><dd class="break-all text-admin-text">{{ $asset->mime_type ?: '—' }}</dd></div>
                             <div class="contents"><dt class="text-xs font-medium text-admin-muted">Dimensions</dt><dd class="text-admin-text">{{ $asset->width && $asset->height ? number_format($asset->width).' × '.number_format($asset->height).' px' : '—' }}</dd></div>
@@ -158,51 +161,56 @@
                             </div>
                         @endcan
                     @else
-                        <div class="rounded-admin-input bg-admin-surface-muted px-3 py-4">
-                            <p class="text-sm font-semibold text-admin-text">No assigned asset</p>
-                            <p class="mt-1 text-sm text-admin-muted">Asset metadata will appear after a logo is assigned.</p>
+                        <div class="mt-4 rounded-admin-input bg-admin-surface-muted px-3 py-4">
+                            <p class="text-sm font-semibold text-admin-text">No asset selected</p>
+                            <p class="mt-1 text-sm text-admin-muted">Asset details will appear after a logo is assigned.</p>
                         </div>
                     @endif
-                </x-admin.card>
+                </aside>
+            </div>
+        </x-admin.card>
 
-                <x-admin.card title="Variants" padding="sm" data-screen-region="variants">
-                    @if ($variants === [])
-                        <div class="flex items-start gap-3 rounded-admin-input bg-admin-surface-muted px-3 py-3">
-                            <span class="mt-0.5 text-admin-muted" aria-hidden="true">◇</span>
-                            <div class="min-w-0">
-                                <p class="text-sm font-semibold text-admin-text">No generated variants yet</p>
-                                <p class="mt-1 text-xs text-admin-muted">{{ $asset ? 'The normalized master can remain usable while variants are generated.' : 'Variants appear after a logo is assigned and processed.' }}</p>
+        <x-admin.card
+            title="Generated variants"
+            description="Read-only Shared Media outputs for this logo."
+            padding="sm"
+            data-screen-region="generated-variants"
+        >
+            @if ($variants === [])
+                <div class="flex items-start gap-3 rounded-admin-input bg-admin-surface-muted px-4 py-3">
+                    <span class="mt-0.5 text-admin-muted" aria-hidden="true">◇</span>
+                    <div class="min-w-0">
+                        <p class="text-sm font-semibold text-admin-text">No generated variants yet</p>
+                        <p class="mt-1 text-xs text-admin-muted">{{ $asset ? 'Variants will appear once processing is complete. The normalized master can remain usable.' : 'Variants appear after a logo is assigned and processed.' }}</p>
+                    </div>
+                </div>
+            @else
+                <div class="grid min-w-0 gap-2 md:grid-cols-3" data-logo-variants>
+                    @foreach ($variants as $variant)
+                        @php
+                            $variantSize = str_replace('brand_logo_', '', $variant->name);
+                        @endphp
+                        <article class="min-w-0 rounded-admin-input border border-admin-border bg-admin-surface-muted p-3" data-logo-variant="{{ $variant->name }}">
+                            <div class="flex min-w-0 items-start justify-between gap-2">
+                                <div class="min-w-0">
+                                    <h3 class="text-sm font-semibold text-admin-text">{{ $variantSize }} px logo</h3>
+                                    <p class="mt-0.5 break-all font-foundation-mono text-[0.6875rem] text-admin-muted">{{ $variant->name }}</p>
+                                </div>
+                                <x-admin.status-badge :label="$variant->state->label()" :variant="$variant->state->badgeVariant()" size="sm" />
                             </div>
-                        </div>
-                    @else
-                        <div class="grid min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-1" data-logo-variants>
-                            @foreach ($variants as $variant)
-                                @php
-                                    $variantSize = str_replace('brand_logo_', '', $variant->name);
-                                @endphp
-                                <article class="min-w-0 rounded-admin-input border border-admin-border bg-admin-surface-muted p-3" data-logo-variant="{{ $variant->name }}">
-                                    <div class="flex min-w-0 items-start justify-between gap-2">
-                                        <div class="min-w-0">
-                                            <h3 class="text-sm font-semibold text-admin-text">{{ $variantSize }} px logo</h3>
-                                            <p class="mt-0.5 break-all font-foundation-mono text-[0.6875rem] text-admin-muted">{{ $variant->name }}</p>
-                                        </div>
-                                        <x-admin.status-badge :label="$variant->state->label()" :variant="$variant->state->badgeVariant()" size="sm" />
-                                    </div>
-                                    <p class="mt-2 text-xs text-admin-muted">
-                                        {{ $variant->width && $variant->height ? number_format($variant->width).' × '.number_format($variant->height).' px' : 'Dimensions pending' }}
-                                        @if ($variant->format) · {{ strtoupper($variant->format) }} @endif
-                                        @if ($variant->fileSize) · {{ $formatBytes($variant->fileSize) }} @endif
-                                    </p>
-                                    @if ($variant->url)
-                                        <a href="{{ $variant->url }}" target="_blank" rel="noopener noreferrer" class="mt-2 inline-flex text-xs font-semibold text-admin-primary hover:underline">Open variant</a>
-                                    @endif
-                                </article>
-                            @endforeach
-                        </div>
-                    @endif
-                </x-admin.card>
-            </aside>
-        </div>
+                            <p class="mt-2 text-xs text-admin-muted">
+                                {{ $variant->width && $variant->height ? number_format($variant->width).' × '.number_format($variant->height).' px' : 'Dimensions pending' }}
+                                @if ($variant->format) · {{ strtoupper($variant->format) }} @endif
+                                @if ($variant->fileSize) · {{ $formatBytes($variant->fileSize) }} @endif
+                            </p>
+                            @if ($variant->url)
+                                <a href="{{ $variant->url }}" target="_blank" rel="noopener noreferrer" class="mt-2 inline-flex text-xs font-semibold text-admin-primary hover:underline">Open variant</a>
+                            @endif
+                        </article>
+                    @endforeach
+                </div>
+            @endif
+        </x-admin.card>
 
         @can('catalog.brands.manage')
             <x-ui.modal id="replace-brand-logo-modal" :title="$asset ? 'Replace logo' : 'Upload logo'" :open="$uploadModalOpen" size="lg">
@@ -252,9 +260,9 @@
                 </form>
                 <x-admin.confirmation-modal
                     id="remove-brand-logo-modal"
-                    :title="'Remove the primary logo from '.$brand->name.'?'"
+                    :title="'Remove logo from '.$brand->name.'?'"
                     message="This removes only the Brand assignment. The Shared Media asset and its files are not deleted and remain available for other uses."
-                    confirm-label="Remove assignment"
+                    confirm-label="Remove logo from brand"
                     confirm-form="remove-brand-logo"
                     variant="danger"
                     :open="false"

@@ -40,8 +40,15 @@ final class CentralBrandMediaTest extends TestCase
         $this->actingAs($user)->get(route('central.brands.media', $active))
             ->assertOk()
             ->assertSee('Brand Media')
+            ->assertSee('Primary logo')
+            ->assertSee('Asset details')
+            ->assertSee('Generated variants')
+            ->assertSee('data-screen-region="brand-logo-workspace"', false)
+            ->assertSee('data-screen-region="generated-variants"', false)
             ->assertSee('data-screen-id="CA-014"', false)
             ->assertDontSee('>CA-014<', false)
+            ->assertDontSee('Current identity media')
+            ->assertDontSee('Remove assignment')
             ->assertDontSee('mx-auto max-w-4xl space-y-admin-section', false);
         $this->get(route('central.brands.media', $archived))->assertOk();
         $this->get(route('central.brands.media', 999999))->assertNotFound();
@@ -305,7 +312,7 @@ final class CentralBrandMediaTest extends TestCase
             ->get(route('central.brands.media', $brand))
             ->assertOk()
             ->assertSee('Upload logo')
-            ->assertDontSee('Choose from Shared Media');
+            ->assertDontSee('Choose from media');
         $this->actingAs($brandOnlyManager)
             ->post(route('central.brands.media.logo.assign', $brand), ['media_asset_id' => $missing->id])
             ->assertForbidden();

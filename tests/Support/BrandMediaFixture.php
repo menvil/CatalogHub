@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Storage;
 
 final class BrandMediaFixture
 {
-    public const VERSION = 'brand-media-v5';
+    public const VERSION = 'brand-media-v6';
 
     public const BRAND_ID = 14014;
 
@@ -126,6 +126,24 @@ final class BrandMediaFixture
             'apple-product-mark.png',
             'apple-partner-lockup.png',
             'apple-legacy-logo.png',
+            'apple-store-badge.png',
+            'apple-services-mark.png',
+            'apple-developer-lockup.png',
+            'apple-education-logo.png',
+            'apple-enterprise-logo.png',
+            'apple-support-mark.png',
+            'apple-tv-lockup.png',
+            'apple-music-lockup.png',
+            'apple-pay-mark.png',
+            'apple-arcade-lockup.png',
+            'apple-fitness-lockup.png',
+            'apple-news-lockup.png',
+            'apple-podcasts-lockup.png',
+            'apple-books-lockup.png',
+            'apple-maps-lockup.png',
+            'apple-wallet-mark.png',
+            'apple-classic-mark.png',
+            'apple-catalog-lockup.png',
         ];
 
         foreach ($filenames as $offset => $filename) {

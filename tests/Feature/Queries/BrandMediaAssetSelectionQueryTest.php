@@ -42,6 +42,8 @@ final class BrandMediaAssetSelectionQueryTest extends TestCase
         DB::disableQueryLog();
         $second = $query->paginateCompatibleImages('', perPage: 3, page: 2);
         $search = $query->paginateCompatibleImages('candidate-2', perPage: 3, page: 1);
+        $defaultPage = $query->paginateCompatibleImages('', page: 1);
+        $preferred = $query->paginateCompatibleImages('', perPage: 3, page: 1, preferredAssetId: 2);
 
         self::assertSame(8, $first->total());
         self::assertSame(3, $first->count());
@@ -51,5 +53,7 @@ final class BrandMediaAssetSelectionQueryTest extends TestCase
         self::assertSame($first->pluck('id')->sortDesc()->values()->all(), $first->pluck('id')->all());
         self::assertSame($second->pluck('id')->sortDesc()->values()->all(), $second->pluck('id')->all());
         self::assertSame(['brand-candidate-2.png'], $search->pluck('original_filename')->all());
+        self::assertSame(24, $defaultPage->perPage());
+        self::assertSame(2, $preferred->first()?->getKey());
     }
 }

@@ -311,8 +311,8 @@ final class CentralBrandMediaTest extends TestCase
         $this->actingAs($brandOnlyManager)
             ->get(route('central.brands.media', $brand))
             ->assertOk()
-            ->assertSee('Upload logo')
-            ->assertDontSee('Choose from media');
+            ->assertSee('Upload Photo')
+            ->assertDontSee('Choose from Shared Media');
         $this->actingAs($brandOnlyManager)
             ->post(route('central.brands.media.logo.assign', $brand), ['media_asset_id' => $missing->id])
             ->assertForbidden();
@@ -471,7 +471,7 @@ final class CentralBrandMediaTest extends TestCase
             ->assertDontSee('>No logo<', false);
     }
 
-    public function test_shared_media_candidates_are_loaded_only_when_the_bounded_picker_is_open(): void
+    public function test_bounded_shared_media_candidates_are_always_visible_to_media_managers_only(): void
     {
         Storage::fake('public');
         $brand = CentralBrand::factory()->create();
@@ -497,15 +497,24 @@ final class CentralBrandMediaTest extends TestCase
         $this->actingAs($manager)
             ->get(route('central.brands.media', $brand))
             ->assertOk()
-            ->assertDontSee('data-screen-region="shared-media-picker"', false)
-            ->assertDontSee('picker-only-candidate.png');
-
-        $this->get(route('central.brands.media', ['brand' => $brand, 'picker' => 1]))
-            ->assertOk()
             ->assertSee('data-screen-region="shared-media-picker"', false)
             ->assertSee('picker-only-candidate.png')
             ->assertSee('aria-current="true"', false)
             ->assertSee('Current logo');
+
+        config()->set('cataloghub_permissions.roles.catalog_editor', [
+            Permission::CentralPanelAccess->value,
+            Permission::CentralPageAccess->value,
+            Permission::CentralMutationExecute->value,
+            Permission::CentralView->value,
+            Permission::CatalogBrandsManage->value,
+        ]);
+
+        $this->actingAs(User::factory()->create(['role' => UserRole::CatalogEditor]))
+            ->get(route('central.brands.media', $brand))
+            ->assertOk()
+            ->assertDontSee('data-screen-region="shared-media-picker"', false)
+            ->assertDontSee('picker-only-candidate.png');
     }
 
     private function gifBytes(): string

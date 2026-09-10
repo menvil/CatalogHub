@@ -38,6 +38,7 @@ parameters:
 | `OfferCoverageQuery` | overall/category/source reports | `selectRaw` | literal | Conditional and distinct grouped coverage aggregates |
 | `TranslationStatusCountsQuery` | `forLocale` | `selectRaw` | literal | Grouped translation status counts |
 | `MissingTranslationsQuery` | `get` | `whereRaw` | required | Literal escaped admin search |
+| `MediaLibraryQuery` | `orderPreferredAssetFirst` | `orderByRaw` | required | Bound current-asset priority in the bounded Brand logo picker |
 
 The effective key is `class + owner method + raw method`, so approving one raw
 call does not approve unrelated calls elsewhere in the same Query Object.

@@ -5,19 +5,19 @@ purpose: Manage the one canonical global primary Brand logo through Shared Media
 roles: authorized Central Admin catalog user
 route: /admin/central/brands/{brand}/media (GET); /admin/central/brands/{brand}/media/logo (POST, DELETE); /admin/central/brands/{brand}/media/logo/assign (POST)
 viewports: desktop=1440x1000,1280;intermediate=1024;tablet=768x1024;mobile=390x844
-fixture: brand-media-v5
-regions: central-shell;breadcrumbs;page-header;brand-tabs;primary-logo-workspace;asset-details;generated-variants;replacement-modal;bounded-shared-media-picker;confirmation-modal;flash-feedback
-actions: upload-logo;replace-logo;choose-shared-media;assign-existing-logo;remove-logo-from-brand;confirm;cancel
-states: no-logo;ready;processing;failed;unavailable;validation-error;picker-open
+fixture: brand-media-v6
+regions: central-shell;breadcrumbs;page-header;brand-tabs;primary-logo-workspace;inline-upload;asset-details;generated-variants;bounded-shared-media-picker;confirmation-modal;flash-feedback
+actions: upload-logo;assign-existing-logo;remove-logo-from-brand;confirm;cancel
+states: no-logo;ready;processing;failed;unavailable;validation-error
 permissions: catalog.brands.manage; media.manage additionally gates Shared Media selection and MediaAsset destination
-responsive: Primary logo and Asset details stay side by side at 1440, 1280, and 1024px, with Generated variants directly below Primary logo. At tablet and mobile widths the order is Primary logo/actions, Asset details, Generated variants, then the inline Shared Media disclosure. Its bounded cards use 4/3/2/1-column responsive results without horizontal overflow.
+responsive: Primary logo and Asset details stay side by side at 1440 and 1280px. At 1024px and below they stack before metadata becomes narrow. Inside Primary logo the preview and upload panel use a 1/3–2/3 row from 768px upward and stack on mobile. The bounded picker uses 8/8/4/4/1 columns at 1440/1280/1024/768/390 without horizontal overflow.
 out_of_scope: svg;additional-brand-roles;dark-light;hero-og;localized-media;site-media;market-media;media-completeness;alt-text;edit-image;asset-deletion;generic-dam;variant-retry;orphan-purge
-reference_version: final-convergence-v5
+reference_version: final-convergence-v6
 ---
 
 # CA-014 — Brand Media / Logo
 
-CA-014 is the finished Brand logo workspace. Its primary task is deliberately narrow: inspect the current logo and, when necessary, replace it with a secure upload or a compatible existing `MediaAsset`. The screen is no longer presented as an always-open Shared Media warehouse. The approved Brand domain still contains exactly one media role: `brand_logo`.
+CA-014 is the finished Brand logo workspace. Its primary task is deliberately narrow: inspect the current logo and, when necessary, replace it with a secure upload or a compatible existing `MediaAsset`. Shared Media selection remains a bounded supporting section rather than a separate DAM workflow. The approved Brand domain still contains exactly one media role: `brand_logo`.
 
 ## Canonical assignment
 
@@ -33,40 +33,40 @@ The database uniqueness constraint and transactionally locked Actions prevent co
 
 ## Final workspace composition
 
-The page header follows CA-012/013 with Brand breadcrumbs, `Brand Media`, the exact Brand-aware Shared Media subtitle, `View Brand`, and only Overview / Media / Translations navigation. The desktop workspace is a roughly 70/30 grid. Its left rail contains Primary logo followed by Generated variants; its independent right rail contains compact Asset details aligned with the top of Primary logo. Inside Primary logo the 256px contained, wordmark-safe neutral preview (`object-fit: contain`) sits beside its compact actions. Compact Global, Primary, and real delivery-state badges live in the card header.
+The page header follows CA-012/013 with Brand breadcrumbs, `Brand Media`, the exact Brand-aware Shared Media subtitle, `View Brand`, and only Overview / Media / Translations navigation. The desktop workspace is a roughly 65/35 grid. Primary logo and the full-height Asset details rail share a top and bottom edge at wide widths. Inside Primary logo, a contained wordmark-safe neutral preview (`object-fit: contain`) occupies one third of the working row and the inline upload panel occupies the remaining two thirds at 768px and above. Compact Global, Primary, and real delivery-state badges live in the card header.
 
-The action column contains the primary `Replace logo`, secondary `Choose from media`, compact ingest limits, and an overflow menu. Its user-facing danger action is `Remove logo from brand`; it is deliberately outside the primary visual flow. The upload form and asset results are absent from the default page flow. Asset details show only filename, MIME, dimensions, size, status, source, timestamps, public UUID, and the readable `Brand · Primary logo` assignment. Storage paths, object keys, buckets, signed-URL internals, and credentials are never rendered. `Open MediaAsset` uses the existing safe admin destination.
+The upload panel contains one large `Upload Photo` file control, the atomic-replacement explanation, and the real ingest constraints. Choosing a file submits directly; there is no replacement popup or duplicate submit step. `Remove logo from brand` is a quiet danger link on the row below the preview/upload pair and still requires confirmation. Asset details use a readable two-column metadata table for filename, MIME, dimensions, size, status, source, timestamps, public UUID, and `Brand · Primary logo`. Storage paths, object keys, buckets, signed-URL internals, and credentials are never rendered. `Open MediaAsset` uses the existing safe admin destination.
 
-Generated variants is a compact read-only section immediately below Primary logo in the left rail. Existing `brand_logo_128`, `brand_logo_256`, and `brand_logo_512` records form one compact desktop row and show purpose, dimensions, format, state, and a safe open link when deliverable. Absence is a short `No generated variants yet` state. A usable normalized master remains Ready while asynchronous variants are absent or processing; variant absence never becomes logo failure.
+Generated variants is a compact read-only section inside Primary logo. Existing `brand_logo_128`, `brand_logo_256`, and `brand_logo_512` records form one compact desktop row. Each card keeps its status at the upper right, a maximum 64×56 contained preview at the lower right, and the safe `Open variant` action aligned with the preview's lower edge. Absence is a short `No generated variants yet` state. A usable normalized master remains Ready while asynchronous variants are absent or processing; variant absence never becomes logo failure.
 
-At 1024px the workspace retains its two-column geometry; at 768px Asset details moves below Primary logo and before Generated variants. At mobile width the same priority order remains, followed by the Shared Media disclosure. Upload and destructive confirmation dialogs remain viewport-bounded, trap focus through the established modal runtime, close with Escape, and return focus to their trigger. Shared Media selection itself is intentionally inline and does not use a dialog.
+At 1024px the outer workspace becomes a single column before the metadata table gets cramped; Primary logo still keeps its internal preview/upload row. At 768px and mobile the order is Primary logo (including upload and variants), Asset details, then Shared Media selection. Mobile stacks preview and upload, keeps controls full-width, wraps long IDs, and has no horizontal overflow. Only destructive confirmation uses the established modal runtime; upload and Shared Media selection are intentionally inline.
 
 ## Upload and atomic replacement
 
-`Replace logo` (or `Upload logo` in the empty state) opens the repository modal pattern around the existing `UploadCentralBrandLogoAction`. The accepted contract remains JPEG, PNG, or WebP; maximum 20 MiB, 8000 pixels per side, and 16 megapixels. Detection is based on decoded content rather than filename or client MIME. SVG, GIF, AVIF, corrupt data, and mismatched content are not promised or accepted.
+The inline `Upload Photo` control posts to the existing `UploadCentralBrandLogoAction` as soon as the user chooses a file. The accepted contract remains JPEG, PNG, or WebP; maximum 20 MiB, 8000 pixels per side, and 16 megapixels. Detection is based on decoded content rather than filename or client MIME. SVG, GIF, AVIF, corrupt data, and mismatched content are not promised or accepted.
 
-Shared `MediaService` ingest and secure validation complete before the canonical assignment changes. Any validation, decode, storage, persistence, or audit failure preserves the old assignment and keeps the replacement modal usable with an associated inline error. A successful assignment is the only point at which success is reported. A post-commit variant-dispatch failure remains visible and is not described as a rolled-back assignment. Replacement retains the old `MediaAsset` and stored file.
+Shared `MediaService` ingest and secure validation complete before the canonical assignment changes. Any validation, decode, storage, persistence, or audit failure preserves the old assignment and redisplays the inline upload panel with an associated error. A successful assignment is the only point at which success is reported. A post-commit variant-dispatch failure remains visible and is not described as a rolled-back assignment. Replacement retains the old `MediaAsset` and stored file.
 
 ## Shared Media reuse and query behavior
 
-`Choose from media` is available only under the existing `media.manage` permission and jumps to the expanded `Choose from Shared Media` section. A compact disclosure shell is visible below the workspace, but the default CA-014 request does not execute the library query or serialize candidate cards. The explicit `picker=1` request expands results inline and runs the existing stable server pagination at six compatible assets per page. Search remains bounded to filename, checksum, and numeric asset ID; pagination retains the picker anchor.
+`Choose from Shared Media` is a full-width section below the main workspace for actors with the existing `media.manage` permission. It is always open by explicit product choice and runs stable server pagination at 24 compatible assets per page; it never loads the whole library. Search remains bounded to filename, checksum, and numeric asset ID, and pagination retains the section anchor.
 
-Cards use the existing safe URL resolver and show only thumbnail, filename, MIME, dimensions, and `Use as logo`. The assigned asset has `aria-current=true`, a visible `Current` marker, and a disabled `Current logo` action. The disclosure exposes explicit Open/Close controls with `aria-expanded`; it requires no focus trap because it stays in normal document flow. Server-side assignment revalidates raster type, active status, allowed MIME, and physical delivery. After success the redirect drops picker state, collapses results, and returns to the updated preview, details, and variants. Candidate variants are eager-loaded in one relation query; the page does not introduce an N+1.
+Cards use the existing safe URL resolver and show only thumbnail, filename, MIME, dimensions, and `Use as logo`. The assigned asset is ordered onto the first page, has `aria-current=true`, a visible `Current` marker, and a disabled `Current logo` action. Server-side assignment revalidates raster type, active status, allowed MIME, and physical delivery. After success the refreshed preview, details, variants, and current marker all reflect the new assignment. Candidate variants are eager-loaded in one relation query; the page does not introduce an N+1.
 
 ## Delivery and empty states
 
 - Ready displays the best ready semantic variant, then the normalized master fallback.
 - Processing states that the assignment remains while a usable file becomes available; it never claims Ready.
 - Failed and Unavailable explain the real condition and leave Replace / Choose recovery actions visible.
-- No logo uses `No primary logo assigned`, immediate Upload and Choose actions, a compact neutral Asset details state, and a compact Variants state.
+- No logo uses `No primary logo assigned`, the same inline upload control, a compact neutral Asset details state, a compact Variants state, and the bounded Shared Media section for authorized users.
 
-The deterministic primary fixture is an Apple-like active Brand backed by a persisted transparent PNG `MediaAsset`, exact canonical assignment, real dimensions/size/source/timestamps, generated variants, and five compatible picker candidates. Separate coverage records the empty state, picker-open state, tablet, and mobile layouts. No screenshot-only metadata is hardcoded in the view.
+The deterministic primary fixture is an Apple-like active Brand backed by a persisted transparent PNG `MediaAsset`, exact canonical assignment, real dimensions/size/source/timestamps, generated variants, and 23 additional compatible picker candidates. Together with the current asset this produces the bounded 24-card page. Separate references cover empty, 1440, 1280, 1024, tablet, mobile, and the anchored picker view. No screenshot-only metadata is hardcoded in the view.
 
 ## Permissions, removal, and audit
 
 Existing authorization is unchanged. Actors allowed to open the Brand workspace see safe current media and metadata. `catalog.brands.manage` continues to gate upload/replace/remove; `media.manage` additionally gates library selection and the generic MediaAsset destination. No new permission exists.
 
-`Remove logo from brand` is reached through the established keyboard-accessible overflow and requires the established confirmation modal. It deletes only the exact canonical `MediaAssignment`; the confirmation explicitly states that the Shared Media asset and files remain available. CA-014 never offers Brand-specific asset deletion. Assign/replace continue to emit `catalog.brand.logo.assigned`; removal emits `catalog.brand.logo.removed`; no-op assignment emits no audit record. Audit payloads contain semantic IDs and role only, never storage internals.
+`Remove logo from brand` is a keyboard-accessible danger link below the preview/upload row and requires the established confirmation modal. It deletes only the exact canonical `MediaAssignment`; the confirmation explicitly states that the Shared Media asset and files remain available. CA-014 never offers Brand-specific asset deletion. Assign/replace continue to emit `catalog.brand.logo.assigned`; removal emits `catalog.brand.logo.removed`; no-op assignment emits no audit record. Audit payloads contain semantic IDs and role only, never storage internals.
 
 ## Intentional prototype divergences
 

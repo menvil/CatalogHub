@@ -134,6 +134,14 @@ parameters:
                 bindings: literal_only
                 behaviorTests: [tests/Feature/Queries/CentralBrandCategoryCoverageQueryTest.php]
                 status: approved
+            -
+                class: App\Queries\Media\MediaLibraryQuery
+                ownerMethods: [orderPreferredAssetFirst]
+                methods: [orderByRaw]
+                reason: 'The bounded Brand logo picker keeps its current asset visible first with a portable CASE expression and a bound asset ID.'
+                bindings: required
+                behaviorTests: [tests/Feature/Queries/BrandMediaAssetSelectionQueryTest.php]
+                status: approved
         paginationBoundaries:
             -
                 class: App\Queries\CentralCatalog\CentralBrandListQuery

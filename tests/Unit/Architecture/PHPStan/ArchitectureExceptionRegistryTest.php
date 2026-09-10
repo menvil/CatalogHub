@@ -163,6 +163,24 @@ class ArchitectureExceptionRegistryTest extends PHPStanTestCase
         }
     }
 
+    public function test_general_php_suite_does_not_repeat_the_dedicated_architecture_suite(): void
+    {
+        $composer = json_decode(
+            (string) file_get_contents(dirname(__DIR__, 4).'/composer.json'),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+        $this->assertIsArray($composer);
+        $scripts = $composer['scripts'] ?? null;
+        $this->assertIsArray($scripts);
+
+        $generalSuite = implode("\n", (array) ($scripts['test'] ?? []));
+        $architectureSuite = implode("\n", (array) ($scripts['test:architecture'] ?? []));
+
+        $this->assertStringNotContainsString('Architecture', $generalSuite);
+        $this->assertStringContainsString('--testsuite Architecture', $architectureSuite);
+    }
+
     private function assertBehaviorTestsExist(mixed $paths): void
     {
         $this->assertIsArray($paths);

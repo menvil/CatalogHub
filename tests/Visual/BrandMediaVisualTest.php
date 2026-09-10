@@ -15,6 +15,8 @@ final class BrandMediaVisualTest extends TestCase
         $names = [
             'ca-014__empty__1440x1000',
             'ca-014__logo-ready__1440x1000',
+            'ca-014__logo-ready__1280x900',
+            'ca-014__logo-ready__1024x900',
             'ca-014__picker-open__1440x1000',
             'ca-014__logo-ready__768x1024',
             'ca-014__logo-ready__390x844',
@@ -42,7 +44,7 @@ final class BrandMediaVisualTest extends TestCase
             static fn (array $reference): bool => $reference['screen_id'] === 'CA-014',
         ));
 
-        self::assertCount(5, $references);
+        self::assertCount(7, $references);
         $identitySet = [];
         foreach ($references as $reference) {
             $identitySet[$reference['state'].'@'.$reference['viewport']] = $reference['path'];
@@ -50,12 +52,14 @@ final class BrandMediaVisualTest extends TestCase
         self::assertSame([
             'empty@1440x1000' => 'tests/Visual/baselines/ca-014__empty__1440x1000.png',
             'logo-ready@1440x1000' => 'tests/Visual/baselines/ca-014__logo-ready__1440x1000.png',
+            'logo-ready@1280x900' => 'tests/Visual/baselines/ca-014__logo-ready__1280x900.png',
+            'logo-ready@1024x900' => 'tests/Visual/baselines/ca-014__logo-ready__1024x900.png',
             'picker-open@1440x1000' => 'tests/Visual/baselines/ca-014__picker-open__1440x1000.png',
             'logo-ready@768x1024' => 'tests/Visual/baselines/ca-014__logo-ready__768x1024.png',
             'logo-ready@390x844' => 'tests/Visual/baselines/ca-014__logo-ready__390x844.png',
         ], $identitySet);
         self::assertSame(
-            array_fill(0, 5, BrandMediaFixture::VERSION),
+            array_fill(0, 7, BrandMediaFixture::VERSION),
             array_column($references, 'fixture'),
         );
         foreach ($references as $reference) {

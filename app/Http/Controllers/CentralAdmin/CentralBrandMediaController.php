@@ -36,12 +36,13 @@ final class CentralBrandMediaController extends Controller
         $availableAssets = null;
         $availableLogos = collect();
 
-        $pickerOpen = Gate::allows('media.manage') && $request->pickerOpen();
+        $pickerOpen = Gate::allows('media.manage');
 
         if ($pickerOpen) {
             $availableAssets = $library->paginateCompatibleImages(
                 $request->assetSearch(),
                 page: $request->assetPage(),
+                preferredAssetId: $asset?->getKey(),
             )->withQueryString()->fragment('shared-media-picker');
             $availableLogos = $availableAssets->getCollection()->mapWithKeys(
                 static fn (MediaAsset $candidate): array => [(int) $candidate->getKey() => $logos->forMedia($candidate)],

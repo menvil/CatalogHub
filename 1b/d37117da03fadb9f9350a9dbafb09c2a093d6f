@@ -1,0 +1,33 @@
+tests/Visual/baselines/ca-014__logo-ready__768x1024.png.sha256
+  s_6f254a5f242e0f::t_14a010bf44a99a 1
+tests/Visual/baselines/ca-014__empty__1440x1000.png.sha256
+  s_6f254a5f242e0f::t_14a010bf44a99a 1
+tests/Visual/baselines/ca-014__picker-open__1440x1000.png.sha256
+  s_6f254a5f242e0f::t_14a010bf44a99a 1
+tests/Visual/baselines/ca-014__logo-ready__1440x1000.png.sha256
+  s_6f254a5f242e0f::t_14a010bf44a99a 1
+tests/Visual/baselines/ca-014__logo-ready__390x844.png.sha256
+  s_6f254a5f242e0f::t_14a010bf44a99a 1
+docs/ui/visual-references.json
+  s_6f254a5f242e0f::t_14a010bf44a99a 42-48
+tests/Visual/baselines/ca-014__logo-ready__1024x900.png.sha256
+  s_6f254a5f242e0f::t_14a010bf44a99a 1
+tests/Visual/baselines/ca-014__logo-ready__1280x900.png.sha256
+  s_6f254a5f242e0f::t_14a010bf44a99a 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "1bd37117da03fadb9f9350a9dbafb09c2a093d6f",
+  "prompts": {},
+  "sessions": {
+    "s_6f254a5f242e0f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a087d7-a88c-7121-80f8-f952db0fb8f8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

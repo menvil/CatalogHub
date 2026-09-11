@@ -21,17 +21,22 @@ final class ContinuousIntegrationWorkflowTest extends TestCase
             self::assertStringContainsString('- '.$dependency, $gate);
         }
 
-        foreach (['composer test:unit', 'composer test:legacy-unit', 'composer test:feature'] as $command) {
-            self::assertStringContainsString($command, $tests);
-        }
-
-        self::assertSame(4, substr_count($tests, '--log-junit test-results/'));
+        self::assertStringContainsString('PHPUNIT_RESULT_DIR: test-results', $tests);
+        self::assertSame(1, substr_count($tests, 'run: composer test'));
         self::assertStringContainsString('glob("test-results/*.xml")', $tests);
+        self::assertStringContainsString('Expected 4 PHPUnit result files', $tests);
         self::assertStringContainsString('$tests += (int) $suite["tests"]', $tests);
         self::assertStringContainsString('$assertions += (int) $suite["assertions"]', $tests);
 
-        self::assertStringContainsString('composer test:architecture', $staticAnalysis);
-        self::assertStringContainsString('composer analyse -- --no-progress', $staticAnalysis);
+        self::assertStringContainsString('composer verify:static', $staticAnalysis);
+        self::assertSame(1, substr_count($staticAnalysis, 'tools/architecture/report.php'));
+
+        $phpunitRunner = (string) file_get_contents(dirname(__DIR__, 2).'/tools/ci/run-phpunit-suites.sh');
+        $staticRunner = (string) file_get_contents(dirname(__DIR__, 2).'/tools/ci/run-static-checks.sh');
+        self::assertStringContainsString('suite_names=("Unit" "Legacy Unit" "Feature" "Browser")', $phpunitRunner);
+        self::assertSame(1, substr_count($phpunitRunner, 'process_ids+=("$!")'));
+        self::assertStringContainsString('composer test:architecture:contracts', $staticRunner);
+        self::assertStringContainsString('composer analyse -- --no-progress', $staticRunner);
         self::assertStringContainsString("!= 'success'", $gate);
         self::assertStringNotContainsString('continue-on-error', $gate);
     }

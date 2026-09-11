@@ -174,11 +174,22 @@ class ArchitectureExceptionRegistryTest extends PHPStanTestCase
         $scripts = $composer['scripts'] ?? null;
         $this->assertIsArray($scripts);
 
-        $generalSuite = implode("\n", (array) ($scripts['test'] ?? []));
+        $generalSuite = (string) ($scripts['test'] ?? '');
+        $architectureContracts = (string) ($scripts['test:architecture:contracts'] ?? '');
         $architectureSuite = implode("\n", (array) ($scripts['test:architecture'] ?? []));
 
-        $this->assertStringNotContainsString('Architecture', $generalSuite);
-        $this->assertStringContainsString('--testsuite Architecture', $architectureSuite);
+        $this->assertSame('bash tools/ci/run-phpunit-suites.sh', $generalSuite);
+        $this->assertStringContainsString('--testsuite Architecture', $architectureContracts);
+        $this->assertStringContainsString('@test:architecture:contracts', $architectureSuite);
+        $this->assertStringContainsString('tools/architecture/report.php', $architectureSuite);
+
+        $runner = file_get_contents(dirname(__DIR__, 4).'/tools/ci/run-phpunit-suites.sh');
+        $this->assertIsString($runner);
+        foreach (['"Unit"', '"Legacy Unit"', '"Feature"', '"Browser"'] as $suite) {
+            $this->assertSame(1, substr_count($runner, $suite), "Suite {$suite} must have exactly one parallel-runner owner.");
+        }
+        $this->assertStringNotContainsString('"Architecture"', $runner);
+        $this->assertStringNotContainsString('"Visual"', $runner);
     }
 
     private function assertBehaviorTestsExist(mixed $paths): void

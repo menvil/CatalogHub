@@ -46,7 +46,7 @@
 
         @include('central-admin.brands.partials.subnav', ['active' => 'media'])
 
-        <div class="grid min-w-0 items-stretch gap-admin-section xl:grid-cols-[minmax(0,1.8fr)_minmax(18rem,1fr)]" data-screen-region="brand-logo-workspace">
+        <div class="grid min-w-0 items-stretch gap-admin-section xl:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]" data-screen-region="brand-logo-workspace">
                 <x-admin.card
                     class="xl:col-start-1 xl:row-start-1"
                     title="Primary logo"
@@ -55,16 +55,18 @@
                     data-brand-media-role="brand_logo"
                 >
                     <x-slot:actions>
-                        @if ($assignment)
-                            <x-admin.status-badge label="Global" variant="info" size="sm" />
-                            <x-admin.status-badge label="Primary" variant="neutral" size="sm" />
-                        @endif
-                        <x-admin.status-badge
-                            :label="$logo->state->label()"
-                            :variant="$logo->state->badgeVariant()"
-                            size="sm"
-                            data-logo-delivery-state="{{ $logo->state->value }}"
-                        />
+                        <div class="flex flex-nowrap items-center gap-2">
+                            @if ($assignment)
+                                <x-admin.status-badge label="Global" variant="info" size="sm" />
+                                <x-admin.status-badge label="Primary" variant="neutral" size="sm" />
+                            @endif
+                            <x-admin.status-badge
+                                :label="$logo->state->label()"
+                                :variant="$logo->state->badgeVariant()"
+                                size="sm"
+                                data-logo-delivery-state="{{ $logo->state->value }}"
+                            />
+                        </div>
                     </x-slot:actions>
 
                     <div class="grid min-w-0 items-start gap-admin-card md:grid-cols-3">

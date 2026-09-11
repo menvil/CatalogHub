@@ -1,0 +1,22 @@
+tests/Feature/Queries/BrandMediaAssetSelectionQueryTest.php
+  s_6f254a5f242e0f::t_b8ab70bd786dbc 21,23,30,47-49,53-54,60
+resources/views/central-admin/brands/media.blade.php
+  s_6f254a5f242e0f::t_81534cdeeb7d9a 49
+  s_6f254a5f242e0f::t_51e073680826fd 58-69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "1ed302f49fa1a148c583c35320aced693b1e1630",
+  "prompts": {},
+  "sessions": {
+    "s_6f254a5f242e0f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a087d7-a88c-7121-80f8-f952db0fb8f8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

@@ -13,8 +13,12 @@ with the branch and has all of these exact successful check contexts:
 
 `Backend quality` is the stable aggregate for code style, architecture and
 static analysis, foundation/legacy unit tests, feature tests, and the browser
-harness contract. The database, browser, visual, frontend, and dependency jobs
-remain directly required so an aggregate status cannot hide a skipped lane.
+harness contract. Each SQLite PHPUnit suite has exactly one owner and the four
+non-overlapping suites run concurrently; architecture contracts and PHPStan run
+concurrently, followed by one debt report. Cross-database behavior tests repeat
+only across SQLite, PostgreSQL, and MariaDB where engine portability is the
+purpose. The database, browser, visual, frontend, and dependency jobs remain
+directly required so an aggregate status cannot hide a skipped lane.
 
 The repository currently has one maintainer, so required approving reviews and
 last-push approval are disabled: GitHub does not allow a pull-request author to

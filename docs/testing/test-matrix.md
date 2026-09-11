@@ -29,8 +29,8 @@ Runtime values are guidance for a normal developer machine and GitHub-hosted run
 | Context/security | `php vendor/bin/phpunit tests/Feature/Foundation tests/Feature/Factories/FoundationFactoriesTest.php` | approximately 5–20 seconds |
 | Browser smoke | `composer test:browser` | approximately 10–30 seconds after browser install |
 | Visual | `composer test:visual` | approximately 3–5 minutes because legacy approved screens are also compared |
-| Full PHP | `composer test` | approximately 1–2 minutes at the current suite size; informational |
-| Full CI | formatter, static analysis, build, PHP, browser, visual, DB engines, dependency audit | parallel jobs; no single brittle wall-clock budget |
+| Full PHP | `composer test` | four non-overlapping PHPUnit suites run concurrently; runtime is bounded by the slowest suite |
+| Full CI | formatter, architecture/PHPStan, build, PHP, browser, visual, DB engines, dependency audit | independent jobs run concurrently; PHPUnit suites and architecture/PHPStan are also parallel within their owning jobs |
 
 ## Last observed local run
 

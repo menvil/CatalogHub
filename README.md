@@ -82,7 +82,7 @@ The default PHPUnit suite is isolated from local infrastructure through `phpunit
 
 ## CI
 
-GitHub Actions runs Composer install, npm install, a PostgreSQL migration smoke check, `composer test`, `php artisan test`, Pint, PHPStan, and `npm run build` for pull requests and pushes to `develop`.
+GitHub Actions runs non-overlapping PHPUnit suites in parallel, architecture contracts alongside PHPStan, frontend quality, Playwright browser/visual checks, SQLite/PostgreSQL/MariaDB database lanes, and dependency audits for pull requests to `develop` or `main`.
 
 ## First Admin User
 

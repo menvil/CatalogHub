@@ -12,7 +12,7 @@ Phase 0.14 keeps each test layer explicit. PHPUnit discovers `Unit`, `Feature`, 
 | Architecture | `composer test:architecture` | Namespace/import rules, presentation boundaries, and exact debt registry checks |
 | Browser | `composer test:browser` | Headless Central login smoke with failure screenshot and trace |
 | Visual | `composer test:visual` | Existing approved-reference checks plus Playwright screenshot comparison |
-| Full PHP | `composer test` | Unit, legacy unit, feature, architecture, and browser contract tests; real screenshot tests stay in the isolated Visual lane |
+| Full PHP | `composer test` | Runs Unit, legacy unit, feature, and browser contract suites concurrently with isolated output/JUnit files. Architecture has one canonical owner in `composer test:architecture`; real screenshot tests stay in the isolated Visual lane. |
 
 `php vendor/bin/phpunit --list-suites` is the discovery check. `npm run test:browser:install` installs Playwright Chromium when a system Chrome binary is unavailable.
 

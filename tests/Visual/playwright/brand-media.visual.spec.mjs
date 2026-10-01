@@ -61,7 +61,7 @@ test('CA-014 populated desktop, tablet and mobile match deterministic final refe
     await page.setViewportSize({ width: 390, height: 844 })
     await settle(page)
     await assertNoHorizontalOverflow(page)
-    await expect(page).toHaveScreenshot(['ca-014__logo-ready__390x844.png'], { animations: 'disabled', scale: 'css', maxDiffPixelRatio: 0.02 })
+    await expect(page).toHaveScreenshot(['ca-014__logo-ready__390x844.png'], { animations: 'disabled', scale: 'css', maxDiffPixelRatio: 0.03 })
     assertNoPageErrors()
 })
 

@@ -1,0 +1,64 @@
+docs/ui/visual-references.json
+  s_6f254a5f242e0f::t_e8760b6c2bb0d5 42,44,47-48
+  s_6f254a5f242e0f::t_bc0a06bd4ce9ad 43,45-46
+tests/Feature/Central/CentralBrandMediaTest.php
+  s_6f254a5f242e0f::t_9c0816ef4fcfea 315-316,475,516,519-521,523,525-527,529,547
+  s_6f254a5f242e0f::t_69764beceba056 24,506-507,509-515,522,524,534-535
+tests/Browser/Acceptance/brand-media.spec.mjs
+  s_6f254a5f242e0f::t_37d3e6af504e3a 29-31,40-42,56-59,64-65,67,71-72,104,124-138,163,166-168
+  s_6f254a5f242e0f::t_c8e3982d9e4e93 33-38
+  s_6f254a5f242e0f::t_29c17b8941d292 32
+  s_6f254a5f242e0f::t_d8fbeec4b673e5 103
+  s_6f254a5f242e0f::t_3d9a1b70d4b298 39
+resources/views/central-admin/brands/media.blade.php
+  s_6f254a5f242e0f::t_29c17b8941d292 290-291
+  s_6f254a5f242e0f::t_d8fbeec4b673e5 37
+  s_6f254a5f242e0f::t_22be8ace047543 119,142-143
+  s_6f254a5f242e0f::t_0e081da4453b30 32-34,75-78,81,118,120-123,125-134,136-141,144-147,263-289,292-308,310
+resources/views/central-admin/brands/partials/media-picker.blade.php
+  s_6f254a5f242e0f::t_22be8ace047543 1-4,6,18,34,76-83
+app/Http/Requests/CentralAdmin/ListCentralBrandMediaAssetsRequest.php
+  s_6f254a5f242e0f::t_b4afa3a517cd79 20,26-28
+docs/ui/screens/CA-014-brand-media-logo.md
+  s_6f254a5f242e0f::t_ae86b8ed37c540 8-9,13,15,20,38,40,44,48,50,54,56,63,65,71
+docs/ui/brands-visual-gap-audit.md
+  s_6f254a5f242e0f::t_ae86b8ed37c540 76,118,120,122
+tests/Visual/baselines/ca-014__logo-ready__390x844.png.sha256
+  s_6f254a5f242e0f::t_5dc5bb0787ea31 1
+tests/Visual/baselines/ca-014__picker-open__1440x1000.png.sha256
+  s_6f254a5f242e0f::t_5dc5bb0787ea31 1
+tests/Visual/baselines/ca-014__logo-ready__1024x900.png.sha256
+  s_6f254a5f242e0f::t_5dc5bb0787ea31 1
+tests/Visual/playwright/brand-media.visual.spec.mjs
+  s_6f254a5f242e0f::t_d8fbeec4b673e5 23,36,38,74,79
+tests/Visual/baselines/ca-014__logo-ready__1280x900.png.sha256
+  s_6f254a5f242e0f::t_5dc5bb0787ea31 1
+tests/Visual/baselines/ca-014__empty__1440x1000.png.sha256
+  s_6f254a5f242e0f::t_5dc5bb0787ea31 1
+docs/architecture/media.md
+  s_6f254a5f242e0f::t_ae86b8ed37c540 17
+tests/Visual/baselines/ca-014__logo-ready__1440x1000.png.sha256
+  s_6f254a5f242e0f::t_5dc5bb0787ea31 1
+tests/Visual/baselines/ca-014__logo-ready__768x1024.png.sha256
+  s_6f254a5f242e0f::t_5dc5bb0787ea31 1
+app/Http/Controllers/CentralAdmin/CentralBrandMediaController.php
+  s_6f254a5f242e0f::t_b4afa3a517cd79 39,60
+tests/Support/BrandMediaFixture.php
+  s_6f254a5f242e0f::t_d8fbeec4b673e5 18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "ba6f9fbf12f2e3beb39462d1ded8229eadcb6901",
+  "prompts": {},
+  "sessions": {
+    "s_6f254a5f242e0f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a087d7-a88c-7121-80f8-f952db0fb8f8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

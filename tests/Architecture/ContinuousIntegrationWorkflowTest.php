@@ -14,6 +14,11 @@ final class ContinuousIntegrationWorkflowTest extends TestCase
         $gate = $this->job($workflow, 'backend-quality');
         $tests = $this->job($workflow, 'tests');
         $staticAnalysis = $this->job($workflow, 'static-analysis');
+        $composer = json_decode(
+            (string) file_get_contents(dirname(__DIR__, 2).'/composer.json'),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
 
         self::assertStringContainsString('name: Backend quality', $gate);
 
@@ -33,6 +38,8 @@ final class ContinuousIntegrationWorkflowTest extends TestCase
 
         $phpunitRunner = (string) file_get_contents(dirname(__DIR__, 2).'/tools/ci/run-phpunit-suites.sh');
         $staticRunner = (string) file_get_contents(dirname(__DIR__, 2).'/tools/ci/run-static-checks.sh');
+        self::assertSame('bash tools/ci/run-phpunit-suites.sh', $composer['scripts']['test'] ?? null);
+        self::assertSame('bash tools/ci/run-static-checks.sh', $composer['scripts']['verify:static'] ?? null);
         self::assertStringContainsString('suite_names=("Unit" "Legacy Unit" "Feature" "Browser")', $phpunitRunner);
         self::assertSame(1, substr_count($phpunitRunner, 'process_ids+=("$!")'));
         self::assertStringContainsString('composer test:architecture:contracts', $staticRunner);

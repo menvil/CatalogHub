@@ -34,14 +34,15 @@ Runtime values are guidance for a normal developer machine and GitHub-hosted run
 
 ## Last observed local run
 
-Observed on 2026-08-11 with PHP 8.5.8, Node 26.5.0, SQLite in memory, and local Google Chrome. Exact measurements are filled from the final Phase 0.14 verification run; CI runners are expected to vary.
+Observed on 2026-10-01 with PHP 8.5.8, Node 26.5.0, SQLite in memory, and local Google Chrome. Exact measurements are from the Phase 18.4 parallel-runner verification; CI runners are expected to vary.
 
 | Suite | Result | Elapsed |
 | --- | --- | --- |
-| Unit | passed, 5 tests / 18 assertions | 0.69 s |
-| Feature foundation slice | passed, 11 tests / 60 assertions | 3.13 s |
-| Architecture | passed, 60 tests / 566 assertions plus valid debt report | 5.66 s |
-| Browser | passed, 1 Playwright test with graceful DB/server cleanup | 6.20 s |
-| Visual | passed, 25 PHPUnit tests / 551 assertions plus 1 Playwright test | 145.75 s |
-| Full PHP | passed, 1,981 tests / 7,739 assertions | 74.60 s |
-| All PHP layers | passed, 2,006 tests including the isolated Visual suite | 74.60 s + 145.75 s visual |
+| Unit | passed, 12 tests / 21 assertions | 0.03 s JUnit time; runs concurrently |
+| Legacy Unit | passed, 370 tests / 1,214 assertions | 16.16 s JUnit time; runs concurrently |
+| Feature | passed, 2,000 tests plus 10 skipped / 8,797 assertions | 104.56 s JUnit time; runs concurrently |
+| Browser contract | passed, 1 test / 8 assertions | 0.004 s JUnit time; runs concurrently |
+| Architecture/static | passed, 73 architecture tests / 877 assertions, valid debt report, and PHPStan | runs independently from Full PHP |
+| Visual | passed, 36 PHPUnit tests plus 28 Playwright screenshot cases | approximately 3–5 minutes |
+| Full PHP | passed, 2,383 tests plus 10 skipped / 10,040 assertions | approximately 105 s, bounded by the Feature suite in this run |
+| All required PHP layers | passed; Full PHP, architecture/static, and isolated Visual own disjoint responsibilities | concurrent CI lanes; wall time varies by host |

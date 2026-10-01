@@ -149,7 +149,8 @@ final class BrandMediaFixture
         foreach ($filenames as $offset => $filename) {
             $id = 1401301 + $offset;
             $path = 'media/originals/ca-014/'.$filename;
-            Storage::disk('public')->put($path, $bytes);
+            $candidateBytes = self::distinctPickerLogoBytes($bytes, $offset);
+            Storage::disk('public')->put($path, $candidateBytes);
 
             $candidate = new MediaAsset;
             $candidate->forceFill([
@@ -161,14 +162,36 @@ final class BrandMediaFixture
                 'original_path' => $path,
                 'original_filename' => $filename,
                 'mime_type' => 'image/png',
-                'file_size' => strlen($bytes),
+                'file_size' => strlen($candidateBytes),
                 'width' => 640,
                 'height' => 400,
-                'checksum' => 'sha256:'.hash('sha256', $bytes.$filename),
+                'checksum' => 'sha256:'.hash('sha256', $candidateBytes),
                 'status' => 'active',
                 'created_at' => $timestamp->subMinute(),
                 'updated_at' => $timestamp->subMinute(),
             ])->saveOrFail();
         }
+    }
+
+    private static function distinctPickerLogoBytes(string $bytes, int $offset): string
+    {
+        $image = imagecreatefromstring($bytes);
+        if ($image === false) {
+            throw new \RuntimeException('Unable to decode the deterministic CA-014 picker fixture logo.');
+        }
+
+        imagealphablending($image, false);
+        imagesavealpha($image, true);
+        $transparentMarker = imagecolorallocatealpha($image, ($offset + 1) % 256, 0, 0, 127);
+        imagesetpixel($image, $offset, 0, $transparentMarker);
+
+        ob_start();
+        $written = imagepng($image, null, 6);
+        $candidateBytes = (string) ob_get_clean();
+        if (! $written || $candidateBytes === '') {
+            throw new \RuntimeException('Unable to encode the deterministic CA-014 picker fixture logo.');
+        }
+
+        return $candidateBytes;
     }
 }

@@ -185,11 +185,15 @@ class ArchitectureExceptionRegistryTest extends PHPStanTestCase
 
         $runner = file_get_contents(dirname(__DIR__, 4).'/tools/ci/run-phpunit-suites.sh');
         $this->assertIsString($runner);
+        $matched = preg_match('/^suite_names=\((?<suiteNames>[^)]*)\)$/m', $runner, $matches);
+        $this->assertSame(1, $matched, 'The parallel runner must declare suite_names.');
+        $suiteNames = $matches['suiteNames'];
+
         foreach (['"Unit"', '"Legacy Unit"', '"Feature"', '"Browser"'] as $suite) {
-            $this->assertSame(1, substr_count($runner, $suite), "Suite {$suite} must have exactly one parallel-runner owner.");
+            $this->assertSame(1, substr_count($suiteNames, $suite), "Suite {$suite} must have exactly one parallel-runner owner.");
         }
-        $this->assertStringNotContainsString('"Architecture"', $runner);
-        $this->assertStringNotContainsString('"Visual"', $runner);
+        $this->assertStringNotContainsString('"Architecture"', $suiteNames);
+        $this->assertStringNotContainsString('"Visual"', $suiteNames);
     }
 
     private function assertBehaviorTestsExist(mixed $paths): void

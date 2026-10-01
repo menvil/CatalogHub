@@ -2,7 +2,7 @@
 
 Audit date: 2026-09-02. Baseline: `develop` at `8e51ab9` after Brands Phase 17. Prototype reference version: `brand-prototype-v1`.
 
-This audit compares the original Brand prototypes with the current desktop implementation and its responsive mobile composition. The PNGs in `pictures/1. Central Admin/1.3. Brands/` are the design source; `tests/Visual/baselines/` are regression evidence only. Every row is classified once: **A** implement from an approved domain source, **B** map prototype language to existing semantics, **C** intentional future-domain gap, or **D** pure composition/visual debt. Phases 18.1–18.4 close the eligible CA-011 through CA-014 A/B/D work.
+This audit compares the original Brand prototypes with the current desktop implementation and its responsive mobile composition. The PNGs in `pictures/1. Central Admin/1.3. Brands/` are the design source; `tests/Visual/baselines/` are regression evidence only. Rows use **A** for implementation from an approved domain source, **B** for mapping prototype language to existing semantics, **C** for intentional future-domain gaps, and **D** for pure composition/visual debt. A row may carry a compound classification when one prototype region contains separable concerns with different outcomes. Phases 18.1–18.4 close the eligible CA-011 through CA-014 A/B/D work.
 
 ## Prototype references
 

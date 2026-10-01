@@ -482,6 +482,15 @@ final class CentralBrandMediaTest extends TestCase
             'mime_type' => 'image/png',
             'status' => 'active',
         ]);
+        $oldestOverflowCandidate = null;
+        foreach (range(1, 24) as $index) {
+            $overflowCandidate = MediaAsset::factory()->create([
+                'original_filename' => sprintf('overflow-candidate-%02d.png', $index),
+                'mime_type' => 'image/png',
+                'status' => 'active',
+            ]);
+            $oldestOverflowCandidate ??= $overflowCandidate;
+        }
         $candidate = MediaAsset::factory()->create([
             'original_filename' => 'picker-only-candidate.png',
             'disk' => 'public',
@@ -494,13 +503,15 @@ final class CentralBrandMediaTest extends TestCase
         app(SetCentralBrandLogoAction::class)->execute(User::factory()->create(), $brand, $current);
         $manager = User::factory()->centralAdmin()->create();
 
-        $this->actingAs($manager)
+        $managerResponse = $this->actingAs($manager)
             ->get(route('central.brands.media', $brand))
             ->assertOk()
             ->assertSee('data-screen-region="shared-media-picker"', false)
             ->assertSee('picker-only-candidate.png')
+            ->assertDontSee($oldestOverflowCandidate->original_filename)
             ->assertSee('aria-current="true"', false)
             ->assertSee('Current logo');
+        $this->assertSame(24, substr_count((string) $managerResponse->getContent(), 'data-media-asset-card="'));
 
         config()->set('cataloghub_permissions.roles.catalog_editor', [
             Permission::CentralPanelAccess->value,

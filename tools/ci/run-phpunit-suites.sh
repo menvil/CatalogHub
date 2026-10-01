@@ -1,11 +1,24 @@
 #!/usr/bin/env bash
 
-set -uo pipefail
+set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$repository_root" || exit 1
 
 php artisan config:clear --ansi
+
+config_cache_path="${APP_CONFIG_CACHE:-$repository_root/bootstrap/cache/config.php}"
+if [[ "$config_cache_path" != /* ]]; then
+    config_cache_path="$repository_root/$config_cache_path"
+fi
+if [[ -e "$config_cache_path" ]]; then
+    printf 'Configuration cache still exists after config:clear: %s\n' "$config_cache_path" >&2
+    exit 1
+fi
+
+if (( $# > 0 )); then
+    printf 'Ignoring additional arguments; composer test always runs the four canonical suites.\n' >&2
+fi
 
 result_directory=""
 if [[ -n "${PHPUNIT_RESULT_DIR:-}" ]]; then
@@ -23,35 +36,63 @@ trap 'rm -rf "$log_directory"' EXIT
 suite_keys=("unit" "legacy-unit" "feature" "browser-contract")
 suite_names=("Unit" "Legacy Unit" "Feature" "Browser")
 process_ids=()
+reported_suites=(0 0 0 0)
 
 run_suite() {
     local suite_key="$1"
     local suite_name="$2"
-    shift 2
-
     local command=(php vendor/bin/phpunit --testsuite "$suite_name" --do-not-cache-result)
     if [[ -n "$result_directory" ]]; then
         command+=(--log-junit "$result_directory/$suite_key.xml")
     fi
-    command+=("$@")
 
-    "${command[@]}"
+    local compiled_view_directory="$log_directory/views/$suite_key"
+    mkdir -p "$compiled_view_directory"
+
+    VIEW_COMPILED_PATH="$compiled_view_directory" "${command[@]}"
 }
 
 for index in "${!suite_keys[@]}"; do
-    run_suite "${suite_keys[$index]}" "${suite_names[$index]}" "$@" \
-        > "$log_directory/${suite_keys[$index]}.log" 2>&1 &
+    (
+        suite_exit_code=0
+        run_suite "${suite_keys[$index]}" "${suite_names[$index]}" \
+            > "$log_directory/${suite_keys[$index]}.log" 2>&1 || suite_exit_code="$?"
+        printf '%s\n' "$suite_exit_code" > "$log_directory/${suite_keys[$index]}.status.tmp"
+        mv "$log_directory/${suite_keys[$index]}.status.tmp" "$log_directory/${suite_keys[$index]}.status"
+        exit "$suite_exit_code"
+    ) &
     process_ids+=("$!")
 done
 
 exit_code=0
-for index in "${!process_ids[@]}"; do
-    if ! wait "${process_ids[$index]}"; then
-        exit_code=1
-    fi
+remaining_suites="${#process_ids[@]}"
+while (( remaining_suites > 0 )); do
+    completion_observed=0
 
-    printf '\n[%s]\n' "${suite_names[$index]}"
-    sed 's/^/  /' "$log_directory/${suite_keys[$index]}.log"
+    for index in "${!process_ids[@]}"; do
+        status_file="$log_directory/${suite_keys[$index]}.status"
+        if (( reported_suites[index] == 1 )) || [[ ! -f "$status_file" ]]; then
+            continue
+        fi
+
+        suite_exit_code="$(<"$status_file")"
+        wait "${process_ids[$index]}" || true
+        reported_suites[index]=1
+        remaining_suites=$((remaining_suites - 1))
+        completion_observed=1
+
+        if (( suite_exit_code == 0 )); then
+            printf '[PASS] %s\n' "${suite_names[$index]}"
+        else
+            printf '\n[FAIL] %s\n' "${suite_names[$index]}"
+            sed 's/^/  /' "$log_directory/${suite_keys[$index]}.log"
+            exit_code=1
+        fi
+    done
+
+    if (( completion_observed == 0 && remaining_suites > 0 )); then
+        sleep 0.1
+    fi
 done
 
 exit "$exit_code"

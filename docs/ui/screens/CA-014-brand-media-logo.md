@@ -4,7 +4,7 @@ context: central-admin
 purpose: Manage the one canonical global primary Brand logo through Shared Media Core.
 roles: authorized Central Admin catalog user
 route: /admin/central/brands/{brand}/media (GET); /admin/central/brands/{brand}/media/logo (POST, DELETE); /admin/central/brands/{brand}/media/logo/assign (POST)
-viewports: desktop=1440x1000,1280;intermediate=1024;tablet=768x1024;mobile=390x844
+viewports: desktop=1440x1000,1280x900;intermediate=1024x900;tablet=768x1024;mobile=390x844
 fixture: brand-media-v6
 regions: central-shell;breadcrumbs;page-header;brand-tabs;primary-logo-workspace;inline-upload;asset-details;generated-variants;bounded-shared-media-picker;confirmation-modal;flash-feedback
 actions: upload-logo;assign-existing-logo;remove-logo-from-brand;confirm;cancel
@@ -27,7 +27,9 @@ CA-014 is the finished Brand logo workspace. Its primary task is deliberately na
 - `role = brand_logo`;
 - null `locale`, `site_id`, and `market_id`;
 - `visibility = global`;
-- `is_primary = true` and position zero.
+- `is_primary = true`.
+
+Position is a deterministic ordering field rather than a selector predicate. Assignment mutations normalize the canonical row to position zero, while reads select the exact global primary context and use position then ID only as a defensive tie-breaker.
 
 The database uniqueness constraint and transactionally locked Actions prevent competing primaries. CA-014 adds no Brand columns, media tables, uploader, storage, assignment role, locale, Site, or market projection.
 

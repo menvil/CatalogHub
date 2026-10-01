@@ -1,0 +1,29 @@
+tests/Visual/baselines/ca-014__logo-ready__768x1024.png.sha256
+  s_6f254a5f242e0f::t_db7e74ec5c3c02 1
+tests/Visual/baselines/ca-014__logo-ready__1280x900.png.sha256
+  s_6f254a5f242e0f::t_db7e74ec5c3c02 1
+docs/ui/visual-references.json
+  s_6f254a5f242e0f::t_db7e74ec5c3c02 42-45,47
+tests/Visual/baselines/ca-014__empty__1440x1000.png.sha256
+  s_6f254a5f242e0f::t_db7e74ec5c3c02 1
+tests/Visual/baselines/ca-014__logo-ready__1440x1000.png.sha256
+  s_6f254a5f242e0f::t_db7e74ec5c3c02 1
+tests/Visual/baselines/ca-014__logo-ready__1024x900.png.sha256
+  s_6f254a5f242e0f::t_db7e74ec5c3c02 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "7eb120968e5be2cd91ad12649286bd5d7ea94cb4",
+  "prompts": {},
+  "sessions": {
+    "s_6f254a5f242e0f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a087d7-a88c-7121-80f8-f952db0fb8f8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

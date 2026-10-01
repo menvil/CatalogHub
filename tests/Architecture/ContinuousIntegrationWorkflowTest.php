@@ -44,6 +44,10 @@ final class ContinuousIntegrationWorkflowTest extends TestCase
         self::assertSame(1, substr_count($phpunitRunner, 'process_ids+=("$!")'));
         self::assertStringContainsString('Ignoring additional arguments;', $phpunitRunner);
         self::assertStringNotContainsString('$@', $phpunitRunner, 'Caller-supplied report paths must never be forwarded to parallel workers.');
+        foreach ([$phpunitRunner, $staticRunner] as $runner) {
+            self::assertStringContainsString('kill -0 "${process_ids[$index]}"', $runner);
+            self::assertStringContainsString('Worker exited without publishing its status.', $runner);
+        }
         self::assertStringContainsString('composer test:architecture:contracts', $staticRunner);
         self::assertStringContainsString('composer analyse -- --no-progress', $staticRunner);
         self::assertStringContainsString("!= 'success'", $gate);

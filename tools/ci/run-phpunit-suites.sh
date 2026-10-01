@@ -71,7 +71,25 @@ while (( remaining_suites > 0 )); do
 
     for index in "${!process_ids[@]}"; do
         status_file="$log_directory/${suite_keys[$index]}.status"
-        if (( reported_suites[index] == 1 )) || [[ ! -f "$status_file" ]]; then
+        if (( reported_suites[index] == 1 )); then
+            continue
+        fi
+
+        if [[ ! -f "$status_file" ]]; then
+            if kill -0 "${process_ids[$index]}" 2>/dev/null; then
+                continue
+            fi
+
+            wait "${process_ids[$index]}" || true
+            reported_suites[index]=1
+            remaining_suites=$((remaining_suites - 1))
+            completion_observed=1
+            exit_code=1
+            printf '\n[FAIL] %s\n' "${suite_names[$index]}"
+            printf '  Worker exited without publishing its status.\n'
+            if [[ -f "$log_directory/${suite_keys[$index]}.log" ]]; then
+                sed 's/^/  /' "$log_directory/${suite_keys[$index]}.log"
+            fi
             continue
         fi
 

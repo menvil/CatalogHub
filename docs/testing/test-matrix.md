@@ -42,7 +42,7 @@ Observed on 2026-10-01 with PHP 8.5.8, Node 26.5.0, SQLite in memory, and local 
 | Legacy Unit | passed, 370 tests / 1,214 assertions | 16.16 s JUnit time; runs concurrently |
 | Feature | passed, 2,000 tests plus 10 skipped / 8,800 assertions | 104.56 s JUnit time; runs concurrently |
 | Browser contract | passed, 1 test / 8 assertions | 0.004 s JUnit time; runs concurrently |
-| Architecture/static | passed, 73 architecture tests / 877 assertions, valid debt report, and PHPStan | runs independently from Full PHP |
+| Architecture/static | passed, 73 architecture tests / 879 assertions, valid debt report, and PHPStan | runs independently from Full PHP |
 | Visual | passed, 36 PHPUnit tests plus 28 Playwright screenshot cases | approximately 3–5 minutes |
 | Full PHP | passed, 2,383 tests plus 10 skipped / 10,043 assertions | approximately 105 s, bounded by the Feature suite in this run |
 | All required PHP layers | passed; Full PHP, architecture/static, and isolated Visual own disjoint responsibilities | concurrent CI lanes; wall time varies by host |

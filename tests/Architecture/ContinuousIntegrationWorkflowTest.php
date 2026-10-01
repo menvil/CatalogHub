@@ -42,6 +42,8 @@ final class ContinuousIntegrationWorkflowTest extends TestCase
         self::assertSame('bash tools/ci/run-static-checks.sh', $composer['scripts']['verify:static'] ?? null);
         self::assertStringContainsString('suite_names=("Unit" "Legacy Unit" "Feature" "Browser")', $phpunitRunner);
         self::assertSame(1, substr_count($phpunitRunner, 'process_ids+=("$!")'));
+        self::assertStringContainsString('Ignoring additional arguments;', $phpunitRunner);
+        self::assertStringNotContainsString('$@', $phpunitRunner, 'Caller-supplied report paths must never be forwarded to parallel workers.');
         self::assertStringContainsString('composer test:architecture:contracts', $staticRunner);
         self::assertStringContainsString('composer analyse -- --no-progress', $staticRunner);
         self::assertStringContainsString("!= 'success'", $gate);

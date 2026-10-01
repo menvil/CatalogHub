@@ -21,6 +21,7 @@ use App\Services\Media\MediaVariantProfile;
 use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -311,8 +312,8 @@ final class CentralBrandMediaTest extends TestCase
         $this->actingAs($brandOnlyManager)
             ->get(route('central.brands.media', $brand))
             ->assertOk()
-            ->assertSee('Upload Photo')
-            ->assertDontSee('Choose from Shared Media');
+            ->assertSee('Upload logo')
+            ->assertDontSee('Choose from media');
         $this->actingAs($brandOnlyManager)
             ->post(route('central.brands.media.logo.assign', $brand), ['media_asset_id' => $missing->id])
             ->assertForbidden();
@@ -471,7 +472,7 @@ final class CentralBrandMediaTest extends TestCase
             ->assertDontSee('>No logo<', false);
     }
 
-    public function test_bounded_shared_media_candidates_are_always_visible_to_media_managers_only(): void
+    public function test_bounded_shared_media_candidates_load_on_demand_for_media_managers_only(): void
     {
         Storage::fake('public');
         $brand = CentralBrand::factory()->create();
@@ -502,15 +503,36 @@ final class CentralBrandMediaTest extends TestCase
         Storage::disk('public')->put($candidate->original_path, 'candidate');
         app(SetCentralBrandLogoAction::class)->execute(User::factory()->create(), $brand, $current);
         $manager = User::factory()->centralAdmin()->create();
+        $containsCandidateQuery = static fn (array $queries): bool => collect($queries)->contains(function (array $query): bool {
+            $sql = str_replace(['"', '`'], '', strtolower($query['query']));
 
-        $managerResponse = $this->actingAs($manager)
+            return str_contains($sql, 'from media_assets')
+                && str_contains($sql, 'type')
+                && str_contains($sql, 'status')
+                && str_contains($sql, 'mime_type');
+        });
+
+        DB::enableQueryLog();
+        $this->actingAs($manager)
             ->get(route('central.brands.media', $brand))
             ->assertOk()
+            ->assertSee('Choose from media')
+            ->assertDontSee('data-screen-region="shared-media-picker"', false)
+            ->assertDontSee('picker-only-candidate.png');
+        $this->assertFalse($containsCandidateQuery(DB::getQueryLog()), 'The default workspace must not query Shared Media candidates.');
+
+        DB::flushQueryLog();
+        $managerResponse = $this->actingAs($manager)
+            ->get(route('central.brands.media', ['brand' => $brand, 'picker' => 1]))
+            ->assertOk()
             ->assertSee('data-screen-region="shared-media-picker"', false)
+            ->assertSee('data-admin-modal-open="true"', false)
             ->assertSee('picker-only-candidate.png')
             ->assertDontSee($oldestOverflowCandidate->original_filename)
             ->assertSee('aria-current="true"', false)
             ->assertSee('Current logo');
+        $this->assertTrue($containsCandidateQuery(DB::getQueryLog()), 'Opening the picker must load its bounded candidate page.');
+        DB::disableQueryLog();
         $this->assertSame(24, substr_count((string) $managerResponse->getContent(), 'data-media-asset-card="'));
 
         config()->set('cataloghub_permissions.roles.catalog_editor', [
@@ -522,7 +544,7 @@ final class CentralBrandMediaTest extends TestCase
         ]);
 
         $this->actingAs(User::factory()->create(['role' => UserRole::CatalogEditor]))
-            ->get(route('central.brands.media', $brand))
+            ->get(route('central.brands.media', ['brand' => $brand, 'picker' => 1]))
             ->assertOk()
             ->assertDontSee('data-screen-region="shared-media-picker"', false)
             ->assertDontSee('picker-only-candidate.png');

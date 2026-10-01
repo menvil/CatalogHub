@@ -29,9 +29,12 @@
             'failed' => 'danger',
             default => 'neutral',
         };
+        $canUploadLogo = \Illuminate\Support\Facades\Gate::allows('catalog.brands.manage');
+        $canChooseLogo = \Illuminate\Support\Facades\Gate::allows('media.manage');
+        $hasLogoActions = $canUploadLogo || $canChooseLogo;
     @endphp
 
-    <div class="min-w-0 space-y-admin-section" data-brand-media-fixture="brand-media-v6">
+    <div class="min-w-0 space-y-admin-section" data-brand-media-fixture="brand-media-v7">
         <x-admin.page-header
             screen-id="CA-014"
             :show-screen-id="false"
@@ -69,10 +72,13 @@
                         </div>
                     </x-slot:actions>
 
-                    <div class="grid min-w-0 items-start gap-admin-card md:grid-cols-3">
+                    <div @class([
+                        'grid min-w-0 items-start gap-admin-card',
+                        'md:grid-cols-[minmax(0,2fr)_minmax(14rem,1fr)]' => $hasLogoActions,
+                    ])>
                         <div @class([
                             'min-w-0',
-                            'md:col-span-3' => \Illuminate\Support\Facades\Gate::denies('catalog.brands.manage'),
+                            'md:col-span-2' => ! $hasLogoActions,
                         ])>
                     @if ($logo->state === \App\Enums\MediaDeliveryState::Ready && $logo->url !== null)
                         <div class="flex h-48 items-center justify-center overflow-hidden rounded-admin-card border border-admin-border bg-admin-surface-muted p-5 sm:h-56 lg:h-64 lg:p-8" data-logo-preview>
@@ -109,48 +115,36 @@
 
                         </div>
 
-                    @can('catalog.brands.manage')
-                        <form
-                            id="brand-logo-upload-form"
-                            method="POST"
-                            enctype="multipart/form-data"
-                            action="{{ route('central.brands.media.logo.store', $brand) }}"
-                            @class([
-                                'flex min-w-0 flex-col justify-center gap-admin-field rounded-admin-card border border-admin-border bg-admin-surface-muted p-4 md:col-span-2',
-                                'sm:h-56 lg:h-64' => ! $errors->has('logo'),
-                                'sm:min-h-56 lg:min-h-64' => $errors->has('logo'),
-                            ])
-                            data-logo-upload-form
-                        >
-                            @csrf
+                        @if ($hasLogoActions)
+                            <aside class="flex min-w-0 flex-col gap-admin-field rounded-admin-card border border-admin-border bg-admin-surface-muted p-4" data-logo-actions>
+                                <div>
+                                    <h3 class="text-sm font-semibold text-admin-text">Logo actions</h3>
+                                    <p class="mt-1 text-sm text-admin-muted">Replace the canonical logo with a secure upload or a compatible Shared Media asset.</p>
+                                </div>
 
-                            <div>
-                                <h3 class="text-sm font-semibold text-admin-text">Upload a new file</h3>
-                                <p class="mt-1 text-sm text-admin-muted">The canonical assignment changes only after secure ingest succeeds. The current Shared Media asset is retained.</p>
-                            </div>
+                                @if ($canUploadLogo)
+                                    <x-ui.button
+                                        variant="primary"
+                                        icon="arrow-up-tray"
+                                        class="w-full"
+                                        aria-haspopup="dialog"
+                                        aria-controls="replace-brand-logo-modal"
+                                        data-admin-modal-open-target="replace-brand-logo-modal"
+                                    >{{ $assignment ? 'Replace logo' : 'Upload logo' }}</x-ui.button>
+                                @endif
 
-                            <label for="logo" class="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-admin-input border border-admin-primary bg-admin-primary px-4 py-3 text-base font-semibold text-white transition hover:brightness-95 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-admin-primary">
-                                <x-ui.icon name="arrow-up-tray" decorative class="h-5 w-5" />
-                                <span>Upload Photo</span>
-                                <input
-                                    id="logo"
-                                    name="logo"
-                                    type="file"
-                                    accept="image/jpeg,image/png,image/webp"
-                                    class="sr-only"
-                                    required
-                                    aria-describedby="logo-help @error('logo') logo-error @enderror"
-                                    onchange="if (this.files.length > 0) this.form.requestSubmit()"
-                                >
-                            </label>
-
-                            <p id="logo-help" class="text-center text-xs leading-5 text-admin-muted">JPEG, PNG or WebP · max 20 MB<br>max 8000 px per side · max 16 MP</p>
-
-                            @error('logo')
-                                <p id="logo-error" class="rounded-admin-input border border-admin-danger/30 bg-admin-danger-soft px-3 py-2 text-sm font-medium text-admin-danger" role="alert">{{ $message }}</p>
-                            @enderror
-                        </form>
-                    @endcan
+                                @if ($canChooseLogo)
+                                    <x-ui.button
+                                        variant="secondary"
+                                        icon="photo"
+                                        class="w-full"
+                                        :href="route('central.brands.media', $brand, absolute: false).'?picker=1#shared-media-picker'"
+                                        aria-haspopup="dialog"
+                                        aria-controls="shared-media-picker"
+                                    >Choose from media</x-ui.button>
+                                @endif
+                            </aside>
+                        @endif
 
                         @if ($logo->state === \App\Enums\MediaDeliveryState::Ready && $logo->url !== null || $assignment)
                             <div class="flex min-w-0 items-center justify-between gap-4 md:col-span-3">
@@ -266,9 +260,54 @@
 
         </div>
 
-        @can('media.manage')
+        @if ($canUploadLogo)
+            <x-ui.modal
+                id="replace-brand-logo-modal"
+                :title="$assignment ? 'Replace logo' : 'Upload logo'"
+                :open="$errors->has('logo')"
+                size="lg"
+            >
+                <form
+                    id="brand-logo-upload-form"
+                    method="POST"
+                    enctype="multipart/form-data"
+                    action="{{ route('central.brands.media.logo.store', $brand) }}"
+                    class="space-y-admin-card"
+                    data-logo-upload-form
+                >
+                    @csrf
+                    <div class="rounded-admin-input bg-admin-surface-muted px-4 py-3">
+                        <p class="text-sm font-semibold text-admin-text">Upload a new file</p>
+                        <p class="mt-1 text-sm text-admin-muted">The canonical assignment changes only after secure ingest succeeds. The current Shared Media asset is retained.</p>
+                    </div>
+                    <x-ui.form.file-input
+                        id="logo"
+                        name="logo"
+                        label="Logo file"
+                        accept="image/jpeg,image/png,image/webp"
+                        hint="JPEG, PNG or WebP · max 20 MB · max 8000 px per side · max 16 MP"
+                        :error="$errors->first('logo')"
+                        class="cursor-pointer file:cursor-pointer"
+                        data-admin-modal-reset-value=""
+                        required
+                        autofocus
+                    />
+                </form>
+
+                <x-slot:footer>
+                    <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                        <x-ui.button variant="secondary" data-admin-modal-close>Cancel</x-ui.button>
+                        <x-ui.button type="submit" form="brand-logo-upload-form" icon="arrow-up-tray">
+                            {{ $assignment ? 'Replace logo' : 'Upload logo' }}
+                        </x-ui.button>
+                    </div>
+                </x-slot:footer>
+            </x-ui.modal>
+        @endif
+
+        @if ($pickerOpen)
             @include('central-admin.brands.partials.media-picker')
-        @endcan
+        @endif
 
         @can('catalog.brands.manage')
             @if ($assignment)

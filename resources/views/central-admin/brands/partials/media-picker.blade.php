@@ -1,10 +1,9 @@
-<section id="shared-media-picker" class="scroll-mt-6" data-screen-region="shared-media-workspace">
-    <x-admin.card
-        title="Choose from Shared Media"
-        description="Search and select an existing compatible asset from Shared Media."
-    >
+<x-ui.modal id="shared-media-picker" title="Choose from Shared Media" :open="true" size="2xl">
+    <div data-screen-region="shared-media-picker">
+        <p class="text-sm text-admin-muted">Search and select an existing compatible asset from Shared Media.</p>
+
         @if ($availableAssets !== null)
-            <div id="shared-media-results" data-screen-region="shared-media-picker">
+            <div id="shared-media-results" class="mt-admin-card">
             <form method="GET" action="{{ route('central.brands.media', $brand, absolute: false).'#shared-media-picker' }}" class="grid min-w-0 gap-admin-field sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                 <input type="hidden" name="picker" value="1">
                 <label class="min-w-0 text-sm font-medium text-admin-text">
@@ -16,6 +15,7 @@
                         maxlength="255"
                         class="mt-1 w-full min-w-0 rounded-admin-input border border-admin-border bg-admin-surface px-3 py-2"
                         placeholder="Filename, checksum or asset ID"
+                        autofocus
                     >
                 </label>
                 <x-ui.button type="submit" variant="secondary">Search</x-ui.button>
@@ -31,7 +31,7 @@
                     <p class="mt-1 text-sm text-admin-muted">Try another filename, checksum or asset ID.</p>
                 </div>
             @else
-                <div class="mt-4 grid min-w-0 grid-cols-1 gap-3 min-[30rem]:grid-cols-2 md:grid-cols-4 xl:grid-cols-8" data-shared-media-results>
+                <div class="mt-4 grid min-w-0 grid-cols-1 gap-3 min-[30rem]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4" data-shared-media-results>
                     @foreach ($availableAssets as $candidate)
                         @php
                             $candidateLogo = $availableLogos->get((int) $candidate->getKey());
@@ -73,5 +73,11 @@
             @endif
             </div>
         @endif
-    </x-admin.card>
-</section>
+    </div>
+
+    <x-slot:footer>
+        <div class="flex justify-end">
+            <x-ui.button variant="secondary" data-admin-modal-close>Close</x-ui.button>
+        </div>
+    </x-slot:footer>
+</x-ui.modal>

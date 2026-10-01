@@ -36,7 +36,7 @@ final class CentralBrandMediaController extends Controller
         $availableAssets = null;
         $availableLogos = collect();
 
-        $pickerOpen = Gate::allows('media.manage');
+        $pickerOpen = Gate::allows('media.manage') && $request->pickerOpen();
 
         if ($pickerOpen) {
             $availableAssets = $library->paginateCompatibleImages(
@@ -57,7 +57,7 @@ final class CentralBrandMediaController extends Controller
             'variants' => $logos->variantsForMedia($asset),
             'availableAssets' => $availableAssets,
             'availableLogos' => $availableLogos,
-            'assetSearch' => $request->assetSearch(),
+            'assetSearch' => $pickerOpen ? $request->assetSearch() : '',
             'pickerOpen' => $pickerOpen,
         ]);
     }

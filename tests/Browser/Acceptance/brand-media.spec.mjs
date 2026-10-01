@@ -26,7 +26,20 @@ test('CA-012 and CA-014 persist the complete Brand logo repair, replace, and rem
     await expect(page.locator('[data-screen-id="CA-014"]')).toBeVisible()
     await expect(page.getByText('No primary logo assigned')).toBeVisible()
 
-    await page.locator('#logo').setInputFiles('tests/Fixtures/media/brand-logo-a.png')
+    await page.getByRole('button', { name: 'Upload logo', exact: true }).click()
+    let uploadDialog = page.getByRole('dialog', { name: 'Upload logo' })
+    await expect(uploadDialog).toBeVisible()
+    await uploadDialog.locator('#logo').setInputFiles('tests/Fixtures/media/brand-logo-a.png')
+    await uploadDialog.getByRole('button', { name: 'Cancel', exact: true }).click()
+    await expect(uploadDialog).toBeHidden()
+    await expect(page.getByText('No primary logo assigned')).toBeVisible()
+
+    await page.getByRole('button', { name: 'Upload logo', exact: true }).click()
+    await expect(uploadDialog).toBeVisible()
+    expect(await uploadDialog.locator('#logo').evaluate((input) => input.files.length)).toBe(0)
+    await uploadDialog.locator('#logo').setInputFiles('tests/Fixtures/media/brand-logo-a.png')
+    await expect(page.getByText('No primary logo assigned')).toBeVisible()
+    await uploadDialog.getByRole('button', { name: 'Upload logo', exact: true }).click()
     const preview = page.getByAltText('Zotac logo')
     await expect(preview).toBeVisible()
     await expect(page.locator('[data-screen-region="asset-details"]')).toContainText('brand-logo-a.png')
@@ -40,16 +53,23 @@ test('CA-012 and CA-014 persist the complete Brand logo repair, replace, and rem
 
     await page.getByRole('tab', { name: 'Media', exact: true }).click()
     await expect(preview).toBeVisible()
-    await page.locator('#logo').setInputFiles({
+    await page.getByRole('button', { name: 'Replace logo', exact: true }).click()
+    uploadDialog = page.getByRole('dialog', { name: 'Replace logo' })
+    await expect(uploadDialog).toBeVisible()
+    await uploadDialog.locator('#logo').setInputFiles({
         name: 'broken-replacement.png',
         mimeType: 'image/png',
         buffer: Buffer.from('not a decodable image'),
     })
+    await expect(preview).toHaveAttribute('src', firstSource ?? '')
+    await uploadDialog.getByRole('button', { name: 'Replace logo', exact: true }).click()
     await expect(page.getByRole('alert')).toContainText('could not be decoded safely')
+    await expect(uploadDialog).toBeVisible()
     await expect(preview).toBeVisible()
     await expect(preview).toHaveAttribute('src', firstSource ?? '')
 
-    await page.locator('#logo').setInputFiles('tests/Fixtures/media/brand-logo-b.png')
+    await uploadDialog.locator('#logo').setInputFiles('tests/Fixtures/media/brand-logo-b.png')
+    await uploadDialog.getByRole('button', { name: 'Replace logo', exact: true }).click()
     await expect(page.locator('[data-screen-region="asset-details"]')).toContainText('brand-logo-b.png')
     await expect(preview).not.toHaveAttribute('src', firstSource ?? '')
 
@@ -80,12 +100,8 @@ test('CA-014 keeps a bounded 24-card Shared Media picker responsive and current 
     await signIn(page, 'central', foundationDemo.centralAdmin)
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
     await page.goto('/admin/central/brands/14014/media')
-    await expect(page.locator('[data-brand-media-fixture="brand-media-v6"]')).toBeVisible()
-    const picker = page.locator('[data-screen-region="shared-media-picker"]')
-    await expect(picker).toBeVisible()
-    await expect(picker.getByRole('searchbox', { name: 'Search shared media' })).toBeVisible()
-    await expect(picker.locator('[data-media-asset-card]')).toHaveCount(24)
-    await expect(picker.locator('[data-media-asset-card][aria-current="true"]')).toContainText('Current')
+    await expect(page.locator('[data-brand-media-fixture="brand-media-v7"]')).toBeVisible()
+    await expect(page.locator('[data-screen-region="shared-media-picker"]')).toHaveCount(0)
 
     for (const viewport of [{ width: 1440, height: 1000 }, { width: 1280, height: 900 }, { width: 1024, height: 900 }, { width: 768, height: 1024 }, { width: 390, height: 844 }]) {
         await page.setViewportSize(viewport)
@@ -105,7 +121,21 @@ test('CA-014 keeps a bounded 24-card Shared Media picker responsive and current 
         expect(detailsBox?.y ?? 0).toBeGreaterThan((primaryBox?.y ?? 0) + (primaryBox?.height ?? 0))
     }
 
-    const expectedColumns = new Map([[1440, 8], [1280, 8], [1024, 4], [768, 4], [390, 1]])
+    await page.setViewportSize({ width: 1440, height: 1000 })
+    await page.getByRole('link', { name: 'Choose from media', exact: true }).click()
+    await expect(page).toHaveURL(/\?picker=1#shared-media-picker$/)
+    const picker = page.locator('[data-screen-region="shared-media-picker"]')
+    await expect(picker).toBeVisible()
+    await expect(picker.getByRole('searchbox', { name: 'Search shared media' })).toBeVisible()
+    await expect(picker.locator('[data-media-asset-card]')).toHaveCount(24)
+    await expect(picker.locator('[data-media-asset-card][aria-current="true"]')).toContainText('Current')
+
+    for (const viewport of [{ width: 1440, height: 1000 }, { width: 1280, height: 900 }, { width: 1024, height: 900 }, { width: 768, height: 1024 }, { width: 390, height: 844 }]) {
+        await page.setViewportSize(viewport)
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+    }
+
+    const expectedColumns = new Map([[1440, 4], [1280, 4], [1024, 3], [768, 3], [390, 1]])
     for (const [width, columns] of expectedColumns) {
         await page.setViewportSize({ width, height: width >= 1024 ? 1000 : 1024 })
         const cards = picker.locator('[data-media-asset-card]')
@@ -130,9 +160,11 @@ test('CA-014 keeps a bounded 24-card Shared Media picker responsive and current 
     await picker.getByRole('button', { name: 'Use as logo' }).click()
 
     await expect(page).toHaveURL(/\/admin\/central\/brands\/14014\/media$/)
-    await expect(page.locator('[data-screen-region="shared-media-picker"]')).toBeVisible()
+    await expect(page.locator('[data-screen-region="shared-media-picker"]')).toHaveCount(0)
     await expect(page.locator('[data-screen-region="asset-details"]')).toContainText('apple-wordmark-black.png')
-    await expect(page.locator('[data-media-asset-card][aria-current="true"]')).toContainText('apple-wordmark-black.png')
     await expect(page.getByText('Existing media asset assigned as the Brand logo.', { exact: true })).toBeVisible()
+
+    await page.getByRole('link', { name: 'Choose from media', exact: true }).click()
+    await expect(page.locator('[data-media-asset-card][aria-current="true"]')).toContainText('apple-wordmark-black.png')
     assertNoPageErrors()
 })

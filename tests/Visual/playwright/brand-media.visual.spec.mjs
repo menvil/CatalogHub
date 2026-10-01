@@ -20,6 +20,7 @@ test('CA-014 empty desktop matches its final convergence reference', async ({ pa
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
     await page.goto('/admin/central/brands/24/media')
     await expect(page.getByText('No primary logo assigned')).toBeVisible()
+    await expect(page.locator('[data-screen-region="shared-media-picker"]')).toHaveCount(0)
     await settle(page)
     await assertNoHorizontalOverflow(page)
     await expect(page).toHaveScreenshot(['ca-014__empty__1440x1000.png'], { animations: 'disabled', scale: 'css', maxDiffPixelRatio: 0.02 })
@@ -32,8 +33,9 @@ test('CA-014 populated desktop, tablet and mobile match deterministic final refe
     await signIn(page, 'central', 'super-admin@demo.cataloghub.test')
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
     await page.goto(`/admin/central/brands/${populatedBrandId}/media`)
-    await expect(page.locator('[data-brand-media-fixture="brand-media-v6"]')).toBeVisible()
+    await expect(page.locator('[data-brand-media-fixture="brand-media-v7"]')).toBeVisible()
     await expect(page.getByAltText('Zyxel Apple Fixture logo')).toBeVisible()
+    await expect(page.locator('[data-screen-region="shared-media-picker"]')).toHaveCount(0)
     await expect(page.locator('[data-logo-variant]')).toHaveCount(3)
     await settle(page)
     await assertNoHorizontalOverflow(page)
@@ -69,12 +71,12 @@ test('CA-014 populated desktop, tablet and mobile match deterministic final refe
     assertNoPageErrors()
 })
 
-test('CA-014 always-open Shared Media picker matches its bounded desktop reference', async ({ page }) => {
+test('CA-014 on-demand Shared Media picker matches its bounded desktop reference', async ({ page }) => {
     const assertNoPageErrors = observePageErrors(page)
     await page.setViewportSize({ width: 1440, height: 1000 })
     await signIn(page, 'central', 'super-admin@demo.cataloghub.test')
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
-    await page.goto(`/admin/central/brands/${populatedBrandId}/media#shared-media-picker`)
+    await page.goto(`/admin/central/brands/${populatedBrandId}/media?picker=1#shared-media-picker`)
     await expect(page.locator('[data-screen-region="shared-media-picker"]')).toBeVisible()
     await expect(page.locator('[data-media-asset-card]')).toHaveCount(24)
     await expect(page.locator('[data-media-asset-card][aria-current="true"]')).toBeVisible()

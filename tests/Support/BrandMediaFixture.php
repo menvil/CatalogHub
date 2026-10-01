@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Storage;
 
 final class BrandMediaFixture
 {
-    public const VERSION = 'brand-media-v6';
+    public const VERSION = 'brand-media-v7';
 
     public const BRAND_ID = 14014;
 

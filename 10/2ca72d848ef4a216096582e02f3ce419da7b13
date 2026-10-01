@@ -1,0 +1,52 @@
+docs/ui/brands-visual-gap-audit.md
+  s_6f254a5f242e0f::t_681affd34f575d 5
+tests/Frontend/modal-reset-contract.test.mjs
+  s_6f254a5f242e0f::t_7a3067a84dbd37 25-27
+resources/views/components/ui/modal.blade.php
+  s_6f254a5f242e0f::t_fa0aed3291d0a9 13-15,26
+tests/Architecture/ContinuousIntegrationWorkflowTest.php
+  s_6f254a5f242e0f::t_8764d4ccb3d060 17-21,41-42
+tools/ci/run-phpunit-suites.sh
+  s_6f254a5f242e0f::t_7cd46f45e551e7 3,19-22,39,49-52,56-63,68-76,78-79,81-94
+  s_6f254a5f242e0f::t_6a7815d28c34f8 80
+  s_6f254a5f242e0f::t_676aed91d47859 10-18
+tests/Visual/playwright/brand-media.visual.spec.mjs
+  s_6f254a5f242e0f::t_8764d4ccb3d060 44-51
+docs/testing/test-matrix.md
+  s_6f254a5f242e0f::t_fbafd85ffc68eb 41-45,47
+  s_6f254a5f242e0f::t_261878e4ece344 37,46,48
+tests/Feature/Central/CentralBrandMediaTest.php
+  s_6f254a5f242e0f::t_7a3067a84dbd37 485-493,506,511,514
+docs/ui/screens/CA-014-brand-media-logo.md
+  s_6f254a5f242e0f::t_261878e4ece344 7
+  s_6f254a5f242e0f::t_681affd34f575d 30-32
+tests/Unit/Architecture/PHPStan/ArchitectureExceptionRegistryTest.php
+  s_6f254a5f242e0f::t_7a3067a84dbd37 188-191,193,195-196
+docs/architecture/media.md
+  s_6f254a5f242e0f::t_261878e4ece344 17
+README.md
+  s_6f254a5f242e0f::t_681affd34f575d 85
+tests/Support/BrandMediaFixture.php
+  s_6f254a5f242e0f::t_261878e4ece344 152-153,165,168,175-195
+tests/Feature/ViewComponents/ModalComponentsTest.php
+  s_6f254a5f242e0f::t_1e8a0d4f0398e0 35-44
+tools/ci/run-static-checks.sh
+  s_6f254a5f242e0f::t_6a7815d28c34f8 41
+  s_6f254a5f242e0f::t_7cd46f45e551e7 3,11-26,29-40,42-56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "102ca72d848ef4a216096582e02f3ce419da7b13",
+  "prompts": {},
+  "sessions": {
+    "s_6f254a5f242e0f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a087d7-a88c-7121-80f8-f952db0fb8f8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

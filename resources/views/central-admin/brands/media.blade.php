@@ -149,7 +149,7 @@
                         @endif
 
                         @if ($logo->state === \App\Enums\MediaDeliveryState::Ready && $logo->url !== null || $assignment)
-                            <div class="flex min-w-0 items-center justify-between gap-4 md:col-span-3">
+                            <div class="flex min-w-0 items-center justify-between gap-4 md:col-span-2">
                                 @if ($logo->state === \App\Enums\MediaDeliveryState::Ready && $logo->url !== null)
                                     <p class="min-w-0 text-xs text-admin-muted">Displaying the normalized master.</p>
                                 @else

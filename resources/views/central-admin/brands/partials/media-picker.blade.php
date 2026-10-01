@@ -1,4 +1,10 @@
-<x-ui.modal id="shared-media-picker" title="Choose from Shared Media" :open="true" size="2xl">
+<x-ui.modal
+    id="shared-media-picker"
+    title="Choose from Shared Media"
+    :open="true"
+    size="2xl"
+    :data-admin-modal-close-url="route('central.brands.media', $brand, absolute: false)"
+>
     <div data-screen-region="shared-media-picker">
         <p class="text-sm text-admin-muted">Search and select an existing compatible asset from Shared Media.</p>
 

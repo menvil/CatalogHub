@@ -57,6 +57,11 @@ export function bootAdminModals() {
         previousFocusByModal.delete(modal);
         previousFocus?.focus?.({ preventScroll: true });
         syncBody();
+
+        if (modal.dataset.adminModalCloseUrl) {
+            window.history.replaceState(window.history.state, '', modal.dataset.adminModalCloseUrl);
+        }
+
         modal.dispatchEvent(new CustomEvent('admin:modal-closed', { bubbles: true }));
 
         modal.querySelectorAll('[data-admin-modal-reset-value]').forEach((control) => {

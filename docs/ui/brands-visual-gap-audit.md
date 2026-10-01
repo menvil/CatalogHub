@@ -78,7 +78,7 @@ Phase 18.4 converges the honest single-role implementation into a focused Brand 
 | Responsive asset metadata/actions | Compact details/variants rail; single-column before 1280px; explicit tablet/mobile coverage | Existing Media asset/variant read model | Converged (D) | Phase 18.4 | Long values wrap and controls remain usable at 390px. |
 | Wordmark, symbol, dark/light, hero and OG slots | No equivalent | Unsupported Brand media roles | C | Deferred | Do not render placeholders that imply role support. |
 | Localized/site media | No equivalent | Future localized/site media | C | Deferred | Remains outside global canonical media. |
-| Generic library/DAM browser | Always-visible but bounded 24-card Shared Media selector | Existing compatible-asset selector; generic DAM redesign | Adapted / C | Phase 18.4 / Deferred | Eight columns at wide desktop, server search/pagination, and no generic asset management. |
+| Generic library/DAM browser | On-demand bounded 24-card Shared Media selector | Existing compatible-asset selector; generic DAM redesign | Adapted / C | Phase 18.4 / Deferred | Four columns at wide desktop, server search/pagination, and no generic asset management. |
 
 ## CA-015 — Brand Translations
 

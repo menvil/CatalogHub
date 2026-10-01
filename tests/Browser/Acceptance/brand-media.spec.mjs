@@ -154,6 +154,13 @@ test('CA-014 keeps a bounded 24-card Shared Media picker responsive and current 
     expect(secondCard?.y ?? 0).toBeGreaterThan(firstCard?.y ?? 0)
     await page.setViewportSize({ width: 1280, height: 900 })
 
+    await page.locator('[data-admin-modal="shared-media-picker"]').getByRole('button', { name: 'Close', exact: true }).click()
+    await expect(picker).toBeHidden()
+    await expect(page).toHaveURL(/\/admin\/central\/brands\/14014\/media$/)
+    await page.getByRole('link', { name: 'Choose from media', exact: true }).click()
+    await expect(page).toHaveURL(/\?picker=1#shared-media-picker$/)
+    await expect(picker).toBeVisible()
+
     await picker.getByRole('searchbox', { name: 'Search shared media' }).fill('wordmark')
     await picker.getByRole('button', { name: 'Search', exact: true }).click()
     await expect(picker.locator('[data-media-asset-card]')).toHaveCount(1)

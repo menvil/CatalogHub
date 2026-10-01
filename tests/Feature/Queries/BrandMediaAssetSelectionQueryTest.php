@@ -47,6 +47,18 @@ final class BrandMediaAssetSelectionQueryTest extends TestCase
         $preferredAssetId = $compatibleAssetIds[1];
         $expectedAssetIds = array_reverse($compatibleAssetIds);
         $preferred = $query->paginateCompatibleImages('', perPage: 3, page: 1, preferredAssetId: $preferredAssetId);
+        $preferredSecond = $query->paginateCompatibleImages('', perPage: 3, page: 2, preferredAssetId: $preferredAssetId);
+        $expectedPreferredOrder = [
+            $preferredAssetId,
+            ...array_values(array_filter(
+                $expectedAssetIds,
+                static fn (int $assetId): bool => $assetId !== $preferredAssetId,
+            )),
+        ];
+        $preferredAcrossPages = [
+            ...$preferred->pluck('id')->all(),
+            ...$preferredSecond->pluck('id')->all(),
+        ];
 
         self::assertSame(8, $first->total());
         self::assertSame(3, $first->count());
@@ -58,5 +70,8 @@ final class BrandMediaAssetSelectionQueryTest extends TestCase
         self::assertSame(['brand-candidate-2.png'], $search->pluck('original_filename')->all());
         self::assertSame(24, $defaultPage->perPage());
         self::assertSame($preferredAssetId, $preferred->first()?->getKey());
+        self::assertNotContains($preferredAssetId, $preferredSecond->pluck('id')->all());
+        self::assertSame(array_slice($expectedPreferredOrder, 0, 6), $preferredAcrossPages);
+        self::assertSame($preferredAcrossPages, array_values(array_unique($preferredAcrossPages)));
     }
 }

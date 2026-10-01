@@ -32,4 +32,14 @@ final class ModalComponentsTest extends TestCase
         $this->assertStringContainsString('custom-dialog', $html);
         $this->assertStringContainsString('data-owner="brands"', $html);
     }
+
+    public function test_modal_height_tracks_its_fixed_or_contained_boundary(): void
+    {
+        $fixed = Blade::render('<x-ui.modal id="fixed-modal" title="Fixed">Body</x-ui.modal>');
+        $contained = Blade::render('<x-ui.modal id="contained-modal" title="Contained" contained>Body</x-ui.modal>');
+
+        $this->assertStringContainsString('max-h-[calc(100dvh-(var(--spacing-admin-page)*2))]', $fixed);
+        $this->assertStringContainsString('max-h-full', $contained);
+        $this->assertStringNotContainsString('100dvh', $contained);
+    }
 }

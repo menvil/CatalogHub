@@ -14,6 +14,11 @@ final class ContinuousIntegrationWorkflowTest extends TestCase
         $gate = $this->job($workflow, 'backend-quality');
         $tests = $this->job($workflow, 'tests');
         $staticAnalysis = $this->job($workflow, 'static-analysis');
+        $composer = json_decode(
+            (string) file_get_contents(dirname(__DIR__, 2).'/composer.json'),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
 
         self::assertStringContainsString('name: Backend quality', $gate);
 
@@ -21,17 +26,30 @@ final class ContinuousIntegrationWorkflowTest extends TestCase
             self::assertStringContainsString('- '.$dependency, $gate);
         }
 
-        foreach (['composer test:unit', 'composer test:legacy-unit', 'composer test:feature'] as $command) {
-            self::assertStringContainsString($command, $tests);
-        }
-
-        self::assertSame(4, substr_count($tests, '--log-junit test-results/'));
+        self::assertStringContainsString('PHPUNIT_RESULT_DIR: test-results', $tests);
+        self::assertSame(1, substr_count($tests, 'run: composer test'));
         self::assertStringContainsString('glob("test-results/*.xml")', $tests);
+        self::assertStringContainsString('Expected 4 PHPUnit result files', $tests);
         self::assertStringContainsString('$tests += (int) $suite["tests"]', $tests);
         self::assertStringContainsString('$assertions += (int) $suite["assertions"]', $tests);
 
-        self::assertStringContainsString('composer test:architecture', $staticAnalysis);
-        self::assertStringContainsString('composer analyse -- --no-progress', $staticAnalysis);
+        self::assertStringContainsString('composer verify:static', $staticAnalysis);
+        self::assertSame(1, substr_count($staticAnalysis, 'tools/architecture/report.php'));
+
+        $phpunitRunner = (string) file_get_contents(dirname(__DIR__, 2).'/tools/ci/run-phpunit-suites.sh');
+        $staticRunner = (string) file_get_contents(dirname(__DIR__, 2).'/tools/ci/run-static-checks.sh');
+        self::assertSame('bash tools/ci/run-phpunit-suites.sh', $composer['scripts']['test'] ?? null);
+        self::assertSame('bash tools/ci/run-static-checks.sh', $composer['scripts']['verify:static'] ?? null);
+        self::assertStringContainsString('suite_names=("Unit" "Legacy Unit" "Feature" "Browser")', $phpunitRunner);
+        self::assertSame(1, substr_count($phpunitRunner, 'process_ids+=("$!")'));
+        self::assertStringContainsString('Ignoring additional arguments;', $phpunitRunner);
+        self::assertStringNotContainsString('$@', $phpunitRunner, 'Caller-supplied report paths must never be forwarded to parallel workers.');
+        foreach ([$phpunitRunner, $staticRunner] as $runner) {
+            self::assertStringContainsString('kill -0 "${process_ids[$index]}"', $runner);
+            self::assertStringContainsString('Worker exited without publishing its status.', $runner);
+        }
+        self::assertStringContainsString('composer test:architecture:contracts', $staticRunner);
+        self::assertStringContainsString('composer analyse -- --no-progress', $staticRunner);
         self::assertStringContainsString("!= 'success'", $gate);
         self::assertStringNotContainsString('continue-on-error', $gate);
     }

@@ -21,6 +21,7 @@ use App\Services\Media\MediaVariantProfile;
 use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -40,8 +41,15 @@ final class CentralBrandMediaTest extends TestCase
         $this->actingAs($user)->get(route('central.brands.media', $active))
             ->assertOk()
             ->assertSee('Brand Media')
+            ->assertSee('Primary logo')
+            ->assertSee('Asset details')
+            ->assertSee('Generated variants')
+            ->assertSee('data-screen-region="brand-logo-workspace"', false)
+            ->assertSee('data-screen-region="generated-variants"', false)
             ->assertSee('data-screen-id="CA-014"', false)
             ->assertDontSee('>CA-014<', false)
+            ->assertDontSee('Current identity media')
+            ->assertDontSee('Remove assignment')
             ->assertDontSee('mx-auto max-w-4xl space-y-admin-section', false);
         $this->get(route('central.brands.media', $archived))->assertOk();
         $this->get(route('central.brands.media', 999999))->assertNotFound();
@@ -185,7 +193,7 @@ final class CentralBrandMediaTest extends TestCase
             ->get(route('central.brands.media', $brand))
             ->assertOk()
             ->assertSee('The assignment exists, but neither a ready semantic variant nor the normalized master can be delivered.')
-            ->assertDontSee('No canonical logo assigned');
+            ->assertDontSee('No primary logo assigned');
 
         $this->get(route('central.brands.show', $brand))
             ->assertOk()
@@ -304,8 +312,8 @@ final class CentralBrandMediaTest extends TestCase
         $this->actingAs($brandOnlyManager)
             ->get(route('central.brands.media', $brand))
             ->assertOk()
-            ->assertSee('Upload a primary logo')
-            ->assertDontSee('Reuse an existing MediaAsset');
+            ->assertSee('Upload logo')
+            ->assertDontSee('Choose from media');
         $this->actingAs($brandOnlyManager)
             ->post(route('central.brands.media.logo.assign', $brand), ['media_asset_id' => $missing->id])
             ->assertForbidden();
@@ -449,7 +457,7 @@ final class CentralBrandMediaTest extends TestCase
         $this->actingAs(User::factory()->centralAdmin()->create())
             ->get(route('central.brands.media', $brand))
             ->assertOk()
-            ->assertSee('Brand Media / Identity')
+            ->assertSee('Brand Media')
             ->assertSee('Processing')
             ->assertSee('Failed')
             ->assertSee('brand_logo_128')
@@ -462,6 +470,84 @@ final class CentralBrandMediaTest extends TestCase
             ->assertSee('data-logo-delivery-state="processing"', false)
             ->assertSee('The assigned logo is still processing.')
             ->assertDontSee('>No logo<', false);
+    }
+
+    public function test_bounded_shared_media_candidates_load_on_demand_for_media_managers_only(): void
+    {
+        Storage::fake('public');
+        $brand = CentralBrand::factory()->create();
+        $current = MediaAsset::factory()->create([
+            'original_filename' => 'current-logo.png',
+            'disk' => 'public',
+            'original_path' => 'media/originals/current-logo.png',
+            'mime_type' => 'image/png',
+            'status' => 'active',
+        ]);
+        $oldestOverflowCandidate = null;
+        foreach (range(1, 24) as $index) {
+            $overflowCandidate = MediaAsset::factory()->create([
+                'original_filename' => sprintf('overflow-candidate-%02d.png', $index),
+                'mime_type' => 'image/png',
+                'status' => 'active',
+            ]);
+            $oldestOverflowCandidate ??= $overflowCandidate;
+        }
+        $candidate = MediaAsset::factory()->create([
+            'original_filename' => 'picker-only-candidate.png',
+            'disk' => 'public',
+            'original_path' => 'media/originals/picker-only-candidate.png',
+            'mime_type' => 'image/png',
+            'status' => 'active',
+        ]);
+        Storage::disk('public')->put($current->original_path, 'current');
+        Storage::disk('public')->put($candidate->original_path, 'candidate');
+        app(SetCentralBrandLogoAction::class)->execute(User::factory()->create(), $brand, $current);
+        $manager = User::factory()->centralAdmin()->create();
+        $containsCandidateQuery = static fn (array $queries): bool => collect($queries)->contains(function (array $query): bool {
+            $sql = str_replace(['"', '`'], '', strtolower($query['query']));
+
+            return str_contains($sql, 'from media_assets')
+                && str_contains($sql, 'type')
+                && str_contains($sql, 'status')
+                && str_contains($sql, 'mime_type');
+        });
+
+        DB::enableQueryLog();
+        $this->actingAs($manager)
+            ->get(route('central.brands.media', $brand))
+            ->assertOk()
+            ->assertSee('Choose from media')
+            ->assertDontSee('data-screen-region="shared-media-picker"', false)
+            ->assertDontSee('picker-only-candidate.png');
+        $this->assertFalse($containsCandidateQuery(DB::getQueryLog()), 'The default workspace must not query Shared Media candidates.');
+
+        DB::flushQueryLog();
+        $managerResponse = $this->actingAs($manager)
+            ->get(route('central.brands.media', ['brand' => $brand, 'picker' => 1]))
+            ->assertOk()
+            ->assertSee('data-screen-region="shared-media-picker"', false)
+            ->assertSee('data-admin-modal-open="true"', false)
+            ->assertSee('picker-only-candidate.png')
+            ->assertDontSee($oldestOverflowCandidate->original_filename)
+            ->assertSee('aria-current="true"', false)
+            ->assertSee('Current logo');
+        $this->assertTrue($containsCandidateQuery(DB::getQueryLog()), 'Opening the picker must load its bounded candidate page.');
+        DB::disableQueryLog();
+        $this->assertSame(24, substr_count((string) $managerResponse->getContent(), 'data-media-asset-card="'));
+
+        config()->set('cataloghub_permissions.roles.catalog_editor', [
+            Permission::CentralPanelAccess->value,
+            Permission::CentralPageAccess->value,
+            Permission::CentralMutationExecute->value,
+            Permission::CentralView->value,
+            Permission::CatalogBrandsManage->value,
+        ]);
+
+        $this->actingAs(User::factory()->create(['role' => UserRole::CatalogEditor]))
+            ->get(route('central.brands.media', ['brand' => $brand, 'picker' => 1]))
+            ->assertOk()
+            ->assertDontSee('data-screen-region="shared-media-picker"', false)
+            ->assertDontSee('picker-only-candidate.png');
     }
 
     private function gifBytes(): string

@@ -2,12 +2,14 @@
 
 namespace App\Queries\Media;
 
+use App\Contracts\Persistence\RawSqlPersistenceBoundary;
 use App\Contracts\Persistence\StablePaginationBoundary;
 use App\Data\Media\MediaLibraryFiltersData;
 use App\Models\MediaAsset;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-final class MediaLibraryQuery implements StablePaginationBoundary
+final class MediaLibraryQuery implements RawSqlPersistenceBoundary, StablePaginationBoundary
 {
     /** @return LengthAwarePaginator<int, MediaAsset> */
     public function paginate(
@@ -33,13 +35,14 @@ final class MediaLibraryQuery implements StablePaginationBoundary
     /** @return LengthAwarePaginator<int, MediaAsset> */
     public function paginateCompatibleImages(
         string $search,
-        int $perPage = 6,
+        int $perPage = 24,
         int $page = 1,
         string $pageName = 'asset_page',
+        ?int $preferredAssetId = null,
     ): LengthAwarePaginator {
         $allowedMimes = config('media.allowed_upload_mimes');
 
-        return MediaAsset::query()
+        $query = MediaAsset::query()
             ->with(['variants' => fn ($query) => $query
                 ->whereIn('variant_type', ['brand_logo_128', 'brand_logo_256', 'brand_logo_512'])
                 ->whereNull('locale')
@@ -54,9 +57,24 @@ final class MediaLibraryQuery implements StablePaginationBoundary
                         ->orWhere('checksum', 'like', "%{$search}%")
                         ->when(ctype_digit($search), fn ($query) => $query->orWhere('id', (int) $search));
                 });
-            })
+            });
+
+        if ($preferredAssetId !== null) {
+            $this->orderPreferredAssetFirst($query, $preferredAssetId);
+        }
+
+        return $query
             ->latest()
             ->latest('id')
             ->paginate($perPage, ['*'], $pageName, $page);
+    }
+
+    /** @param Builder<MediaAsset> $query */
+    private function orderPreferredAssetFirst(Builder $query, int $preferredAssetId): void
+    {
+        $query->orderByRaw(
+            'CASE WHEN media_assets.id = ? THEN 0 ELSE 1 END',
+            [$preferredAssetId],
+        );
     }
 }

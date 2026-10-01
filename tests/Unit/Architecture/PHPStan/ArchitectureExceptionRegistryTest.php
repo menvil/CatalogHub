@@ -163,6 +163,39 @@ class ArchitectureExceptionRegistryTest extends PHPStanTestCase
         }
     }
 
+    public function test_general_php_suite_does_not_repeat_the_dedicated_architecture_suite(): void
+    {
+        $composer = json_decode(
+            (string) file_get_contents(dirname(__DIR__, 4).'/composer.json'),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+        $this->assertIsArray($composer);
+        $scripts = $composer['scripts'] ?? null;
+        $this->assertIsArray($scripts);
+
+        $generalSuite = (string) ($scripts['test'] ?? '');
+        $architectureContracts = (string) ($scripts['test:architecture:contracts'] ?? '');
+        $architectureSuite = implode("\n", (array) ($scripts['test:architecture'] ?? []));
+
+        $this->assertSame('bash tools/ci/run-phpunit-suites.sh', $generalSuite);
+        $this->assertStringContainsString('--testsuite Architecture', $architectureContracts);
+        $this->assertStringContainsString('@test:architecture:contracts', $architectureSuite);
+        $this->assertStringContainsString('tools/architecture/report.php', $architectureSuite);
+
+        $runner = file_get_contents(dirname(__DIR__, 4).'/tools/ci/run-phpunit-suites.sh');
+        $this->assertIsString($runner);
+        $matched = preg_match('/^suite_names=\((?<suiteNames>[^)]*)\)$/m', $runner, $matches);
+        $this->assertSame(1, $matched, 'The parallel runner must declare suite_names.');
+        $suiteNames = $matches['suiteNames'];
+
+        foreach (['"Unit"', '"Legacy Unit"', '"Feature"', '"Browser"'] as $suite) {
+            $this->assertSame(1, substr_count($suiteNames, $suite), "Suite {$suite} must have exactly one parallel-runner owner.");
+        }
+        $this->assertStringNotContainsString('"Architecture"', $suiteNames);
+        $this->assertStringNotContainsString('"Visual"', $suiteNames);
+    }
+
     private function assertBehaviorTestsExist(mixed $paths): void
     {
         $this->assertIsArray($paths);

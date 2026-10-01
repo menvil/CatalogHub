@@ -34,7 +34,10 @@ export function bootAdminModals() {
         const existingIndex = modalOpeningOrder.indexOf(modal);
         if (existingIndex !== -1) modalOpeningOrder.splice(existingIndex, 1);
         modalOpeningOrder.push(modal);
-        const focusTarget = focusableElements(modal)[0] ?? dialogFor(modal);
+        const elements = focusableElements(modal);
+        const focusTarget = elements.find((element) => element.hasAttribute('autofocus'))
+            ?? elements[0]
+            ?? dialogFor(modal);
 
         if (! focusTarget.hasAttribute('tabindex')) {
             focusTarget.setAttribute('tabindex', '-1');
@@ -54,6 +57,11 @@ export function bootAdminModals() {
         previousFocusByModal.delete(modal);
         previousFocus?.focus?.({ preventScroll: true });
         syncBody();
+
+        if (modal.dataset.adminModalCloseUrl) {
+            window.history.replaceState(window.history.state, '', modal.dataset.adminModalCloseUrl);
+        }
+
         modal.dispatchEvent(new CustomEvent('admin:modal-closed', { bubbles: true }));
 
         modal.querySelectorAll('[data-admin-modal-reset-value]').forEach((control) => {

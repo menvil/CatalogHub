@@ -93,11 +93,8 @@ jobs:
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Run architecture contract tests
-        run: composer test:architecture
-
-      - name: Run PHPStan
-        run: composer analyse -- --no-progress
+      - name: Run architecture contracts and PHPStan in parallel
+        run: composer verify:static
 
       - name: Audit architecture debt suppressions
         id: architecture-debt
@@ -214,17 +211,10 @@ jobs:
       - name: Initialize backend test results
         run: mkdir -p test-results
 
-      - name: Run foundation unit tests
-        run: composer test:unit -- --log-junit test-results/unit.xml
-
-      - name: Run legacy unit tests
-        run: composer test:legacy-unit -- --log-junit test-results/legacy-unit.xml
-
-      - name: Run feature tests
-        run: composer test:feature -- --log-junit test-results/feature.xml
-
-      - name: Run browser harness contract tests
-        run: php vendor/bin/phpunit --testsuite Browser --do-not-cache-result --log-junit test-results/browser-contract.xml
+      - name: Run isolated PHPUnit suites in parallel
+        env:
+          PHPUNIT_RESULT_DIR: test-results
+        run: composer test
 
       - name: Collect test results
         id: test-results

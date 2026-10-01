@@ -1,0 +1,27 @@
+tests/Visual/baselines/ca-014__logo-ready__1440x1000.png.sha256
+  s_6f254a5f242e0f::t_ce22e1e8f02081 1
+tests/Visual/baselines/ca-014__picker-open__1440x1000.png.sha256
+  s_6f254a5f242e0f::t_ce22e1e8f02081 1
+docs/ui/visual-references.json
+  s_6f254a5f242e0f::t_ce22e1e8f02081 42-44,46
+tests/Visual/baselines/ca-014__empty__1440x1000.png.sha256
+  s_6f254a5f242e0f::t_ce22e1e8f02081 1
+tests/Visual/baselines/ca-014__logo-ready__1280x900.png.sha256
+  s_6f254a5f242e0f::t_ce22e1e8f02081 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "981e1f7f3d67485aa2012e7ba291fc418e15d28f",
+  "prompts": {},
+  "sessions": {
+    "s_6f254a5f242e0f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a087d7-a88c-7121-80f8-f952db0fb8f8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

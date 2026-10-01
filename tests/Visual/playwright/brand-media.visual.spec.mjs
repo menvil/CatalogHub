@@ -6,11 +6,13 @@ const populatedBrandId = 14014
 async function settle(page) {
     await page.evaluate(() => document.fonts.ready)
     await page.addStyleTag({ content: '*,*::before,*::after{animation-duration:0s!important;transition-duration:0s!important}html{scrollbar-width:none}::-webkit-scrollbar{display:none}' })
+    await page.evaluate(() => window.scrollTo(0, 0))
 }
 
-async function assertNoHorizontalOverflow(page) {
+async function assertStableViewport(page) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
     expect(await page.evaluate(() => window.scrollX)).toBe(0)
+    expect(await page.evaluate(() => window.scrollY)).toBe(0)
 }
 
 test('CA-014 empty desktop matches its final convergence reference', async ({ page }) => {
@@ -22,7 +24,7 @@ test('CA-014 empty desktop matches its final convergence reference', async ({ pa
     await expect(page.getByText('No primary logo assigned')).toBeVisible()
     await expect(page.locator('[data-screen-region="shared-media-picker"]')).toHaveCount(0)
     await settle(page)
-    await assertNoHorizontalOverflow(page)
+    await assertStableViewport(page)
     await expect(page).toHaveScreenshot(['ca-014__empty__1440x1000.png'], { animations: 'disabled', scale: 'css', maxDiffPixelRatio: 0.02 })
     assertNoPageErrors()
 })
@@ -38,7 +40,7 @@ test('CA-014 populated desktop, tablet and mobile match deterministic final refe
     await expect(page.locator('[data-screen-region="shared-media-picker"]')).toHaveCount(0)
     await expect(page.locator('[data-logo-variant]')).toHaveCount(3)
     await settle(page)
-    await assertNoHorizontalOverflow(page)
+    await assertStableViewport(page)
     const previewBox = await page.locator('[data-logo-preview]').boundingBox()
     const primaryBox = await page.locator('[data-screen-region="primary-logo"]').boundingBox()
     const detailsBox = await page.locator('[data-screen-region="asset-details"]').boundingBox()
@@ -54,19 +56,19 @@ test('CA-014 populated desktop, tablet and mobile match deterministic final refe
     await expect(page).toHaveScreenshot(['ca-014__logo-ready__1440x1000.png'], { animations: 'disabled', scale: 'css', maxDiffPixelRatio: 0.02 })
     await page.setViewportSize({ width: 1280, height: 900 })
     await settle(page)
-    await assertNoHorizontalOverflow(page)
+    await assertStableViewport(page)
     await expect(page).toHaveScreenshot(['ca-014__logo-ready__1280x900.png'], { animations: 'disabled', scale: 'css', maxDiffPixelRatio: 0.025 })
     await page.setViewportSize({ width: 1024, height: 900 })
     await settle(page)
-    await assertNoHorizontalOverflow(page)
+    await assertStableViewport(page)
     await expect(page).toHaveScreenshot(['ca-014__logo-ready__1024x900.png'], { animations: 'disabled', scale: 'css', maxDiffPixelRatio: 0.03 })
     await page.setViewportSize({ width: 768, height: 1024 })
     await settle(page)
-    await assertNoHorizontalOverflow(page)
+    await assertStableViewport(page)
     await expect(page).toHaveScreenshot(['ca-014__logo-ready__768x1024.png'], { animations: 'disabled', scale: 'css', maxDiffPixelRatio: 0.04 })
     await page.setViewportSize({ width: 390, height: 844 })
     await settle(page)
-    await assertNoHorizontalOverflow(page)
+    await assertStableViewport(page)
     await expect(page).toHaveScreenshot(['ca-014__logo-ready__390x844.png'], { animations: 'disabled', scale: 'css', maxDiffPixelRatio: 0.03 })
     assertNoPageErrors()
 })
@@ -81,7 +83,7 @@ test('CA-014 on-demand Shared Media picker matches its bounded desktop reference
     await expect(page.locator('[data-media-asset-card]')).toHaveCount(24)
     await expect(page.locator('[data-media-asset-card][aria-current="true"]')).toBeVisible()
     await settle(page)
-    await assertNoHorizontalOverflow(page)
+    await assertStableViewport(page)
     await expect(page).toHaveScreenshot(['ca-014__picker-open__1440x1000.png'], { animations: 'disabled', scale: 'css', maxDiffPixelRatio: 0.02 })
     assertNoPageErrors()
 })

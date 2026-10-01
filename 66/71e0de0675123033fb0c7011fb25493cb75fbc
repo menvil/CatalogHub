@@ -1,0 +1,21 @@
+tests/Visual/playwright/brand-media.visual.spec.mjs
+  s_6f254a5f242e0f::t_07778729445fb0 64
+composer.lock
+  ai_agent 2507,2511,2515-2516,2610,6739,6743,6747-6748,6799,6819
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "6671e0de0675123033fb0c7011fb25493cb75fbc",
+  "prompts": {},
+  "sessions": {
+    "s_6f254a5f242e0f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a087d7-a88c-7121-80f8-f952db0fb8f8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

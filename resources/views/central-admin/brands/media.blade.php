@@ -119,7 +119,9 @@
                             <aside class="flex min-w-0 flex-col gap-admin-field rounded-admin-card border border-admin-border bg-admin-surface-muted p-4" data-logo-actions>
                                 <div>
                                     <h3 class="text-sm font-semibold text-admin-text">Logo actions</h3>
-                                    <p class="mt-1 text-sm text-admin-muted">Replace the canonical logo with a secure upload or a compatible Shared Media asset.</p>
+                                    <p class="mt-1 text-sm text-admin-muted">
+                                        Replace the canonical logo with a secure<span class="hidden sm:inline"> </span><br class="sm:hidden">upload or a compatible Shared Media<span class="hidden sm:inline"> </span><br class="sm:hidden">asset.
+                                    </p>
                                 </div>
 
                                 @if ($canUploadLogo)

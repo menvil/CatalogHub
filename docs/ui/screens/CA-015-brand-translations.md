@@ -10,14 +10,14 @@ regions: central-shell;brand-breadcrumbs;page-header;brand-tabs;translation-dire
 actions: select-source;select-target;copy-field;copy-all;save-translation;approve-translation;mark-outdated
 states: no-active-locales;missing;machine-translated;human-reviewed;approved;outdated;missing-source;outdated-source;rtl;validation-error;empty-activity;populated-activity;read-only
 permissions: translations.manage; central.mutation.execute for mutations
-responsive: Desktop field/target/source rows with compact right rail; tablet target/source share each field block; mobile source then target with no horizontal page overflow.
+responsive: Desktop field/source/target rows with compact right rail; tablet source/target share each field block; mobile source then target with no horizontal page overflow.
 out_of_scope: machine-provider;translation-memory;glossary;persisted-field-statuses;localized-media;site-publication;translated-slug;localized-elements;locale-management
 reference_version: v3
 ---
 
 # CA-015 — Brand Translations, Phase 18.5
 
-The Brand workspace uses `Brands / {Brand} / Translations`, a **Brand Translations** title, View Brand where authorized, and the existing Overview / Media / Translations tabs. Two labeled menus, **Source language → Target language**, replace the locale strip so twenty or more active languages do not add rows or horizontal scrolling. Each option shows language, code and current quality state; both selected languages have visible code/status metadata. The direction repeats above the editor. All six supported fields show target editing alongside source reference: localized name, tagline, short description, description, SEO title and SEO description. Canonical Brand name and slug appear only as compact identity metadata.
+The Brand workspace uses `Brands / {Brand} / Translations`, a **Brand Translations** title, View Brand where authorized, and the existing Overview / Media / Translations tabs. Two labeled menus, **Source language → Target language**, replace the locale strip so twenty or more active languages do not add rows or horizontal scrolling. Each option shows language, code and current quality state; the selected option contains code/status without a duplicate line underneath. Native selectors use the UI kit chevron with its 12px right inset. The direction repeats above the editor. All six supported fields show target editing alongside source reference: localized name, tagline, short description, description, SEO title and SEO description. Canonical Brand name and slug appear only as compact identity metadata.
 
 ## Two different meanings of source
 
@@ -41,7 +41,7 @@ An absent source row shows `No source translation available for {language} ({cod
 
 Each non-empty source field has a field-specific accessible **Copy source** action. **Copy all from Source** copies only non-empty reference fields, preserving targets whose source is empty. These actions update only local input/textarea values and counters. They never submit, create a row, change review state, change hashes, emit audit or call a provider. A differing non-empty target requires the lightweight confirmation `Replace current target values with source values?`; empty targets copy immediately. Saving remains explicit.
 
-Counters and maxlength values follow current validators: name/tagline/SEO title 255, short description 1000, description 10000, SEO description 500. These are input length limits, not field completeness metrics. Target controls use the target locale's `dir` and `lang`; reference text independently uses the source locale's direction and language. Canonical fallback uses `dir=auto`. The shell remains LTR. Tablet shares target and source within each field; mobile stacks source then target and shows a compact language-code direction above the selectors.
+Counters and maxlength values follow current validators: name/tagline/SEO title 255, short description 1000, description 10000, SEO description 500. These are input length limits, not field completeness metrics. Target controls use the target locale's `dir` and `lang`; reference text independently uses the source locale's direction and language. Canonical fallback uses `dir=auto`. The shell remains LTR. Desktop and tablet place Source on the left and Target on the right in reading order. Column headings use the existing table treatment: muted 14px semibold text. Tablet shares source and target within each field; mobile stacks source then target and shows a compact language-code direction above the selectors.
 
 ## Workflow actions and statuses
 

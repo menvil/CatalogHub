@@ -22,7 +22,11 @@ async function stop() {
 }
 
 for (const signal of ['SIGINT', 'SIGTERM']) {
-    process.on(signal, () => { child?.kill(signal); void stop() })
+    process.on(signal, () => {
+        // Playwright handles SIGINT with fixture and web-server teardown.
+        if (child) child.kill('SIGINT')
+        else void stop()
+    })
 }
 
 try {

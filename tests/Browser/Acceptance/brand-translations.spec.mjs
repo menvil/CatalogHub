@@ -101,6 +101,20 @@ test('CA-015 offers any source and target in two compact menus with twenty activ
         await page.evaluate(() => document.fonts.ready)
         expect(Math.abs((await direction.boundingBox()).height - sizes.get(width))).toBeLessThan(1)
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+        for (const field of await page.locator('[data-translation-field]').all()) {
+            const source = await field.locator('.brand-translation-source').boundingBox()
+            const target = await field.locator('.brand-translation-target').boundingBox()
+            if (width >= 640) expect(source.x + source.width).toBeLessThanOrEqual(target.x)
+            else expect(source.y + source.height).toBeLessThanOrEqual(target.y)
+        }
+        for (const select of await direction.locator('.brand-translation-select').all()) {
+            const control = await select.locator('select').boundingBox()
+            const chevron = await select.locator('[data-select-chevron]').boundingBox()
+            expect(control.x + control.width - chevron.x - chevron.width).toBeCloseTo(12, 0)
+        }
+        if (width >= 1024) {
+            await expect(page.locator('.brand-translation-table-heading span')).toHaveText(['Field', 'Source · English', 'Target · German'])
+        }
     }
     await page.getByLabel('Source language', { exact: true }).selectOption('de-DE')
     await expect(page).toHaveURL(/translations\/en-US\?source=de-DE$/)

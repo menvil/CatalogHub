@@ -8,7 +8,7 @@ The visual project fixes viewport, DPR, locale, timezone, color scheme, reduced 
 
 Playwright screenshot capture and comparison run through `tools/visual/run.mjs`. Both local development and CI use the official Playwright Noble image pinned by its immutable amd64 digest in `tools/visual/environment.json`. Its Chromium, rendering libraries and installed system fonts are identical on both paths; Apple Silicon also uses `linux/amd64`. Docker must be running. The first run downloads the image.
 
-When the host architecture requires amd64 emulation, individual tests have a 120-second execution budget instead of 30 seconds. Screenshot comparison thresholds remain identical; this only allows time for slower browser execution.
+When the host architecture requires amd64 emulation, individual tests have a 120-second execution budget instead of 30 seconds, and assertion waits allow 30 seconds instead of 10 seconds. Screenshot comparison thresholds remain identical; this only allows time for slower browser execution and page loading.
 
 The runner mounts only the installed, locked Playwright JavaScript packages read-only and starts a temporary browser server on a random localhost port. Node, PHP, fixture setup and the existing application harness run on the host. Playwright forwards loopback traffic to that harness. The runner stops its container after the test process exits and records the image identity in `storage/logs/visual-artifacts/renderer.json`. No application secrets or repository files are mounted in the browser container. The package/image version check fails on drift; there is no native-browser fallback for screenshot tests.
 

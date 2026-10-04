@@ -1133,7 +1133,7 @@
 
 .brand-translation-arrow {
     font-size: 1.75rem;
-    color: var(--color-admin-text-muted);
+    color: var(--color-admin-muted);
 }
 
 .brand-translation-source-select {
@@ -1147,18 +1147,31 @@
     font-size: .875rem;
 }
 
-.brand-translation-language-state {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: .5rem;
-    margin-top: .5rem;
+.brand-translation-select {
+    position: relative;
+    min-width: 0;
+    max-width: 27rem;
+}
+
+.brand-translation-select .brand-translation-source-select {
+    appearance: none;
+    min-height: 2.5rem;
+    padding: .5rem 2.5rem .5rem .75rem;
+}
+
+.brand-translation-select [data-select-chevron] {
+    position: absolute;
+    top: 50%;
+    right: .75rem;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--color-admin-muted);
 }
 
 .brand-translation-language-help {
     grid-column: 1 / -1;
     font-size: .75rem;
-    color: var(--color-admin-text-muted);
+    color: var(--color-admin-muted);
 }
 
 .brand-translation-workspace {
@@ -1254,7 +1267,7 @@ textarea.brand-translation-control {
     font-size: .6875rem;
     text-transform: uppercase;
     font-weight: 600;
-    color: var(--color-admin-text-muted);
+    color: var(--color-admin-muted);
 }
 
 .brand-translation-save {
@@ -1289,9 +1302,11 @@ textarea.brand-translation-control {
     }
 
     .brand-translation-table-heading {
-        padding: .75rem 1rem;
+        padding: .5rem 1rem;
         background: var(--color-admin-surface-muted);
-        font-size: .75rem;
+        color: var(--color-admin-muted);
+        font-size: .875rem;
+        line-height: 1.5;
         font-weight: 600;
     }
 

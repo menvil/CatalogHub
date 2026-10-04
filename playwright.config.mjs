@@ -5,7 +5,7 @@ import { visualEnvironment } from './tools/visual/environment.mjs'
 const remoteVisualBrowser = process.env.CATALOGHUB_VISUAL_IMAGE === visualEnvironment.image && Boolean(process.env.PW_TEST_CONNECT_WS_ENDPOINT)
 const emulatedVisualBrowser = remoteVisualBrowser && process.arch !== 'x64'
 const projects = process.argv.flatMap((arg, index, args) => arg.startsWith('--project=') ? [arg.slice(10)] : arg === '--project' ? [args[index + 1]] : [])
-if ((projects.length === 0 || projects.includes('visual')) && !remoteVisualBrowser) {
+if (process.env.TEST_WORKER_INDEX === undefined && (projects.length === 0 || projects.includes('visual')) && !remoteVisualBrowser) {
     throw new Error('Visual screenshots require the pinned Linux renderer. Use npm run test:visual or npm run test:visual:update.')
 }
 const configuredBrowser = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
@@ -32,7 +32,7 @@ export default defineConfig({
     workers: 1,
     timeout: emulatedVisualBrowser ? 120_000 : 30_000,
     expect: {
-        timeout: 10_000,
+        timeout: emulatedVisualBrowser ? 30_000 : 10_000,
     },
     forbidOnly: Boolean(process.env.CI),
     retries: 0,

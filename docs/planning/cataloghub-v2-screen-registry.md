@@ -2,12 +2,16 @@
 
 | Field | Value |
 | --- | --- |
-| Registry version | 1.0.0 |
+| Registry version | 1.1.0 |
 | Status | Proposed; product approval required |
 | Owner | CatalogHub Product Owner |
 | Approver | `TBD — approver must be named` |
 | Approval date | `TBD — YYYY-MM-DD` |
 | Contract | `cataloghub-v2-product-contract.md` |
+
+## Current section amendment
+
+Phase 19.0 discovers/freezes Categories / Schema CA-016…CA-026 after Brands closure PR #611. The [Phase 19 roadmap](roadmap-v2-screen-driven.md#phase-19--categories--schema-current-section) and [ADR-0003](../architecture/adr/0003-categories-schema-ownership.md) govern ownership and permissions. This registers future screen ownership only; no runtime routes or finished-screen baselines are added. CA-027…CA-032 remains the later dedicated Units / Measurements section.
 
 ## Registry rules
 
@@ -65,23 +69,23 @@ updates this registry and the visual manifest.
 | CA-013 | Brand Create / Edit | Central Admin | page | `/admin/central/brands/create`; `/admin/central/brands/{brand}/edit` | Central | no | `pictures/1. Central Admin/1.3. Brands/CA-013 — Brand Create:Edit.png` | Phase 02 |
 | CA-014 | Brand Media  /  Logo | Central Admin | page | `/admin/central/brands/{brand}/media` | Central | no | `pictures/1. Central Admin/1.3. Brands/CA-014 — Brand Media : Logo.png` | Phase 02 |
 | CA-015 | Brand Translations | Central Admin | page | `/admin/central/brands/{brand}/translations` | Central | no | `pictures/1. Central Admin/1.3. Brands/CA-015 — Brand Translations.png` | Phase 02 |
-| CA-016 | Categories List | Central Admin | page | `/admin/central/categories` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-016 — Categories List.png` | Phase 03 |
-| CA-017 | Category Detail | Central Admin | page | `/admin/central/categories/{category}` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-017 — Category Detail.png` | Phase 03 |
-| CA-018 | Category Create / Edit | Central Admin | page | `/admin/central/categories/{category?}/edit` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-018 — Category Create:Edit.png` | Phase 03 |
-| CA-019 | Category Schema Builder | Central Admin | page | `/admin/central/categories/{category}/schema` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-019 — Category Schema Builder.png` | Phase 03 |
-| CA-020 | Attribute Sections Editor | Central Admin | page | `/admin/central/categories/{category}/schema/sections` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-020 — Attribute Sections Editor.png` | Phase 03 |
-| CA-021 | Attribute Definitions Editor | Central Admin | page | `/admin/central/categories/{category}/schema/attributes` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-021 — Attribute Definitions Editor.png` | Phase 03 |
-| CA-022 | Attribute Options Editor | Central Admin | page | `/admin/central/categories/{category}/schema/options` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-022 — Attribute Options Editor.png` | Phase 03 |
-| CA-023 | Category Facets Config | Central Admin | page | `/admin/central/categories/{category}/facets` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-023 — Category Facets Config.png` | Phase 03 |
-| CA-024 | Category Comparison Config | Central Admin | page | `/admin/central/categories/{category}/comparison` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-024 — Category Comparison Config.png` | Phase 03 |
-| CA-025 | Category SEO Templates | Central Admin | page | `/admin/central/categories/{category}/seo-template` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-025 — Category SEO Templates.png` | Phase 03 |
-| CA-026 | Category Translation Editor | Central Admin | page | `/admin/central/categories/{category}/translations` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-026 — Category Translation Editor.png` | Phase 03 |
-| CA-027 | Measurement Dimensions | Central Admin | page | `/admin/central/measurements/dimensions` | Central | no | `pictures/1. Central Admin/1.5. Units : Measurements/CA-027 — Measurement Dimensions.png` | Phase 03 |
-| CA-028 | Measurement Units | Central Admin | page | `/admin/central/measurements/units` | Central | no | `pictures/1. Central Admin/1.5. Units : Measurements/CA-028 — Measurement Units.png` | Phase 03 |
-| CA-029 | Unit Aliases | Central Admin | page | `/admin/central/measurements/aliases` | Central | no | `pictures/1. Central Admin/1.5. Units : Measurements/CA-029 — Unit Aliases.png` | Phase 03 |
-| CA-030 | Unit Translations | Central Admin | page | `/admin/central/measurements/translations` | Central | no | `pictures/1. Central Admin/1.5. Units : Measurements/CA-030 — Unit Translations.png` | Phase 03 |
-| CA-031 | Market Unit Preferences | Central Admin | page | `/admin/central/measurements/market-preferences` | Central | no | `pictures/1. Central Admin/1.5. Units : Measurements/CA-031 — Market Unit Preferences.png` | Phase 03 |
-| CA-032 | Attribute Display Rules | Central Admin | page | `/admin/central/measurements/attribute-display-rules` | Central | no | `pictures/1. Central Admin/1.5. Units : Measurements/CA-032 — Attribute Display Rules.png` | Phase 03 |
+| CA-016 | Categories List | Central Admin | page | `/admin/central/categories` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-016 — Categories List.png` | Phase 19.4 |
+| CA-017 | Category Detail | Central Admin | page | `/admin/central/categories/{category}` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-017 — Category Detail.png` | Phase 19.5 |
+| CA-018 | Category Create / Edit | Central Admin | page | `/admin/central/categories/{category?}/edit` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-018 — Category Create:Edit.png` | Phase 19.6 |
+| CA-019 | Category Schema Builder | Central Admin | page | `/admin/central/categories/{category}/schema` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-019 — Category Schema Builder.png` | Phase 19.7 / 19.11 |
+| CA-020 | Attribute Sections Editor | Central Admin | page | `/admin/central/categories/{category}/schema/sections` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-020 — Attribute Sections Editor.png` | Phase 19.8 |
+| CA-021 | Attribute Definitions Editor | Central Admin | page | `/admin/central/categories/{category}/schema/attributes` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-021 — Attribute Definitions Editor.png` | Phase 19.9 |
+| CA-022 | Attribute Options Editor | Central Admin | page | `/admin/central/categories/{category}/schema/options` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-022 — Attribute Options Editor.png` | Phase 19.10 |
+| CA-023 | Category Facets Config | Central Admin | page | `/admin/central/categories/{category}/facets` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-023 — Category Facets Config.png` | Phase 19.12 |
+| CA-024 | Category Comparison Config | Central Admin | page | `/admin/central/categories/{category}/comparison` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-024 — Category Comparison Config.png` | Phase 19.13 |
+| CA-025 | Category SEO Templates | Central Admin | page | `/admin/central/categories/{category}/seo-template` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-025 — Category SEO Templates.png` | Phase 19.14 |
+| CA-026 | Category Translation Editor | Central Admin | page | `/admin/central/categories/{category}/translations` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-026 — Category Translation Editor.png` | Phase 19.15 |
+| CA-027 | Measurement Dimensions | Central Admin | page | `/admin/central/measurements/dimensions` | Central | no | `pictures/1. Central Admin/1.5. Units : Measurements/CA-027 — Measurement Dimensions.png` | Phase 03 — later dedicated Units section |
+| CA-028 | Measurement Units | Central Admin | page | `/admin/central/measurements/units` | Central | no | `pictures/1. Central Admin/1.5. Units : Measurements/CA-028 — Measurement Units.png` | Phase 03 — later dedicated Units section |
+| CA-029 | Unit Aliases | Central Admin | page | `/admin/central/measurements/aliases` | Central | no | `pictures/1. Central Admin/1.5. Units : Measurements/CA-029 — Unit Aliases.png` | Phase 03 — later dedicated Units section |
+| CA-030 | Unit Translations | Central Admin | page | `/admin/central/measurements/translations` | Central | no | `pictures/1. Central Admin/1.5. Units : Measurements/CA-030 — Unit Translations.png` | Phase 03 — later dedicated Units section |
+| CA-031 | Market Unit Preferences | Central Admin | page | `/admin/central/measurements/market-preferences` | Central | no | `pictures/1. Central Admin/1.5. Units : Measurements/CA-031 — Market Unit Preferences.png` | Phase 03 — later dedicated Units section |
+| CA-032 | Attribute Display Rules | Central Admin | page | `/admin/central/measurements/attribute-display-rules` | Central | no | `pictures/1. Central Admin/1.5. Units : Measurements/CA-032 — Attribute Display Rules.png` | Phase 03 — later dedicated Units section |
 | CA-033 | Import Sources | Central Admin | page | `/admin/central/imports/sources` | Central | no | `pictures/1. Central Admin/1.6. Imports/CA-033 — Import Sources.png` | Phase 04 |
 | CA-034 | Import Batches List | Central Admin | page | `/admin/central/imports/batches` | Central | no | `pictures/1. Central Admin/1.6. Imports/CA-034 — Import Batches List.png` | Phase 04 |
 | CA-035 | Import Batch Detail | Central Admin | page | `/admin/central/imports/batches/{batch}` | Central | no | `pictures/1. Central Admin/1.6. Imports/CA-035 — Import Batch Detail.png` | Phase 04 |
@@ -291,3 +295,9 @@ requires an approved registry version and changelog entry first. Phase 16 is
 blocked for every unresolved PUB row; the ten defined rows may only be sliced
 into an earlier MR after a product decision explicitly permits partial Phase 16
 acceptance.
+
+## Changelog
+
+### 1.1.0 — 2026-10-04
+
+Move CA-016…CA-026 to the Phase 19 serial screen packages (CA-019 v1/final convergence); retain all screen IDs/names/routes/surfaces/context/reference paths. Keep CA-027…CA-032 in later dedicated Units work. The Phase 19.0 brief authorizes this section amendment; unrelated proposed/blocked registry rows keep their existing approval gates.

@@ -1,0 +1,21 @@
+tools/visual/environment.mjs
+  s_9298cf6d02b081::t_04822dd65d2a1b 1,25
+tests/Frontend/visual-environment.test.mjs
+  s_9298cf6d02b081::t_04822dd65d2a1b 47-48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "bf18a2a4758541d9431bc8fa5e5c048c1212bbc5",
+  "prompts": {},
+  "sessions": {
+    "s_9298cf6d02b081": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a105d9-5bc1-7c82-a8c4-0457a79f1d44",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

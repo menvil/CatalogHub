@@ -44,6 +44,8 @@ test('native selection allows Browser files and filters while rejecting Visual, 
         ['test', 'tests/Browser', 'tests/Visual'],
         ['test', '--grep', 'tests/Browser'],
         ['test', 'tests/Browser/../Visual'],
+        ['test', 'tests/Browser/Acceptance/.*|tests/Visual'],
+        ['test', 'tests/Browser/not-a-real-test.spec.mjs'],
     ]) assert.equal(selectsOnlyBrowser(args, root), false, args.join(' '))
 })
 

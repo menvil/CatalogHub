@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { resolve, sep } from 'node:path'
 
 export const visualEnvironment = Object.freeze(JSON.parse(readFileSync(new URL('./environment.json', import.meta.url), 'utf8')))
@@ -22,7 +22,7 @@ export function selectsOnlyBrowser(args, root) {
     const browserDirectory = resolve(root, 'tests/Browser')
     return files.length > 0 && files.every((file) => {
         const path = resolve(root, file.replace(/:\d+(?::\d+)?$/, ''))
-        return path === browserDirectory || path.startsWith(browserDirectory + sep)
+        return existsSync(path) && (path === browserDirectory || path.startsWith(browserDirectory + sep))
     })
 }
 

@@ -1,0 +1,58 @@
+playwright.config.mjs
+  s_9298cf6d02b081::t_e345c549b4c158 2-3,5,9-13
+docs/ui/visual-testing.md
+  s_9298cf6d02b081::t_bd1424a34d6635 5
+resources/views/central-admin/brands/translations.blade.php
+  s_9298cf6d02b081::t_bd1424a34d6635 59,77,152
+tests/Feature/Central/BrandTranslationSourceSelectionTest.php
+  s_9298cf6d02b081::t_fefe4f88662591 17,162-190
+docs/domains/brands.md
+  s_9298cf6d02b081::t_bd1424a34d6635 44
+docs/ui/screens/CA-015-brand-translations.md
+  s_9298cf6d02b081::t_bd1424a34d6635 20,34,36,44
+tests/Frontend/visual-lifecycle.test.mjs
+  s_9298cf6d02b081::t_46c37223bb2cfb 1-61
+app/Http/Requests/CentralAdmin/Translations/SaveBrandTranslationRequest.php
+  s_9298cf6d02b081::t_bd1424a34d6635 17
+tools/visual/environment.mjs
+  s_9298cf6d02b081::t_e345c549b4c158 2,6-27
+tools/visual/lifecycle.mjs
+  s_9298cf6d02b081::t_e345c549b4c158 1-41
+resources/css/central-admin.css
+  s_9298cf6d02b081::t_bd1424a34d6635 1171-1174
+app/Http/Requests/CentralAdmin/Translations/BrandTranslationSourceRequest.php
+  s_9298cf6d02b081::t_33d2f8b397f917 9
+  s_9298cf6d02b081::t_bd1424a34d6635 7,18,21,24-25,27-31
+resources/js/admin/brand-translations.js
+  s_9298cf6d02b081::t_bd1424a34d6635 14,24-29,34-38
+tools/visual/run.mjs
+  s_9298cf6d02b081::t_e345c549b4c158 7,14,29-31,33,37,51-52,55,57,60,62
+tests/Browser/Acceptance/brand-translations.spec.mjs
+  s_9298cf6d02b081::t_1a89aa01f7b13a 250-251
+  s_9298cf6d02b081::t_4b4611b586c414 246-249,252,287-355
+  s_9298cf6d02b081::t_fefe4f88662591 7,17-26
+tests/Feature/Central/CentralBrandTranslationTest.php
+  s_9298cf6d02b081::t_4b4611b586c414 109,111,113-129
+tests/Frontend/visual-environment.test.mjs
+  s_9298cf6d02b081::t_46c37223bb2cfb 4,13,18,25-47
+tests/Browser/Support/brand-translation-fixture.mjs
+  s_9298cf6d02b081::t_fefe4f88662591 53-58
+docs/architecture/translations.md
+  s_9298cf6d02b081::t_087f5839d8c5a2 11,15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "2e1776618c7334e3265c517270ed54c44fb9af5e",
+  "prompts": {},
+  "sessions": {
+    "s_9298cf6d02b081": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a105d9-5bc1-7c82-a8c4-0457a79f1d44",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

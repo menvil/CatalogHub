@@ -55,19 +55,23 @@ final class SchedulerHeartbeatTest extends TestCase
             'last_ran_at' => now()->subSeconds(301),
         ]);
 
-        self::assertSame(HealthStatus::Stale, app(SchedulerHealthService::class)->inspect()->status);
+        $stale = app(SchedulerHealthService::class)->inspect()->status;
 
         OperationalHeartbeat::query()->where('name', SchedulerHeartbeatService::NAME)->update([
             'last_ran_at' => now()->subSeconds(300),
         ]);
 
-        self::assertSame(HealthStatus::Healthy, app(SchedulerHealthService::class)->inspect()->status);
+        $threshold = app(SchedulerHealthService::class)->inspect()->status;
 
         OperationalHeartbeat::query()->where('name', SchedulerHeartbeatService::NAME)->update([
             'last_ran_at' => now(),
         ]);
 
-        self::assertSame(HealthStatus::Healthy, app(SchedulerHealthService::class)->inspect()->status);
+        $fresh = app(SchedulerHealthService::class)->inspect()->status;
+
+        self::assertSame(HealthStatus::Stale, $stale);
+        self::assertSame(HealthStatus::Healthy, $threshold);
+        self::assertSame(HealthStatus::Healthy, $fresh);
     }
 
     public function test_scheduler_heartbeat_is_registered_once_per_schedule(): void

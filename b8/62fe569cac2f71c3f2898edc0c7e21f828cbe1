@@ -1,0 +1,23 @@
+tests/Feature/Actions/CategorySchemaStatusActionsTest.php
+  s_44ede181af91ce::t_dd1d7892711a44 184
+tests/Feature/Categories/CategoryPermissionsTest.php
+  s_44ede181af91ce::t_dd1d7892711a44 7,176-187
+tests/Feature/Categories/CategoryDiagnosticsTest.php
+  s_44ede181af91ce::t_dd1d7892711a44 28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "b862fe569cac2f71c3f2898edc0c7e21f828cbe1",
+  "prompts": {},
+  "sessions": {
+    "s_44ede181af91ce": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a10821-5e4f-73f3-a218-1cbf8ec83499",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

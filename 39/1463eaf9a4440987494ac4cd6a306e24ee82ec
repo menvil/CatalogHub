@@ -1,0 +1,25 @@
+docs/planning/cataloghub-v2-visual-reference-manifest.md
+  s_44ede181af91ce::t_060daaafe5a66f 70
+  s_44ede181af91ce::t_c56a6fa973da7f 43-69,71-72
+docs/planning/categories-schema-migration-map.md
+  s_44ede181af91ce::t_5e82cce4d32faa 11-33
+  s_44ede181af91ce::t_eca867c0caf02b 7-10,37-38,61
+docs/architecture/adr/0003-categories-schema-ownership.md
+  s_44ede181af91ce::t_5d532c0f6e689d 11,13,51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "391463eaf9a4440987494ac4cd6a306e24ee82ec",
+  "prompts": {},
+  "sessions": {
+    "s_44ede181af91ce": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a10821-5e4f-73f3-a218-1cbf8ec83499",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

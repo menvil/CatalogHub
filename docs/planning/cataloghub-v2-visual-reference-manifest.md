@@ -2,11 +2,11 @@
 
 | Field | Value |
 | --- | --- |
-| Manifest version | 1.1.0 |
-| Status | Partially approved; Brand prototype artifacts versioned |
+| Manifest version | 1.2.0 |
+| Status | Partially approved; Brand and Categories / Schema prototype artifacts versioned |
 | Owner | CatalogHub Product Owner |
 | Approver | menvil (CatalogHub Product Owner) |
-| Approval date | 2026-09-01 |
+| Approval date | 2026-10-04 (Categories / Schema); 2026-09-01 (Brands) |
 | Acceptance mode | Semantic/manual for MVP; immutable versions identify source artifacts and do not require strict pixel diff |
 
 ## Reproducibility status
@@ -16,10 +16,16 @@ The five Brand prototypes CA-011 through CA-015 are committed at their listed
 references for `brand-prototype-v1`. Their SHA-256 values and native dimensions
 identify the exact approved source artifacts.
 
+The eleven Categories / Schema prototypes CA-016 through CA-026 are committed
+at their exact supplied `pictures/1. Central Admin/1.4. Categories : Schema/`
+paths as `categories-schema-prototype-v1`, approved by menvil in the Phase 19.0
+brief on 2026-10-04. They are visual/product source references; implementation
+fixtures and screen baselines remain future work. See the [gap audit](../ui/categories-schema-visual-gap-audit.md).
+
 The remaining CA/SA PNGs may exist only in the working copy under `pictures/`;
 they are not committed in this manifest version. Their SHA-256 entries therefore
 remain **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED**, and their native
-dimensions are inventory evidence only. Versioning the five Brand files does not
+dimensions are inventory evidence only. Versioning these sixteen source files does not
 approve or make the other local prototype files reproducible.
 
 Before a screen work package starts, its approved PNG must be committed (or
@@ -33,6 +39,36 @@ Product/design must confirm whether browser chrome was excluded before approval.
 Locale is the visible admin reference locale (`en`). Each scenario ID requires
 a deterministic seeder that reproduces the visible populated state and any
 state named for that ID in the registry.
+
+## Categories / Schema source-byte verification
+
+Rechecked on 2026-10-04 for PR #612. Each original supplied file still present
+in the working directory was read as bytes and compared for exact equality with
+`git show 39cc9c1c1f69e3dd4d388790166068a09b0804d6:<path>` (the first commit
+registering these images). All eleven comparisons passed; SHA-256 also matched
+the entries below and `docs/ui/visual-references.json`. Git attributes specify
+neither a content filter nor working-tree encoding for these paths. No image
+was re-encoded, optimized or replaced, and no digest changed in this correction.
+The comparison uses the supplied local originals, not a separately downloaded
+copy or a visual similarity check.
+
+| Screen | Original and committed byte length | Exact byte comparison |
+| --- | --- | --- |
+| CA-016 | 1,064,054 | Identical |
+| CA-017 | 1,080,534 | Identical |
+| CA-018 | 1,055,382 | Identical |
+| CA-019 | 1,035,877 | Identical |
+| CA-020 | 1,231,922 | Identical |
+| CA-021 | 1,111,533 | Identical |
+| CA-022 | 1,012,643 | Identical |
+| CA-023 | 1,262,219 | Identical |
+| CA-024 | 1,135,641 | Identical |
+| CA-025 | 1,153,797 | Identical |
+| CA-026 | 1,170,021 | Identical |
+
+The existing prototype integrity test checks the registered paths, SHA-256,
+native dimensions and reference version labels. Source-byte comparison above
+additionally verifies the committed objects against the supplied local files.
 
 ## Severity levels
 
@@ -58,7 +94,9 @@ and primary actions. It is not a pixel-diff percentage.
 label for CA-011 through CA-015. It means the committed file and recorded digest
 are the fixed prototype source used during manual comparison. Those rows still
 use the semantic/manual MVP acceptance procedure above; the label does not
-introduce strict pixel-diff acceptance.
+introduce strict pixel-diff acceptance. The same artifact-identity meaning applies
+to `categories-schema-prototype-v1` for CA-016 through CA-026; it does not claim
+implementation fixtures or regression baselines exist.
 
 ## Central Admin and Site Admin references
 
@@ -79,17 +117,17 @@ introduce strict pixel-diff acceptance.
 | CA-013 | `pictures/1. Central Admin/1.3. Brands/CA-013 — Brand Create:Edit.png` | `ed3c038a940ae44f10a95ec49ae58a3be3b9c2ce65b0522abe4c26f351dd68af` | 1448 | 1086 | 1448×1086 | en | `VR-CA-013-POPULATED` | immutable prototype `brand-prototype-v1` |
 | CA-014 | `pictures/1. Central Admin/1.3. Brands/CA-014 — Brand Media : Logo.png` | `79973a4c00b177e49d3f5401e5e4fab122a2e4c0d803953b72998584f42dc1e1` | 1448 | 1086 | 1448×1086 | en | `VR-CA-014-POPULATED` | immutable prototype `brand-prototype-v1` |
 | CA-015 | `pictures/1. Central Admin/1.3. Brands/CA-015 — Brand Translations.png` | `cf129080993a2aa03dd4dfbfa5cf824ef6da5c68d23be52b7275063ab05ce66b` | 1448 | 1086 | 1448×1086 | en | `VR-CA-015-POPULATED` | immutable prototype `brand-prototype-v1` |
-| CA-016 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-016 — Categories List.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-016-POPULATED` | semantic/manual MVP |
-| CA-017 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-017 — Category Detail.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-017-POPULATED` | semantic/manual MVP |
-| CA-018 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-018 — Category Create:Edit.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-018-POPULATED` | semantic/manual MVP |
-| CA-019 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-019 — Category Schema Builder.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-019-POPULATED` | semantic/manual MVP |
-| CA-020 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-020 — Attribute Sections Editor.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-020-POPULATED` | semantic/manual MVP |
-| CA-021 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-021 — Attribute Definitions Editor.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-021-POPULATED` | semantic/manual MVP |
-| CA-022 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-022 — Attribute Options Editor.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-022-POPULATED` | semantic/manual MVP |
-| CA-023 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-023 — Category Facets Config.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-023-POPULATED` | semantic/manual MVP |
-| CA-024 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-024 — Category Comparison Config.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-024-POPULATED` | semantic/manual MVP |
-| CA-025 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-025 — Category SEO Templates.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-025-POPULATED` | semantic/manual MVP |
-| CA-026 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-026 — Category Translation Editor.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-026-POPULATED` | semantic/manual MVP |
+| CA-016 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-016 — Categories List.png` | `c8e776138aa1356369fa2a48efb89f32540ac2d4234e4ee74a1406cba92094f2` | 1448 | 1086 | 1448×1086 | en | `VR-CA-016-POPULATED` | immutable prototype `categories-schema-prototype-v1` |
+| CA-017 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-017 — Category Detail.png` | `afa4cd4539d19818effb5796ef4e6b1da23c0c41dcd36fe144d6e92ae51a20de` | 1448 | 1086 | 1448×1086 | en | `VR-CA-017-POPULATED` | immutable prototype `categories-schema-prototype-v1` |
+| CA-018 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-018 — Category Create:Edit.png` | `91008de57b8a2f0e8a59761d907606caa68aaa12ca7c942e16bb487e466268dd` | 1448 | 1086 | 1448×1086 | en | `VR-CA-018-POPULATED` | immutable prototype `categories-schema-prototype-v1` |
+| CA-019 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-019 — Category Schema Builder.png` | `813d60cb21d26862752c7c82523d2c0c5711bc4999a1ec5d292b1c1848d75fbe` | 1448 | 1086 | 1448×1086 | en | `VR-CA-019-POPULATED` | immutable prototype `categories-schema-prototype-v1` |
+| CA-020 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-020 — Attribute Sections Editor.png` | `15acc2f7cf9bcfcc0e2db2bf9cf9c2ccdb1278024a6017b0241a167e4020fc1c` | 1448 | 1086 | 1448×1086 | en | `VR-CA-020-POPULATED` | immutable prototype `categories-schema-prototype-v1` |
+| CA-021 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-021 — Attribute Definitions Editor.png` | `d747e09e39dfafd28e17b2ae21731e12e1ae159b8a00561f2f8171ff9f67be47` | 1448 | 1086 | 1448×1086 | en | `VR-CA-021-POPULATED` | immutable prototype `categories-schema-prototype-v1` |
+| CA-022 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-022 — Attribute Options Editor.png` | `c8536912edf32c1ab6b1833dada807ef16a9e2d3ccbecfa8fd8bf5dc1613d0b2` | 1448 | 1086 | 1448×1086 | en | `VR-CA-022-POPULATED` | immutable prototype `categories-schema-prototype-v1` |
+| CA-023 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-023 — Category Facets Config.png` | `35770aad3af7f03dcc5951d82991ce4cf13e1e8f7ae5a1c47be337cb43184fe8` | 1448 | 1086 | 1448×1086 | en | `VR-CA-023-POPULATED` | immutable prototype `categories-schema-prototype-v1` |
+| CA-024 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-024 — Category Comparison Config.png` | `05f35d6675e1122cd305199dbbe92c1e73c43df35b64659b453a3133e4ae681d` | 1448 | 1086 | 1448×1086 | en | `VR-CA-024-POPULATED` | immutable prototype `categories-schema-prototype-v1` |
+| CA-025 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-025 — Category SEO Templates.png` | `eb9a479b5722a49fa9bcb7a8f929c114c12832123906b5a5e5fa9dffc4b4b2b8` | 1448 | 1086 | 1448×1086 | en | `VR-CA-025-POPULATED` | immutable prototype `categories-schema-prototype-v1` |
+| CA-026 | `pictures/1. Central Admin/1.4. Categories : Schema/CA-026 — Category Translation Editor.png` | `d0bace628eef9ab571e17747049a9f1195fb008128e53f34931d07b5a89927ed` | 1448 | 1086 | 1448×1086 | en | `VR-CA-026-POPULATED` | immutable prototype `categories-schema-prototype-v1` |
 | CA-027 | `pictures/1. Central Admin/1.5. Units : Measurements/CA-027 — Measurement Dimensions.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-027-POPULATED` | semantic/manual MVP |
 | CA-028 | `pictures/1. Central Admin/1.5. Units : Measurements/CA-028 — Measurement Units.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-028-POPULATED` | semantic/manual MVP |
 | CA-029 | `pictures/1. Central Admin/1.5. Units : Measurements/CA-029 — Unit Aliases.png` | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | 1448 | 1086 | 1448×1086 (confirm) | en | `VR-CA-029-POPULATED` | semantic/manual MVP |
@@ -237,6 +275,12 @@ existed.
 | PUB-057 | **REQUIRED BEFORE IMPLEMENTATION: `PUB-057.png`** | **REQUIRED BEFORE IMPLEMENTATION — NOT VERSIONED** | TBD | TBD | 1440×900 (to approve) | en | `VR-PUB-057-POPULATED` | semantic/manual MVP |
 
 ## Changelog
+
+### 1.2.0 — 2026-10-04
+
+- Register the eleven exact user-approved CA-016…CA-026 PNGs, SHA-256, native/intended 1448×1086 viewport, visible `en` Locale and existing `VR-CA-016-POPULATED`…`VR-CA-026-POPULATED` scenario IDs. These scenario IDs are future fixture contracts, not implemented seeders.
+- Name the approving Product Owner as menvil via the Phase 19.0 brief; archive the source as `categories-schema-prototype-v1`. No implementation baselines are added.
+- Preserve Brand approval and all remaining unversioned placeholders.
 
 ### 1.1.0 — 2026-09-01
 

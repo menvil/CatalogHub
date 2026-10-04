@@ -8,6 +8,8 @@ Administrative mutations write their domain state and audit entry in one databas
 
 ## Brand activity contract
 
+Categories / Schema does not yet have Brand-grade action audit. Phase 19.0 reserves its future event names, semantic snapshot fields, subjects, transaction/no-op rules and aggregated global-entity activity in [ADR-0003's audit registry](adr/0003-categories-schema-ownership.md#required-audit-registry-future-implementation). This is planning only; no new enum events or actions exist until the owning foundation/implementation phase.
+
 All Brand events use `CentralBrand` as the subject, `central` context for Central Admin requests, and a null site. The registry is:
 
 - `catalog.brand.created`: `name`, `slug`, `status`, `website_url`, semantic `country_code`, `founded_year`, `support_url`, `contact_email`, and `primary_color`;

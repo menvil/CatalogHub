@@ -48,4 +48,6 @@ Brand translation read, Save, explicit Approve, and explicit Mark Outdated route
 
 ## Executable coverage
 
+Phase 19.0 freezes the future Categories / Schema split in [ADR-0003](adr/0003-categories-schema-ownership.md#permission-freeze): CA-016…CA-018 use `catalog.categories.manage`, CA-019…CA-025 use `catalog.schema.manage`, and CA-026 uses `translations.manage`; all writes additionally require `central.mutation.execute`. The existing Category Filament resource's blanket permission is a migration gap, not the target contract. No permission/action implementation is changed by 19.0.
+
 `tests/Feature/Auth/AuthorizationMatrixTest.php` covers all six roles, two independent sites, unassigned users, disabled users, query tampering, and a forbidden cross-site mutation with no database side effect. Focused policy, middleware, membership, disabled-user, and audit suites cover the underlying contracts.

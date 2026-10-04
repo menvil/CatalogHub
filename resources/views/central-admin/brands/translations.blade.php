@@ -178,10 +178,13 @@
                                 @else
                                     <div>
                                         <label for="status" class="mr-2 text-xs font-medium text-admin-muted">Save as</label>
-                                        <select id="status" name="status" class="brand-translation-source-select !w-auto" @if ($errors->has('status')) aria-invalid="true" aria-describedby="status-error" @endif>
-                                            <option value="human_reviewed" @selected(old('status', $selectedStatus->value) !== 'machine_translated')>Human reviewed</option>
-                                            <option value="machine_translated" @selected(old('status', $selectedStatus->value) === 'machine_translated')>Machine translated</option>
-                                        </select>
+                                        <div class="brand-translation-select inline-block align-middle">
+                                            <select id="status" name="status" class="brand-translation-source-select !w-auto" @if ($errors->has('status')) aria-invalid="true" aria-describedby="status-error" @endif>
+                                                <option value="human_reviewed" @selected(old('status', $selectedStatus->value) !== 'machine_translated')>Human reviewed</option>
+                                                <option value="machine_translated" @selected(old('status', $selectedStatus->value) === 'machine_translated')>Machine translated</option>
+                                            </select>
+                                            <x-ui.icon name="chevron-down" decorative size="sm" data-select-chevron />
+                                        </div>
                                         @if ($errors->has('status'))<p id="status-error" class="mt-1 text-xs text-admin-danger" role="alert">{{ $errors->first('status') }}</p>@endif
                                     </div>
                                 @endif

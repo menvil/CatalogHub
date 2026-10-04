@@ -107,7 +107,7 @@ test('CA-015 offers any source and target in two compact menus with twenty activ
             if (width >= 640) expect(source.x + source.width).toBeLessThanOrEqual(target.x)
             else expect(source.y + source.height).toBeLessThanOrEqual(target.y)
         }
-        for (const select of await direction.locator('.brand-translation-select').all()) {
+        for (const select of await page.locator('.brand-translation-select').all()) {
             const control = await select.locator('select').boundingBox()
             const chevron = await select.locator('[data-select-chevron]').boundingBox()
             expect(control.x + control.width - chevron.x - chevron.width).toBeCloseTo(12, 0)

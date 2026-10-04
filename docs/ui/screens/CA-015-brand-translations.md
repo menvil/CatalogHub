@@ -17,7 +17,7 @@ reference_version: v3
 
 # CA-015 — Brand Translations, Phase 18.5
 
-The Brand workspace uses `Brands / {Brand} / Translations`, a **Brand Translations** title, View Brand where authorized, and the existing Overview / Media / Translations tabs. Two labeled menus, **Source language → Target language**, replace the locale strip so twenty or more active languages do not add rows or horizontal scrolling. Each option shows language, code and current quality state; the selected option contains code/status without a duplicate line underneath. Native selectors use the UI kit chevron with its 12px right inset. The direction repeats above the editor. All six supported fields show target editing alongside source reference: localized name, tagline, short description, description, SEO title and SEO description. Canonical Brand name and slug appear only as compact identity metadata.
+The Brand workspace uses `Brands / {Brand} / Translations`, a **Brand Translations** title, View Brand where authorized, and the existing Overview / Media / Translations tabs. Two labeled menus, **Source language → Target language**, replace the locale strip so twenty or more active languages do not add rows or horizontal scrolling. Each option shows language, code and current quality state; the selected option contains code/status without a duplicate line underneath. Native language selectors and Save as use the same UI kit chevron with a 12px right inset. The direction repeats above the editor. All six supported fields show target editing alongside source reference: localized name, tagline, short description, description, SEO title and SEO description. Canonical Brand name and slug appear only as compact identity metadata.
 
 ## Two different meanings of source
 

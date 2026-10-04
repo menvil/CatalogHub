@@ -16,11 +16,11 @@
         "test:visual:update": "CATALOGHUB_BROWSER_PORT=8015 node tools/visual/run.mjs --update-snapshots=all"
     },
     "devDependencies": {
-        "@playwright/test": "1.62.1",
+        "@playwright/test": "1.63.0",
         "@tailwindcss/vite": "^4.3.3",
         "concurrently": "^10.0.5",
         "laravel-vite-plugin": "^3.2",
         "tailwindcss": "^4.0.0",
-        "vite": "^8.2.2"
+        "vite": "^8.3.2"
     }
 }

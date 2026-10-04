@@ -7,7 +7,7 @@ This audit compares the original Brand prototypes with the current desktop imple
 | Screen | Final acceptance |
 |---|---|
 | CA-011 — Brands List | Final converged / accepted |
-| CA-012 — Brand Overview | Final converged / accepted |
+| CA-012 — Brand Detail | Final converged / accepted |
 | CA-013 — Brand Create/Edit | Final converged / accepted |
 | CA-014 — Brand Media | Final converged / accepted |
 | CA-015 — Brand Translations | Final converged / accepted |

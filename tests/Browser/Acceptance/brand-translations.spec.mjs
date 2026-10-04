@@ -34,6 +34,11 @@ test('CA-015 contains long canonical identity and locale labels without writes a
         await expect(page.getByRole('heading', { name: 'Brand Translations', exact: true })).toBeVisible()
         await expect(page.getByLabel('Source language', { exact: true })).toHaveValue('en-US')
         await expect(page.getByLabel('Target language', { exact: true })).toHaveValue('de-DE')
+        const headerSlug = page.locator('[data-page-actions] .font-foundation-mono')
+        await expect(headerSlug).toBeVisible()
+        await expect(headerSlug).toHaveText('long-slug-'.repeat(24))
+        await expect(page.locator('#source-language option:checked')).toContainText(`English ${'reference language '.repeat(10)}`)
+        await expect(page.locator('#target-language option:checked')).toContainText(`German ${'target language '.repeat(10)}`)
         await expect(page.getByRole('link', { name: 'View Brand', exact: true })).toBeVisible()
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
             `Long translation identity must not overflow at ${viewport.width}px.`).toBe(true)

@@ -25,7 +25,7 @@ No Brands-specific TODO/FIXME or unused view/helper/hook requiring removal was f
 | Screen | Accepted operational contract |
 |---|---|
 | [CA-011](screens/CA-011-brands-list.md) | Real KPIs; combined search/Country/lifecycle/coverage/translation/Quality filters; global Clear; stable sorting/pagination; contained desktop table and mobile cards; Ready/Missing/Unavailable logo; empty/filtered-empty states. |
-| [CA-012](screens/CA-012-brand-detail.md) | Canonical identity/profile, shared logo, Organization owner, explicit Tags, derived Category/Product context, authoritative Quality and existing repair destinations, safe entity provenance and explicit legal lifecycle actions. |
+| [CA-012 — Brand Detail](screens/CA-012-brand-detail.md) | Canonical identity/profile, shared logo, Organization owner, explicit Tags, derived Category/Product context, authoritative Quality and existing repair destinations, safe entity provenance and explicit legal lifecycle actions. |
 | [CA-013](screens/CA-013-brand-create-edit.md) | Shared Create/Edit form for canonical scalar fields only; active Country plus retained inactive assignment; existing Organization ownership workflow; field-associated validation; read-only lifecycle and logo context. |
 | [CA-014](screens/CA-014-brand-media-logo.md) | Current Primary logo, compact details/variants and honest delivery states; upload and 24-item Shared Media picker open only by explicit action; replacement is atomic; removal retains the MediaAsset/files. |
 | [CA-015](screens/CA-015-brand-translations.md) | Explicit Source → Target menus; all six fields with read-only reference on the left; copy field/all with explicit Save; dirty draft protection; Missing target/source and Outdated source; explicit approval/outdated actions, real activity and independent LTR/RTL. |
@@ -42,7 +42,7 @@ Authorization uses the existing route middleware and permission matrix; no new p
 |---|---|---|
 | CentralAdmin / SuperAdmin | All approved Brand surfaces and actions. | Existing catalog, media and translation capabilities. |
 | CatalogEditor / Brand manager | List, Overview, Create/Edit, lifecycle, owner, Tags, provenance and Media; no Translations tab/issue CTA without translation capability. | `catalog.brands.manage`; Shared Media reuse additionally requires `media.manage`. |
-| Translator / Translation manager | CA-015 only; inaccessible Brand Overview/Media/View Brand links are absent. | `translations.manage` and `central.mutation.execute` for Save/Approve/Outdated. |
+| Translator / Translation manager | CA-015 only; inaccessible Overview/Media/View Brand links are absent. | `translations.manage` and `central.mutation.execute` for Save/Approve/Outdated. |
 | Authorized translation viewer without central mutation capability | Reference/target content, locale states and activity remain readable; target is read-only and mutation/copy actions absent. | Mutation routes independently reject the missing capability. |
 | Guest, denied/disabled actor, Site-only actor without approved Central access | No protected Brand read or mutation capability. | Authentication, Central access and owning permissions are enforced on direct requests. |
 
@@ -75,7 +75,15 @@ Repository verification entry points: `composer validate --strict`, `composer fo
 
 Local verification passed: all four canonical PHP suites; 73 architecture contracts; 222 database-boundary cases (213 passed and nine expected SQLite-only skips); schema, pagination and query contracts; 51 Browser scenarios; 31 frontend tests; 36 PHP visual checks and 29 pinned Playwright comparisons. Strict Composer validation, Pint, PHPStan, lint, build and both dependency audits passed.
 
-Local browser acceptance uses the unchanged Playwright Browser command with `CATALOGHUB_BROWSER_PORT=8015` because 8014 belongs to an existing preview. Visual comparison uses the unchanged pinned Linux renderer. Native acceptance screenshots are review diagnostics, never replacement baselines. No approved PNG, threshold, Docker runner, Playwright configuration or visual environment image is changed. CI retains its full SQLite, PostgreSQL and MariaDB lanes, including exact locale codes, case-sensitive external identities, owner/translation uniqueness, Category/Tag queries and concurrency checks.
+Local browser acceptance used this direct Playwright command because port 8014 belongs to an existing preview:
+
+```bash
+CATALOGHUB_BROWSER_PORT=8015 npx playwright test --config=playwright.config.mjs --project=browser
+```
+
+`composer test:browser` delegates to the npm script, which explicitly sets port 8014 and overrides an external `CATALOGHUB_BROWSER_PORT=8015`. Use the direct command above when 8014 is occupied; CI retains the unchanged Composer entry point.
+
+Visual comparison uses the unchanged pinned Linux renderer. Native acceptance screenshots are review diagnostics, never replacement baselines. No approved PNG, threshold, Docker runner, Playwright configuration or visual environment image is changed. CI retains its full SQLite, PostgreSQL and MariaDB lanes, including exact locale codes, case-sensitive external identities, owner/translation uniqueness, Category/Tag queries and concurrency checks.
 
 The PR description records the exact final commit and successful CI run after verification; that run is the completion gate. [Visual gap audit](brands-visual-gap-audit.md) records every implemented/mapped, intentionally deferred or rejected prototype divergence.
 

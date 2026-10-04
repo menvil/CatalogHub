@@ -87,9 +87,10 @@ final class CentralBrandOwnershipActionTest extends TestCase
         self::assertDatabaseHas('organizations', ['id' => $organizationB->id]);
         self::assertSame(CentralBrandStatus::Active, $brand->fresh()->status);
         self::assertSame(3, $this->auditQuery($brand)->count());
+        $auditIds = $this->auditQuery($brand)->orderBy('id')->pluck('id')->all();
 
         app(ClearCentralBrandOwnerAction::class)->handle($actor, $brand);
-        self::assertSame(3, $this->auditQuery($brand)->count());
+        self::assertSame($auditIds, $this->auditQuery($brand)->orderBy('id')->pluck('id')->all());
     }
 
     public function test_create_and_assign_normalizes_unicode_without_global_name_uniqueness(): void

@@ -27,6 +27,6 @@ final class SystemErrorFixtureTest extends TestCase
         exec('APP_ENV=production '.PHP_BINARY.' artisan route:list --path=dev/system-error --json 2>&1', $output, $exitCode);
 
         $this->assertSame(0, $exitCode, implode(PHP_EOL, $output));
-        $this->assertStringContainsString('doesn\'t have any routes matching', implode(PHP_EOL, $output));
+        $this->assertSame([], json_decode(implode(PHP_EOL, $output), true, flags: JSON_THROW_ON_ERROR));
     }
 }

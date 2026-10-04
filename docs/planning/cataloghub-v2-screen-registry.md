@@ -62,7 +62,7 @@ updates this registry and the visual manifest.
 | CA-010 | Product Data Quality View | Central Admin | page | `/admin/central/products/quality` | Central | no | `pictures/1. Central Admin/1.2. Products/CA-010 — Product Data Quality View.png` | Phase 02 |
 | CA-011 | Brands List | Central Admin | page | `/admin/central/brands` | Central | no | `pictures/1. Central Admin/1.3. Brands/CA-011 — Brands List.png` | Phase 02 |
 | CA-012 | Brand Detail | Central Admin | page | `/admin/central/brands/{brand}` | Central | no | `pictures/1. Central Admin/1.3. Brands/CA-012 — Brand Detail.png` | Phase 02 |
-| CA-013 | Brand Create / Edit | Central Admin | page | `/admin/central/brands/{brand?}/edit` | Central | no | `pictures/1. Central Admin/1.3. Brands/CA-013 — Brand Create:Edit.png` | Phase 02 |
+| CA-013 | Brand Create / Edit | Central Admin | page | `/admin/central/brands/create`; `/admin/central/brands/{brand}/edit` | Central | no | `pictures/1. Central Admin/1.3. Brands/CA-013 — Brand Create:Edit.png` | Phase 02 |
 | CA-014 | Brand Media  /  Logo | Central Admin | page | `/admin/central/brands/{brand}/media` | Central | no | `pictures/1. Central Admin/1.3. Brands/CA-014 — Brand Media : Logo.png` | Phase 02 |
 | CA-015 | Brand Translations | Central Admin | page | `/admin/central/brands/{brand}/translations` | Central | no | `pictures/1. Central Admin/1.3. Brands/CA-015 — Brand Translations.png` | Phase 02 |
 | CA-016 | Categories List | Central Admin | page | `/admin/central/categories` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-016 — Categories List.png` | Phase 03 |

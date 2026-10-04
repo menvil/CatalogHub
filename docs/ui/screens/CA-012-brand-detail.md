@@ -17,6 +17,8 @@ reference_version: v10-final
 
 # CA-012 — Brand Detail
 
+**Final converged / accepted — Brands Phase 18.6.** See [section acceptance and closure](../brands-section-acceptance.md) for the cross-screen, permission and verification evidence.
+
 ## Contract
 
 Brand Detail is the final canonical overview for a Central Brand. Its header shows the escaped canonical name, slug context, lifecycle, derived Quality state, primary `Edit Brand`, and only the lifecycle actions valid for the current state. Breadcrumbs are `Central Admin → Brands → {Brand name}`, with the current Brand rendered as plain text. Overview, Media and permission-aware Translations remain navigation—not dead prototype buttons.

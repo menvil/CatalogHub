@@ -1,5 +1,7 @@
 # Brand domain contract
 
+**Brands CA-011…CA-015 — COMPLETE.** Phase 18.6 accepts the existing module without extending its domain or schema. See [final section acceptance](../ui/brands-section-acceptance.md).
+
 `CentralBrand` is the global, canonical, language-neutral Brand entity in the Central Catalog. It is not owned by a Site, market, or locale.
 
 ## Canonical profile
@@ -43,7 +45,7 @@ Ownership is contextual metadata, not quality. It does not change Draft/Active/A
 
 Localized name overrides, tagline, short/long descriptions, SEO title, and SEO description belong only to `BrandTranslation`. The shared row status is `Missing`, `MachineTranslated`, `HumanReviewed`, `Approved`, or `Outdated`, with source hash and server-owned approval actor/time metadata. Brand translation source hashes remain based only on canonical `name` and `slug`; profile-only changes do not make translations Outdated. CA-015 lets the translator choose another active locale as source. When its `BrandTranslation` exists, it is displayed as a read-only reference beside all six target fields, with explicit client-side field/all copy. Selecting a locale with no source row shows a Missing source state without fabricating values or creating a row. This selected Source Locale is a UX reference only: it does not change the canonical source hash, define a master locale, or persist a dependency between translations. Canonical name is used only as an explicitly labeled fallback for a blank source localized name; slug remains identity metadata. Missing source values are never fabricated.
 
-Logo and other media belong to `MediaAsset`/`MediaAssignment`; they are not columns or computed model accessors on `CentralBrand`. A Brand may have many `CentralProduct` records through `products`, but Product, translation, and media counts are derived queries, never persisted Brand fields.
+The canonical Brand logo belongs to `MediaAsset`/`MediaAssignment`; they are not columns or computed model accessors on `CentralBrand`. A Brand may have many `CentralProduct` records through `products`, but Product, translation, and media counts are derived queries, never persisted Brand fields.
 
 Phase 14 confirms only the global canonical `brand_logo` role. Its exact assignment is `central_brand` + Brand ID + `brand_logo`, null locale/site/market, global visibility, and primary status. `CentralBrandMediaQuery` owns that selection for CA-012, CA-014, and derived quality. CA-014 mutates the relation through transactionally locked Actions; upload uses Shared Media ingest, bounded reuse additionally requires `media.manage`, and replace/remove never physically delete a shared asset. Localized, Site, and market media remain future concerns even though the generic assignment model can represent those contexts.
 
@@ -80,7 +82,7 @@ The eight Brand concerns remain intentionally separate:
 
 Parent Company is represented only by the current direct Organization relation described above. Historical ownership, multiple concurrent owners, percentages, beneficial/ultimate ownership, mergers/acquisitions, Organization hierarchy, registries, Organization translations/media/lifecycle, a global Organization administration screen, and Site-specific/public owner projection remain future concerns.
 
-Field-level provenance or persisted field workflow, source observation/content history, automatic canonical overwrite, AI/machine-translation providers, translation memory/glossaries, fuzzy matching, social links, public/Site localized delivery, fallback, translated slugs, additional Brand media roles, localized/site/market media, richer identity palettes, global Tag vocabulary management, and final Brand UI convergence remain future domains.
+Field-level provenance or persisted field workflow, source observation/content history, automatic canonical overwrite, AI/machine-translation providers, translation memory/glossaries, fuzzy matching, social links, public/Site localized delivery, fallback, translated slugs, additional Brand media roles, localized/site/market media, richer identity palettes, and global Tag vocabulary management remain future domains.
 
 ## Permissions and audit
 

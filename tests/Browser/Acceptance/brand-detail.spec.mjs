@@ -9,6 +9,24 @@ const activeBrandId = 20
 const completeBrandId = 21
 const draftBrandId = 24
 
+async function checkModalKeyboardFocus(page, opener) {
+    await opener.click()
+    const dialog = page.getByRole('dialog')
+    const first = dialog.getByRole('button').first()
+    await expect(dialog).toBeVisible()
+    await first.focus()
+    await page.keyboard.press('Tab')
+    await page.keyboard.press('Shift+Tab')
+    await expect(first).toBeFocused()
+    await page.keyboard.press('Shift+Tab')
+    expect(await dialog.evaluate((element) => element.contains(document.activeElement))).toBe(true)
+    await page.keyboard.press('Tab')
+    await expect(first).toBeFocused()
+    await page.keyboard.press('Escape')
+    await expect(dialog).toBeHidden()
+    await expect(opener).toBeFocused()
+}
+
 test('CA-012 derives complete and needs-attention quality states from persisted Brand data', async ({ page }) => {
     const assertNoPageErrors = observePageErrors(page)
 
@@ -47,13 +65,15 @@ test('CA-012 derives complete and needs-attention quality states from persisted 
     assertNoPageErrors()
 })
 
-test('CA-012 supports list, detail, edit, and detail navigation', async ({ page }) => {
+test('Brands section keeps identity and navigation consistent across CA-011 through CA-015', async ({ page }) => {
     const assertNoPageErrors = observePageErrors(page)
 
     await signIn(page, 'central', foundationDemo.centralAdmin)
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
     await page.goto('/admin/central/brands?q=Samsung')
     const activeBrandRow = page.locator(`[data-row-id="${activeBrandId}"]`)
+    await expect(activeBrandRow).toContainText('Samsung Electronics Co., Ltd.')
+    await expect(activeBrandRow.locator('.brand-list-quality')).toContainText('80%')
     await activeBrandRow.locator('summary[aria-label^="Open actions for row"]').click()
     await activeBrandRow.getByRole('menuitem', { name: 'View', exact: true }).click()
 
@@ -78,6 +98,8 @@ test('CA-012 supports list, detail, edit, and detail navigation', async ({ page 
     await expect(page.locator('[data-screen-region="recent-products"]')).toHaveCount(0)
     await expect(page.locator('[data-brand-tags]')).toContainText('Premium')
     await expect(page.locator('[data-screen-region="external-identities"]')).toContainText('Manufacturer API')
+    await checkModalKeyboardFocus(page, page.getByRole('button', { name: 'Manage tags', exact: true }))
+    await checkModalKeyboardFocus(page, page.getByRole('button', { name: 'Archive Brand', exact: true }))
     await page.getByRole('link', { name: 'Edit Brand', exact: true }).click()
 
     await expect(page).toHaveURL(new RegExp(`/admin/central/brands/${activeBrandId}/edit$`))
@@ -85,11 +107,77 @@ test('CA-012 supports list, detail, edit, and detail navigation', async ({ page 
     await expect(page.getByText('CA-013', { exact: true })).toHaveCount(0)
     await expect(page.locator('#brand-form')).toHaveAttribute('data-admin-form-leave-warning', 'false')
     await expect(page.locator('#brand-name')).toHaveValue('Samsung')
+    await expect(page.locator('#brand-slug')).toHaveValue('samsung')
+    await expect(page.locator('[data-current-parent-company]')).toContainText('Samsung Electronics Co., Ltd.')
+    await expect(page.locator('[data-screen-region="status-context"]')).toContainText('Active')
     await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Samsung')
+    await checkModalKeyboardFocus(page, page.getByRole('button', { name: 'Change', exact: true }))
     await page.getByRole('link', { name: 'Back to Overview', exact: true }).click()
 
     await expect(page).toHaveURL(new RegExp(`/admin/central/brands/${activeBrandId}$`))
     await expect(page.locator('[data-screen-id="CA-012"]')).toBeVisible()
+    const logoSource = await page.getByAltText('Samsung logo').getAttribute('src')
+    await expect(page.getByRole('tab', { name: 'Overview', exact: true })).toHaveAttribute('aria-selected', 'true')
+    await page.getByRole('tab', { name: 'Media', exact: true }).click()
+    await expect(page).toHaveURL(new RegExp(`/admin/central/brands/${activeBrandId}/media$`))
+    await expect(page.locator('[data-screen-id="CA-014"]')).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Media', exact: true })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByAltText('Samsung logo')).toHaveAttribute('src', logoSource ?? '')
+    await expect(page.locator('[data-screen-region="asset-details"]')).toContainText('samsung-logo.png')
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await checkModalKeyboardFocus(page, page.getByRole('button', { name: 'Replace logo', exact: true }))
+    await page.getByRole('tab', { name: 'Translations', exact: true }).click()
+    await expect(page).toHaveURL(new RegExp(`/admin/central/brands/${activeBrandId}/translations/en-US$`))
+    await expect(page.locator('[data-screen-id="CA-015"]')).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Translations', exact: true })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByLabel('Target language', { exact: true })).toHaveValue('en-US')
+    await expect(page.getByLabel('Localized name', { exact: true })).toHaveValue('Samsung')
+    await expect(page.getByRole('complementary', { name: 'Translation metadata and activity' })).toContainText('Approved')
+    const breadcrumbs = page.getByRole('navigation', { name: 'Breadcrumbs', exact: true })
+    await expect(breadcrumbs).toContainText('Samsung')
+    await expect(breadcrumbs.getByRole('link', { name: 'Samsung', exact: true })).toHaveAttribute('href', `/admin/central/brands/${activeBrandId}`)
+    await page.getByRole('tab', { name: 'Overview', exact: true }).click()
+    await expect(page).toHaveURL(new RegExp(`/admin/central/brands/${activeBrandId}$`))
+    await expect(page.locator('[data-parent-company]')).toHaveText('Samsung Electronics Co., Ltd.')
+    await expect(page.locator('[data-screen-region="quality-completeness"]')).toContainText('80%')
+    await expect(page.locator('[data-screen-region="translation-summary"]')).toContainText('3 of 4 active locales complete')
+    await breadcrumbs.getByRole('link', { name: 'Brands', exact: true }).click()
+    await expect(page).toHaveURL(/\/admin\/central\/brands$/)
+    await expect(page.locator('[data-screen-id="CA-011"]')).toBeVisible()
+    assertNoPageErrors()
+})
+
+test('Brands section contains every screen at desktop, intermediate, tablet and mobile widths', async ({ page }) => {
+    test.slow()
+    const assertNoPageErrors = observePageErrors(page)
+    await signIn(page, 'central', foundationDemo.centralAdmin)
+    await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
+
+    const screens = [
+        ['CA-011', '/admin/central/brands?q=Samsung'],
+        ['CA-012', `/admin/central/brands/${activeBrandId}`],
+        ['CA-013', '/admin/central/brands/create'],
+        ['CA-013', `/admin/central/brands/${activeBrandId}/edit`],
+        ['CA-014', `/admin/central/brands/${activeBrandId}/media`],
+        ['CA-015', `/admin/central/brands/${activeBrandId}/translations/de-DE?source=en-US`],
+    ]
+    for (const viewport of [
+        { width: 1440, height: 1000 },
+        { width: 1280, height: 900 },
+        { width: 1024, height: 900 },
+        { width: 768, height: 1024 },
+        { width: 390, height: 844 },
+    ]) {
+        await page.setViewportSize(viewport)
+        for (const [screen, url] of screens) {
+            const response = await page.goto(url)
+            expect(response?.status(), `${screen} should open at ${viewport.width}px.`).toBe(200)
+            await expect(page.locator(`[data-screen-id="${screen}"]`)).toBeVisible()
+            await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
+            expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
+                `${screen} must not overflow at ${viewport.width}px.`).toBe(true)
+        }
+    }
     assertNoPageErrors()
 })
 

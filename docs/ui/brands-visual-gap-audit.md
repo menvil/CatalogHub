@@ -1,8 +1,16 @@
 # Brands visual gap audit — CA-011…CA-015
 
-Audit date: 2026-09-02. Baseline: `develop` at `8e51ab9` after Brands Phase 17. Prototype reference version: `brand-prototype-v1`.
+Final section audit: 2026-10-04. Baseline: `develop` at `be2817ca` after merged Phase 18.5 / PR #610. Original prototype audit: 2026-09-02 at `8e51ab9` after Phase 17. Prototype reference version: `brand-prototype-v1`.
 
-This audit compares the original Brand prototypes with the current desktop implementation and its responsive mobile composition. The PNGs in `pictures/1. Central Admin/1.3. Brands/` are the design source; `tests/Visual/baselines/` are regression evidence only. Rows use **A** for implementation from an approved domain source, **B** for mapping prototype language to existing semantics, **C** for intentional future-domain gaps, and **D** for pure composition/visual debt. A row may carry a compound classification when one prototype region contains separable concerns with different outcomes. Phases 18.1–18.4 close the eligible CA-011 through CA-014 A/B/D work.
+This audit compares the original Brand prototypes with the current desktop implementation and its responsive mobile composition. The PNGs in `pictures/1. Central Admin/1.3. Brands/` are the design source; `tests/Visual/baselines/` are regression evidence only. Rows use **A** for implementation from an approved domain source, **B** for mapping prototype language to existing semantics, **C** for intentional future-domain gaps, and **D** for pure composition/visual debt. A row may carry a compound classification when one prototype region contains separable concerns with different outcomes. Phases 18.1–18.5 closed all eligible A/B/D work. Phase 18.6 accepts CA-011…CA-015 as one finished section; C rows identify explicit future exclusions, and controls that conflict with approved ownership are rejected rather than left as open gaps. See [final section acceptance](brands-section-acceptance.md).
+
+| Screen | Final acceptance |
+|---|---|
+| CA-011 — Brands List | Final converged / accepted |
+| CA-012 — Brand Detail | Final converged / accepted |
+| CA-013 — Brand Create/Edit | Final converged / accepted |
+| CA-014 — Brand Media | Final converged / accepted |
+| CA-015 — Brand Translations | Final converged / accepted |
 
 ## Prototype references
 
@@ -33,51 +41,48 @@ Phase 18.1 converges CA-011 into a dense operating dashboard while retaining app
 
 ## CA-012 — Brand Detail
 
-Before Phase 17, desktop rendered all approved data but as a long succession of generic cards; identity, quality and canonical facts competed at equal weight. Mobile stacked safely but inherited that fragmentation. This is the only screen converged in Phase 17.
+CA-012 is final-converged and accepted. Its current overview uses the Phase 18.2 consolidated composition; the former Phase 16/17 card gaps are closed.
 
-| Prototype region | Phase 16 desktop / mobile equivalent | Domain source | Gap | Phase | Notes |
-|---|---|---|---|---|---|
-| Logo/name/slug/status identity header | Small logo context and separate generic profile cards; mobile fragments identity | Canonical Brand, `brand_logo`, lifecycle | D | Phase 17 | Recompose as one dominant identity/profile surface with clear primary action. |
-| Parent Company | Absent from CA-012 after Phase 16 introduced ownership | `CentralBrandOwnership.organization` | A | Phase 17 | Prominent read-only identity metadata; mutation remains CA-013. |
-| Official profile facts | Split across General Information, Online Presence and Brand Identity cards | Canonical profile fields | D | Phase 17 | One compact definition grid for Country, Founded, URLs, email and color. |
-| `Needs Review` / completeness | Derived Quality card exists but composition is detached | `CentralBrandQualitySummary` | B | Phase 17 | Keep `Complete / Needs attention`; present score, progress and repair destinations. |
-| Translation coverage | Only individual translation quality issues | Active Locales + existing Brand translations | A | Phase 17 | Add a read-only grouped status summary with no stored counter and no N+1. |
-| Product portfolio and category coverage | Separate usage/category blocks lower in a long page | Product count and grouped derived coverage | D | Phase 17 | Compact portfolio surface; categories remain derived. |
-| Categories and Tags | Correct semantics, visually scattered | Derived Category coverage; editorial Tags | D | Phase 17 | Keep concepts distinct while aligning their visual weight. |
-| Source Information | External identities card exists with generic management layout | `CentralBrandExternalIdentity` + `ImportSource` | B | Phase 17 | Treat as source context; retain existing scoped mutation and safe links. |
-| Record metadata | Large secondary card competes with primary information | Brand ID and timestamps | D | Phase 17 | Keep secondary and compact. |
-| Lifecycle actions | Correct actions in a separate card | Draft / Active / Archived actions | B | Phase 17 | Preserve approved transitions; do not copy publication controls. |
-| Published, Synced, publication status and Sites tab | No equivalent | Future SiteBrand/projection | C | Deferred | Intentionally absent; these are not lifecycle. |
-| Hero, dark/light logos and media completeness | Only exact global primary `brand_logo` | Future/unsupported media roles | C | Deferred | No fake slots or speculative Shared Media roles. |
-| Recent Products, price/rating snapshots | Product and Category totals remain in Brand summary; no separate recent list or decorative metrics | Current Product usage/category reads; no approved Brand-filtered Product destination or rating/price metrics | Adapted / C | Phase 18.2 / Deferred | Overview avoids duplicate Product context; rating/price remain intentionally absent. |
-| Field source/confidence/history | External identity links only | Future field-level provenance | C | Deferred | Do not infer canonical auto-update or matching confidence. |
+| Prototype region | Final desktop / mobile equivalent | Domain source | Decision | Notes |
+|---|---|---|---|---|
+| Logo/name/slug/status identity | Dominant identity/contact surface, contained logo, lifecycle and Edit | Canonical Brand, exact Shared Media logo | Implemented / converged (A/D) | Mobile stacks the same identity and actions. |
+| Parent Company and profile facts | Read-only Organization owner and compact Country/founded/contact/color grid | Canonical profile + ownership | Implemented (A) | All scalar/owner writes remain CA-013. |
+| Needs Review / completeness | Authoritative Quality and repair destinations | Quality evaluator and query | Mapped (B) | Complete / Needs attention are derived, never lifecycle. |
+| Translation coverage | One active-locale summary in Brand summary | BrandTranslation + active Locales | Implemented (A) | No stored counters or locale N+1. |
+| Products / Categories / Tags | One usage summary and separate derived Category/editorial Tag chips | Current Products, Category coverage, Catalog Tags | Implemented / converged (A/D) | No duplicate Product portfolio or editable Brand Categories. |
+| Source information | Safe external identities with configured ImportSource namespaces | Entity-level provenance | Mapped (B) | No field provenance or exposed source configuration. |
+| Metadata and lifecycle | Compact record facts; explicit legal header actions | Brand ID/timestamps, existing Actions | Implemented / mapped (A/B) | No generic status edit or quality recalculation. |
+| Published/Synced/Sites/Versions | Omitted | Future Site projection/version domains | Intentionally deferred (C) | Not a canonical lifecycle or an accepted tab. |
+| Hero / dark / light / richer media | Omitted | Unapproved media roles | Intentionally deferred (C) | Only global primary brand_logo is accepted. |
+| Recent Products / price / rating | Current usage totals only | No approved Brand-filtered Product destination or metric | Mapped / intentionally deferred (B/C) | No duplicate list, invented price or Brand rating. |
+| Field source/confidence/history | Entity-level external identities only | No field-level provenance contract | Intentionally deferred (C) | No inferred field ownership or confidence. |
 
 ## CA-013 — Brand Create / Edit
 
 Phase 18.3 converges the approved canonical form and Phase 16 Organization ownership into one dense Brand information editor. The prototype remains a density/hierarchy reference, not a source of deprecated Brand domains.
 
-| Prototype region | Current desktop / mobile equivalent | Domain source | Gap | Phase | Notes |
+| Prototype region | Current desktop / mobile equivalent | Domain source | Decision | Phase | Notes |
 |---|---|---|---|---|---|
-| Compact canonical identity/profile sections | One Brand information card with four divided subsections and 3→2→1 responsive field grids | Canonical Brand input | A | Phase 18.3 | Header actions and compact rail keep most canonical data in the first desktop viewport. |
-| Parent Company selector | Embedded Company & origin row with Assign/Change plus contextual Create/Clear | `CentralBrandOwnership → Organization` | A | Phase 18.3 | Visual integration only; one owner and separate authoritative mutations remain exact. |
-| Website/support/contact/color | Compact internal subsections without redundant helper copy | Canonical Brand fields | A | Phase 18.3 | No persistence or validation changes. |
-| Tags in prototype form | Managed only from CA-012 Classification | Existing editorial Tags | B | Phase 18.3 | Intentionally not duplicated in CA-013. |
-| Publish/save controls | Create/Save in page header; lifecycle remains CA-012 | Existing save plus CA-012 lifecycle | A | Phase 18.3 | No sticky footer, Save Draft, preview, or publication shortcut. |
-| Description, SEO, visibility, site assignment | No canonical equivalent in Brand profile | Translation or future Site projection domains | C | Deferred | Must not become new Brand columns. |
-| Manual category assignment | No editor by design | Category coverage is derived from Products | C | Deferred | Prototype control conflicts with approved semantics. |
-| Arbitrary external identifier fields | External identities use configured namespaces | `CentralBrandExternalIdentity` | C | Deferred | Do not add free-form identifier columns to the profile. |
+| Compact canonical identity/profile sections | One Brand information card with four divided subsections and 3→2→1 responsive field grids | Canonical Brand input | Implemented (A) | Phase 18.3 | Header actions and compact rail keep most canonical data in the first desktop viewport. |
+| Parent Company selector | Embedded Company & origin row with Assign/Change plus contextual Create/Clear | `CentralBrandOwnership → Organization` | Implemented (A) | Phase 18.3 | Visual integration only; one owner and separate authoritative mutations remain exact. |
+| Website/support/contact/color | Compact internal subsections without redundant helper copy | Canonical Brand fields | Implemented (A) | Phase 18.3 | No persistence or validation changes. |
+| Tags in prototype form | Managed only from CA-012 Classification | Existing editorial Tags | Mapped (B) | Phase 18.3 | Intentionally not duplicated in CA-013. |
+| Publish/save controls | Create/Save in page header; lifecycle remains CA-012 | Existing save plus CA-012 lifecycle | Implemented (A) | Phase 18.3 | No sticky footer, Save Draft, preview, or publication shortcut. |
+| Description / SEO and Site visibility | Localized copy on CA-015; Site controls omitted | BrandTranslation; future Site projection | Mapped / intentionally deferred (B/C) | Phase 18.5 / Deferred | No localized canonical columns. |
+| Manual category assignment | No editor by design | Category coverage is derived from Products | Rejected as speculative | Closed | Prototype control conflicts with approved derived ownership. |
+| Arbitrary external identifier fields | Entity-level external identities on CA-012 | `CentralBrandExternalIdentity` + `ImportSource` | Mapped (B); free-form fields rejected | Closed | Provenance stays outside canonical profile input. |
 
 ## CA-014 — Brand Media / Logo
 
 Phase 18.4 converges the honest single-role implementation into a focused Brand logo manager. The prototype remains a hierarchy and polish reference rather than authority for its multi-role DAM domain.
 
-| Prototype region | Current desktop / mobile equivalent | Domain source | Gap | Phase | Notes |
+| Prototype region | Current desktop / mobile equivalent | Domain source | Decision | Phase | Notes |
 |---|---|---|---|---|---|
 | Primary logo preview and controls | Contained preview, real state badges, compact action rail, on-demand replacement dialog, quiet confirmed assignment removal | Shared Media Core assignment and variants | Converged (A/D) | Phase 18.4 | Choosing a file does not mutate the assignment until explicit submission. |
 | Missing/unavailable media health | Polished no-logo, Processing, Failed and Unavailable states with existing recovery actions | Media assignment usability + derived Quality | Implemented (A) | Phase 18.4 | Missing variants never override a usable normalized master. |
 | Responsive asset metadata/actions | Compact details/variants rail; single-column before 1280px; explicit tablet/mobile coverage | Existing Media asset/variant read model | Converged (D) | Phase 18.4 | Long values wrap and controls remain usable at 390px. |
-| Wordmark, symbol, dark/light, hero and OG slots | No equivalent | Unsupported Brand media roles | C | Deferred | Do not render placeholders that imply role support. |
-| Localized/site media | No equivalent | Future localized/site media | C | Deferred | Remains outside global canonical media. |
+| Wordmark, symbol, dark/light, hero and OG slots | No equivalent | Unsupported Brand media roles | Intentionally deferred (C) | Deferred | Do not render placeholders that imply role support. |
+| Localized/site media | No equivalent | Future localized/site media | Intentionally deferred (C) | Deferred | Remains outside global canonical media. |
 | Generic library/DAM browser | On-demand bounded 24-card Shared Media selector | Existing compatible-asset selector; generic DAM redesign | Adapted / C | Phase 18.4 / Deferred | Four columns at wide desktop, server search/pagination, and no generic asset management. |
 
 ## CA-015 — Brand Translations
@@ -92,8 +97,8 @@ Phase 18.5 converges CA-015 to the original prototype's translation workspace us
 | Source copy | Field copy and Copy all, overwrite confirmation | Existing reference values | Converged | Client-side only, explicit Save. |
 | Workflow overview | Compact status/row/current context and secondary actions | Existing Phase 15 actions and hashes | Adapted | No field-level completeness engine. |
 | Translation activity | Bounded real audit feed | Existing translation audit | Converged | No fake events or history subsystem. |
-| Donut / field counts | Omitted | No authoritative per-field completeness | Intentional divergence | No 78% or invented Complete/In Progress counts. |
-| Localized elements | Omitted | No hero/footer/support fields | Intentional divergence | Only the approved six-field contract. |
+| Donut / field counts | Omitted | No authoritative per-field completeness | Rejected as speculative | No 78% or invented Complete/In Progress counts. |
+| Localized elements | Omitted | No hero/footer/support fields | Rejected as speculative | Only the approved six-field contract. |
 | Add Language / AI / publication | Omitted | Separate or deferred domains | Intentional divergence | No machine provider, Site or Published/Synced semantics. |
 
 ## Phase 17 CA-012 convergence decision
@@ -122,10 +127,14 @@ The Shared Media selector is an on-demand dialog rather than a permanent page se
 
 The reviewed 1440×1000 and 1280×900 frames show the aligned Primary logo/Asset details workspace and compact Generated variants. At 1024×900 the rails stack before metadata gets narrow; 768×1024 and 390×844 preserve the same priority order with no horizontal overflow. The 1440×1000 picker frame verifies the dedicated dialog and exactly 24 compact cards in a four-column grid. Dark/light logos, wordmarks as a separate role, favicon, hero, OG, localized or Site media, Media Completeness, alt-text completeness, Edit Image, and Delete Asset remain intentional architectural divergences. CA-014 manages one exact global primary `brand_logo` assignment and never deletes the Shared Media asset.
 
-## Remaining bounded backlog
+## Closed section and future exclusions
 
-No A/B/D convergence work remains for CA-011…CA-015 after Phase 18.5. Category C capabilities above remain explicitly deferred.
+Brands CA-011…CA-015 — COMPLETE. No open implementation or visual convergence gaps remain after Phase 18.6 acceptance. Explicit future C capabilities remain deferred; conflicting prototype controls are rejected. The next section is Categories / Schema, outside this closure MR.
 
 ## Phase 18.5 CA-015 convergence decision
 
 The separate Source Context sidebar is replaced by actual localized reference text beside every editable field. Existing canonical hash/outdated authority remains intact. English Approved → German Outdated, English → French Missing, outdated reference, tablet/mobile and independent English LTR → Arabic RTL references demonstrate the final workspace. Screenshots use persisted Zotac fixture records, not hardcoded view values. Source selection and copy introduce no write on GET or before Save and no additional locale-by-locale queries. CA-015 retains the original shell system typography; its eight references are captured and compared with the pinned Linux renderer, not reconciled by a product font override.
+
+## Phase 18.6 section acceptance
+
+Cross-screen acceptance uses the same persisted Samsung Brand for list, Overview, Edit, Media and Translations. A focused product fix delays the CA-011 one-row filter layout until 1440px, retaining the compact three-column layout at 1280px so an active Clear action stays inside the workspace. Long CA-015 slug metadata is bounded/wrapped, and modal initialization preserves native control tab order so Shift+Tab stays inside Brand dialogs. The existing journey is extended through Media and Translations and back to Brands; section-level browser coverage checks all five widths. All approved PNG references, prototype hashes, typography and pinned visual infrastructure remain unchanged.

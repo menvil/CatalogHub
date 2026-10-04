@@ -213,6 +213,7 @@ test('CA-011 filter grid remains contained at intermediate and narrow widths', a
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
 
     for (const viewport of [
+        { width: 1280, height: 900, columns: 3 },
         { width: 1024, height: 900, columns: 3 },
         { width: 768, height: 1024, columns: 2 },
         { width: 390, height: 844, columns: 1 },

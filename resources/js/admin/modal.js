@@ -39,7 +39,7 @@ export function bootAdminModals() {
             ?? elements[0]
             ?? dialogFor(modal);
 
-        if (! focusTarget.hasAttribute('tabindex')) {
+        if (focusTarget === dialogFor(modal) && ! focusTarget.hasAttribute('tabindex')) {
             focusTarget.setAttribute('tabindex', '-1');
         }
 

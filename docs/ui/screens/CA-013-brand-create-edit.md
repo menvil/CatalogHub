@@ -15,7 +15,9 @@ out_of_scope: status-lifecycle-control;logo-mutation;translations;product-usage;
 reference_version: v4
 ---
 
-# CA-013 — Brand Create / Edit v4
+# CA-013 — Brand Create / Edit
+
+**Final converged / accepted — Brands Phase 18.6.** See [section acceptance and closure](../brands-section-acceptance.md) for the cross-screen, permission and verification evidence.
 
 ## Scalar Brand profile
 

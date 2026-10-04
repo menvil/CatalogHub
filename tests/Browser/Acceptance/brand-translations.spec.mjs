@@ -5,6 +5,7 @@ import {
     addWorkspaceLanguageOptions,
     clearSourceTagline,
     keepOnlyTargetLocale,
+    setLongBrandTranslationIdentity,
     workspacePersistence,
 } from '../Support/brand-translation-fixture.mjs'
 
@@ -13,6 +14,33 @@ const workspaceBrandId = 24
 test.beforeEach(() => resetBrowserFixture())
 
 test.afterEach(() => resetBrowserFixture())
+
+test('CA-015 contains long canonical identity and locale labels without writes at every section width', async ({ page }) => {
+    test.slow()
+    const assertNoPageErrors = observePageErrors(page)
+    setLongBrandTranslationIdentity()
+    await signIn(page, 'central', foundationDemo.centralAdmin)
+    await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
+    const before = workspacePersistence()
+    for (const viewport of [
+        { width: 1440, height: 1000 },
+        { width: 1280, height: 900 },
+        { width: 1024, height: 900 },
+        { width: 768, height: 1024 },
+        { width: 390, height: 844 },
+    ]) {
+        await page.setViewportSize(viewport)
+        await page.goto(`/admin/central/brands/${workspaceBrandId}/translations/de-DE?source=en-US`)
+        await expect(page.getByRole('heading', { name: 'Brand Translations', exact: true })).toBeVisible()
+        await expect(page.getByLabel('Source language', { exact: true })).toHaveValue('en-US')
+        await expect(page.getByLabel('Target language', { exact: true })).toHaveValue('de-DE')
+        await expect(page.getByRole('link', { name: 'View Brand', exact: true })).toBeVisible()
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
+            `Long translation identity must not overflow at ${viewport.width}px.`).toBe(true)
+    }
+    expect(workspacePersistence()).toEqual(before)
+    assertNoPageErrors()
+})
 
 test('CA-015 dims the disabled source chevron when only the target locale is active', async ({ page }) => {
     const assertNoPageErrors = observePageErrors(page)

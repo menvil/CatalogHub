@@ -1,9 +1,16 @@
 import { existsSync } from 'node:fs'
 import { defineConfig } from '@playwright/test'
+import { visualEnvironment } from './tools/visual/environment.mjs'
 
+const remoteVisualBrowser = process.env.CATALOGHUB_VISUAL_IMAGE === visualEnvironment.image && Boolean(process.env.PW_TEST_CONNECT_WS_ENDPOINT)
+const emulatedVisualBrowser = remoteVisualBrowser && process.arch !== 'x64'
+const projects = process.argv.flatMap((arg, index, args) => arg.startsWith('--project=') ? [arg.slice(10)] : arg === '--project' ? [args[index + 1]] : [])
+if ((projects.length === 0 || projects.includes('visual')) && !remoteVisualBrowser) {
+    throw new Error('Visual screenshots require the pinned Linux renderer. Use npm run test:visual or npm run test:visual:update.')
+}
 const configuredBrowser = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
 const macChrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-const executablePath = configuredBrowser || (existsSync(macChrome) ? macChrome : undefined)
+const executablePath = remoteVisualBrowser ? undefined : configuredBrowser || (existsSync(macChrome) ? macChrome : undefined)
 const port = Number.parseInt(process.env.CATALOGHUB_BROWSER_PORT ?? '', 10)
 const foundationHosts = [
     'tech-germany.test',
@@ -23,7 +30,7 @@ const baseURL = `http://127.0.0.1:${port}`
 export default defineConfig({
     fullyParallel: false,
     workers: 1,
-    timeout: 30_000,
+    timeout: emulatedVisualBrowser ? 120_000 : 30_000,
     expect: {
         timeout: 10_000,
     },

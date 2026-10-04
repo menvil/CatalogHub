@@ -11,6 +11,7 @@ const targets = [
     'tests/Frontend',
     'tests/Support',
     'tests/Visual/playwright',
+    'tools/visual',
 ]
 
 function javascriptFiles(path) {

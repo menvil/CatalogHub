@@ -1147,28 +1147,18 @@
     font-size: .875rem;
 }
 
-.brand-translation-locales {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .5rem;
-    min-width: 0;
-}
-
-.brand-translation-locale {
+.brand-translation-language-state {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: .5rem;
-    padding: .625rem .75rem;
-    border: 1px solid var(--color-admin-border);
-    border-radius: var(--radius-admin-input);
-    font-size: .8125rem;
-    background: var(--color-admin-surface);
+    margin-top: .5rem;
 }
 
-.brand-translation-locale.is-target {
-    border-color: var(--color-admin-primary);
-    background: var(--color-admin-primary-soft);
+.brand-translation-language-help {
+    grid-column: 1 / -1;
+    font-size: .75rem;
+    color: var(--color-admin-text-muted);
 }
 
 .brand-translation-workspace {
@@ -1254,7 +1244,7 @@ textarea.brand-translation-control {
     font-weight: 600;
 }
 
-.brand-translation-copy:focus-visible, .brand-translation-locale:focus-visible {
+.brand-translation-copy:focus-visible {
     outline: 2px solid var(--color-admin-primary);
     outline-offset: 3px;
 }
@@ -1331,26 +1321,12 @@ textarea.brand-translation-control {
         font-size: .75rem;
     }
 
-    .brand-translation-direction .text-lg {
-        font-size: .875rem;
-    }
-
     .brand-translation-source {
         grid-row: 2;
     }
 
     .brand-translation-target {
         grid-row: 3;
-    }
-
-    .brand-translation-locales {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    }
-
-    .brand-translation-locale {
-        padding: .5rem;
-        align-content: start;
     }
 
 }

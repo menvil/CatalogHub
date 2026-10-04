@@ -178,6 +178,38 @@ final class BrandTranslationSourceSelectionTest extends TestCase
         $this->assertDatabaseCount('brand_translations', 1);
     }
 
+    public function test_language_menus_offer_active_locales_and_valid_swap_urls_without_a_locale_strip(): void
+    {
+        $brand = CentralBrand::factory()->create();
+        $source = Locale::factory()->create(['code' => 'en-US', 'name' => 'English']);
+        $target = Locale::factory()->create(['code' => 'de-DE', 'name' => 'German']);
+        Locale::factory()->disabled()->create(['code' => 'xx-XX', 'name' => 'Inactive language']);
+        $this->row($brand, $source, TranslationStatus::Approved);
+        $this->row($brand, $target, TranslationStatus::Outdated);
+        $url = route('central.brands.translations.edit', [$brand, $target->code, 'source' => $source->code]);
+        $swap = route('central.brands.translations.edit', [$brand, $source->code, 'source' => $target->code], absolute: false);
+        $response = $this->actingAs(User::factory()->create(['role' => UserRole::Translator]))->get($url);
+        $response->assertOk()->assertSee('id="source-language"', false)->assertSee('id="target-language"', false)
+            ->assertSee('value="de-DE" data-language-url="'.$swap.'"', false)
+            ->assertSee('value="en-US" data-language-url="'.$swap.'"', false)
+            ->assertSee('English · en-US · Approved')->assertSee('German · de-DE · Outdated')
+            ->assertDontSee('Inactive language')->assertDontSee('brand-translation-locales', false)
+            ->assertDontSee('/translations/en-US?source=en-US', false)->assertDontSee('/translations/de-DE?source=de-DE', false);
+        $this->get($swap)->assertOk()->assertSee('German (de-DE) → English (en-US)');
+        $this->assertDatabaseCount('brand_translations', 2);
+    }
+
+    public function test_single_active_locale_keeps_target_visible_without_offering_self_source(): void
+    {
+        $brand = CentralBrand::factory()->create();
+        $target = Locale::factory()->create(['code' => 'en-US', 'name' => 'English']);
+        $response = $this->actingAs(User::factory()->create(['role' => UserRole::Translator]))
+            ->get(route('central.brands.translations.edit', [$brand, $target->code]));
+        $response->assertOk()->assertSee('id="target-language"', false)->assertSee('Choose source language')
+            ->assertDontSee('Switch direction')->assertDontSee('/translations/en-US?source=en-US', false);
+        $this->assertDatabaseCount('brand_translations', 0);
+    }
+
     private function row(CentralBrand $brand, Locale $locale, TranslationStatus $status): BrandTranslation
     {
         return BrandTranslation::factory()->create([

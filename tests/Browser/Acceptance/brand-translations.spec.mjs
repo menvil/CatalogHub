@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import { foundationDemo, observePageErrors, signIn, resetBrowserFixture } from '../Support/acceptance.mjs'
 import {
     activateRtlBrandTranslationLocale,
+    addWorkspaceLanguageOptions,
     clearSourceTagline,
     workspacePersistence,
 } from '../Support/brand-translation-fixture.mjs'
@@ -71,6 +72,76 @@ test('CA-012 and CA-015 complete the persisted Brand translation review workflow
 
     expect(dialogs).toEqual([])
     assertNoPageErrors()
+})
+
+test('CA-015 offers any source and target in two compact menus with twenty active languages and read-only swapping', async ({ page }) => {
+    const assertNoPageErrors = observePageErrors(page)
+    await signIn(page, 'central', foundationDemo.centralAdmin)
+    await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
+    await page.goto(`/admin/central/brands/${workspaceBrandId}/translations/de-DE?source=en-US`)
+    const direction = page.locator('[data-screen-region="translation-direction"]')
+    const sizes = new Map()
+    for (const width of [1440, 768, 390]) {
+        await page.setViewportSize({ width, height: 1000 })
+        await page.evaluate(() => document.fonts.ready)
+        sizes.set(width, (await direction.boundingBox()).height)
+    }
+    addWorkspaceLanguageOptions()
+    const before = workspacePersistence()
+    const mutations = []
+    page.on('request', (request) => {
+        if (request.method() !== 'GET' && request.url().includes('/translations/')) mutations.push(request.url())
+    })
+    await page.reload()
+    await expect(page.locator('#source-language option')).toHaveCount(21)
+    await expect(page.locator('#target-language option')).toHaveCount(20)
+    await expect(page.getByRole('navigation', { name: 'Translation locales' })).toHaveCount(0)
+    for (const width of [1440, 768, 390]) {
+        await page.setViewportSize({ width, height: 1000 })
+        await page.evaluate(() => document.fonts.ready)
+        expect(Math.abs((await direction.boundingBox()).height - sizes.get(width))).toBeLessThan(1)
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+    }
+    await page.getByLabel('Source language', { exact: true }).selectOption('de-DE')
+    await expect(page).toHaveURL(/translations\/en-US\?source=de-DE$/)
+    await expect(page.getByLabel('Source language', { exact: true })).toHaveValue('de-DE')
+    await expect(page.getByLabel('Target language', { exact: true })).toHaveValue('en-US')
+    await page.getByLabel('Source language', { exact: true }).selectOption('en-US')
+    await expect(page).toHaveURL(/translations\/de-DE\?source=en-US$/)
+    await page.getByLabel('Target language', { exact: true }).selectOption('bg-BG')
+    await expect(page).toHaveURL(/translations\/bg-BG\?source=en-US$/)
+    await expect(page.locator('#name')).toHaveValue('')
+    await page.getByLabel('Source language', { exact: true }).selectOption('it-IT')
+    await expect(page).toHaveURL(/translations\/bg-BG\?source=it-IT$/)
+    await expect(page.getByText('No source translation available for Italian (it-IT). Choose another source language.')).toBeVisible()
+    await page.getByLabel('Target language', { exact: true }).selectOption('it-IT')
+    await expect(page).toHaveURL(/translations\/it-IT\?source=bg-BG$/)
+    await page.reload()
+    await expect(page.getByLabel('Source language', { exact: true })).toHaveValue('bg-BG')
+    await expect(page.getByLabel('Target language', { exact: true })).toHaveValue('it-IT')
+    expect(mutations).toEqual([])
+    expect(workspacePersistence()).toEqual(before)
+    assertNoPageErrors()
+})
+
+test('CA-015 offers valid source and target navigation when JavaScript is disabled', async ({ page, browser }) => {
+    await signIn(page, 'central', foundationDemo.centralAdmin)
+    await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
+    const context = await browser.newContext({ javaScriptEnabled: false, storageState: await page.context().storageState() })
+    try {
+        const fallback = await context.newPage()
+        await fallback.goto(new URL(`/admin/central/brands/${workspaceBrandId}/translations/de-DE?source=en-US`, page.url()).href)
+        const before = workspacePersistence()
+        await fallback.getByText('Choose languages', { exact: true }).click()
+        await fallback.getByRole('navigation', { name: 'Source languages' }).getByRole('link', { name: /Source: German/ }).click()
+        await expect(fallback).toHaveURL(/translations\/en-US\?source=de-DE$/)
+        await fallback.getByText('Choose languages', { exact: true }).click()
+        await fallback.getByRole('navigation', { name: 'Target languages' }).getByRole('link', { name: /Target: German/ }).click()
+        await expect(fallback).toHaveURL(/translations\/de-DE\?source=en-US$/)
+        expect(workspacePersistence()).toEqual(before)
+    } finally {
+        await context.close()
+    }
 })
 
 test('CA-015 keeps the shell LTR, applies RTL only to target controls, and has no mobile overflow', async ({ page }) => {
@@ -168,9 +239,16 @@ test('CA-015 preserves source choice through selection, navigation, and validati
     await page.locator('#source-language').selectOption('de-DE')
     await expect(page).toHaveURL(/source=de-DE$/)
     await expect(page.getByText('You are translating from an outdated source.')).toBeVisible()
-    await page.getByRole('navigation', { name: 'Translation locales' }).locator('a[href*="/translations/en-US"]').click()
+    await page.getByLabel('Target language', { exact: true }).selectOption('en-US')
     await expect(page).toHaveURL(/translations\/en-US\?source=de-DE$/)
-    await page.getByRole('navigation', { name: 'Translation locales' }).locator('a[href*="/translations/de-DE"]').click()
+    await page.getByLabel('Target language', { exact: true }).selectOption('de-DE')
     await expect(page.locator('#source-language')).toHaveValue('en-US')
-    await expect(page.locator('#source-language option[value="de-DE"]')).toHaveCount(0)
+    await expect(page.locator('#target-language')).toHaveValue('de-DE')
+    await page.getByLabel('Source language', { exact: true }).selectOption('de-DE')
+    await expect(page).toHaveURL(/translations\/en-US\?source=de-DE$/)
+    await expect(page.getByLabel('Source language', { exact: true })).toHaveValue('de-DE')
+    await expect(page.getByLabel('Target language', { exact: true })).toHaveValue('en-US')
+    await page.reload()
+    await expect(page.getByLabel('Source language', { exact: true })).toHaveValue('de-DE')
+    await expect(page.getByLabel('Target language', { exact: true })).toHaveValue('en-US')
 })

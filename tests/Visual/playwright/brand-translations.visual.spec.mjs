@@ -24,6 +24,8 @@ for (const state of states) {
         await page.goto(`${workspaceUrl}/${state.target}?source=${state.source}`)
         await expect(page.locator('[data-brand-translations-fixture="brand-translations-v3"]')).toBeVisible()
         await expect(page.locator('#source-language')).toHaveValue(state.source)
+        await expect(page.getByLabel('Target language', { exact: true })).toHaveValue(state.target)
+        await expect(page.locator('[data-brand-translation-language-selector]')).toHaveCount(2)
         await expect(page.locator('[data-source-field=tagline]')).not.toHaveText('No source value')
         if (state.state === 'missing') await expect(page.locator('#name')).toHaveValue('')
         if (state.state === 'approved') await expect(page.getByText('You are translating from an outdated source.')).toBeVisible()

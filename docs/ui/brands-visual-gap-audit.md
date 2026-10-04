@@ -86,8 +86,8 @@ Phase 18.5 converges CA-015 to the original prototype's translation workspace us
 
 | Prototype region | Final equivalent | Domain source | Result | Notes |
 |---|---|---|---|---|
-| Source → Target | Explicit direction, shareable source selector | Active Locales + existing BrandTranslation | Converged | UI reference is independent of canonical source hash. |
-| Dense locale navigation | Compact language/code/status strip, Source marker | Active Locales + row enum states | Converged | Target and source differ; no locale management. |
+| Source → Target | Explicit direction, two labeled language selectors | Active Locales + existing BrandTranslation | Converged | Shareable reference choice; independent of canonical source hash. |
+| Dense locale navigation | Compact Source and Target menus with language/code/status | Active Locales + row enum states | Adapted | Twenty languages do not expand the panel; selecting the opposite language swaps direction. No locale management. |
 | Side-by-side fields | Field / Target / Source rows for six approved fields | BrandTranslation | Converged | Tablet pairs within field; mobile source then target. |
 | Source copy | Field copy and Copy all, overwrite confirmation | Existing reference values | Converged | Client-side only, explicit Save. |
 | Workflow overview | Compact status/row/current context and secondary actions | Existing Phase 15 actions and hashes | Adapted | No field-level completeness engine. |

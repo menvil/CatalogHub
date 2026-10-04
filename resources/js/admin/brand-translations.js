@@ -22,14 +22,11 @@ export function bootBrandTranslations() {
     window.__catalogHubBrandTranslationsBooted = true;
 
     document.addEventListener('change', (event) => {
-        if (event.target instanceof HTMLSelectElement && event.target.matches('[data-brand-translation-source-selector]')) {
-            const url = new URL(window.location.href);
-            if (event.target.value) {
-                url.searchParams.set('source', event.target.value);
-            } else {
-                url.searchParams.delete('source');
+        if (event.target instanceof HTMLSelectElement && event.target.matches('[data-brand-translation-language-selector]')) {
+            const url = event.target.selectedOptions[0]?.dataset.languageUrl;
+            if (url) {
+                window.location.assign(new URL(url, window.location.href).href);
             }
-            window.location.assign(url.href);
         }
     });
 

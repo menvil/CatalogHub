@@ -23,6 +23,7 @@
         $canApprove = $translation?->status === \App\Enums\TranslationStatus::HumanReviewed && $sourceHashMatches;
         $canMarkOutdated = $translation !== null && $translation->status !== \App\Enums\TranslationStatus::Outdated;
         $sourceParameters = $sourceLocale ? ['source' => $sourceLocale->code] : [];
+        $swapTarget = $sourceLocale ?? $sourceLocales->first();
         $statusExplanation = match ($selectedStatus) {
             \App\Enums\TranslationStatus::Missing => 'No saved translation yet. Save to create one.',
             \App\Enums\TranslationStatus::MachineTranslated => 'Review this translation before approval.',
@@ -56,44 +57,64 @@
         @else
             <section class="brand-translation-direction" aria-label="Translation direction" data-screen-region="translation-direction">
                 <p class="brand-translation-mobile-direction" aria-label="{{ $sourceLocale?->name ?? 'Choose source' }} to {{ $selectedLocale->name }}">{{ strtoupper($sourceLocale?->language_code ?? '—') }} → {{ strtoupper($selectedLocale->language_code) }}</p>
-                <form method="GET" action="{{ route('central.brands.translations.edit', [$brand, $selectedLocale->code], absolute: false) }}" class="min-w-0">
+                <div class="min-w-0">
                     <label for="source-language" class="mb-2 block text-xs font-medium text-admin-muted">Source language</label>
-                    <div class="flex min-w-0 items-center gap-2">
-                        <select id="source-language" name="source" class="brand-translation-source-select" data-brand-translation-source-selector @disabled($sourceLocales->isEmpty())>
-                            <option value="" @selected(! $sourceLocale)>Choose source language</option>
-                            @foreach ($sourceLocales as $candidate)
-                                <option value="{{ $candidate->code }}" @selected($sourceLocale?->is($candidate))>{{ $candidate->name }} · {{ $candidate->code }} · {{ \App\Enums\TranslationStatus::options()[($translationsByLocale->get($candidate->getKey())?->status ?? \App\Enums\TranslationStatus::Missing)->value] }}</option>
-                            @endforeach
-                        </select>
-                        <noscript><x-ui.button type="submit" variant="secondary">Select</x-ui.button></noscript>
-                    </div>
-                </form>
+                    <select id="source-language" class="brand-translation-source-select" data-brand-translation-source-selector data-brand-translation-language-selector aria-describedby="language-selection-help" @disabled($sourceLocales->isEmpty())>
+                        <option value="" data-language-url="{{ route('central.brands.translations.edit', [$brand, $selectedLocale->code], absolute: false) }}" @selected(! $sourceLocale)>Choose source language</option>
+                        @foreach ($sourceLocales as $candidate)
+                            <option value="{{ $candidate->code }}" data-language-url="{{ route('central.brands.translations.edit', [$brand, $selectedLocale->code, 'source' => $candidate->code], absolute: false) }}" @selected($sourceLocale?->is($candidate))>{{ $candidate->name }} · {{ $candidate->code }} · {{ \App\Enums\TranslationStatus::options()[($translationsByLocale->get($candidate->getKey())?->status ?? \App\Enums\TranslationStatus::Missing)->value] }}</option>
+                        @endforeach
+                        @if ($swapTarget)
+                            <optgroup label="Switch direction">
+                                <option value="{{ $selectedLocale->code }}" data-language-url="{{ route('central.brands.translations.edit', [$brand, $swapTarget->code, 'source' => $selectedLocale->code], absolute: false) }}">{{ $selectedLocale->name }} · {{ $selectedLocale->code }} · {{ \App\Enums\TranslationStatus::options()[$selectedStatus->value] }}</option>
+                            </optgroup>
+                        @endif
+                    </select>
+                    @if ($sourceLocale)
+                        <div class="brand-translation-language-state">
+                            <span class="font-foundation-mono text-xs text-admin-muted">{{ $sourceLocale->code }}</span>
+                            <x-admin.translation-status-badge :status="$sourceStatus->value" />
+                        </div>
+                    @endif
+                </div>
                 <span class="brand-translation-arrow" aria-hidden="true">→</span>
                 <div class="min-w-0">
-                    <p class="mb-2 text-xs font-medium text-admin-muted">Target language</p>
-                    <div class="flex flex-wrap items-center gap-2">
-                        <p class="text-lg font-semibold text-admin-text">{{ $selectedLocale->name }} <span class="font-foundation-mono text-sm font-normal text-admin-muted">· {{ $selectedLocale->code }}</span></p>
+                    <label for="target-language" class="mb-2 block text-xs font-medium text-admin-muted">Target language</label>
+                    <select id="target-language" class="brand-translation-source-select" data-brand-translation-target-selector data-brand-translation-language-selector aria-describedby="language-selection-help">
+                        @foreach ($locales as $candidate)
+                            @php
+                                $candidateStatus = $translationsByLocale->get($candidate->getKey())?->status ?? \App\Enums\TranslationStatus::Missing;
+                                $nextSource = $sourceLocale?->is($candidate) ? $selectedLocale : $sourceLocale;
+                            @endphp
+                            <option value="{{ $candidate->code }}" data-language-url="{{ route('central.brands.translations.edit', [$brand, $candidate->code, ...($nextSource ? ['source' => $nextSource->code] : [])], absolute: false) }}" @selected($selectedLocale->is($candidate))>{{ $candidate->name }} · {{ $candidate->code }} · {{ \App\Enums\TranslationStatus::options()[$candidateStatus->value] }}</option>
+                        @endforeach
+                    </select>
+                    <div class="brand-translation-language-state">
+                        <span class="font-foundation-mono text-xs text-admin-muted">{{ $selectedLocale->code }}</span>
                         <x-admin.translation-status-badge :status="$selectedStatus->value" />
                     </div>
                 </div>
+                <p id="language-selection-help" class="brand-translation-language-help">Selecting a language already on the other side swaps the direction.</p>
+                <noscript class="brand-translation-language-help">
+                    <details>
+                        <summary>Choose languages</summary>
+                        <nav aria-label="Source languages" class="mt-2 flex flex-col gap-2">
+                            @foreach ($sourceLocales as $candidate)
+                                <a href="{{ route('central.brands.translations.edit', [$brand, $selectedLocale->code, 'source' => $candidate->code], absolute: false) }}">Source: {{ $candidate->name }} · {{ $candidate->code }}</a>
+                            @endforeach
+                            @if ($swapTarget)<a href="{{ route('central.brands.translations.edit', [$brand, $swapTarget->code, 'source' => $selectedLocale->code], absolute: false) }}">Source: {{ $selectedLocale->name }} · {{ $selectedLocale->code }} — Switch direction</a>@endif
+                        </nav>
+                        <nav aria-label="Target languages" class="mt-3 flex flex-col gap-2">
+                            @foreach ($locales as $candidate)
+                                @php
+                                    $nextSource = $sourceLocale?->is($candidate) ? $selectedLocale : $sourceLocale;
+                                @endphp
+                                <a href="{{ route('central.brands.translations.edit', [$brand, $candidate->code, ...($nextSource ? ['source' => $nextSource->code] : [])], absolute: false) }}">Target: {{ $candidate->name }} · {{ $candidate->code }}</a>
+                            @endforeach
+                        </nav>
+                    </details>
+                </noscript>
             </section>
-
-            <nav class="brand-translation-locales" aria-label="Translation locales">
-                @foreach ($locales as $locale)
-                    @php
-                        $localeStatus = $translationsByLocale->get($locale->getKey())?->status ?? \App\Enums\TranslationStatus::Missing;
-                        $navigationSource = $sourceLocale && ! $sourceLocale->is($locale) ? $sourceParameters : [];
-                    @endphp
-                    <a href="{{ route('central.brands.translations.edit', [$brand, $locale->code, ...$navigationSource], absolute: false) }}"
-                        @if ($selectedLocale?->is($locale)) aria-current="page" @endif
-                        @class(['brand-translation-locale', 'is-target' => $selectedLocale?->is($locale)])>
-                        <span class="font-semibold uppercase">{{ $locale->language_code }}</span>
-                        <span>{{ $locale->name }} <span class="text-xs text-admin-muted">{{ $locale->code }}</span></span>
-                        <x-admin.translation-status-badge :status="$localeStatus->value" />
-                        @if ($sourceLocale?->is($locale))<span class="text-xs font-semibold text-admin-primary">Source</span>@endif
-                    </a>
-                @endforeach
-            </nav>
 
             @if ($errors->has('translation') || $errors->has('source'))
                 <p class="rounded-admin-input bg-admin-danger-soft p-3 text-sm" role="alert">{{ $errors->first('translation') ?: $errors->first('source') }}</p>

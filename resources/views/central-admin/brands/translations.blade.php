@@ -1,5 +1,9 @@
 @extends('layouts.central-admin', ['activeNav' => 'Brands', 'pageTitle' => 'Brand Translations'])
 
+@push('head')
+    @fonts('instrument-sans')
+@endpush
+
 @section('breadcrumbs')
     @can('catalog.brands.manage')
         <a href="{{ route('central.brands.index', absolute: false) }}" class="font-medium hover:text-admin-text">Brands</a><span aria-hidden="true">/</span>
@@ -38,7 +42,7 @@
         ];
     @endphp
 
-    <div class="brand-translation-page" data-brand-translations-fixture="brand-translations-v3">
+    <div class="brand-translation-page font-foundation-sans" data-brand-translations-fixture="brand-translations-v3">
         <x-admin.page-header class="brand-translation-heading" screen-id="CA-015" :show-screen-id="false" title="Brand Translations" description="Manage localized Brand content across active locales." :breadcrumbs="[]">
             <x-slot:actions>
                 <span class="text-xs text-admin-muted">Brand: {{ $brand->name }} · <span class="font-foundation-mono">{{ $brand->slug }}</span></span>

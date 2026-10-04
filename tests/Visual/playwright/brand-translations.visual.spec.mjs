@@ -31,7 +31,11 @@ for (const state of states) {
             await expect(page.locator('#name')).toHaveAttribute('dir', 'rtl')
             await expect(page.locator('[data-source-field=name]')).toHaveAttribute('dir', 'ltr')
         }
-        await page.evaluate(() => document.fonts.ready)
+        await page.evaluate(async () => {
+            await document.fonts.ready
+            const referenceFontLoaded = Array.from(document.fonts).some((face) => face.family.replaceAll('"', '') === 'Instrument Sans' && face.status === 'loaded')
+            if (! referenceFontLoaded) throw new Error('CA-015 reference font did not load.')
+        })
         await page.addStyleTag({ content: '*,*::before,*::after{animation-duration:0s!important;caret-color:transparent!important;transition-duration:0s!important}html{scrollbar-width:none}::-webkit-scrollbar{display:none}' })
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
         await expect(page).toHaveScreenshot([`ca-015__${state.state}__${state.width}x${state.height}.png`], {

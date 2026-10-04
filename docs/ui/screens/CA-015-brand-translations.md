@@ -61,4 +61,6 @@ The existing `translations.manage` read boundary remains; a catalog-only user st
 
 Persisted `brand-translations-v3` uses the existing deterministic Zotac Brand: English Approved → German Outdated with realistic English/German content in all six fields; French has no target row. Desktop references cover outdated, missing and approved targets (including an outdated reference warning), tablet and mobile cover German editing, and the RTL reference covers English → Arabic. Full-page tablet/mobile references additionally cover all fields and the rail.
 
+The workspace explicitly loads the existing bundled Instrument Sans foundation font, scoped to CA-015. Visual tests wait for that font to load so macOS and Linux use the same text metrics and line wrapping; shared shell typography and existing diff thresholds remain unchanged.
+
 Converged from the original prototype: explicit source/target direction, per-field side-by-side reference, compact locale status navigation, field/all source copy, workflow status, real translation activity and professional form density. Intentional differences: no speculative field-completeness donut or counts, localized hero/footer/support fields, Add Language, AI/machine translation, Translation Memory, glossary, media, publication/Site/market states or cross-locale dependency model.

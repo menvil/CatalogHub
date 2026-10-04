@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Queries\Translations\BrandTranslationEditorQuery;
 use App\Services\Translations\TranslationSourceHashService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\Support\DatabaseQueryCounter;
 use Tests\Support\DatabaseQueryRecorder;
 use Tests\TestCase;
@@ -116,6 +117,36 @@ final class BrandTranslationSourceSelectionTest extends TestCase
         }
         $this->assertDatabaseCount('brand_translations', 0);
         $this->assertSame($auditCount, AuditLogEntry::query()->count());
+    }
+
+    public function test_query_rejects_invalid_sources_with_menu_guidance_and_allows_missing_translation(): void
+    {
+        $brand = CentralBrand::factory()->create();
+        $target = Locale::factory()->create(['code' => 'de-DE']);
+        $missing = Locale::factory()->create(['code' => 'fr-FR']);
+        Locale::factory()->disabled()->create(['code' => 'en-US']);
+        $query = app(BrandTranslationEditorQuery::class);
+        $message = 'Choose an active source language from the language menu.';
+
+        foreach (['de-DE', 'DE-DE', 'FR-FR', 'en-US', 'zz-ZZ'] as $source) {
+            try {
+                $query->forBrand($brand, $target, $source);
+                $this->fail('Invalid source should fail query validation: '.$source);
+            } catch (ValidationException $exception) {
+                $this->assertSame(['source' => [$message]], $exception->errors());
+            }
+        }
+
+        $this->actingAs(User::factory()->create(['role' => UserRole::Translator]));
+        foreach (['en-US', 'zz-ZZ'] as $source) {
+            $this->get(route('central.brands.translations.edit', [$brand, $target->code, 'source' => $source]))
+                ->assertRedirect()->assertSessionHasErrors(['source' => $message]);
+        }
+
+        $selection = $query->forBrand($brand, $target, $missing->code);
+        $this->assertTrue($missing->is($selection->sourceLocale));
+        $this->assertNull($selection->sourceTranslation);
+        $this->assertDatabaseCount('brand_translations', 0);
     }
 
     public function test_save_and_workflow_redirects_keep_source_and_never_mutate_it(): void

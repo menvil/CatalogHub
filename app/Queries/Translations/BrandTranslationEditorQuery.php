@@ -54,7 +54,7 @@ final readonly class BrandTranslationEditorQuery
 
         if ($sourceCode !== null && ! $sourceLocale instanceof Locale) {
             throw ValidationException::withMessages([
-                'source' => 'Choose an active source language different from the target.',
+                'source' => 'Choose an active source language from the language menu.',
             ]);
         }
 

@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Queries\Translations\BrandTranslationEditorQuery;
 use App\Services\Translations\TranslationSourceHashService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\Support\DatabaseQueryCounter;
 use Tests\TestCase;
 
@@ -156,6 +157,37 @@ final class BrandTranslationSourceSelectionTest extends TestCase
             ->assertOk()->assertSee('/translations/de-DE?source=en-US', false)
             ->assertDontSee('/translations/en-US?source=en-US', false);
         $this->assertTrue($query->forBrand($brand, $source)->sourceLocale?->is($source) !== true);
+    }
+
+    public function test_mutations_validate_source_without_loading_editor_locales_translations_or_activity(): void
+    {
+        $brand = CentralBrand::factory()->create();
+        $source = Locale::factory()->create(['code' => 'en-US']);
+        $target = Locale::factory()->create(['code' => 'de-DE']);
+        $this->row($brand, $source, TranslationStatus::Approved);
+        $this->actingAs(User::factory()->create(['role' => UserRole::Translator]));
+        foreach (['save', 'approve', 'outdated'] as $action) {
+            DatabaseQueryCounter::measure(fn () => $this->post(
+                route('central.brands.translations.'.$action, [$brand, $target->code, 'source' => $source->code]),
+                $action === 'save' ? ['name' => 'Target'] : [],
+            )->assertRedirect());
+            foreach (DB::getQueryLog() as $query) {
+                $sql = strtolower($query['query']);
+                $this->assertDoesNotMatchRegularExpression('/from ["`]?locales["`]?.*order by/i', $sql);
+                $this->assertDoesNotMatchRegularExpression('/from ["`]?brand_translations["`]?.*locale_id["`]? in/i', $sql);
+                $this->assertDoesNotMatchRegularExpression('/^select .*from ["`]?audit_log_entries/i', $sql);
+            }
+        }
+    }
+
+    public function test_initial_counter_matches_native_utf16_length_for_saved_supplementary_characters(): void
+    {
+        $brand = CentralBrand::factory()->create();
+        $target = Locale::factory()->create(['code' => 'de-DE']);
+        $this->row($brand, $target, TranslationStatus::HumanReviewed)->update(['tagline' => 'A😀B']);
+        $response = $this->actingAs(User::factory()->create(['role' => UserRole::Translator]))
+            ->get(route('central.brands.translations.edit', [$brand, $target->code]))->assertOk();
+        $response->assertSee('data-brand-translation-counter="tagline">4 / 255', false);
     }
 
     public function test_authorized_read_only_viewer_sees_content_and_activity_without_mutation_actions(): void

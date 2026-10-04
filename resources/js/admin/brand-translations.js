@@ -11,7 +11,7 @@ function copyableFields() {
 function updateCounter(target) {
     const counter = document.querySelector(`[data-brand-translation-counter="${target.id}"]`);
     if (counter) {
-        counter.textContent = `${[...target.value].length} / ${target.maxLength}`;
+        counter.textContent = `${target.value.length} / ${target.maxLength}`;
     }
 }
 
@@ -21,10 +21,21 @@ export function bootBrandTranslations() {
     }
     window.__catalogHubBrandTranslationsBooted = true;
 
+    const form = document.getElementById('brand-translation-form');
+    const controls = form ? [...form.querySelectorAll('input[name]:not([type=hidden]), textarea[name], select[name]')] : [];
+    const initialValues = controls.map((control) => control.value);
+    const languages = [...document.querySelectorAll('[data-brand-translation-language-selector]')];
+    const initialLanguages = new Map(languages.map((control) => [control, control.value]));
+
     document.addEventListener('change', (event) => {
         if (event.target instanceof HTMLSelectElement && event.target.matches('[data-brand-translation-language-selector]')) {
             const url = event.target.selectedOptions[0]?.dataset.languageUrl;
             if (url) {
+                const dirty = controls.some((control, index) => control.value !== initialValues[index]);
+                if (dirty && ! window.confirm('Discard unsaved translation changes?')) {
+                    event.target.value = initialLanguages.get(event.target);
+                    return;
+                }
                 window.location.assign(new URL(url, window.location.href).href);
             }
         }

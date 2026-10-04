@@ -51,13 +51,9 @@ final class CentralBrandTranslationController extends Controller
         CentralBrand $brand,
         Locale $locale,
         SaveBrandTranslationAction $action,
-        BrandTranslationEditorQuery $query,
     ): RedirectResponse {
         abort_unless($locale->is_active, 404);
         $sourceCode = $this->sourceCode($request);
-        if ($sourceCode !== null) {
-            $query->forBrand($brand, $locale, $sourceCode);
-        }
         $actor = $request->user();
         assert($actor instanceof User);
         $action->handle($actor, $brand, $locale, $request->brandTranslationInput());
@@ -72,13 +68,9 @@ final class CentralBrandTranslationController extends Controller
         CentralBrand $brand,
         Locale $locale,
         ApproveBrandTranslationAction $action,
-        BrandTranslationEditorQuery $query,
     ): RedirectResponse {
         abort_unless($locale->is_active, 404);
         $sourceCode = $this->sourceCode($request);
-        if ($sourceCode !== null) {
-            $query->forBrand($brand, $locale, $sourceCode);
-        }
         $actor = $request->user();
         assert($actor instanceof User);
         $action->handle($actor, $brand, $locale);
@@ -93,13 +85,9 @@ final class CentralBrandTranslationController extends Controller
         CentralBrand $brand,
         Locale $locale,
         MarkBrandTranslationOutdatedAction $action,
-        BrandTranslationEditorQuery $query,
     ): RedirectResponse {
         abort_unless($locale->is_active, 404);
         $sourceCode = $this->sourceCode($request);
-        if ($sourceCode !== null) {
-            $query->forBrand($brand, $locale, $sourceCode);
-        }
         $actor = $request->user();
         assert($actor instanceof User);
         $action->handle($actor, $brand, $locale);

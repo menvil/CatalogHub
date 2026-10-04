@@ -14,7 +14,7 @@ final class SaveBrandTranslationRequest extends SaveTranslationRequest
 {
     protected function translationRules(): array
     {
-        return BrandTranslationSourceRequest::sourceRules() + [
+        return BrandTranslationSourceRequest::sourceRules($this->route('locale')) + [
             'name' => ['required', 'string', 'max:255'],
             'tagline' => ['nullable', 'string', 'max:255'],
             'short_description' => ['nullable', 'string', 'max:1000'],

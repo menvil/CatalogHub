@@ -4,6 +4,7 @@ import {
     activateRtlBrandTranslationLocale,
     addWorkspaceLanguageOptions,
     clearSourceTagline,
+    keepOnlyTargetLocale,
     workspacePersistence,
 } from '../Support/brand-translation-fixture.mjs'
 
@@ -12,6 +13,17 @@ const workspaceBrandId = 24
 test.beforeEach(() => resetBrowserFixture())
 
 test.afterEach(() => resetBrowserFixture())
+
+test('CA-015 dims the disabled source chevron when only the target locale is active', async ({ page }) => {
+    await signIn(page, 'central', foundationDemo.centralAdmin)
+    await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
+    keepOnlyTargetLocale()
+    await page.goto(`/admin/central/brands/${workspaceBrandId}/translations/de-DE`)
+    await expect(page.locator('#source-language')).toBeDisabled()
+    await expect(page.locator('#source-language + [data-select-chevron]')).toHaveCSS('opacity', '0.5')
+    await expect(page.locator('#target-language')).toBeEnabled()
+    await expect(page.locator('#target-language + [data-select-chevron]')).toHaveCSS('opacity', '1')
+})
 
 test('CA-012 and CA-015 complete the persisted Brand translation review workflow', async ({ page }) => {
     const assertNoPageErrors = observePageErrors(page)
@@ -231,7 +243,13 @@ test('CA-015 copies each field and all fields locally, protects existing text, a
     const saved = workspacePersistence()
     expect(saved.brand).toEqual(before.brand)
     expect(saved.rows.find((row) => row.locale === 'en-US')).toEqual(before.rows.find((row) => row.locale === 'en-US'))
-    expect(saved.rows.find((row) => row.locale === 'fr-FR').status).toBe('human_reviewed')
+    const source = before.rows.find((row) => row.locale === 'en-US')
+    const target = saved.rows.find((row) => row.locale === 'fr-FR')
+    expect(source).toBeDefined()
+    expect(target).toBeDefined()
+    // Native form submission serializes textarea line breaks as CRLF.
+    for (const field of fields) expect(target[field].replace(/\r\n/g, '\n')).toBe(source[field].replace(/\r\n/g, '\n'))
+    expect(target.status).toBe('human_reviewed')
 })
 
 test('CA-015 preserves source choice through selection, navigation, and validation; skips empty source fields', async ({ page }) => {
@@ -265,4 +283,74 @@ test('CA-015 preserves source choice through selection, navigation, and validati
     await page.reload()
     await expect(page.getByLabel('Source language', { exact: true })).toHaveValue('de-DE')
     await expect(page.getByLabel('Target language', { exact: true })).toHaveValue('en-US')
+})
+
+
+test('CA-015 protects unsaved edits, copied text, and Save as when either language changes', async ({ page }) => {
+    await signIn(page, 'central', foundationDemo.centralAdmin)
+    await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
+    const url = `/admin/central/brands/${workspaceBrandId}/translations/fr-FR?source=en-US`
+    await page.goto(url)
+    const before = workspacePersistence()
+    const mutations = []
+    page.on('request', (request) => {
+        if (request.method() !== 'GET') mutations.push(request.url())
+    })
+    const dialogs = []
+    page.on('dialog', async (dialog) => {
+        dialogs.push(dialog.message())
+        await dialog.dismiss()
+    })
+    await page.locator('#tagline').fill('Unsaved draft')
+    for (const [selector, selected, previous] of [['#source-language', 'de-DE', 'en-US'], ['#target-language', 'en-US', 'fr-FR']]) {
+        await page.locator(selector).selectOption(selected)
+        await expect(page).toHaveURL(new RegExp('translations/fr-FR\\?source=en-US$'))
+        await expect(page.locator(selector)).toHaveValue(previous)
+        await expect(page.locator('#tagline')).toHaveValue('Unsaved draft')
+    }
+    await page.locator('#tagline').fill('')
+    await page.locator('#status').selectOption('machine_translated')
+    await page.locator('#source-language').selectOption('de-DE')
+    await expect(page.locator('#source-language')).toHaveValue('en-US')
+    await page.locator('#status').selectOption('human_reviewed')
+    await page.getByRole('button', { name: 'Copy all from Source', exact: true }).click()
+    await page.locator('#target-language').selectOption('en-US')
+    await expect(page.locator('#target-language')).toHaveValue('fr-FR')
+    expect(dialogs).toEqual(Array(4).fill('Discard unsaved translation changes?'))
+    expect(mutations).toEqual([])
+    expect(workspacePersistence()).toEqual(before)
+    page.removeAllListeners('dialog')
+    page.once('dialog', async (dialog) => {
+        expect(dialog.message()).toBe('Discard unsaved translation changes?')
+        await dialog.accept()
+    })
+    await page.locator('#source-language').selectOption('fr-FR')
+    await expect(page).toHaveURL(/translations\/en-US\?source=fr-FR$/)
+    expect(workspacePersistence()).toEqual(before)
+    await page.goto(url)
+    await page.locator('#tagline').fill('Temporary draft')
+    await page.locator('#tagline').fill('')
+    page.on('dialog', async (dialog) => {
+        throw new Error(`Unexpected confirmation for restored fields or explicit Save: ${dialog.message()}`)
+    })
+    await page.locator('#source-language').selectOption('de-DE')
+    await expect(page).toHaveURL(/translations\/fr-FR\?source=de-DE$/)
+    await page.locator('#name').fill('French draft')
+    await page.locator('#brand-translation-form').getByRole('button', { name: 'Save translation', exact: true }).click()
+    await expect(page.getByText('Translation saved.', { exact: true })).toBeVisible()
+})
+
+test('CA-015 counters match native UTF-16 maxlength enforcement for emoji', async ({ page }) => {
+    await signIn(page, 'central', foundationDemo.centralAdmin)
+    await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
+    await page.goto(`/admin/central/brands/${workspaceBrandId}/translations/fr-FR?source=en-US`)
+    const before = workspacePersistence()
+    await page.locator('#tagline').fill('A😀B')
+    await expect(page.locator('[data-brand-translation-counter=tagline]')).toHaveText('4 / 255')
+    await page.locator('#tagline').fill('A'.repeat(253))
+    await page.locator('#tagline').press('End')
+    await page.locator('#tagline').pressSequentially('😀B')
+    await expect(page.locator('#tagline')).toHaveValue('A'.repeat(253) + '😀')
+    await expect(page.locator('[data-brand-translation-counter=tagline]')).toHaveText('255 / 255')
+    expect(workspacePersistence()).toEqual(before)
 })

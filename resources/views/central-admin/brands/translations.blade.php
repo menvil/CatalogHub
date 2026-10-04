@@ -56,7 +56,7 @@
                 <div class="min-w-0">
                     <label for="source-language" class="mb-2 block text-xs font-medium text-admin-muted">Source language</label>
                     <div class="brand-translation-select">
-                        <select id="source-language" class="brand-translation-source-select" data-brand-translation-source-selector data-brand-translation-language-selector aria-describedby="language-selection-help" @disabled($sourceLocales->isEmpty())>
+                        <select id="source-language" class="brand-translation-source-select" data-brand-translation-language-selector aria-describedby="language-selection-help" @disabled($sourceLocales->isEmpty())>
                             <option value="" data-language-url="{{ route('central.brands.translations.edit', [$brand, $selectedLocale->code], absolute: false) }}" @selected(! $sourceLocale)>Choose source language</option>
                             @foreach ($sourceLocales as $candidate)
                                 <option value="{{ $candidate->code }}" data-language-url="{{ route('central.brands.translations.edit', [$brand, $selectedLocale->code, 'source' => $candidate->code], absolute: false) }}" @selected($sourceLocale?->is($candidate))>{{ $candidate->name }} · {{ $candidate->code }} · {{ \App\Enums\TranslationStatus::options()[($translationsByLocale->get($candidate->getKey())?->status ?? \App\Enums\TranslationStatus::Missing)->value] }}</option>
@@ -74,7 +74,7 @@
                 <div class="min-w-0">
                     <label for="target-language" class="mb-2 block text-xs font-medium text-admin-muted">Target language</label>
                     <div class="brand-translation-select">
-                        <select id="target-language" class="brand-translation-source-select" data-brand-translation-target-selector data-brand-translation-language-selector aria-describedby="language-selection-help">
+                        <select id="target-language" class="brand-translation-source-select" data-brand-translation-language-selector aria-describedby="language-selection-help">
                             @foreach ($locales as $candidate)
                                 @php
                                     $candidateStatus = $translationsByLocale->get($candidate->getKey())?->status ?? \App\Enums\TranslationStatus::Missing;
@@ -149,7 +149,7 @@
                             <div class="brand-translation-field" data-translation-field="{{ $field }}">
                                 <div class="brand-translation-field-label">
                                     <label for="{{ $field }}" class="text-sm font-medium">{{ $label }}</label> @if ($field === 'name')<span aria-hidden="true" class="text-admin-danger">*</span>@endif
-                                    <span class="mt-1 block text-xs text-admin-muted" data-brand-translation-counter="{{ $field }}">{{ mb_strlen($targetValue) }} / {{ $limit }}</span>
+                                    <span class="mt-1 block text-xs text-admin-muted" data-brand-translation-counter="{{ $field }}">{{ intdiv(strlen(mb_convert_encoding($targetValue, 'UTF-16LE', 'UTF-8')), 2) }} / {{ $limit }}</span>
                                     @if ($canManage && filled($sourceValue))
                                         <button type="button" class="brand-translation-copy" aria-label="Copy source for {{ $label }}" data-brand-translation-copy-source data-brand-translation-copy-target="{{ $field }}" data-brand-translation-source-value="{{ $sourceValue }}">Copy source</button>
                                     @endif

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { spawnSync } from 'node:child_process'
-import { validateVisualRun, visualEnvironment } from '../../tools/visual/environment.mjs'
+import { selectsOnlyBrowser, validateVisualRun, visualEnvironment } from '../../tools/visual/environment.mjs'
 
 test('visual capture pins the Linux architecture and immutable browser/fonts image', () => {
     assert.equal(visualEnvironment.platform, 'linux/amd64')
@@ -10,19 +10,41 @@ test('visual capture pins the Linux architecture and immutable browser/fonts ima
     assert.doesNotThrow(() => validateVisualRun(visualEnvironment.playwrightVersion, ['--grep', 'CA-015'], true))
 })
 
-test('native browser workers can reload the shared config while direct native visual runs are rejected', () => {
+test('native Browser selection is allowed while direct Visual runs and forged worker flags are rejected', () => {
     const environment = { ...process.env, CATALOGHUB_BROWSER_PORT: '8015' }
     delete environment.CATALOGHUB_VISUAL_IMAGE
     delete environment.PW_TEST_CONNECT_WS_ENDPOINT
     delete environment.TEST_WORKER_INDEX
-    const args = ['--input-type=module', '-e', "await import('./playwright.config.mjs')"]
+    const args = ['--input-type=module', '-e', "process.argv.splice(1, 0, 'config-check.mjs'); await import('./playwright.config.mjs')"]
     const nativeVisual = spawnSync(process.execPath, args, { env: environment, encoding: 'utf8' })
     assert.notEqual(nativeVisual.status, 0)
     assert.match(nativeVisual.stderr, /pinned Linux renderer/)
     const nativeBrowser = spawnSync(process.execPath, [...args, '--', '--project=browser'], { env: environment, encoding: 'utf8' })
     assert.equal(nativeBrowser.status, 0, nativeBrowser.stderr)
     const worker = spawnSync(process.execPath, args, { env: { ...environment, TEST_WORKER_INDEX: '0' }, encoding: 'utf8' })
-    assert.equal(worker.status, 0, worker.stderr)
+    assert.notEqual(worker.status, 0)
+    assert.match(worker.stderr, /pinned Linux renderer/)
+    const fileScoped = spawnSync(process.execPath, [...args, '--', 'tests/Browser/Acceptance/brand-translations.spec.mjs', '--list'], { env: environment, encoding: 'utf8' })
+    assert.equal(fileScoped.status, 0, fileScoped.stderr)
+})
+
+test('native selection allows Browser files and filters while rejecting Visual, mixed, wildcard and unscoped runs', () => {
+    const root = process.cwd()
+    for (const args of [
+        ['test', 'tests/Browser/Acceptance/brand-translations.spec.mjs'],
+        ['test', 'tests/Browser', '--list'],
+        ['test', '--grep', 'CA-015', 'tests/Browser/Acceptance/brand-translations.spec.mjs:234'],
+        ['test', '--project', 'browser', '--list'],
+        ['test', '--project=browser'],
+    ]) assert.equal(selectsOnlyBrowser(args, root), true, args.join(' '))
+    for (const args of [
+        ['test'], ['test', '--list'], ['test', '--project=*'],
+        ['test', '--project', 'browser', 'visual'],
+        ['test', 'tests/Visual/playwright/brands.visual.spec.mjs'],
+        ['test', 'tests/Browser', 'tests/Visual'],
+        ['test', '--grep', 'tests/Browser'],
+        ['test', 'tests/Browser/../Visual'],
+    ]) assert.equal(selectsOnlyBrowser(args, root), false, args.join(' '))
 })
 
 test('visual runner permits explicit local reference capture but never CI updates or config overrides', () => {

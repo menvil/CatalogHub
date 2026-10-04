@@ -1168,6 +1168,10 @@
     color: var(--color-admin-muted);
 }
 
+.brand-translation-select select:disabled + [data-select-chevron] {
+    opacity: .5;
+}
+
 .brand-translation-language-help {
     grid-column: 1 / -1;
     font-size: .75rem;

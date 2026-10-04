@@ -1,11 +1,16 @@
 import { existsSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from '@playwright/test'
-import { visualEnvironment } from './tools/visual/environment.mjs'
+import { selectsOnlyBrowser, visualEnvironment } from './tools/visual/environment.mjs'
 
 const remoteVisualBrowser = process.env.CATALOGHUB_VISUAL_IMAGE === visualEnvironment.image && Boolean(process.env.PW_TEST_CONNECT_WS_ENDPOINT)
 const emulatedVisualBrowser = remoteVisualBrowser && process.arch !== 'x64'
-const projects = process.argv.flatMap((arg, index, args) => arg.startsWith('--project=') ? [arg.slice(10)] : arg === '--project' ? [args[index + 1]] : [])
-if (process.env.TEST_WORKER_INDEX === undefined && (projects.length === 0 || projects.includes('visual')) && !remoteVisualBrowser) {
+// Workers reload config without the parent CLI arguments. Require Playwright's
+// actual fork entry and IPC channel, rather than a caller-controlled env flag.
+const workerEntry = resolve(dirname(fileURLToPath(import.meta.resolve('playwright/package.json'))), 'lib/worker/workerProcessEntry.js')
+const worker = typeof process.send === 'function' && resolve(process.argv[1] ?? '') === workerEntry
+if (!worker && !selectsOnlyBrowser(process.argv.slice(2), import.meta.dirname) && !remoteVisualBrowser) {
     throw new Error('Visual screenshots require the pinned Linux renderer. Use npm run test:visual or npm run test:visual:update.')
 }
 const configuredBrowser = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH

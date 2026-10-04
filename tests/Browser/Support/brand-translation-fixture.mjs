@@ -50,6 +50,12 @@ export function clearSourceTagline() {
     ])
 }
 
+export function keepOnlyTargetLocale() {
+    updateBrandTranslationLocales([
+        "App\\Models\\Locale::query()->where('code', '!=', 'de-DE')->update(['is_active' => false, 'is_default' => false]);",
+    ])
+}
+
 export function addWorkspaceLanguageOptions() {
     updateBrandTranslationLocales([
         "$languages = ['bg-BG' => 'Bulgarian', 'es-ES' => 'Spanish', 'it-IT' => 'Italian', 'pt-PT' => 'Portuguese', 'nl-NL' => 'Dutch', 'pl-PL' => 'Polish', 'cs-CZ' => 'Czech', 'sv-SE' => 'Swedish', 'da-DK' => 'Danish', 'fi-FI' => 'Finnish', 'el-GR' => 'Greek', 'tr-TR' => 'Turkish', 'ja-JP' => 'Japanese', 'ko-KR' => 'Korean', 'zh-CN' => 'Chinese', 'uk-UA' => 'Ukrainian'];",

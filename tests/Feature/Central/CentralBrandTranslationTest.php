@@ -106,13 +106,27 @@ final class CentralBrandTranslationTest extends TestCase
         $selected = Locale::factory()->create(['code' => 'de-DE', 'name' => 'German', 'native_name' => 'Deutsch', 'position' => 2]);
         Locale::factory()->create(['code' => 'en-US', 'name' => 'English', 'native_name' => 'English', 'is_default' => true, 'position' => 99]);
         Locale::factory()->create(['code' => 'fr-FR', 'name' => 'French', 'native_name' => 'Français', 'position' => 1]);
-        Locale::factory()->disabled()->create(['code' => 'es-ES', 'native_name' => 'Español']);
+        Locale::factory()->disabled()->create(['code' => 'es-ES', 'name' => 'Spanish', 'native_name' => 'Español']);
 
-        $this->actingAs(User::factory()->create(['role' => UserRole::Translator]))
+        $response = $this->actingAs(User::factory()->create(['role' => UserRole::Translator]))
             ->get(route('central.brands.translations.edit', [$brand, $selected->code]))
-            ->assertOk()
-            ->assertSeeInOrder(['English', 'en-US', 'French', 'fr-FR', 'German', 'de-DE'])
-            ->assertDontSee('Español');
+            ->assertOk();
+        $document = new \DOMDocument;
+        @$document->loadHTML($response->getContent() ?: '');
+        $xpath = new \DOMXPath($document);
+        $options = $xpath->query('//select[@id="target-language"]/option');
+        $this->assertNotFalse($options);
+        $codes = [];
+        foreach ($options as $option) {
+            $this->assertInstanceOf(\DOMElement::class, $option);
+            $codes[] = $option->getAttribute('value');
+        }
+        $this->assertSame(['en-US', 'fr-FR', 'de-DE'], $codes);
+        foreach (['source-language', 'target-language'] as $selector) {
+            $inactive = $xpath->query('//select[@id="'.$selector.'"]//option[@value="es-ES" or contains(., "Spanish")]');
+            $this->assertNotFalse($inactive);
+            $this->assertSame(0, $inactive->length);
+        }
 
         $oneLocale = DatabaseQueryCounter::measure(fn () => app(BrandTranslationEditorQuery::class)->forBrand($brand, $selected));
         Locale::factory()->count(8)->create();

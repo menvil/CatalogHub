@@ -32,7 +32,7 @@ final class BrandTranslationSourceRequest extends FormRequest
                 // SQL collations can match a differently cased code. Require
                 // the exact stored code, as the editor's source selection does.
                 if (! is_string($value) || Locale::query()->active()->where('code', $value)->value('code') !== $value) {
-                    $fail('Choose an active source language different from the target.');
+                    $fail('Choose an active source language from the language menu.');
                 }
             },
         ]];

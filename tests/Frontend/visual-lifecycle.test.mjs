@@ -3,6 +3,23 @@ import { EventEmitter } from 'node:events'
 import test from 'node:test'
 import { VisualRunLifecycle } from '../../tools/visual/lifecycle.mjs'
 
+test('a repeated interrupt reaches the pending cleanup CLI and disposal removes its listeners', async () => {
+    const signals = new EventEmitter()
+    const killed = []
+    let completeStop
+    const lifecycle = new VisualRunLifecycle(() => new Promise((done) => { completeStop = done }), signals)
+    lifecycle.container = 'owned-container'
+    lifecycle.cleanupChild = { exitCode: null, signalCode: null, kill: (signal) => killed.push(signal) }
+    const disposing = lifecycle.dispose()
+    signals.emit('SIGINT')
+    signals.emit('SIGINT')
+    assert.deepEqual(killed, ['SIGTERM', 'SIGKILL'])
+    completeStop()
+    await disposing
+    assert.equal(signals.listenerCount('SIGINT'), 0)
+    assert.equal(signals.listenerCount('SIGTERM'), 0)
+})
+
 test('an uninterrupted lifecycle stays running and disposes its container and both listeners', async () => {
     const signals = new EventEmitter()
     const stopped = []

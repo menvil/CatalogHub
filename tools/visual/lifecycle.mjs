@@ -7,11 +7,12 @@ export class VisualRunLifecycle {
             const repeated = this.interrupted
             this.interrupted = true
             if (repeated) this.forceStop()
-            else if (this.isAlive(this.child) || this.isAlive(this.startupChild)) {
+            else if (this.isAlive(this.child) || this.isAlive(this.startupChild) || this.isAlive(this.cleanupChild)) {
                 // Playwright gets graceful fixture teardown. In-flight Docker
                 // commands are cancelled too, with the same bounded escalation.
                 if (this.isAlive(this.child)) this.child.kill('SIGINT')
-                else this.startupChild.kill('SIGTERM')
+                else if (this.isAlive(this.startupChild)) this.startupChild.kill('SIGTERM')
+                else this.cleanupChild.kill('SIGTERM')
                 this.timer = setTimeout(() => this.forceStop(), this.gracePeriod)
                 this.timer.unref()
             } else void this.stop()
@@ -26,6 +27,7 @@ export class VisualRunLifecycle {
     forceStop() {
         if (this.isAlive(this.child)) this.child.kill('SIGKILL')
         if (this.isAlive(this.startupChild)) this.startupChild.kill('SIGKILL')
+        if (this.isAlive(this.cleanupChild)) this.cleanupChild.kill('SIGKILL')
         // The owner awaits the Docker command before final cleanup, including
         // commands cancelled before Docker has returned the container ID.
         if (!this.isAlive(this.startupChild)) void this.stop()
@@ -45,11 +47,11 @@ export class VisualRunLifecycle {
     }
 
     async dispose() {
-        clearTimeout(this.timer)
         try {
             await this.stop()
             if (this.cleanupError) throw this.cleanupError
         } finally {
+            clearTimeout(this.timer)
             for (const signal of ['SIGINT', 'SIGTERM']) this.signals.off(signal, this.interrupt)
         }
     }

@@ -13,11 +13,15 @@ const args = process.argv.slice(2)
 const version = JSON.parse(readFileSync(resolve(root, 'node_modules/playwright/package.json'), 'utf8')).version
 validateVisualRun(version, args, Boolean(process.env.CI))
 const lifecycle = new VisualRunLifecycle(async (id) => {
+    const removal = execute('docker', ['rm', '--force', id], { timeout: 10_000, killSignal: 'SIGKILL' })
+    lifecycle.cleanupChild = removal.child
     try {
-        await execute('docker', ['rm', '--force', id], { timeout: 10_000, killSignal: 'SIGKILL' })
+        await removal
     } catch (error) {
         // A cancelled create or an already auto-removed container is absent.
         if (!/No such container/i.test(error.stderr ?? '')) throw error
+    } finally {
+        lifecycle.cleanupChild = undefined
     }
 })
 

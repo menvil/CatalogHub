@@ -110,7 +110,7 @@ class MoveAttributeDefinitionActionTest extends TestCase
             ->create();
 
         $this->expectException(CannotMoveAttributeDefinitionException::class);
-        $this->expectExceptionMessage('between zero and the maximum unsigned integer value');
+        $this->expectExceptionMessage('between zero and the maximum portable integer value');
 
         app(MoveAttributeDefinitionAction::class)->handle($attribute, $section, AttributeDefinition::MAX_POSITION + 1);
     }

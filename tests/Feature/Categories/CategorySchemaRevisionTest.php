@@ -18,6 +18,7 @@ use App\Actions\CategorySchema\UpdateAttributeOptionAction;
 use App\Actions\CategorySchema\UpdateAttributeSectionAction;
 use App\Enums\CategorySchemaStatus;
 use App\Exceptions\CategorySchema\CannotApproveCategorySchemaException;
+use App\Exceptions\CategorySchema\CannotMoveAttributeDefinitionException;
 use App\Models\AuditLogEntry;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
@@ -220,5 +221,83 @@ final class CategorySchemaRevisionTest extends TestCase
             self::assertSame(CategorySchemaStatus::Approved, $category->fresh()->schema_status);
             self::assertSame(1, $category->fresh()->schema_approved_revision);
         }
+    }
+
+    public static function positionCases(): array
+    {
+        return array_map(fn ($case) => [$case], [
+            'section-create', 'section-update', 'attribute-create', 'attribute-update',
+            'option-create', 'option-update', 'attribute-move',
+        ]);
+    }
+
+    #[DataProvider('positionCases')]
+    public function test_positions_outside_the_portable_integer_range_are_rejected_before_writes(string $case): void
+    {
+        $category = CentralCategory::factory()->create();
+        $section = AttributeSection::factory()->for($category, 'category')->create();
+        $attribute = AttributeDefinition::factory()->for($category, 'category')->for($section, 'section')->create(['data_type' => 'enum']);
+        $option = AttributeOption::factory()->for($attribute, 'attribute')->create();
+        $this->approve($category);
+        $position = 2147483648;
+        try {
+            match ($case) {
+                'section-create' => app(CreateAttributeSectionAction::class)->handle($category, ['name' => 'New', 'code' => 'new', 'position' => $position]),
+                'section-update' => app(UpdateAttributeSectionAction::class)->handle($section, ['name' => $section->name, 'code' => $section->code, 'position' => $position]),
+                'attribute-create' => app(CreateAttributeDefinitionAction::class)->handle($section, ['name' => 'New', 'code' => 'new', 'data_type' => 'string', 'position' => $position]),
+                'attribute-update' => app(UpdateAttributeDefinitionAction::class)->handle($attribute, ['name' => $attribute->name, 'code' => $attribute->code, 'data_type' => 'enum', 'position' => $position]),
+                'option-create' => app(CreateAttributeOptionAction::class)->handle($attribute, ['code' => 'new', 'label' => 'New', 'position' => $position]),
+                'option-update' => app(UpdateAttributeOptionAction::class)->handle($option, ['code' => $option->code, 'label' => $option->label, 'position' => $position]),
+                'attribute-move' => app(MoveAttributeDefinitionAction::class)->handle($attribute, $section, $position),
+                default => throw new \InvalidArgumentException('Unknown position case'),
+            };
+            self::fail('Nonportable position accepted');
+        } catch (ValidationException|CannotMoveAttributeDefinitionException) {
+            self::assertSame(1, $category->fresh()->schema_revision);
+            self::assertSame(CategorySchemaStatus::Approved, $category->fresh()->schema_status);
+            self::assertSame($section->position, $section->fresh()->position);
+            self::assertSame($attribute->position, $attribute->fresh()->position);
+            self::assertSame($option->position, $option->fresh()->position);
+            self::assertSame(0, AuditLogEntry::query()->where('action', 'catalog.category.schema.invalidated')->count());
+        }
+    }
+
+    public function test_move_rejects_target_shift_overflow_without_invalidating_approval(): void
+    {
+        $category = CentralCategory::factory()->create();
+        $source = AttributeSection::factory()->for($category, 'category')->create();
+        $target = AttributeSection::factory()->for($category, 'category')->create();
+        $attribute = AttributeDefinition::factory()->for($category, 'category')->for($source, 'section')->create();
+        $last = AttributeDefinition::factory()->for($category, 'category')->for($target, 'section')->create(['position' => 2147483647]);
+        $this->approve($category);
+        try {
+            app(MoveAttributeDefinitionAction::class)->handle($attribute, $target, 0);
+            self::fail('Overflow shift accepted');
+        } catch (CannotMoveAttributeDefinitionException) {
+            self::assertSame($source->id, $attribute->fresh()->attribute_section_id);
+            self::assertSame(2147483647, $last->fresh()->position);
+            self::assertSame(1, $category->fresh()->schema_revision);
+            self::assertSame(CategorySchemaStatus::Approved, $category->fresh()->schema_status);
+            self::assertSame(0, AuditLogEntry::query()->where('action', 'catalog.category.schema.invalidated')->count());
+        }
+    }
+
+    public function test_sectionless_move_does_not_reorder_another_category_or_leave_its_schema_silently_changed(): void
+    {
+        $category = CentralCategory::factory()->create();
+        $other = CentralCategory::factory()->create();
+        $target = AttributeSection::factory()->for($category, 'category')->create();
+        $moving = AttributeDefinition::factory()->for($category, 'category')->create(['position' => 0]);
+        $remaining = AttributeDefinition::factory()->for($category, 'category')->create(['position' => 1]);
+        $foreign = AttributeDefinition::factory()->for($other, 'category')->create(['position' => 1]);
+        $this->approve($category);
+        $this->approve($other);
+        app(MoveAttributeDefinitionAction::class)->handle($moving, $target, 0);
+        self::assertSame(0, $remaining->fresh()->position);
+        self::assertSame(1, $foreign->fresh()->position);
+        self::assertSame(1, $other->fresh()->schema_revision);
+        self::assertSame(CategorySchemaStatus::Approved, $other->fresh()->schema_status);
+        self::assertSame(2, $category->fresh()->schema_revision);
+        self::assertSame([$category->id], AuditLogEntry::query()->where('action', 'catalog.category.schema.invalidated')->get()->map(fn ($event) => $event->after_json['category_id'])->all());
     }
 }

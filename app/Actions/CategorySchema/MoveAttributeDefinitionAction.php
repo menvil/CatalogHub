@@ -49,13 +49,14 @@ final class MoveAttributeDefinitionAction
             if (
                 AttributeDefinition::query()
                     ->where('attribute_section_id', $targetSection->getKey())
-                    ->where('position', AttributeDefinition::MAX_POSITION)
+                    ->where('position', '>=', AttributeDefinition::MAX_POSITION)
                     ->exists()
             ) {
                 throw CannotMoveAttributeDefinitionException::targetSectionPositionOverflow();
             }
 
             AttributeDefinition::query()
+                ->where('central_category_id', $lockedAttribute->central_category_id)
                 ->where('attribute_section_id', $sourceSectionId)
                 ->where('position', '>', $oldPosition)
                 ->decrement('position');

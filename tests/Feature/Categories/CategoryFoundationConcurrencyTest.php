@@ -29,6 +29,14 @@ final class CategoryFoundationConcurrencyTest extends TestCase
         RefreshDatabaseState::$migrated = false;
     }
 
+    protected function tearDown(): void
+    {
+        // These tests commit on independent connections. The next transactional
+        // test must rebuild rather than inherit those committed fixtures.
+        RefreshDatabaseState::$migrated = false;
+        parent::tearDown();
+    }
+
     public function test_two_root_reorders_serialize_and_the_second_rejects_the_stale_revision(): void
     {
         $actor = User::factory()->centralAdmin()->create();

@@ -17,6 +17,12 @@ final class CategoryFoundationMigrationTest extends TestCase
         RefreshDatabaseState::$migrated = false;
     }
 
+    protected function tearDown(): void
+    {
+        RefreshDatabaseState::$migrated = false;
+        parent::tearDown();
+    }
+
     public function test_additive_backfill_preserves_legacy_shapes_and_never_invents_attribution_then_reverses(): void
     {
         $migration = require database_path('migrations/2026_10_04_200000_add_category_foundation_revisions.php');

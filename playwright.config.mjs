@@ -1,9 +1,21 @@
 import { existsSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from '@playwright/test'
+import { selectsOnlyBrowser, visualEnvironment } from './tools/visual/environment.mjs'
 
+const remoteVisualBrowser = process.env.CATALOGHUB_VISUAL_IMAGE === visualEnvironment.image && Boolean(process.env.PW_TEST_CONNECT_WS_ENDPOINT)
+const emulatedVisualBrowser = remoteVisualBrowser && process.arch !== 'x64'
+// Workers reload config without the parent CLI arguments. Require Playwright's
+// actual fork entry and IPC channel, rather than a caller-controlled env flag.
+const workerEntry = resolve(dirname(fileURLToPath(import.meta.resolve('playwright/package.json'))), 'lib/worker/workerProcessEntry.js')
+const worker = typeof process.send === 'function' && resolve(process.argv[1] ?? '') === workerEntry
+if (!worker && !selectsOnlyBrowser(process.argv.slice(2), import.meta.dirname) && !remoteVisualBrowser) {
+    throw new Error('Visual screenshots require the pinned Linux renderer. Use npm run test:visual or npm run test:visual:update.')
+}
 const configuredBrowser = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
 const macChrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-const executablePath = configuredBrowser || (existsSync(macChrome) ? macChrome : undefined)
+const executablePath = remoteVisualBrowser ? undefined : configuredBrowser || (existsSync(macChrome) ? macChrome : undefined)
 const port = Number.parseInt(process.env.CATALOGHUB_BROWSER_PORT ?? '', 10)
 const foundationHosts = [
     'tech-germany.test',
@@ -23,9 +35,9 @@ const baseURL = `http://127.0.0.1:${port}`
 export default defineConfig({
     fullyParallel: false,
     workers: 1,
-    timeout: 30_000,
+    timeout: emulatedVisualBrowser ? 120_000 : 30_000,
     expect: {
-        timeout: 10_000,
+        timeout: emulatedVisualBrowser ? 30_000 : 10_000,
     },
     forbidOnly: Boolean(process.env.CI),
     retries: 0,

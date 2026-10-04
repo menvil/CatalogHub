@@ -1,285 +1,226 @@
-@extends('layouts.central-admin', ['activeNav' => 'Translations', 'pageTitle' => 'Brand Translations'])
+@extends('layouts.central-admin', ['activeNav' => 'Brands', 'pageTitle' => 'Brand Translations'])
 
 @section('breadcrumbs')
-    <a href="{{ route('filament.central.pages.home', absolute: false) }}" class="font-medium hover:text-admin-text">Central Admin</a><span aria-hidden="true">/</span>
-    <a href="{{ route('central.translations.dashboard', absolute: false) }}" class="font-medium hover:text-admin-text">Translations</a><span aria-hidden="true">/</span>
     @can('catalog.brands.manage')
+        <a href="{{ route('central.brands.index', absolute: false) }}" class="font-medium hover:text-admin-text">Brands</a><span aria-hidden="true">/</span>
         <a href="{{ route('central.brands.show', $brand, absolute: false) }}" class="font-medium hover:text-admin-text">{{ $brand->name }}</a>
     @else
-        <span>{{ $brand->name }}</span>
+        <span>Brands</span><span aria-hidden="true">/</span><span>{{ $brand->name }}</span>
     @endcan
-    @if ($selectedLocale)
-        <span aria-hidden="true">/</span><span aria-current="page">{{ $selectedLocale->code }}</span>
-    @endif
+    <span aria-hidden="true">/</span><span aria-current="page">Translations</span>
 @endsection
 
 @section('content')
     @php
         $selectedStatus = $translation?->status ?? \App\Enums\TranslationStatus::Missing;
+        $sourceStatus = $sourceTranslation?->status ?? \App\Enums\TranslationStatus::Missing;
+        $canManage = auth()->user()?->can('translations.manage') === true
+            && auth()->user()?->can('central.mutation.execute') === true;
         $canApprove = $translation?->status === \App\Enums\TranslationStatus::HumanReviewed && $sourceHashMatches;
         $canMarkOutdated = $translation !== null && $translation->status !== \App\Enums\TranslationStatus::Outdated;
+        $sourceParameters = $sourceLocale ? ['source' => $sourceLocale->code] : [];
+        $swapTarget = $sourceLocale ?? $sourceLocales->first();
         $statusExplanation = match ($selectedStatus) {
-            \App\Enums\TranslationStatus::Missing => 'No translation row exists for this active locale. Nothing is persisted until Save.',
-            \App\Enums\TranslationStatus::MachineTranslated => 'The row carries the shared machine-translated state. CA-015 does not run a translation provider.',
-            \App\Enums\TranslationStatus::HumanReviewed => 'A human-reviewed target is saved and may be explicitly approved when its source hash is current.',
-            \App\Enums\TranslationStatus::Approved => 'Approval was explicit and is attributed below. Editing localized copy invalidates this approval.',
+            \App\Enums\TranslationStatus::Missing => 'No saved translation yet. Save to create one.',
+            \App\Enums\TranslationStatus::MachineTranslated => 'Review this translation before approval.',
+            \App\Enums\TranslationStatus::HumanReviewed => 'Ready for explicit approval once the canonical source is current.',
+            \App\Enums\TranslationStatus::Approved => 'Approved. Editing content requires a new approval.',
             \App\Enums\TranslationStatus::Outdated => $sourceHashMatches
-                ? 'The row was explicitly marked outdated; its saved text is preserved.'
-                : 'The stored source hash differs from the current canonical Brand name or slug.',
+                ? 'Marked outdated. Review and save before approval.'
+                : 'Canonical Brand context changed. Review and save before approval.',
         };
+        $fields = [
+            ['name', 'Localized name', 255, 1],
+            ['tagline', 'Tagline', 255, 1],
+            ['short_description', 'Short description', 1000, 3],
+            ['description', 'Description', 10000, 5],
+            ['seo_title', 'SEO title', 255, 1],
+            ['seo_description', 'SEO description', 500, 3],
+        ];
     @endphp
 
-    <div class="space-y-admin-section" data-brand-translations-fixture="brand-translations-v2">
-        <x-admin.page-header
-            screen-id="CA-015"
-            :show-screen-id="false"
-            :title="$brand->name"
-            description="Translate canonical Brand copy for active locales."
-            :breadcrumbs="[]"
-        >
-            @if ($selectedLocale)
-                <x-slot:actions>
-                    <div class="flex min-w-0 flex-wrap items-center gap-2">
-                        <span class="break-words text-sm font-semibold text-admin-text">{{ $selectedLocale->native_name ?: $selectedLocale->name }}</span>
-                        <span class="font-foundation-mono text-xs text-admin-muted">{{ $selectedLocale->code }}</span>
-                        <x-admin.translation-status-badge :status="$selectedStatus->value" />
-                    </div>
-                </x-slot:actions>
-            @endif
+    <div class="brand-translation-page" data-brand-translations-fixture="brand-translations-v3">
+        <x-admin.page-header class="brand-translation-heading" screen-id="CA-015" :show-screen-id="false" title="Brand Translations" description="Manage localized Brand content across active locales." :breadcrumbs="[]">
+            <x-slot:actions>
+                <span class="text-xs text-admin-muted">Brand: {{ $brand->name }} · <span class="font-foundation-mono">{{ $brand->slug }}</span></span>
+                @can('catalog.brands.manage')<x-ui.button :href="route('central.brands.show', $brand, absolute: false)" variant="secondary">View Brand</x-ui.button>@endcan
+            </x-slot:actions>
         </x-admin.page-header>
-
         @include('central-admin.brands.partials.subnav', ['active' => 'translations'])
 
         @if ($locales->isEmpty())
-            <x-admin.empty-state
-                title="No active locales are available for translation."
-                description="Activate a locale before creating Brand translations. Existing rows for inactive locales are retained but are not editable here."
-            />
+            <x-admin.empty-state title="No active locales are available for translation." description="Activate a locale to manage translations." />
         @else
-            <x-admin.card title="Active locales" description="Choose a target locale. Opening a locale never creates a translation row.">
-                <nav class="flex max-w-full gap-2 overflow-x-auto pb-1" aria-label="Translation locales">
-                    @foreach ($locales as $locale)
-                        @php
-                            $localeTranslation = $translationsByLocale->get($locale->getKey());
-                            $localeStatus = $localeTranslation?->status ?? \App\Enums\TranslationStatus::Missing;
-                        @endphp
-                        <a
-                            href="{{ route('central.brands.translations.edit', [$brand, $locale->code], absolute: false) }}"
-                            @if ($selectedLocale?->is($locale)) aria-current="page" @endif
-                            @class([
-                                'flex min-w-40 shrink-0 flex-col gap-1 rounded-admin-input border px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-admin-primary',
-                                'border-admin-primary bg-admin-primary-soft text-admin-primary' => $selectedLocale?->is($locale),
-                                'border-admin-border bg-admin-surface text-admin-text hover:bg-admin-surface-muted' => ! $selectedLocale?->is($locale),
-                            ])
-                        >
-                            <span class="font-medium">{{ $locale->native_name ?: $locale->name }}</span>
-                            <span class="font-foundation-mono text-xs opacity-80">{{ $locale->code }}</span>
-                            <x-admin.translation-status-badge :status="$localeStatus->value" class="mt-1 self-start" />
-                        </a>
-                    @endforeach
-                </nav>
-            </x-admin.card>
-
-            @if ($errors->has('translation'))
-                <div class="rounded-admin-input border border-admin-danger/30 bg-admin-danger-soft px-4 py-3 text-sm text-admin-text" role="alert">
-                    {{ $errors->first('translation') }}
+            <section class="brand-translation-direction" aria-label="Translation direction" data-screen-region="translation-direction">
+                <p class="brand-translation-mobile-direction" aria-label="{{ $sourceLocale?->name ?? 'Choose source' }} to {{ $selectedLocale->name }}">{{ strtoupper($sourceLocale?->language_code ?? '—') }} → {{ strtoupper($selectedLocale->language_code) }}</p>
+                <div class="min-w-0">
+                    <label for="source-language" class="mb-2 block text-xs font-medium text-admin-muted">Source language</label>
+                    <div class="brand-translation-select">
+                        <select id="source-language" class="brand-translation-source-select" data-brand-translation-language-selector aria-describedby="language-selection-help" @disabled($sourceLocales->isEmpty())>
+                            <option value="" data-language-url="{{ route('central.brands.translations.edit', [$brand, $selectedLocale->code], absolute: false) }}" @selected(! $sourceLocale)>Choose source language</option>
+                            @foreach ($sourceLocales as $candidate)
+                                <option value="{{ $candidate->code }}" data-language-url="{{ route('central.brands.translations.edit', [$brand, $selectedLocale->code, 'source' => $candidate->code], absolute: false) }}" @selected($sourceLocale?->is($candidate))>{{ $candidate->name }} · {{ $candidate->code }} · {{ \App\Enums\TranslationStatus::options()[($translationsByLocale->get($candidate->getKey())?->status ?? \App\Enums\TranslationStatus::Missing)->value] }}</option>
+                            @endforeach
+                            @if ($swapTarget)
+                                <optgroup label="Switch direction">
+                                    <option value="{{ $selectedLocale->code }}" data-language-url="{{ route('central.brands.translations.edit', [$brand, $swapTarget->code, 'source' => $selectedLocale->code], absolute: false) }}">{{ $selectedLocale->name }} · {{ $selectedLocale->code }} · {{ \App\Enums\TranslationStatus::options()[$selectedStatus->value] }}</option>
+                                </optgroup>
+                            @endif
+                        </select>
+                        <x-ui.icon name="chevron-down" decorative size="sm" data-select-chevron />
+                    </div>
                 </div>
+                <span class="brand-translation-arrow" aria-hidden="true">→</span>
+                <div class="min-w-0">
+                    <label for="target-language" class="mb-2 block text-xs font-medium text-admin-muted">Target language</label>
+                    <div class="brand-translation-select">
+                        <select id="target-language" class="brand-translation-source-select" data-brand-translation-language-selector aria-describedby="language-selection-help">
+                            @foreach ($locales as $candidate)
+                                @php
+                                    $candidateStatus = $translationsByLocale->get($candidate->getKey())?->status ?? \App\Enums\TranslationStatus::Missing;
+                                    $nextSource = $sourceLocale?->is($candidate) ? $selectedLocale : $sourceLocale;
+                                @endphp
+                                <option value="{{ $candidate->code }}" data-language-url="{{ route('central.brands.translations.edit', [$brand, $candidate->code, ...($nextSource ? ['source' => $nextSource->code] : [])], absolute: false) }}" @selected($selectedLocale->is($candidate))>{{ $candidate->name }} · {{ $candidate->code }} · {{ \App\Enums\TranslationStatus::options()[$candidateStatus->value] }}</option>
+                            @endforeach
+                        </select>
+                        <x-ui.icon name="chevron-down" decorative size="sm" data-select-chevron />
+                    </div>
+                </div>
+                <p id="language-selection-help" class="brand-translation-language-help">Selecting a language already on the other side swaps the direction.</p>
+                <noscript class="brand-translation-language-help">
+                    <details>
+                        <summary>Choose languages</summary>
+                        <nav aria-label="Source languages" class="mt-2 flex flex-col gap-2">
+                            @foreach ($sourceLocales as $candidate)
+                                <a href="{{ route('central.brands.translations.edit', [$brand, $selectedLocale->code, 'source' => $candidate->code], absolute: false) }}">Source: {{ $candidate->name }} · {{ $candidate->code }}</a>
+                            @endforeach
+                            @if ($swapTarget)<a href="{{ route('central.brands.translations.edit', [$brand, $swapTarget->code, 'source' => $selectedLocale->code], absolute: false) }}">Source: {{ $selectedLocale->name }} · {{ $selectedLocale->code }} — Switch direction</a>@endif
+                        </nav>
+                        <nav aria-label="Target languages" class="mt-3 flex flex-col gap-2">
+                            @foreach ($locales as $candidate)
+                                @php
+                                    $nextSource = $sourceLocale?->is($candidate) ? $selectedLocale : $sourceLocale;
+                                @endphp
+                                <a href="{{ route('central.brands.translations.edit', [$brand, $candidate->code, ...($nextSource ? ['source' => $nextSource->code] : [])], absolute: false) }}">Target: {{ $candidate->name }} · {{ $candidate->code }}</a>
+                            @endforeach
+                        </nav>
+                    </details>
+                </noscript>
+            </section>
+
+            @if ($errors->has('translation') || $errors->has('source'))
+                <p class="rounded-admin-input bg-admin-danger-soft p-3 text-sm" role="alert">{{ $errors->first('translation') ?: $errors->first('source') }}</p>
+            @endif
+            @if (! $sourceLocale)
+                <p class="rounded-admin-input bg-admin-surface-muted p-3 text-sm" role="status">Choose another source language for reference.</p>
+            @elseif (! $sourceTranslation)
+                <p class="rounded-admin-input bg-admin-warning-soft p-3 text-sm" role="status">No source translation available for {{ $sourceLocale->name }} ({{ $sourceLocale->code }}). Choose another source language.</p>
+            @elseif ($sourceStatus === \App\Enums\TranslationStatus::Outdated)
+                <p class="rounded-admin-input bg-admin-warning-soft p-3 text-sm" role="status">You are translating from an outdated source.</p>
+            @elseif ($sourceStatus === \App\Enums\TranslationStatus::Missing)
+                <p class="rounded-admin-input bg-admin-warning-soft p-3 text-sm" role="status">The source translation is marked Missing. Choose another source language if needed.</p>
             @endif
 
-            <x-admin.card data-screen-region="translation-workflow">
-                <div class="flex flex-col gap-admin-card lg:flex-row lg:items-center lg:justify-between">
-                    <div class="min-w-0">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <x-admin.translation-status-badge :status="$selectedStatus->value" />
-                            <span class="font-foundation-mono text-xs text-admin-muted">Target {{ $selectedLocale->code }}</span>
+            <div class="brand-translation-workspace" data-screen-region="source-target-workspace">
+                <section class="brand-translation-editor" aria-label="Translation editor">
+                    <header class="brand-translation-editor-heading">
+                        <div>
+                            <h2 class="text-base font-semibold">{{ $sourceLocale ? $sourceLocale->name.' ('.$sourceLocale->code.')' : 'Choose source' }} → {{ $selectedLocale->name }} ({{ $selectedLocale->code }})</h2>
+                            <p class="mt-1 text-xs text-admin-muted">Compare each field, then save your translation.</p>
                         </div>
-                        <p class="mt-2 max-w-3xl text-sm text-admin-muted">{{ $statusExplanation }}</p>
-                    </div>
-
-                    <div class="flex flex-wrap gap-admin-field lg:justify-end">
-                        <form method="POST" action="{{ route('central.brands.translations.outdated', [$brand, $selectedLocale->code], absolute: false) }}">
-                            @csrf
-                            <x-ui.button type="submit" variant="secondary" :disabled="! $canMarkOutdated">Mark outdated</x-ui.button>
-                        </form>
-                        <form method="POST" action="{{ route('central.brands.translations.approve', [$brand, $selectedLocale->code], absolute: false) }}">
-                            @csrf
-                            <x-ui.button type="submit" variant="secondary" :disabled="! $canApprove">Approve translation</x-ui.button>
-                        </form>
-                        <x-ui.button type="submit" form="brand-translation-form">Save translation</x-ui.button>
-                    </div>
-                </div>
-            </x-admin.card>
-
-            <div class="grid min-w-0 gap-admin-section xl:grid-cols-[16rem_minmax(0,1fr)_18rem] xl:items-start" data-screen-region="source-target-workspace">
-                <aside class="min-w-0 space-y-admin-section" aria-label="Source context">
-                    <x-admin.card title="Source context" description="Canonical values used by the existing Brand source-hash contract.">
-                        <dl class="space-y-admin-card text-sm">
-                            <div>
-                                <dt class="font-medium text-admin-muted">Canonical name</dt>
-                                <dd class="mt-1 break-words text-admin-text">{{ $brand->name }}</dd>
-                                <x-ui.button
-                                    variant="secondary"
-                                    class="mt-3 w-full"
-                                    data-brand-translation-copy-source
-                                    data-brand-translation-copy-target="name"
-                                    :data-brand-translation-source-value="$brand->name"
-                                >Copy canonical name</x-ui.button>
-                                <p class="mt-2 text-xs text-admin-muted">Client-side only. Save remains a separate action and Copy never changes status.</p>
+                        @if ($canManage)
+                            <div class="flex flex-wrap gap-2">
+                                @if ($sourceTranslation)<x-ui.button variant="secondary" data-brand-translation-copy-all>Copy all from Source</x-ui.button>@endif
+                                <x-ui.button type="submit" form="brand-translation-form">Save translation</x-ui.button>
                             </div>
-                            <div class="border-t border-admin-border pt-admin-card">
-                                <dt class="font-medium text-admin-muted">Canonical slug</dt>
-                                <dd class="mt-1 break-all font-foundation-mono text-admin-text">{{ $brand->slug }}</dd>
-                                <p class="mt-2 text-xs text-admin-muted">Slug participates in the source hash but has no localized target in CA-015.</p>
-                            </div>
-                            <div class="border-t border-admin-border pt-admin-card">
-                                <dt class="font-medium text-admin-muted">Stored source state</dt>
-                                <dd class="mt-2">
-                                    @if (! $translation)
-                                        <span class="text-admin-muted">Not stored</span>
-                                    @elseif ($sourceHashMatches)
-                                        <span class="font-medium text-admin-success">Matches current source</span>
-                                    @else
-                                        <span class="font-medium text-admin-outdated">Canonical source differs</span>
+                        @endif
+                    </header>
+                    <x-ui.form.form-state id="brand-translation-form" :action="route('central.brands.translations.save', [$brand, $selectedLocale->code, ...$sourceParameters], absolute: false)" method="post" :leave-warning="false">
+                        <div class="brand-translation-table-heading" aria-hidden="true">
+                            <span>Field</span><span>Source · {{ $sourceLocale?->name ?? 'Not selected' }}</span><span>Target · {{ $selectedLocale->name }}</span>
+                        </div>
+                        @foreach ($fields as [$field, $label, $limit, $rows])
+                            @php
+                                $targetValue = old($field, $translation?->getAttribute($field)) ?? '';
+                                $sourceValue = $sourceTranslation?->getAttribute($field);
+                                $canonicalFallback = $field === 'name' && $sourceTranslation && blank($sourceValue);
+                                if ($canonicalFallback) $sourceValue = $brand->name;
+                            @endphp
+                            <div class="brand-translation-field" data-translation-field="{{ $field }}">
+                                <div class="brand-translation-field-label">
+                                    <label for="{{ $field }}" class="text-sm font-medium">{{ $label }}</label> @if ($field === 'name')<span aria-hidden="true" class="text-admin-danger">*</span>@endif
+                                    <span class="mt-1 block text-xs text-admin-muted" data-brand-translation-counter="{{ $field }}">{{ intdiv(strlen(mb_convert_encoding($targetValue, 'UTF-16LE', 'UTF-8')), 2) }} / {{ $limit }}</span>
+                                    @if ($canManage && filled($sourceValue))
+                                        <button type="button" class="brand-translation-copy" aria-label="Copy source for {{ $label }}" data-brand-translation-copy-source data-brand-translation-copy-target="{{ $field }}" data-brand-translation-source-value="{{ $sourceValue }}">Copy source</button>
                                     @endif
-                                </dd>
-                            </div>
-                        </dl>
+                                </div>
+                                <div class="brand-translation-source">
+                                    <p class="brand-translation-mobile-label">Source · {{ $sourceLocale?->name ?? 'Not selected' }}</p>
+                                    @if ($canonicalFallback)<p class="mb-1 text-xs font-medium text-admin-muted">Canonical fallback</p>@endif
+                                    <div class="brand-translation-source-value" dir="{{ $canonicalFallback ? 'auto' : ($sourceLocale?->direction ?? 'ltr') }}" @if ($sourceLocale && ! $canonicalFallback) lang="{{ $sourceLocale->code }}" @endif data-source-field="{{ $field }}">{{ filled($sourceValue) ? $sourceValue : 'No source value' }}</div>
+                                </div>
+                                <div class="brand-translation-target">
+                                    <p class="brand-translation-mobile-label">Target · {{ $selectedLocale->name }}</p>
+                                    @if ($rows === 1)
+                                        <input id="{{ $field }}" name="{{ $field }}" type="text" value="{{ $targetValue }}" data-brand-translation-saved-value="{{ $translation?->getAttribute($field) ?? '' }}" class="brand-translation-control" dir="{{ $selectedLocale->direction }}" lang="{{ $selectedLocale->code }}" maxlength="{{ $limit }}" @required($field === 'name') @readonly(! $canManage) @if ($errors->has($field)) aria-invalid="true" aria-describedby="{{ $field }}-error" @endif>
+                                    @else
+                                        <textarea id="{{ $field }}" name="{{ $field }}" rows="{{ $rows }}" data-brand-translation-saved-value="{{ $translation?->getAttribute($field) ?? '' }}" class="brand-translation-control" dir="{{ $selectedLocale->direction }}" lang="{{ $selectedLocale->code }}" maxlength="{{ $limit }}" @readonly(! $canManage) @if ($errors->has($field)) aria-invalid="true" aria-describedby="{{ $field }}-error" @endif>{{ $targetValue }}</textarea>
+                                    @endif
+                                    @if ($errors->has($field))<p id="{{ $field }}-error" class="mt-1 text-xs text-admin-danger" role="alert">{{ $errors->first($field) }}</p>@endif
 
-                        <div class="mt-admin-card rounded-admin-input border border-dashed border-admin-border bg-admin-surface-muted p-3">
-                            <p class="text-sm font-medium text-admin-text">No invented source copy</p>
-                            <p class="mt-1 text-xs text-admin-muted">Tagline, descriptions, and SEO fields have no canonical Brand equivalent, so CA-015 does not fabricate values for them.</p>
-                        </div>
-                    </x-admin.card>
-                </aside>
-
-                <main class="min-w-0">
-                    <x-admin.card
-                        :title="'Target translation · '.($selectedLocale->native_name ?: $selectedLocale->name)"
-                        :description="'Localized fields are stored only in BrandTranslation for '.$selectedLocale->code.'.'"
-                    >
-                        <x-ui.form.form-state
-                            id="brand-translation-form"
-                            :action="route('central.brands.translations.save', [$brand, $selectedLocale->code], absolute: false)"
-                            method="post"
-                            :leave-warning="false"
-                            class="space-y-admin-card"
-                        >
-                            <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-                                <x-ui.form.input
-                                    id="name"
-                                    name="name"
-                                    label="Localized name"
-                                    :value="old('name', $translation?->name)"
-                                    :error="$errors->first('name')"
-                                    help="Required target. Canonical name is the only field with a real Copy from Source value."
-                                    :required="true"
-                                    :dir="$selectedLocale->direction"
-                                    maxlength="255"
-                                />
-                                <x-ui.button
-                                    variant="secondary"
-                                    class="sm:mb-[1.625rem]"
-                                    data-brand-translation-copy-source
-                                    data-brand-translation-copy-target="name"
-                                    :data-brand-translation-source-value="$brand->name"
-                                >Copy from Source</x-ui.button>
+                                </div>
                             </div>
-                            <x-ui.form.input
-                                id="tagline"
-                                name="tagline"
-                                label="Tagline"
-                                :value="old('tagline', $translation?->tagline)"
-                                :error="$errors->first('tagline')"
-                                help="No authoritative canonical source value."
-                                :optional="true"
-                                :dir="$selectedLocale->direction"
-                                maxlength="255"
-                            />
-                            <x-ui.form.textarea
-                                id="short_description"
-                                name="short_description"
-                                label="Short description"
-                                :value="old('short_description', $translation?->short_description)"
-                                :error="$errors->first('short_description')"
-                                help="No authoritative canonical source value."
-                                :optional="true"
-                                :rows="4"
-                                :dir="$selectedLocale->direction"
-                                maxlength="1000"
-                            />
-                            <x-ui.form.textarea
-                                id="description"
-                                name="description"
-                                label="Description"
-                                :value="old('description', $translation?->description)"
-                                :error="$errors->first('description')"
-                                help="No authoritative canonical source value."
-                                :optional="true"
-                                :rows="9"
-                                :dir="$selectedLocale->direction"
-                                maxlength="10000"
-                            />
-                            <x-ui.form.input
-                                id="seo_title"
-                                name="seo_title"
-                                label="SEO title"
-                                :value="old('seo_title', $translation?->seo_title)"
-                                :error="$errors->first('seo_title')"
-                                help="Stored centrally but not published by CA-015. No canonical source value."
-                                :optional="true"
-                                :dir="$selectedLocale->direction"
-                                maxlength="255"
-                            />
-                            <x-ui.form.textarea
-                                id="seo_description"
-                                name="seo_description"
-                                label="SEO description"
-                                :value="old('seo_description', $translation?->seo_description)"
-                                :error="$errors->first('seo_description')"
-                                help="Stored centrally but not published by CA-015. No canonical source value."
-                                :optional="true"
-                                :rows="4"
-                                :dir="$selectedLocale->direction"
-                                maxlength="500"
-                            />
-                            <x-ui.form.select
-                                id="status"
-                                name="status"
-                                label="Review state"
-                                :options="$statusOptions"
-                                :selected="old('status', $translation?->status?->value ?? \App\Enums\TranslationStatus::HumanReviewed->value)"
-                                :error="$errors->first('status')"
-                                help="Approval is never granted by Save. Changed approved copy returns to Human reviewed and clears stale attribution."
-                                :required="true"
-                            />
-                            <div class="flex justify-end border-t border-admin-border pt-admin-card">
+                        @endforeach
+                        @if ($canManage)
+                            <div class="brand-translation-save">
+                                @if ($selectedStatus === \App\Enums\TranslationStatus::Approved)
+                                    <input type="hidden" name="status" value="approved">
+                                @else
+                                    <div>
+                                        <label for="status" class="mr-2 text-xs font-medium text-admin-muted">Save as</label>
+                                        <div class="brand-translation-select inline-block align-middle">
+                                            <select id="status" name="status" data-brand-translation-saved-value="{{ $selectedStatus === \App\Enums\TranslationStatus::MachineTranslated ? 'machine_translated' : 'human_reviewed' }}" class="brand-translation-source-select !w-auto" @if ($errors->has('status')) aria-invalid="true" aria-describedby="status-error" @endif>
+                                                <option value="human_reviewed" @selected(old('status', $selectedStatus->value) !== 'machine_translated')>Human reviewed</option>
+                                                <option value="machine_translated" @selected(old('status', $selectedStatus->value) === 'machine_translated')>Machine translated</option>
+                                            </select>
+                                            <x-ui.icon name="chevron-down" decorative size="sm" data-select-chevron />
+                                        </div>
+                                        @if ($errors->has('status'))<p id="status-error" class="mt-1 text-xs text-admin-danger" role="alert">{{ $errors->first('status') }}</p>@endif
+                                    </div>
+                                @endif
+                                <span class="text-xs text-admin-muted">Save records your review. Approval is a separate action.</span>
                                 <x-ui.button type="submit">Save translation</x-ui.button>
                             </div>
-                        </x-ui.form.form-state>
-                    </x-admin.card>
-                </main>
-
+                        @endif
+                    </x-ui.form.form-state>
+                </section>
                 <aside class="min-w-0 space-y-admin-section" aria-label="Translation metadata and activity">
                     <x-admin.card title="Workflow status">
+                        <p class="mb-2 text-sm font-medium">{{ $selectedLocale->name }} · {{ $selectedLocale->code }}</p>
                         <div class="flex flex-wrap items-center gap-2">
                             <x-admin.translation-status-badge :status="$selectedStatus->value" />
-                            @if ($translation)
-                                <span class="font-foundation-mono text-xs text-admin-muted">Row #{{ $translation->getKey() }}</span>
-                            @endif
+                            @if ($translation)<span class="font-foundation-mono text-xs text-admin-muted">Row #{{ $translation->getKey() }}</span>@endif
                         </div>
                         <p class="mt-3 text-sm text-admin-muted">{{ $statusExplanation }}</p>
-
-                        @if ($translation && ! $canApprove && $translation->status !== \App\Enums\TranslationStatus::Approved)
-                            <p class="mt-3 rounded-admin-input bg-admin-surface-muted p-3 text-xs text-admin-muted">
-                                @if ($translation->status !== \App\Enums\TranslationStatus::HumanReviewed)
-                                    Save as Human reviewed before approval.
-                                @elseif (! $sourceHashMatches)
-                                    Save against the current source before approval.
-                                @endif
-                            </p>
+                        @if ($translation)
+                            <p class="mt-2 text-xs text-admin-muted">Canonical context: {{ $sourceHashMatches ? 'Current' : 'Changed' }}</p>
+                        @endif
+                        @if ($canManage)
+                            <div class="mt-4 flex flex-wrap gap-2">
+                                <form method="POST" action="{{ route('central.brands.translations.approve', [$brand, $selectedLocale->code, ...$sourceParameters], absolute: false) }}">
+                                    @csrf
+                                    <x-ui.button type="submit" variant="secondary" :disabled="! $canApprove" :aria-describedby="! $canApprove ? 'approval-help' : null">Approve translation</x-ui.button>
+                                </form>
+                                <form method="POST" action="{{ route('central.brands.translations.outdated', [$brand, $selectedLocale->code, ...$sourceParameters], absolute: false) }}">
+                                    @csrf
+                                    <x-ui.button type="submit" variant="secondary" :disabled="! $canMarkOutdated">Mark outdated</x-ui.button>
+                                </form>
+                            </div>
+                            @if (! $canApprove)
+                                <p id="approval-help" class="mt-3 text-xs text-admin-muted">{{ $selectedStatus === \App\Enums\TranslationStatus::Approved ? 'Already approved.' : 'Save against the current source before approval.' }}</p>
+                            @endif
                         @endif
                     </x-admin.card>
-
                     @if ($translation?->status === \App\Enums\TranslationStatus::Approved)
                         <x-admin.card title="Approval" data-screen-region="approval-metadata">
                             <dl class="space-y-admin-card text-sm">

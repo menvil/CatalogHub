@@ -15,6 +15,7 @@ final readonly class BrandTranslationEditorData
     /**
      * @param  Collection<int, Locale>  $locales
      * @param  Collection<int, BrandTranslation>  $translationsByLocale
+     * @param  Collection<int, Locale>  $sourceLocales
      * @param  Collection<int, AuditLogEntry>  $activity
      */
     public function __construct(
@@ -23,6 +24,9 @@ final readonly class BrandTranslationEditorData
         public Collection $translationsByLocale,
         public ?Locale $selectedLocale,
         public ?BrandTranslation $translation,
+        public ?Locale $sourceLocale,
+        public ?BrandTranslation $sourceTranslation,
+        public Collection $sourceLocales,
         public string $currentSourceHash,
         public bool $sourceHashMatches,
         public Collection $activity,

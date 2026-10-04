@@ -17,7 +17,7 @@ use RuntimeException;
 
 final class BrandTranslationFixture
 {
-    public const VERSION = 'brand-translations-v2';
+    public const VERSION = 'brand-translations-v3';
 
     public const WORKSPACE_BRAND_ID = BrandDetailFixture::DRAFT_BRAND_ID;
 
@@ -113,18 +113,18 @@ final class BrandTranslationFixture
             actor: $actor,
             name: 'Zotac',
             tagline: 'Innovation beyond the expected.',
-            shortDescription: 'Deterministic approved target copy for the CA-015 workspace.',
+            shortDescription: 'Zotac designs graphics cards and compact computers for gaming and creative work.',
         );
         $outdated = self::translation(
             id: 1501502,
             brand: $workspaceBrand,
-            locale: $locales->get('fr-FR'),
+            locale: $locales->get('de-DE'),
             sourceHash: $sourceHash,
             status: TranslationStatus::Outdated,
             actor: null,
             name: 'Zotac',
-            tagline: 'L’innovation au-delà des attentes.',
-            shortDescription: 'Copie cible déterministe marquée comme obsolète.',
+            tagline: 'Innovation über das Erwartete hinaus.',
+            shortDescription: 'Zotac entwickelt Grafikkarten und kompakte Computer für Spiele und kreative Arbeit.',
         );
         self::translation(
             id: 1501503,
@@ -151,8 +151,8 @@ final class BrandTranslationFixture
 
         self::activity($workspaceBrand, $actor, AuditAction::CatalogBrandTranslationSaved, $approved->id, 'en-US', TranslationStatus::HumanReviewed, ['name', 'tagline', 'short_description'], '2026-08-24T09:00:00Z');
         self::activity($workspaceBrand, $actor, AuditAction::TranslationApproved, $approved->id, 'en-US', TranslationStatus::Approved, ['status', 'approval'], '2026-08-25T10:30:00Z');
-        self::activity($workspaceBrand, $actor, AuditAction::CatalogBrandTranslationSaved, $outdated->id, 'fr-FR', TranslationStatus::HumanReviewed, ['name', 'tagline', 'short_description'], '2026-08-23T08:00:00Z');
-        self::activity($workspaceBrand, $actor, AuditAction::TranslationMarkedOutdated, $outdated->id, 'fr-FR', TranslationStatus::Outdated, ['status'], '2026-08-26T11:45:00Z');
+        self::activity($workspaceBrand, $actor, AuditAction::CatalogBrandTranslationSaved, $outdated->id, 'de-DE', TranslationStatus::HumanReviewed, ['name', 'tagline', 'short_description'], '2026-08-23T08:00:00Z');
+        self::activity($workspaceBrand, $actor, AuditAction::TranslationMarkedOutdated, $outdated->id, 'de-DE', TranslationStatus::Outdated, ['status'], '2026-08-26T11:45:00Z');
 
         foreach (Locale::query()->active()->orderBy('position')->orderBy('code')->get() as $locale) {
             BrandTranslation::factory()->create([
@@ -193,6 +193,29 @@ final class BrandTranslationFixture
         }
 
         $timestamp = CarbonImmutable::parse('2026-08-22T08:00:00Z');
+        $workspace = $brand->getKey() === self::WORKSPACE_BRAND_ID;
+        $copy = match ($workspace ? $locale->code : null) {
+            'de-DE' => [
+                'description' => "Zotac verbindet leistungsstarke Grafik mit kompaktem Design.\n\nUnsere Hardware unterstützt Spieler und Kreative bei ihren nächsten Ideen.",
+                'seo_title' => 'Zotac – Grafikkarten und Mini-PCs',
+                'seo_description' => 'Entdecken Sie Zotac Grafikkarten und Mini-PCs für Spiele, Arbeit und kreative Projekte.',
+            ],
+            'en-US' => [
+                'description' => "Zotac combines powerful graphics with compact design.\n\nOur hardware helps gamers and creators bring their next ideas to life.",
+                'seo_title' => 'Zotac – Graphics cards and mini PCs',
+                'seo_description' => 'Explore Zotac graphics cards and mini PCs for gaming, work and creative projects.',
+            ],
+            'ar-SA' => [
+                'description' => "تجمع زوتاك بين الرسومات القوية والتصميم المدمج.\n\nتساعد أجهزتنا اللاعبين والمبدعين على تحويل أفكارهم إلى واقع.",
+                'seo_title' => 'زوتاك – بطاقات الرسومات والحواسيب الصغيرة',
+                'seo_description' => 'اكتشف بطاقات الرسومات والحواسيب الصغيرة من زوتاك للألعاب والعمل والمشاريع الإبداعية.',
+            ],
+            default => [
+                'description' => 'Long deterministic localized Brand description for visual layout and wrapping checks.',
+                'seo_title' => $name.' | CatalogHub',
+                'seo_description' => 'Deterministic localized SEO description for CA-015 visual and browser acceptance.',
+            ],
+        };
         $translation = new BrandTranslation;
         $translation->forceFill([
             'id' => $id,
@@ -202,9 +225,7 @@ final class BrandTranslationFixture
             'name' => $name,
             'tagline' => $tagline,
             'short_description' => $shortDescription,
-            'description' => 'Long deterministic localized Brand description for visual layout and wrapping checks.',
-            'seo_title' => $name.' | CatalogHub',
-            'seo_description' => 'Deterministic localized SEO description for CA-015 visual and browser acceptance.',
+            ...$copy,
             'status' => $status,
             'source_hash' => $sourceHash,
             'approved_at' => $status === TranslationStatus::Approved ? CarbonImmutable::parse('2026-08-25T10:30:00Z') : null,

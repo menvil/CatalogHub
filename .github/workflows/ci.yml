@@ -365,7 +365,7 @@ jobs:
           name: public-build
           path: public/build
 
-      - name: Install pinned Chromium
+      - name: Install Chromium for legacy PHP visual checks
         run: npx playwright install --with-deps chromium
 
       - name: Prepare application and browser
@@ -377,6 +377,9 @@ jobs:
           test -x "$chrome_bin"
           echo "CHROME_BIN=$chrome_bin" >> "$GITHUB_ENV"
           echo "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=$chrome_bin" >> "$GITHUB_ENV"
+
+      - name: Prepare immutable Linux screenshot renderer
+        run: node tools/visual/run.mjs --list
 
       - name: Compare approved visual references
         run: composer test:visual
@@ -826,7 +829,7 @@ jobs:
               `| Frontend build | ${details(process.env.FRONTEND_BUILD_RESULT, `${value('BUILD_FILES')} files · ${value('BUILD_SIZE')}`)} |`,
               `| Tests & SQLite | ${details(process.env.TESTS_RESULT, `${tests} tests · ${assertions} assertions · ${value('SQLITE_MIGRATIONS')} migrations · seed passed`)} |`,
               `| Browser smoke | ${details(process.env.BROWSER_RESULT, 'Playwright Central login passed')} |`,
-              `| Visual regression | ${details(process.env.VISUAL_REGRESSION_RESULT, 'PHP reference checks and Playwright login baseline passed')} |`,
+              `| Visual regression | ${details(process.env.VISUAL_REGRESSION_RESULT, 'PHP reference checks and pinned Linux Playwright screenshots passed')} |`,
               `| MariaDB | ${details(process.env.MARIADB_RESULT, `${value('MARIADB_MIGRATIONS')} migrations · approved queries ${value('MARIADB_QUERY_BOUNDARIES')} · rollback ${value('MARIADB_ROLLBACK')}`)} |`,
               `| PostgreSQL | ${details(process.env.POSTGRES_RESULT, `${value('POSTGRES_MIGRATIONS')} migrations · approved queries ${value('POSTGRES_QUERY_BOUNDARIES')} · rollback ${value('POSTGRES_ROLLBACK')}`)} |`,
               `| Dependencies | ${details(process.env.DEPENDENCY_AUDIT_RESULT, `Composer: ${value('COMPOSER_PACKAGES')} packages · ${value('COMPOSER_ADVISORIES')} advisories; npm: ${value('NPM_PACKAGES')} packages · ${value('NPM_VULNERABILITIES')} vulnerabilities (${value('NPM_HIGH')} high / ${value('NPM_CRITICAL')} critical)`)} |`,

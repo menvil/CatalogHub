@@ -26,7 +26,7 @@ function updateBrandTranslationLocales(statements) {
     const database = resolve(root, `storage/logs/browser-harness-${port}.sqlite`)
     const command = statements.join(' ')
 
-    execFileSync('php', ['artisan', 'tinker', '--execute', command], {
+    return execFileSync('php', ['artisan', 'tinker', '--execute', command], {
         cwd: root,
         env: {
             ...process.env,
@@ -40,5 +40,31 @@ function updateBrandTranslationLocales(statements) {
             SESSION_DRIVER: 'file',
         },
         stdio: 'pipe',
+        encoding: 'utf8',
     })
+}
+
+export function clearSourceTagline() {
+    updateBrandTranslationLocales([
+        "App\\Models\\Translations\\BrandTranslation::query()->where('brand_id', 24)->where('locale', 'en-US')->update(['tagline' => null]);",
+    ])
+}
+
+export function keepOnlyTargetLocale() {
+    updateBrandTranslationLocales([
+        "App\\Models\\Locale::query()->where('code', '!=', 'de-DE')->update(['is_active' => false, 'is_default' => false]);",
+    ])
+}
+
+export function addWorkspaceLanguageOptions() {
+    updateBrandTranslationLocales([
+        "$languages = ['bg-BG' => 'Bulgarian', 'es-ES' => 'Spanish', 'it-IT' => 'Italian', 'pt-PT' => 'Portuguese', 'nl-NL' => 'Dutch', 'pl-PL' => 'Polish', 'cs-CZ' => 'Czech', 'sv-SE' => 'Swedish', 'da-DK' => 'Danish', 'fi-FI' => 'Finnish', 'el-GR' => 'Greek', 'tr-TR' => 'Turkish', 'ja-JP' => 'Japanese', 'ko-KR' => 'Korean', 'zh-CN' => 'Chinese', 'uk-UA' => 'Ukrainian'];",
+        "foreach ($languages as $code => $name) { [$language, $region] = explode('-', $code); $locale = App\\Models\\Locale::query()->firstOrNew(['code' => $code]); $locale->forceFill(['name' => $name, 'language_code' => $language, 'region_code' => $region, 'direction' => 'ltr', 'is_active' => true, 'is_default' => false, 'position' => 20])->saveOrFail(); }",
+    ])
+}
+
+export function workspacePersistence() {
+    return JSON.parse(updateBrandTranslationLocales([
+        "echo json_encode(['brand' => App\\Models\\CentralCatalog\\CentralBrand::query()->findOrFail(24)->getRawOriginal(), 'rows' => App\\Models\\Translations\\BrandTranslation::query()->where('brand_id', 24)->orderBy('id')->get()->map(fn ($row) => $row->getRawOriginal()), 'locales' => App\\Models\\Locale::query()->orderBy('id')->get()->map(fn ($locale) => $locale->getRawOriginal()), 'audit' => App\\Models\\AuditLogEntry::query()->count()]);",
+    ]).trim())
 }

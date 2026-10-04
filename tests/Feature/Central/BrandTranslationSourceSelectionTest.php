@@ -104,9 +104,10 @@ final class BrandTranslationSourceSelectionTest extends TestCase
         $brand = CentralBrand::factory()->create();
         $target = Locale::factory()->create(['code' => 'de-DE']);
         Locale::factory()->disabled()->create(['code' => 'en-US']);
+        Locale::factory()->create(['code' => 'fr-FR']);
         $auditCount = AuditLogEntry::query()->count();
         $this->actingAs(User::factory()->create(['role' => UserRole::Translator]));
-        foreach (['de-DE', 'en-US', 'zz-ZZ', ['en-US']] as $source) {
+        foreach (['de-DE', 'DE-DE', 'FR-FR', 'en-US', 'zz-ZZ', ['en-US']] as $source) {
             $parameters = [$brand, $target->code, 'source' => $source];
             $this->getJson(route('central.brands.translations.edit', $parameters))->assertRedirect()->assertSessionHasErrors('source');
             foreach (['save', 'approve', 'outdated'] as $action) {

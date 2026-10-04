@@ -21,7 +21,7 @@ fs.appendFileSync(process.env.CA015_VISUAL_DOCKER_LOG, command + '\\n');
 if (command === 'run') setTimeout(() => process.stdout.write('owned-container\\n'), ${delayed ? 1000 : 0});
 else if (command === 'port') process.stdout.write('127.0.0.1:12345\\n');
 else if (command === 'logs') process.stdout.write('Listening on ws://127.0.0.1:3000/\\n');
-else if (command === 'stop') { process.stderr.write('Docker stop failed'); process.exitCode = 42; }
+else if (command === 'rm') { process.stderr.write('Docker removal failed'); process.exitCode = 42; }
 else process.exitCode = 43;
 `, { mode: 0o755 })
     return { log, options: { cwd: root, env: { ...process.env, PATH: directory + delimiter + process.env.PATH, CA015_VISUAL_DOCKER_LOG: log } } }
@@ -32,8 +32,8 @@ test('a successful real visual collection fails visibly when its renderer cleanu
     const result = spawnSync(process.execPath, ['tools/visual/run.mjs', '--list'], { ...options, encoding: 'utf8', timeout: 15_000 })
     assert.equal(result.status, 1, result.stderr)
     assert.match(result.stdout, /Total: \d+ tests/)
-    assert.match(result.stderr, /Visual renderer cleanup failed:.*Docker stop failed/s)
-    assert.deepEqual(readFileSync(log, 'utf8').trim().split('\n'), ['run', 'port', 'logs', 'stop'])
+    assert.match(result.stderr, /Visual renderer cleanup failed:.*Docker removal failed/s)
+    assert.deepEqual(readFileSync(log, 'utf8').trim().split('\n'), ['run', 'port', 'logs', 'rm'])
 })
 
 test('startup interruption stops the eventual container and preserves exit 130 when cleanup also fails', async (context) => {
@@ -52,7 +52,7 @@ test('startup interruption stops the eventual container and preserves exit 130 w
         assert.equal(status, 130, stderr)
         assert.match(stderr, /Visual run interrupted/)
         assert.match(stderr, /Visual renderer cleanup failed/)
-        assert.deepEqual(readFileSync(log, 'utf8').trim().split('\n'), ['run', 'stop'])
+        assert.deepEqual(readFileSync(log, 'utf8').trim().split('\n'), ['run', 'rm'])
     } finally {
         if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL')
     }

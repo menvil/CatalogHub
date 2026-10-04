@@ -40,7 +40,7 @@ test('native selection allows Browser files and filters while rejecting Visual, 
     for (const args of [
         ['test'], ['test', '--list'], ['test', '--project=*'],
         ['test', '--project', 'browser', 'visual'],
-        ['test', 'tests/Visual/playwright/brands.visual.spec.mjs'],
+        ['test', 'tests/Visual/playwright/brand-translations.visual.spec.mjs'],
         ['test', 'tests/Browser', 'tests/Visual'],
         ['test', '--grep', 'tests/Browser'],
         ['test', 'tests/Browser/../Visual'],

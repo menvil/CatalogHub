@@ -7,9 +7,11 @@ export class VisualRunLifecycle {
             const repeated = this.interrupted
             this.interrupted = true
             if (repeated) this.forceStop()
-            else if (this.child) {
-                // Allow Playwright to tear down fixtures and its owned server.
-                this.child.kill('SIGINT')
+            else if (this.isAlive(this.child) || this.isAlive(this.startupChild)) {
+                // Playwright gets graceful fixture teardown. In-flight Docker
+                // commands are cancelled too, with the same bounded escalation.
+                if (this.isAlive(this.child)) this.child.kill('SIGINT')
+                else this.startupChild.kill('SIGTERM')
                 this.timer = setTimeout(() => this.forceStop(), this.gracePeriod)
                 this.timer.unref()
             } else void this.stop()
@@ -22,8 +24,15 @@ export class VisualRunLifecycle {
     }
 
     forceStop() {
-        if (this.child?.exitCode === null && this.child?.signalCode === null) this.child.kill('SIGKILL')
-        void this.stop()
+        if (this.isAlive(this.child)) this.child.kill('SIGKILL')
+        if (this.isAlive(this.startupChild)) this.startupChild.kill('SIGKILL')
+        // The owner awaits the Docker command before final cleanup, including
+        // commands cancelled before Docker has returned the container ID.
+        if (!this.isAlive(this.startupChild)) void this.stop()
+    }
+
+    isAlive(child) {
+        return child?.exitCode === null && child?.signalCode === null
     }
 
     stop() {
@@ -36,9 +45,12 @@ export class VisualRunLifecycle {
     }
 
     async dispose() {
-        for (const signal of ['SIGINT', 'SIGTERM']) this.signals.off(signal, this.interrupt)
         clearTimeout(this.timer)
-        await this.stop()
-        if (this.cleanupError) throw this.cleanupError
+        try {
+            await this.stop()
+            if (this.cleanupError) throw this.cleanupError
+        } finally {
+            for (const signal of ['SIGINT', 'SIGTERM']) this.signals.off(signal, this.interrupt)
+        }
     }
 }

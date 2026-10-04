@@ -1,4 +1,5 @@
 import { execFile, spawn } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
 import { once } from 'node:events'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -11,29 +12,49 @@ const root = resolve(import.meta.dirname, '../..')
 const args = process.argv.slice(2)
 const version = JSON.parse(readFileSync(resolve(root, 'node_modules/playwright/package.json'), 'utf8')).version
 validateVisualRun(version, args, Boolean(process.env.CI))
-const lifecycle = new VisualRunLifecycle((id) => execute('docker', ['stop', '--time', '3', id], { timeout: 10_000 }))
+const lifecycle = new VisualRunLifecycle(async (id) => {
+    try {
+        await execute('docker', ['rm', '--force', id], { timeout: 10_000, killSignal: 'SIGKILL' })
+    } catch (error) {
+        // A cancelled create or an already auto-removed container is absent.
+        if (!/No such container/i.test(error.stderr ?? '')) throw error
+    }
+})
+
+async function docker(args, timeout = 10_000) {
+    lifecycle.assertRunning()
+    const execution = execute('docker', args, { timeout, killSignal: 'SIGKILL', maxBuffer: 1024 * 1024 })
+    lifecycle.startupChild = execution.child
+    try {
+        return await execution
+    } finally {
+        lifecycle.startupChild = undefined
+    }
+}
 
 try {
     console.log(`Visual renderer: ${visualEnvironment.imageTag}, ${visualEnvironment.platform}, ${visualEnvironment.image}`)
     const artifacts = resolve(root, 'storage/logs/visual-artifacts')
     mkdirSync(artifacts, { recursive: true })
     writeFileSync(resolve(artifacts, 'renderer.json'), JSON.stringify(visualEnvironment, null, 2) + '\n')
-    const result = await execute('docker', [
-        'run', '--detach', '--rm', '--init', '--ipc=host', '--platform', visualEnvironment.platform,
+    // Know the owned container before creation, even if its CLI is cancelled
+    // before Docker returns an ID. Never address another workspace's container.
+    const container = `cataloghub-visual-${randomUUID()}`
+    lifecycle.container = container
+    await docker([
+        'run', '--name', container, '--detach', '--rm', '--init', '--ipc=host', '--platform', visualEnvironment.platform,
         '--publish', '127.0.0.1::3000', '--workdir', '/opt/cataloghub',
         '--volume', `${resolve(root, 'node_modules/playwright')}:/opt/cataloghub/node_modules/playwright:ro`,
         '--volume', `${resolve(root, 'node_modules/playwright-core')}:/opt/cataloghub/node_modules/playwright-core:ro`,
         visualEnvironment.image, 'node', 'node_modules/playwright/cli.js',
         'run-server', '--port', '3000', '--host', '0.0.0.0', '--unsafe',
-    ], { maxBuffer: 1024 * 1024 })
-    const container = result.stdout.trim()
-    lifecycle.container = container
+    ], 180_000)
     lifecycle.assertRunning()
-    const port = (await execute('docker', ['port', container, '3000/tcp'])).stdout.trim().split(':').at(-1)
+    const port = (await docker(['port', container, '3000/tcp'])).stdout.trim().split(':').at(-1)
     lifecycle.assertRunning()
     const deadline = Date.now() + 60_000
     while (true) {
-        const logs = await execute('docker', ['logs', container])
+        const logs = await docker(['logs', container])
         lifecycle.assertRunning()
         if (logs.stdout.includes('Listening on ws://')) break
         if (Date.now() >= deadline) throw new Error(`Pinned visual browser did not start. ${logs.stdout}${logs.stderr}`)
@@ -56,15 +77,18 @@ try {
     const [status] = await once(child, 'exit')
     process.exitCode = lifecycle.interrupted ? 130 : status ?? 1
 } catch (error) {
-    console.error(error.message)
+    console.error(lifecycle.interrupted ? 'Visual run interrupted.' : error.message)
     process.exitCode = lifecycle.interrupted ? 130 : 1
 } finally {
+    let cleanupFailed = false
     try {
         await lifecycle.dispose()
     } catch (error) {
         console.error(`Visual renderer cleanup failed: ${error.message}`)
         // Preserve a test failure or interruption; a successful run must fail
         // if its detached renderer could not be stopped.
-        if (!process.exitCode) process.exitCode = 1
+        cleanupFailed = true
     }
+    if (!process.exitCode && lifecycle.interrupted) process.exitCode = 130
+    if (!process.exitCode && cleanupFailed) process.exitCode = 1
 }

@@ -162,9 +162,9 @@
                                 <div class="brand-translation-target">
                                     <p class="brand-translation-mobile-label">Target · {{ $selectedLocale->name }}</p>
                                     @if ($rows === 1)
-                                        <input id="{{ $field }}" name="{{ $field }}" type="text" value="{{ $targetValue }}" class="brand-translation-control" dir="{{ $selectedLocale->direction }}" lang="{{ $selectedLocale->code }}" maxlength="{{ $limit }}" @required($field === 'name') @readonly(! $canManage) @if ($errors->has($field)) aria-invalid="true" aria-describedby="{{ $field }}-error" @endif>
+                                        <input id="{{ $field }}" name="{{ $field }}" type="text" value="{{ $targetValue }}" data-brand-translation-saved-value="{{ $translation?->getAttribute($field) ?? '' }}" class="brand-translation-control" dir="{{ $selectedLocale->direction }}" lang="{{ $selectedLocale->code }}" maxlength="{{ $limit }}" @required($field === 'name') @readonly(! $canManage) @if ($errors->has($field)) aria-invalid="true" aria-describedby="{{ $field }}-error" @endif>
                                     @else
-                                        <textarea id="{{ $field }}" name="{{ $field }}" rows="{{ $rows }}" class="brand-translation-control" dir="{{ $selectedLocale->direction }}" lang="{{ $selectedLocale->code }}" maxlength="{{ $limit }}" @readonly(! $canManage) @if ($errors->has($field)) aria-invalid="true" aria-describedby="{{ $field }}-error" @endif>{{ $targetValue }}</textarea>
+                                        <textarea id="{{ $field }}" name="{{ $field }}" rows="{{ $rows }}" data-brand-translation-saved-value="{{ $translation?->getAttribute($field) ?? '' }}" class="brand-translation-control" dir="{{ $selectedLocale->direction }}" lang="{{ $selectedLocale->code }}" maxlength="{{ $limit }}" @readonly(! $canManage) @if ($errors->has($field)) aria-invalid="true" aria-describedby="{{ $field }}-error" @endif>{{ $targetValue }}</textarea>
                                     @endif
                                     @if ($errors->has($field))<p id="{{ $field }}-error" class="mt-1 text-xs text-admin-danger" role="alert">{{ $errors->first($field) }}</p>@endif
 
@@ -179,7 +179,7 @@
                                     <div>
                                         <label for="status" class="mr-2 text-xs font-medium text-admin-muted">Save as</label>
                                         <div class="brand-translation-select inline-block align-middle">
-                                            <select id="status" name="status" class="brand-translation-source-select !w-auto" @if ($errors->has('status')) aria-invalid="true" aria-describedby="status-error" @endif>
+                                            <select id="status" name="status" data-brand-translation-saved-value="{{ $selectedStatus === \App\Enums\TranslationStatus::MachineTranslated ? 'machine_translated' : 'human_reviewed' }}" class="brand-translation-source-select !w-auto" @if ($errors->has('status')) aria-invalid="true" aria-describedby="status-error" @endif>
                                                 <option value="human_reviewed" @selected(old('status', $selectedStatus->value) !== 'machine_translated')>Human reviewed</option>
                                                 <option value="machine_translated" @selected(old('status', $selectedStatus->value) === 'machine_translated')>Machine translated</option>
                                             </select>

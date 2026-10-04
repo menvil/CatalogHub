@@ -3,6 +3,48 @@ import { EventEmitter } from 'node:events'
 import test from 'node:test'
 import { VisualRunLifecycle } from '../../tools/visual/lifecycle.mjs'
 
+test('an uninterrupted lifecycle stays running and disposes its container and both listeners', async () => {
+    const signals = new EventEmitter()
+    const stopped = []
+    const lifecycle = new VisualRunLifecycle(async (id) => stopped.push(id), signals)
+    lifecycle.container = 'owned-container'
+    assert.doesNotThrow(() => lifecycle.assertRunning())
+    await lifecycle.dispose()
+    assert.deepEqual(stopped, ['owned-container'])
+    assert.equal(signals.listenerCount('SIGINT'), 0)
+    assert.equal(signals.listenerCount('SIGTERM'), 0)
+})
+
+test('interrupts skip signals to an exited child while still disposing the owned container', async () => {
+    const signals = new EventEmitter()
+    const killed = []
+    const stopped = []
+    const lifecycle = new VisualRunLifecycle(async (id) => stopped.push(id), signals)
+    lifecycle.container = 'owned-container'
+    lifecycle.child = { exitCode: 0, signalCode: null, kill: (signal) => killed.push(signal) }
+    signals.emit('SIGINT')
+    signals.emit('SIGINT')
+    await lifecycle.dispose()
+    assert.deepEqual(killed, [])
+    assert.deepEqual(stopped, ['owned-container'])
+})
+
+test('a stalled startup CLI receives termination and bounded forced escalation before Playwright exists', async () => {
+    const signals = new EventEmitter()
+    const killed = []
+    const stopped = []
+    const lifecycle = new VisualRunLifecycle(async (id) => stopped.push(id), signals, 10)
+    lifecycle.container = 'owned-container'
+    lifecycle.startupChild = { exitCode: null, signalCode: null, kill: (signal) => killed.push(signal) }
+    signals.emit('SIGTERM')
+    await new Promise((done) => setTimeout(done, 25))
+    assert.deepEqual(killed, ['SIGTERM', 'SIGKILL'])
+    assert.throws(() => lifecycle.assertRunning(), /interrupted/)
+    assert.deepEqual(stopped, [])
+    await lifecycle.dispose()
+    assert.deepEqual(stopped, ['owned-container'])
+})
+
 test('cancellation before docker run returns prevents continuation and cleans up the eventual container', async () => {
     const signals = new EventEmitter()
     const stopped = []

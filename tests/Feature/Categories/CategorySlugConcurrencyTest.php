@@ -46,7 +46,7 @@ final class CategorySlugConcurrencyTest extends TestCase
         $actor = User::factory()->centralAdmin()->create();
         $subject = CentralCategory::factory()->create(['name' => 'Subject', 'slug' => 'subject', 'position' => 0]);
         $competitor = CentralCategory::factory()->create(['name' => 'Competitor', 'slug' => 'competitor', 'position' => 1]);
-        $before = $subject->toJson();
+        $before = $subject->fresh()->getRawOriginal();
         $scopeKeys = CategoryHierarchyScope::query()->orderBy('scope_key')->pluck('scope_key')->all();
         $directory = sys_get_temp_dir().'/cataloghub-category-slug-'.bin2hex(random_bytes(8));
         self::assertTrue(mkdir($directory));
@@ -109,7 +109,7 @@ final class CategorySlugConcurrencyTest extends TestCase
             self::assertSame(0, pcntl_wexitstatus($status));
             self::assertSame('updated', file_get_contents($outcome));
             DB::purge($defaultConnection);
-            self::assertSame($before, $subject->fresh()->toJson());
+            self::assertSame($before, $subject->fresh()->getRawOriginal());
             self::assertSame($slug, $competitor->fresh()->slug);
             self::assertSame(2, CentralCategory::query()->count());
             self::assertSame($scopeKeys, CategoryHierarchyScope::query()->orderBy('scope_key')->pluck('scope_key')->all());

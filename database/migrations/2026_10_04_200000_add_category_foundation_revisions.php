@@ -16,12 +16,14 @@ return new class extends Migration
 
         DB::table('category_hierarchy_scopes')->insert(['scope_key' => 'root', 'revision' => 0]);
         DB::table('central_categories')->orderBy('id')->chunkById(500, function ($categories): void {
+            $scopes = [];
             foreach ($categories as $category) {
-                DB::table('category_hierarchy_scopes')->insert([
+                $scopes[] = [
                     'scope_key' => 'parent:'.$category->id,
                     'revision' => 0,
-                ]);
+                ];
             }
+            DB::table('category_hierarchy_scopes')->insert($scopes);
         });
 
         Schema::table('central_categories', function (Blueprint $table): void {

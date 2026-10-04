@@ -34,10 +34,11 @@ final readonly class ArchiveCategorySchemaAction
                 throw CannotTransitionCategorySchemaStatusException::mustBeApproved();
             }
             $before = $this->revision->snapshot($locked);
-            $locked->forceFill([
+            if (! $locked->forceFill([
                 'schema_status' => CategorySchemaStatus::Archived,
-
-            ])->saveOrFail();
+            ])->saveOrFail()) {
+                throw CannotTransitionCategorySchemaStatusException::persistenceFailed();
+            }
             $this->audit->record(AuditAction::CatalogCategorySchemaArchived, AuditContext::Central, $actor, $locked, null, $before, $this->revision->snapshot($locked));
 
             return $locked;

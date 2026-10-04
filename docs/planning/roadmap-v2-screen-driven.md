@@ -153,7 +153,7 @@ Each row is one serial work package/MR and depends on the preceding merged gate.
 
 | Phase | Work package | Schema/model changes | Required gate before next phase |
 | --- | --- | --- | --- |
-| 19.0 | Discovery + Architecture Freeze | None implemented; document required future changes | Full domain/FK/service audit, A/B/C/D screen tables, frozen decisions/permissions/audit/deferred list; exact sources/hashes; validation; no feature code. Stop here in this MR. |
+| 19.0 | Discovery + Architecture Freeze | None implemented; document required future changes | Full domain/FK/service audit, A/B/C/D screen tables, frozen decisions/permissions/audit/deferred list; exact sources/hashes; validation; no feature code. PR #612 stopped at this documentation-only boundary. |
 | 19.1 | Category Core & Hierarchy Foundation — **COMPLETE** | Dedicated hierarchy scope/revision table; schema revision + review/approval metadata, safe additive backfill | Shared root mutex and sibling revisions, deterministic locks/order, explicit Category lifecycle, schema invalidation/lifecycle, transactional audit, capability split and read-only legacy diagnostics; SQLite/PostgreSQL/MariaDB acceptance. No CA-016 UI. |
 | 19.2 | Global Attribute + Category Assignment Foundation | Assignments/crosswalk/global uniqueness, measurement pair FKs, Locale identity reconciliation, Import membership transition | Preserve Product values/Import mapping/draft/content/option/translation/display references, review deduplication collisions, no cascade loss; expand with compatibility. |
 | 19.3 | Schema Consumer Convergence | Facet assignment FK, comparison base rows, versioned projection/export contract, retire obsolete columns/flags after cutover | Product Specs, Imports, Facets, Search, Public comparison, Projections, translations and units consume new ownership; freshness fan-out/rebuild; losslessness/concurrency tests pass. |
@@ -193,6 +193,10 @@ The scenarios below are future deterministic fixture requirements. Naming a scen
 ### Roadmap amendment 2.2.0 — 2026-10-04
 
 Phase 19 replaces the original Category/Schema Phase 03 schedule and incorrect no-model-change assumption. It keeps Units later, reserves compatibility foundations before screens, registers the exact approved sources, and changes no runtime route or feature. Original unrelated phases remain historical planning contracts; this amendment does not claim them implemented.
+
+### Roadmap amendment 2.3.0 — 2026-10-05
+
+Phase 19.1 completes Category Core & Hierarchy Foundation: additive hierarchy scopes/revisions and schema review/approval metadata, authoritative lifecycle/hierarchy actions, schema invalidation, permissions, audit and legacy diagnostics. The existing Filament resource uses this foundation without implementing a new screen. Next is 19.2 Global Attribute + Category Assignment Foundation; CA-016 and all later screens remain pending.
 
 ## Phase 04 — Central Imports
 

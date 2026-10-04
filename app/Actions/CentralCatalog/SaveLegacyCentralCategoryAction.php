@@ -6,12 +6,11 @@ use App\Enums\Permission;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\User;
 use App\Services\Categories\CategoryAccess;
-use App\Services\Categories\CategoryHierarchy;
 use Illuminate\Support\Facades\DB;
 
 final readonly class SaveLegacyCentralCategoryAction
 {
-    public function __construct(private CategoryAccess $access, private CategoryHierarchy $hierarchy, private ReparentCentralCategoryAction $reparent, private UpdateCentralCategoryAction $update) {}
+    public function __construct(private CategoryAccess $access, private ReparentCentralCategoryAction $reparent, private UpdateCentralCategoryAction $update) {}
 
     /** @param array<string, mixed> $identity */
     public function handle(User $actor, CentralCategory $category, array $identity, ?int $originalParentId, ?int $newParentId, int $oldRevision, int $newRevision): CentralCategory
@@ -19,7 +18,6 @@ final readonly class SaveLegacyCentralCategoryAction
         $this->access->authorize(Permission::CatalogCategoriesManage, $actor);
 
         return DB::transaction(function () use ($actor, $category, $identity, $originalParentId, $newParentId, $oldRevision, $newRevision): CentralCategory {
-            $this->hierarchy->lockTree();
             if ($newParentId !== $originalParentId) {
                 $category->parent_id = $originalParentId;
                 $category = $this->reparent->handle($actor, $category, $newParentId, $oldRevision, $newRevision);

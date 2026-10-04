@@ -40,7 +40,7 @@ final class CategoryFoundationMigrationTest extends TestCase
         $before = DB::table('central_categories')->orderBy('id')->get()->map(fn ($row) => (array) $row)->all();
         $migration->up();
         foreach (DB::table('central_categories')->orderBy('id')->get() as $index => $row) {
-            self::assertEquals($before[$index], array_intersect_key((array) $row, $before[$index]));
+            self::assertSame($before[$index], array_intersect_key((array) $row, $before[$index]));
             self::assertSame(1, (int) $row->schema_revision);
             self::assertSame(in_array($row->schema_status, ['reviewed', 'approved']) ? 1 : null, $row->schema_reviewed_revision === null ? null : (int) $row->schema_reviewed_revision);
             self::assertSame($row->schema_status === 'approved' ? 1 : null, $row->schema_approved_revision === null ? null : (int) $row->schema_approved_revision);
@@ -50,6 +50,9 @@ final class CategoryFoundationMigrationTest extends TestCase
         }
         self::assertSame(5, DB::table('category_hierarchy_scopes')->count());
         self::assertSame(0, (int) DB::table('category_hierarchy_scopes')->where('scope_key', 'root')->value('revision'));
+        foreach ($ids as $id) {
+            $this->assertDatabaseHas('category_hierarchy_scopes', ['scope_key' => 'parent:'.$id, 'revision' => 0]);
+        }
         self::assertSame(0, DB::table('audit_log_entries')->count());
         $migration->down();
         self::assertFalse(Schema::hasTable('category_hierarchy_scopes'));

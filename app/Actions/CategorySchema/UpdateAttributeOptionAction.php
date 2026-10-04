@@ -4,6 +4,7 @@ namespace App\Actions\CategorySchema;
 
 use App\Enums\SchemaMutationOrigin;
 use App\Exceptions\CategorySchema\CannotManageAttributeOptionException;
+use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\User;
 use App\Services\CategorySchema\SchemaRevision;
@@ -17,7 +18,11 @@ final class UpdateAttributeOptionAction
      */
     public function handle(AttributeOption $option, array $data, ?User $actor = null): AttributeOption
     {
-        $categoryId = $option->attribute->central_category_id;
+        // Resolve current ownership without trusting the caller's cached relation.
+        // perform() reloads the option/type again after the Category lock.
+        $categoryId = AttributeDefinition::query()->whereIn('id',
+            AttributeOption::query()->select('attribute_definition_id')->whereKey($option->id)
+        )->firstOrFail(['central_category_id'])->central_category_id;
 
         return app(SchemaRevision::class)->mutate($categoryId, SchemaMutationOrigin::OptionUpdated, $option->id, fn () => $this->perform($option, $data), $actor);
     }

@@ -135,11 +135,12 @@ final class CategoryFoundationConcurrencyTest extends TestCase
         $childConnection = 'category_child_connection';
         config(['database.connections.'.$childConnection => config('database.connections.'.$defaultConnection)]);
         $locked = $directory.'/locked';
-        $started = $directory.'/child-started';
+        $started = $directory.'/child-lock-query-started';
+        $lockTime = $directory.'/child-lock-query-time';
         $outcomeFile = $directory.'/outcome';
         $parentPid = getmypid();
         $handled = false;
-        DB::listen(function (QueryExecuted $query) use ($lockedTable, $locked, $started, $parentPid, &$handled): void {
+        DB::listen(function (QueryExecuted $query) use ($lockedTable, $locked, $started, $lockTime, $parentPid, &$handled): void {
             if ($handled || getmypid() !== $parentPid || ! str_starts_with(strtolower($query->sql), 'update') || ! str_contains($query->sql, $lockedTable)) {
                 return;
             }
@@ -147,6 +148,12 @@ final class CategoryFoundationConcurrencyTest extends TestCase
             touch($locked);
             if (! $this->waitForFile($started)) {
                 throw new \RuntimeException('Child failed to start its concurrent action.');
+            }
+            // Hold the acquired lock while the child's actual UPDATE is in flight.
+            // Its first lock query must not complete until this transaction commits.
+            usleep(300000);
+            if (file_exists($lockTime)) {
+                throw new \RuntimeException('Child lock query completed while the parent still held the lock.');
             }
         });
         $pid = pcntl_fork();
@@ -157,7 +164,20 @@ final class CategoryFoundationConcurrencyTest extends TestCase
                 file_put_contents($outcomeFile, 'parent-timeout');
                 exit(1);
             }
-            touch($started);
+            $attempted = false;
+            DB::connection($childConnection)->beforeExecuting(function (string $sql) use ($lockedTable, $started, &$attempted): void {
+                if (! $attempted && str_starts_with(strtolower($sql), 'update') && str_contains($sql, $lockedTable)) {
+                    $attempted = true;
+                    touch($started);
+                }
+            });
+            $timed = false;
+            DB::listen(function (QueryExecuted $query) use ($lockedTable, $lockTime, &$timed): void {
+                if (! $timed && str_starts_with(strtolower($query->sql), 'update') && str_contains($query->sql, $lockedTable)) {
+                    $timed = true;
+                    file_put_contents($lockTime, (string) $query->time);
+                }
+            });
             try {
                 $childAction();
                 file_put_contents($outcomeFile, 'success');
@@ -173,6 +193,8 @@ final class CategoryFoundationConcurrencyTest extends TestCase
             pcntl_waitpid($pid, $status);
             self::assertTrue($handled);
             self::assertSame(0, pcntl_wexitstatus($status));
+            self::assertFileExists($lockTime);
+            self::assertGreaterThanOrEqual(100, (float) file_get_contents($lockTime), 'The child must actually wait on the held lock.');
             // Verify committed facts on a third connection, independent of
             // any PDO descriptor inherited by fork.
             DB::purge($defaultConnection);

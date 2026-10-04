@@ -16,11 +16,13 @@ final class CategoryHierarchyDiagnosticsQuery
         $issues = [];
         $cycles = [];
         foreach ($parents as $id => $parentId) {
+            if ($parentId !== null && ! array_key_exists($parentId, $parents)) {
+                $issues[] = ['code' => 'missing_parent', 'category_id' => $id, 'parent_id' => $parentId];
+            }
             $path = [];
             $node = $id;
             while ($node !== null) {
                 if (! array_key_exists($node, $parents)) {
-                    $issues[] = ['code' => 'missing_parent', 'category_id' => $id, 'parent_id' => $node];
                     break;
                 }
                 if (isset($path[$node])) {

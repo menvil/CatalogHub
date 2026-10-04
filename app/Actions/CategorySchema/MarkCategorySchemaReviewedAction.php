@@ -6,7 +6,6 @@ use App\Enums\AuditAction;
 use App\Enums\AuditContext;
 use App\Enums\CategorySchemaStatus;
 use App\Enums\Permission;
-use App\Exceptions\CategorySchema\CannotApproveCategorySchemaException;
 use App\Exceptions\CategorySchema\CannotTransitionCategorySchemaStatusException;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\User;
@@ -36,14 +35,16 @@ final readonly class MarkCategorySchemaReviewedAction
                 throw CannotTransitionCategorySchemaStatusException::mustBeDraft();
             }
             if ($this->validator->validate($locked)->hasErrors()) {
-                throw CannotApproveCategorySchemaException::hasValidationErrors();
+                throw CannotTransitionCategorySchemaStatusException::hasReviewValidationErrors();
             }
             $before = $this->revision->snapshot($locked);
-            $locked->forceFill([
+            if (! $locked->forceFill([
                 'schema_status' => CategorySchemaStatus::Reviewed,
                 ...$this->revision->clearAttribution(), 'schema_reviewed_revision' => $locked->schema_revision,
                 'schema_reviewed_by_user_id' => $actor->id, 'schema_reviewed_at' => now(),
-            ])->saveOrFail();
+            ])->saveOrFail()) {
+                throw CannotTransitionCategorySchemaStatusException::persistenceFailed();
+            }
             $this->audit->record(AuditAction::CatalogCategorySchemaReviewed, AuditContext::Central, $actor, $locked, null, $before, $this->revision->snapshot($locked));
 
             return $locked;

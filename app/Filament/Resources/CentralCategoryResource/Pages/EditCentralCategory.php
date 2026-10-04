@@ -88,6 +88,7 @@ final class EditCentralCategory extends EditRecord
     {
         $actor = app(CategoryAccess::class)->authorize(Permission::CatalogCategoriesManage);
         app($action)->handle($actor, $this->category());
+        $this->getRecord()->refresh();
         $this->refreshFormData(['status']);
     }
 }

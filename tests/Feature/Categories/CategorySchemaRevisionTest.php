@@ -19,6 +19,7 @@ use App\Actions\CategorySchema\UpdateAttributeSectionAction;
 use App\Enums\CategorySchemaStatus;
 use App\Exceptions\CategorySchema\CannotApproveCategorySchemaException;
 use App\Exceptions\CategorySchema\CannotMoveAttributeDefinitionException;
+use App\Exceptions\CategorySchema\CannotTransitionCategorySchemaStatusException;
 use App\Models\AuditLogEntry;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
@@ -201,7 +202,8 @@ final class CategorySchemaRevisionTest extends TestCase
         $category->update(['schema_status' => CategorySchemaStatus::Draft]);
         $attribute = AttributeDefinition::factory()->for($category, 'category')->create(['data_type' => 'decimal']);
         AttributeOption::factory()->for($attribute, 'attribute')->create();
-        $this->expectException(CannotApproveCategorySchemaException::class);
+        $this->expectException(CannotTransitionCategorySchemaStatusException::class);
+        $this->expectExceptionMessage('Category schema cannot be marked reviewed while validation errors exist.');
         app(MarkCategorySchemaReviewedAction::class)->handle($category, 1);
     }
 
@@ -299,5 +301,23 @@ final class CategorySchemaRevisionTest extends TestCase
         self::assertSame(CategorySchemaStatus::Approved, $other->fresh()->schema_status);
         self::assertSame(2, $category->fresh()->schema_revision);
         self::assertSame([$category->id], AuditLogEntry::query()->where('action', 'catalog.category.schema.invalidated')->get()->map(fn ($event) => $event->after_json['category_id'])->all());
+    }
+
+    public function test_option_update_uses_current_ownership_instead_of_a_cached_attribute_relation(): void
+    {
+        $old = AttributeDefinition::factory()->create(['data_type' => 'enum']);
+        $current = AttributeDefinition::factory()->create(['data_type' => 'enum']);
+        $option = AttributeOption::factory()->for($old, 'attribute')->create()->load('attribute');
+        // Simulate a stale caller snapshot of legacy data, not an ownership action.
+        AttributeOption::query()->whereKey($option->id)->update(['attribute_definition_id' => $current->id]);
+        $this->approve($old->category);
+        $this->approve($current->category);
+        app(UpdateAttributeOptionAction::class)->handle($option, ['code' => $option->code, 'label' => 'Changed']);
+        self::assertSame('Changed', $option->fresh()->label);
+        self::assertSame(1, $old->category->fresh()->schema_revision);
+        self::assertSame(CategorySchemaStatus::Approved, $old->category->fresh()->schema_status);
+        self::assertSame(2, $current->category->fresh()->schema_revision);
+        self::assertSame(CategorySchemaStatus::Draft, $current->category->fresh()->schema_status);
+        self::assertSame($current->central_category_id, AuditLogEntry::query()->where('action', 'catalog.category.schema.invalidated')->sole()->after_json['category_id']);
     }
 }

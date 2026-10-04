@@ -228,6 +228,7 @@ final class CategoryHierarchyActionsTest extends TestCase
         $audit = Mockery::mock(AuditRecorder::class);
         $audit->shouldReceive('record')->times(3)->andThrow(new RuntimeException('audit unavailable'));
         $this->app->instance(AuditRecorder::class, $audit);
+        $scopeKeys = CategoryHierarchyScope::query()->orderBy('scope_key')->pluck('scope_key')->all();
         foreach (['create', 'identity', 'reorder'] as $case) {
             try {
                 match ($case) {
@@ -241,6 +242,7 @@ final class CategoryHierarchyActionsTest extends TestCase
                 self::assertSame($a->name, $a->fresh()->name);
                 self::assertSame([0, 1], [$a->fresh()->position, $b->fresh()->position]);
                 self::assertSame(0, app(CategoryHierarchy::class)->revision(null));
+                self::assertSame($scopeKeys, CategoryHierarchyScope::query()->orderBy('scope_key')->pluck('scope_key')->all());
                 self::assertSame(0, AuditLogEntry::query()->count());
             }
         }
@@ -261,6 +263,23 @@ final class CategoryHierarchyActionsTest extends TestCase
             self::assertSame(1, app(CategoryHierarchy::class)->revision($a->id));
             self::assertSame(2, AuditLogEntry::query()->count());
         }
+    }
+
+    public function test_legacy_identity_edits_and_no_ops_do_not_lock_hierarchy_scopes(): void
+    {
+        $category = CentralCategory::factory()->create();
+        $queries = [];
+        DB::listen(function (QueryExecuted $query) use (&$queries): void {
+            $queries[] = $query->sql;
+        });
+        foreach (['Changed', 'Changed'] as $name) {
+            app(SaveLegacyCentralCategoryAction::class)->handle($this->actor, $category,
+                ['name' => $name, 'slug' => $category->slug], null, null, 0, 0);
+            self::assertSame(1, AuditLogEntry::query()->count());
+        }
+        self::assertSame([], array_values(array_filter($queries, fn ($sql) => str_contains($sql, 'category_hierarchy_scopes'))));
+        self::assertSame('Changed', $category->fresh()->name);
+        self::assertSame(0, app(CategoryHierarchy::class)->revision(null));
     }
 
     public function test_tree_write_precedes_scope_and_sibling_reads_and_locks_are_deterministic(): void

@@ -5,6 +5,7 @@ namespace Tests\Feature\Categories;
 use App\Actions\CategorySchema\CreateAttributeSectionAction;
 use App\Actions\CategorySchema\MarkCategorySchemaReviewedAction;
 use App\Actions\CentralCatalog\CreateCentralCategoryAction;
+use App\Enums\CentralCategoryStatus;
 use App\Enums\UserRole;
 use App\Filament\Resources\CentralCategoryResource;
 use App\Filament\Resources\CentralCategoryResource\Pages\CategorySchemaBuilder;
@@ -144,6 +145,44 @@ final class CategoryPermissionsTest extends TestCase
         self::assertSame('draft', $a->fresh()->status->value);
         self::assertSame('draft', $a->fresh()->schema_status->value);
         self::assertSame(0, AuditLogEntry::query()->count());
+    }
+
+    public function test_lifecycle_actions_refresh_the_current_page_record_form_and_header_visibility(): void
+    {
+        $this->actingAs(User::factory()->centralAdmin()->create());
+        $category = CentralCategory::factory()->create();
+        $page = Livewire::test(EditCentralCategory::class, ['record' => $category->id]);
+        $page->assertSet('data.status', 'draft')->assertActionVisible('activate')
+            ->assertActionVisible('archive')->assertActionHidden('restore');
+        foreach ([['activate', CentralCategoryStatus::Active], ['archive', CentralCategoryStatus::Archived], ['restore', CentralCategoryStatus::Draft]] as [$action, $status]) {
+            $page->callAction($action)->assertHasNoActionErrors()->assertSet('data.status', $status->value);
+            $component = $page->instance();
+            self::assertInstanceOf(EditCentralCategory::class, $component);
+            $record = $component->getRecord();
+            self::assertInstanceOf(CentralCategory::class, $record);
+            self::assertSame($status, $record->status);
+            self::assertSame($status, $category->fresh()->status);
+            if ($status === CentralCategoryStatus::Draft) {
+                $page->assertActionVisible('activate')->assertActionVisible('archive')->assertActionHidden('restore');
+            } elseif ($status === CentralCategoryStatus::Active) {
+                $page->assertActionHidden('activate')->assertActionVisible('archive')->assertActionHidden('restore');
+            } else {
+                $page->assertActionHidden('activate')->assertActionHidden('archive')->assertActionVisible('restore');
+            }
+        }
+    }
+
+    public function test_clearing_the_parent_select_with_an_empty_string_reparents_to_root(): void
+    {
+        $this->actingAs(User::factory()->centralAdmin()->create());
+        $parent = CentralCategory::factory()->create(['position' => 0]);
+        $child = CentralCategory::factory()->create(['parent_id' => $parent->id, 'position' => 0]);
+        Livewire::test(EditCentralCategory::class, ['record' => $child->id])
+            ->fillForm(['parent_id' => '', 'new_hierarchy_revision' => 0])
+            ->call('save')->assertHasNoFormErrors()->assertSet('data.parent_id', null);
+        self::assertNull($child->fresh()->parent_id);
+        self::assertSame(1, $child->fresh()->position);
+        self::assertSame(1, AuditLogEntry::query()->where('action', 'catalog.category.reparented')->count());
     }
 
     public function test_legacy_identity_validation_failure_rolls_back_combined_reparent_and_audit(): void

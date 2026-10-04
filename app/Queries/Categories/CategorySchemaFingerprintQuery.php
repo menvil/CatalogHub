@@ -12,6 +12,8 @@ final class CategorySchemaFingerprintQuery
     {
         // Bounded field allowlists describe CURRENT local schema semantics.
         // Timestamps/locale copy are excluded. These values never enter audit.
+        // Raw driver values are compared within one transaction/connection only;
+        // this is not a persisted hash stable across databases or connections.
         $sections = AttributeSection::query()->where('central_category_id', $categoryId)->orderBy('id')
             ->get(['id', 'parent_id', 'code', 'name', 'position', 'display_style', 'is_collapsible', 'is_visible'])->map(fn ($row) => $row->getRawOriginal());
         $attributes = AttributeDefinition::query()->where('central_category_id', $categoryId)->orderBy('id')

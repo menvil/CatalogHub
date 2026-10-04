@@ -38,11 +38,13 @@ final readonly class ApproveCategorySchemaAction
                 throw CannotApproveCategorySchemaException::hasValidationErrors();
             }
             $before = $this->revision->snapshot($locked);
-            $locked->forceFill([
+            if (! $locked->forceFill([
                 'schema_status' => CategorySchemaStatus::Approved,
                 'schema_approved_revision' => $locked->schema_revision,
                 'schema_approved_by_user_id' => $actor->id, 'schema_approved_at' => now(),
-            ])->saveOrFail();
+            ])->saveOrFail()) {
+                throw CannotApproveCategorySchemaException::persistenceFailed();
+            }
             $this->audit->record(AuditAction::CatalogCategorySchemaApproved, AuditContext::Central, $actor, $locked, null, $before, $this->revision->snapshot($locked));
 
             return $locked;

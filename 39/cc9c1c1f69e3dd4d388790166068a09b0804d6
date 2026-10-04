@@ -1,0 +1,47 @@
+docs/planning/cataloghub-v2-visual-reference-manifest.md
+  s_44ede181af91ce::t_7e872d46acc90f 67-69
+  s_44ede181af91ce::t_ecc62b5c912fe1 5-6,9,19-24,28,90-100,249-253
+docs/architecture/audit.md
+  s_44ede181af91ce::t_ff35f85aff1949 11-12
+docs/ui/visual-references.json
+  s_44ede181af91ce::t_ecc62b5c912fe1 9-20
+docs/architecture/adr/README.md
+  s_44ede181af91ce::t_e2c601ef73e857 13
+docs/planning/cataloghub-v2-screen-registry.md
+  s_44ede181af91ce::t_e2c601ef73e857 5,12-15,72-88,298-303
+tests/Visual/BrandPrototypeReferenceTest.php
+  s_44ede181af91ce::t_ff35f85aff1949 11,21,23,35-38
+docs/architecture/authorization.md
+  s_44ede181af91ce::t_ff35f85aff1949 51-52
+docs/ui/categories-schema-visual-gap-audit.md
+  s_44ede181af91ce::t_92387d4374747c 7
+  s_44ede181af91ce::t_8b816ad67956ab 1-6,8-23,25-32,34-104,106-110,112-137,139-184,187-196
+  s_44ede181af91ce::t_7e872d46acc90f 24,33,105,111,138,185-186
+docs/architecture/adr/0003-categories-schema-ownership.md
+  s_44ede181af91ce::t_ff35f85aff1949 146
+  s_44ede181af91ce::t_48bdd7ee72d750 1-20,22-24,26-74,76-108,110-115,117-145,147-150
+  s_44ede181af91ce::t_92387d4374747c 21,25,75,109,116
+docs/planning/categories-schema-migration-map.md
+  s_44ede181af91ce::t_dfa397750e9ead 1-44,47-84
+  s_44ede181af91ce::t_92387d4374747c 45-46
+docs/planning/roadmap-v2-screen-driven.md
+  s_44ede181af91ce::t_e2c601ef73e857 5,9-13,18,25,113,115,117-127,138-195
+docs/architecture/translations.md
+  s_44ede181af91ce::t_ff35f85aff1949 5-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "39cc9c1c1f69e3dd4d388790166068a09b0804d6",
+  "prompts": {},
+  "sessions": {
+    "s_44ede181af91ce": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a10821-5e4f-73f3-a218-1cbf8ec83499",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

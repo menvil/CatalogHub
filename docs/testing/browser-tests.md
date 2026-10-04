@@ -1,6 +1,6 @@
 # Browser tests
 
-Playwright Test `1.62.1` is the single browser framework. The lockfile pins the effective package version. `playwright.config.mjs` runs Chromium headlessly with one worker, fixed locale/timezone, DPR 1, and a fixed viewport.
+Playwright Test `1.63.0` is the single browser framework. The lockfile pins the effective package version. `playwright.config.mjs` runs Chromium headlessly with one worker, fixed locale/timezone, DPR 1, and a fixed viewport.
 
 The harness creates only its port-scoped `storage/logs/browser-harness-8014.sqlite`, migrates it without seeders, inserts the deterministic Central operator, and starts Laravel on `127.0.0.1:8014`. The visual project uses `8015` and its own database, so both lanes can run concurrently. Databases are isolated from PHPUnit and removed when each server stops.
 

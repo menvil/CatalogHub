@@ -40,6 +40,36 @@ Locale is the visible admin reference locale (`en`). Each scenario ID requires
 a deterministic seeder that reproduces the visible populated state and any
 state named for that ID in the registry.
 
+## Categories / Schema source-byte verification
+
+Rechecked on 2026-10-04 for PR #612. Each original supplied file still present
+in the working directory was read as bytes and compared for exact equality with
+`git show 39cc9c1c1f69e3dd4d388790166068a09b0804d6:<path>` (the first commit
+registering these images). All eleven comparisons passed; SHA-256 also matched
+the entries below and `docs/ui/visual-references.json`. Git attributes specify
+neither a content filter nor working-tree encoding for these paths. No image
+was re-encoded, optimized or replaced, and no digest changed in this correction.
+The comparison uses the supplied local originals, not a separately downloaded
+copy or a visual similarity check.
+
+| Screen | Original and committed byte length | Exact byte comparison |
+| --- | --- | --- |
+| CA-016 | 1,064,054 | Identical |
+| CA-017 | 1,080,534 | Identical |
+| CA-018 | 1,055,382 | Identical |
+| CA-019 | 1,035,877 | Identical |
+| CA-020 | 1,231,922 | Identical |
+| CA-021 | 1,111,533 | Identical |
+| CA-022 | 1,012,643 | Identical |
+| CA-023 | 1,262,219 | Identical |
+| CA-024 | 1,135,641 | Identical |
+| CA-025 | 1,153,797 | Identical |
+| CA-026 | 1,170,021 | Identical |
+
+The existing prototype integrity test checks the registered paths, SHA-256,
+native dimensions and reference version labels. Source-byte comparison above
+additionally verifies the committed objects against the supplied local files.
+
 ## Severity levels
 
 - **Severity 1:** wrong product surface, wrong navigation, wrong workspace/site

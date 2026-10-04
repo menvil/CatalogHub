@@ -4,6 +4,10 @@ Status: Frozen target for Phase 19; proposed implementation is subject to this M
 
 Discovery base: `develop` **`fea2cc7bc71e2972074d7ebe2b7e20319abf04b4`**, the merge commit of PR #611 (Brands 18.6). All eleven supplied PNGs exist in `pictures/1. Central Admin/1.4. Categories : Schema/` and were visually inspected. The [screen audit](../../ui/categories-schema-visual-gap-audit.md) uses the requested A/B/C/D meanings, which differ from the historical Brand audit's legend. Prototypes authorize product/visual evaluation, not database contracts.
 
+## Implementation status
+
+Phase 19.1 implements **Category Core & Hierarchy Foundation — COMPLETE** at develop base `864ea5e4aeca0267ff24954e0fce27413d23644a` after PR #612. See [foundation implementation contract](../category-foundation.md) for the additive migration, shared root/sibling scopes, explicit actions, revision-bound schema lifecycle, current-action invalidation, capability split, audit and diagnostics. Next: **19.2 Global Attribute + Category Assignment Foundation**. No CA-016 or global Attribute/assignment implementation is claimed. Observations below retain the Phase 19.0 discovery baseline; the linked contract records the specific gaps closed by 19.1 and those still deferred.
+
 ## Observed context
 
 | Existing domain / evidence | Discovered behavior / limitation |
@@ -36,7 +40,7 @@ Retain `central_categories.id`, `slug`, source/reference `name`, `parent_id`, `p
 
 One parent; no multi-parent taxonomy or parent-schema inheritance. Archive is the ordinary removal operation; restoration returns an archived Category to Draft for explicit activation. Activation does not publish a Site. Category archive does not delete Products, assignments or Site selections. Category lifecycle and schema lifecycle are independent; Active does not silently mean Approved. Publication gating remains Site-domain policy.
 
-Future actions validate parent existence, self/descendant-parent and the whole changed ancestry under a transaction. Serialize hierarchy mutations using a shared hierarchy lock (including the root sibling scope), then lock affected sibling sets in deterministic ID order. Reparent compacts old and new sibling orders; reorder submits the complete sibling ID set plus expected revision, rejects stale/missing/foreign IDs, writes contiguous order atomically. A version/revision token is required. Dropdown exclusion alone is insufficient. Slug edits require a downstream routing-impact preview; Phase 19 will rebuild projections but will not invent a redirect system.
+Phase 19.1 actions validate parent existence, self/descendant-parent and the whole changed ancestry under a transaction. Serialize hierarchy mutations using a shared hierarchy lock (including the root sibling scope), then lock affected sibling sets in deterministic ID order. Reparent compacts old and new sibling orders; reorder submits the complete sibling ID set plus expected revision, rejects stale/missing/foreign IDs, writes contiguous order atomically. A version/revision token is required. Dropdown exclusion alone is insufficient. The CA-018 editing workflow (Phase 19.6) requires a downstream routing-impact preview for slug edits; Phase 19 will rebuild projections but will not invent a redirect system. Phase 19.1 keeps canonical name/slug updates available through the foundation action and temporary legacy form, as required by its implementation scope. It does not implement or claim that later screen preview.
 
 ### F02 — Global meaning, local assignment
 
@@ -120,7 +124,7 @@ Current role mapping: Super Admin wildcard; Central Admin has all four permissio
 
 ## Required audit registry (future implementation)
 
-Extend existing enum/`AuditRecorder` allowlists; these names are reserved documentation, not implemented events. Transactions include domain write, revision/approval invalidation and audit; audit failure rolls all back. Emit no event for rejected/no-op/GET/preview operations. No arbitrary model serialization, Product raw payloads, translated bodies, secrets, hashes or config JSON. Stable IDs are allowed only as relationship identity context alongside safe semantic code/name. Changed field names, old/new scalar configuration and bounded deterministic relationship/order lists are sufficient; large fan-out uses one canonical event plus per-Category schema invalidation events with correlation, not copied payloads.
+Phase 19.1 implements the Category core and Category schema lifecycle/invalidation enum events and action-specific `AuditRecorder` allowlists. The remaining entity/config/translation events below are reserved for their owning phases. Root sibling reorder uses the actual hierarchy-scope record as subject (no fictional root Category); other core/schema events use Category. Transactions include domain write, revision/approval invalidation and audit; audit failure rolls all back. Emit no event for rejected/no-op/GET/preview operations. No arbitrary model serialization, Product raw payloads, translated bodies, secrets, hashes or config JSON. Stable IDs are allowed only as relationship identity context alongside safe semantic code/name. Changed field names, old/new scalar configuration and bounded deterministic relationship/order lists are sufficient; large fan-out uses one canonical event plus per-Category schema invalidation events with correlation, not copied payloads.
 
 | Event(s) | Subject / safe snapshot fields |
 | --- | --- |

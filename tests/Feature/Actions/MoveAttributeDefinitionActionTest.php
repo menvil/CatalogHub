@@ -7,12 +7,19 @@ use App\Exceptions\CategorySchema\CannotMoveAttributeDefinitionException;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class MoveAttributeDefinitionActionTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->actingAs(User::factory()->centralAdmin()->create());
+    }
 
     public function test_moves_attribute_definition_to_another_section(): void
     {
@@ -103,7 +110,7 @@ class MoveAttributeDefinitionActionTest extends TestCase
             ->create();
 
         $this->expectException(CannotMoveAttributeDefinitionException::class);
-        $this->expectExceptionMessage('between zero and the maximum unsigned integer value');
+        $this->expectExceptionMessage('between zero and the maximum portable integer value');
 
         app(MoveAttributeDefinitionAction::class)->handle($attribute, $section, AttributeDefinition::MAX_POSITION + 1);
     }

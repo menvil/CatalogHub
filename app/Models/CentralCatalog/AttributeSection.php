@@ -29,7 +29,8 @@ final class AttributeSection extends Model
     /** @use HasFactory<AttributeSectionFactory> */
     use HasFactory;
 
-    public const MAX_POSITION = 4294967295;
+    // PostgreSQL stores Laravel unsignedInteger as signed INTEGER.
+    public const MAX_POSITION = 2147483647;
 
     public const DISPLAY_STYLES = ['table', 'list'];
 

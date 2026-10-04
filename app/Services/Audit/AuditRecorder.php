@@ -15,6 +15,9 @@ use Illuminate\Http\Request;
 
 class AuditRecorder
 {
+    /** @var list<string> */
+    private const CATEGORY_SCHEMA_SNAPSHOT_FIELDS = ['category_id', 'name', 'slug', 'schema_status', 'schema_revision', 'schema_reviewed_revision', 'schema_approved_revision', 'reason', 'origin_type', 'origin_id'];
+
     /** @var array<string, list<string>> */
     private const SNAPSHOT_FIELDS = [
         AuditAction::RoleAssigned->value => ['role'],
@@ -35,6 +38,18 @@ class AuditRecorder
         AuditAction::CatalogBrandLogoAssigned->value => ['media_asset_id', 'role'],
         AuditAction::CatalogBrandLogoRemoved->value => ['media_asset_id', 'role'],
         AuditAction::CatalogBrandTranslationSaved->value => ['translation_id', 'locale', 'status', 'changed_fields'],
+        AuditAction::CatalogCategoryCreated->value => ['category_id', 'name', 'slug', 'status', 'parent_id', 'parent_name', 'position', 'hierarchy_revision'],
+        AuditAction::CatalogCategoryUpdated->value => ['name', 'slug', 'changed_fields'],
+        AuditAction::CatalogCategoryReparented->value => ['parent_id', 'parent_name', 'position', 'hierarchy_revision', 'old_scope_key', 'old_scope_revision', 'old_ordered_ids', 'ordered_ids'],
+        AuditAction::CatalogCategoryReordered->value => ['parent_id', 'parent_name', 'ordered_ids', 'hierarchy_revision'],
+        AuditAction::CatalogCategoryActivated->value => ['status'],
+        AuditAction::CatalogCategoryArchived->value => ['status'],
+        AuditAction::CatalogCategoryRestored->value => ['status'],
+        AuditAction::CatalogCategorySchemaReviewed->value => self::CATEGORY_SCHEMA_SNAPSHOT_FIELDS,
+        AuditAction::CatalogCategorySchemaApproved->value => self::CATEGORY_SCHEMA_SNAPSHOT_FIELDS,
+        AuditAction::CatalogCategorySchemaArchived->value => self::CATEGORY_SCHEMA_SNAPSHOT_FIELDS,
+        AuditAction::CatalogCategorySchemaRestored->value => self::CATEGORY_SCHEMA_SNAPSHOT_FIELDS,
+        AuditAction::CatalogCategorySchemaInvalidated->value => self::CATEGORY_SCHEMA_SNAPSHOT_FIELDS,
         AuditAction::TranslationApproved->value => ['translation_id', 'locale', 'status', 'changed_fields'],
         AuditAction::TranslationMarkedOutdated->value => ['translation_id', 'locale', 'status', 'changed_fields'],
     ];

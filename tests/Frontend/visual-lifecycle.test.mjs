@@ -59,3 +59,13 @@ test('an ignored first interrupt escalates after the bounded graceful shutdown p
     await lifecycle.dispose()
     assert.deepEqual(killed, ['SIGINT', 'SIGKILL'])
 })
+
+test('cleanup failures requested by a signal are surfaced on disposal without an unhandled rejection', async () => {
+    const signals = new EventEmitter()
+    const failure = new Error('Docker stop failed')
+    const lifecycle = new VisualRunLifecycle(async () => { throw failure }, signals)
+    lifecycle.container = 'owned-container'
+    signals.emit('SIGTERM')
+    await assert.rejects(lifecycle.dispose(), (error) => error === failure)
+    assert.equal(signals.listenerCount('SIGTERM'), 0)
+})

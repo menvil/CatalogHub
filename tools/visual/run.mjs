@@ -59,5 +59,12 @@ try {
     console.error(error.message)
     process.exitCode = lifecycle.interrupted ? 130 : 1
 } finally {
-    await lifecycle.dispose()
+    try {
+        await lifecycle.dispose()
+    } catch (error) {
+        console.error(`Visual renderer cleanup failed: ${error.message}`)
+        // Preserve a test failure or interruption; a successful run must fail
+        // if its detached renderer could not be stopped.
+        if (!process.exitCode) process.exitCode = 1
+    }
 }

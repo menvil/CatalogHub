@@ -28,7 +28,9 @@ export class VisualRunLifecycle {
 
     stop() {
         if (!this.stopping && this.container) {
-            this.stopping = this.stopContainer(this.container).catch(() => {})
+            // Signal handlers must not create an unhandled rejection. Report
+            // cleanup failure to the runner when it awaits disposal instead.
+            this.stopping = this.stopContainer(this.container).catch((error) => { this.cleanupError = error })
         }
         return this.stopping ?? Promise.resolve()
     }
@@ -37,5 +39,6 @@ export class VisualRunLifecycle {
         for (const signal of ['SIGINT', 'SIGTERM']) this.signals.off(signal, this.interrupt)
         clearTimeout(this.timer)
         await this.stop()
+        if (this.cleanupError) throw this.cleanupError
     }
 }

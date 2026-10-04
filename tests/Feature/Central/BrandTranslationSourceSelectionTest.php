@@ -14,8 +14,8 @@ use App\Models\User;
 use App\Queries\Translations\BrandTranslationEditorQuery;
 use App\Services\Translations\TranslationSourceHashService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Tests\Support\DatabaseQueryCounter;
+use Tests\Support\DatabaseQueryRecorder;
 use Tests\TestCase;
 
 final class BrandTranslationSourceSelectionTest extends TestCase
@@ -166,16 +166,34 @@ final class BrandTranslationSourceSelectionTest extends TestCase
         $target = Locale::factory()->create(['code' => 'de-DE']);
         $this->row($brand, $source, TranslationStatus::Approved);
         $this->actingAs(User::factory()->create(['role' => UserRole::Translator]));
+        $recorder = new DatabaseQueryRecorder;
+        $patterns = [
+            '/from ["`]?locales["`]?.*order by/i',
+            '/from ["`]?brand_translations["`]?.*locale_id["`]? in/i',
+            '/^select .*from ["`]?audit_log_entries/im',
+        ];
+        // Positive control pins each exclusion to a real editor read. The event
+        // listener captures SQL independently of DatabaseQueryCounter's log.
+        $control = DatabaseQueryCounter::measure(fn () => app(BrandTranslationEditorQuery::class)->forBrand($brand, $target, $source->code));
+        $queries = $recorder->queries();
+        $this->assertNotEmpty($queries);
+        $this->assertCount($control['count'], $queries);
+        foreach ($patterns as $pattern) {
+            $this->assertMatchesRegularExpression($pattern, implode("\n", $queries));
+        }
         foreach (['save', 'approve', 'outdated'] as $action) {
-            DatabaseQueryCounter::measure(fn () => $this->post(
+            $recorder->reset();
+            $measurement = DatabaseQueryCounter::measure(fn () => $this->post(
                 route('central.brands.translations.'.$action, [$brand, $target->code, 'source' => $source->code]),
                 $action === 'save' ? ['name' => 'Target'] : [],
             )->assertRedirect());
-            foreach (DB::getQueryLog() as $query) {
-                $sql = strtolower($query['query']);
-                $this->assertDoesNotMatchRegularExpression('/from ["`]?locales["`]?.*order by/i', $sql);
-                $this->assertDoesNotMatchRegularExpression('/from ["`]?brand_translations["`]?.*locale_id["`]? in/i', $sql);
-                $this->assertDoesNotMatchRegularExpression('/^select .*from ["`]?audit_log_entries/i', $sql);
+            $queries = $recorder->queries();
+            $this->assertNotEmpty($queries);
+            $this->assertCount($measurement['count'], $queries);
+            foreach ($queries as $sql) {
+                foreach ($patterns as $pattern) {
+                    $this->assertDoesNotMatchRegularExpression($pattern, $sql);
+                }
             }
         }
     }

@@ -15,6 +15,7 @@ test.beforeEach(() => resetBrowserFixture())
 test.afterEach(() => resetBrowserFixture())
 
 test('CA-015 dims the disabled source chevron when only the target locale is active', async ({ page }) => {
+    const assertNoPageErrors = observePageErrors(page)
     await signIn(page, 'central', foundationDemo.centralAdmin)
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
     keepOnlyTargetLocale()
@@ -23,6 +24,7 @@ test('CA-015 dims the disabled source chevron when only the target locale is act
     await expect(page.locator('#source-language + [data-select-chevron]')).toHaveCSS('opacity', '0.5')
     await expect(page.locator('#target-language')).toBeEnabled()
     await expect(page.locator('#target-language + [data-select-chevron]')).toHaveCSS('opacity', '1')
+    assertNoPageErrors()
 })
 
 test('CA-012 and CA-015 complete the persisted Brand translation review workflow', async ({ page }) => {
@@ -151,6 +153,7 @@ test('CA-015 offers any source and target in two compact menus with twenty activ
 })
 
 test('CA-015 offers valid source and target navigation when JavaScript is disabled', async ({ page, browser }) => {
+    const assertNoPageErrors = observePageErrors(page)
     await signIn(page, 'central', foundationDemo.centralAdmin)
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
     const context = await browser.newContext({ javaScriptEnabled: false, storageState: await page.context().storageState() })
@@ -168,6 +171,7 @@ test('CA-015 offers valid source and target navigation when JavaScript is disabl
     } finally {
         await context.close()
     }
+    assertNoPageErrors()
 })
 
 test('CA-015 keeps the shell LTR, applies RTL only to target controls, and has no mobile overflow', async ({ page }) => {
@@ -197,6 +201,7 @@ test('CA-015 keeps the shell LTR, applies RTL only to target controls, and has n
 })
 
 test('CA-015 copies each field and all fields locally, protects existing text, and saves only on request', async ({ page }) => {
+    const assertNoPageErrors = observePageErrors(page)
     await signIn(page, 'central', foundationDemo.centralAdmin)
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
     await page.goto(`/admin/central/brands/${workspaceBrandId}/translations/fr-FR?source=en-US`)
@@ -250,9 +255,11 @@ test('CA-015 copies each field and all fields locally, protects existing text, a
     // Native form submission serializes textarea line breaks as CRLF.
     for (const field of fields) expect(target[field].replace(/\r\n/g, '\n')).toBe(source[field].replace(/\r\n/g, '\n'))
     expect(target.status).toBe('human_reviewed')
+    assertNoPageErrors()
 })
 
 test('CA-015 preserves source choice through selection, navigation, and validation; skips empty source fields', async ({ page }) => {
+    const assertNoPageErrors = observePageErrors(page)
     await signIn(page, 'central', foundationDemo.centralAdmin)
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
     clearSourceTagline()
@@ -283,10 +290,12 @@ test('CA-015 preserves source choice through selection, navigation, and validati
     await page.reload()
     await expect(page.getByLabel('Source language', { exact: true })).toHaveValue('de-DE')
     await expect(page.getByLabel('Target language', { exact: true })).toHaveValue('en-US')
+    assertNoPageErrors()
 })
 
 
 test('CA-015 protects unsaved edits, copied text, and Save as when either language changes', async ({ page }) => {
+    const assertNoPageErrors = observePageErrors(page)
     await signIn(page, 'central', foundationDemo.centralAdmin)
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
     const url = `/admin/central/brands/${workspaceBrandId}/translations/fr-FR?source=en-US`
@@ -338,9 +347,11 @@ test('CA-015 protects unsaved edits, copied text, and Save as when either langua
     await page.locator('#name').fill('French draft')
     await page.locator('#brand-translation-form').getByRole('button', { name: 'Save translation', exact: true }).click()
     await expect(page.getByText('Translation saved.', { exact: true })).toBeVisible()
+    assertNoPageErrors()
 })
 
 test('CA-015 counters match native UTF-16 maxlength enforcement for emoji', async ({ page }) => {
+    const assertNoPageErrors = observePageErrors(page)
     await signIn(page, 'central', foundationDemo.centralAdmin)
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
     await page.goto(`/admin/central/brands/${workspaceBrandId}/translations/fr-FR?source=en-US`)
@@ -353,4 +364,5 @@ test('CA-015 counters match native UTF-16 maxlength enforcement for emoji', asyn
     await expect(page.locator('#tagline')).toHaveValue('A'.repeat(253) + '😀')
     await expect(page.locator('[data-brand-translation-counter=tagline]')).toHaveText('255 / 255')
     expect(workspacePersistence()).toEqual(before)
+    assertNoPageErrors()
 })

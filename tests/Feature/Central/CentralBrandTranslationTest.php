@@ -123,6 +123,9 @@ final class CentralBrandTranslationTest extends TestCase
         }
         $this->assertSame(['en-US', 'fr-FR', 'de-DE'], $codes);
         foreach (['source-language', 'target-language'] as $selector) {
+            $menu = $xpath->query('//select[@id="'.$selector.'"]');
+            $this->assertNotFalse($menu);
+            $this->assertSame(1, $menu->length);
             $inactive = $xpath->query('//select[@id="'.$selector.'"]//option[@value="es-ES" or contains(., "Spanish")]');
             $this->assertNotFalse($inactive);
             $this->assertSame(0, $inactive->length);

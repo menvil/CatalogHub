@@ -25,7 +25,7 @@ The Brand workspace uses `Brands / {Brand} / Translations`, a **Brand Translatio
 
 Phase 15's authoritative `TranslationSourceHashService::forBrand()` still hashes normalized canonical Brand name and slug. Stored hashes, outdated detection, approval checks, transaction locking, audit and cache eviction retain that contract. Selecting another reference locale neither changes this hash nor creates a dependency between translations.
 
-The selected Source Locale is only a UX/reference concept: an active Locale and its existing `BrandTranslation` for this Brand. Localized content remains exclusively in `BrandTranslation`. There is no master locale, `source_locale_id`, persisted preference, ownership relationship, publication source, Site source, or cross-locale stale propagation. English is fixture content, never a domain constant.
+The selected Source Locale is only a UX/reference concept: an active Locale used as reference. Its `BrandTranslation` for this Brand is displayed and available for copying only when present; selecting a Missing source never creates the row. Localized content remains exclusively in `BrandTranslation`. There is no master locale, `source_locale_id`, persisted preference, ownership relationship, publication source, Site source, or cross-locale stale propagation. English is fixture content, never a domain constant.
 
 ## Source selection and reads
 

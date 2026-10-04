@@ -1,0 +1,38 @@
+app/Models/CentralCatalog/AttributeSection.php
+  s_44ede181af91ce::t_dce82c0b54fa04 32-33
+app/Actions/CategorySchema/MoveAttributeDefinitionAction.php
+  s_44ede181af91ce::t_ccee6a202d5b8f 52
+  s_44ede181af91ce::t_dce82c0b54fa04 59
+tests/Feature/Categories/CategoryFoundationConcurrencyTest.php
+  s_44ede181af91ce::t_dce82c0b54fa04 32-39
+app/Models/CentralCatalog/AttributeDefinition.php
+  s_44ede181af91ce::t_dce82c0b54fa04 40-41
+app/Exceptions/CategorySchema/CannotMoveAttributeDefinitionException.php
+  s_44ede181af91ce::t_dce82c0b54fa04 16,21
+tests/Feature/Categories/CategorySchemaRevisionTest.php
+  s_44ede181af91ce::t_937148a935362b 21,225-301
+tests/Feature/Database/CategoryFoundationMigrationTest.php
+  s_44ede181af91ce::t_dce82c0b54fa04 20-25
+docs/architecture/category-foundation.md
+  s_44ede181af91ce::t_ccee6a202d5b8f 41-42
+app/Models/CentralCatalog/AttributeOption.php
+  s_44ede181af91ce::t_dce82c0b54fa04 29-30
+tests/Feature/Actions/MoveAttributeDefinitionActionTest.php
+  s_44ede181af91ce::t_dce82c0b54fa04 113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "253e8f9e021c580c12ee12c86fcc887d3e8665ca",
+  "prompts": {},
+  "sessions": {
+    "s_44ede181af91ce": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a10821-5e4f-73f3-a218-1cbf8ec83499",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

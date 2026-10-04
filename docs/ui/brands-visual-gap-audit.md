@@ -82,18 +82,19 @@ Phase 18.4 converges the honest single-role implementation into a focused Brand 
 
 ## CA-015 — Brand Translations
 
-Current desktop/mobile implements the common translation status model, exact-locale routes and source-hash context, but differs from the prototype's dense locale workspace, two-column editor balance and activity emphasis.
+Phase 18.5 converges CA-015 to the original prototype's translation workspace using existing localized data and workflow authority.
 
-| Prototype region | Current desktop / mobile equivalent | Domain source | Gap | Phase | Notes |
-|---|---|---|---|---|---|
-| Locale navigation with health | Selector and status badges exist | Active Locales + `BrandTranslation.status` | D | Phase 18 | Make locale health faster to scan and retain exact-locale URLs. |
-| Source/target editor columns | Current source context and target form are more vertically separated | Canonical source hash context + `BrandTranslation` | D | Phase 18 | Restore denser desktop balance; stack source before target on mobile. |
-| Translation fields | Name, tagline, descriptions and SEO fields exist | `BrandTranslation` only | A | Phase 18 | Converge grouping for supported fields, not canonical Brand columns. |
-| Missing/Machine/Human/Approved/Outdated | Existing common states | Common translation status/source hash | B | Phase 18 | Preserve exact approved terms; do not invent prototype review states. |
-| Activity/context | Existing audit/context is less visually prominent | Current audit and source metadata | D | Phase 18 | Place as secondary context without competing with the editor. |
-| AI translate/provider actions | No workflow exists | Future AI translation domain | C | Deferred | A supported `MachineTranslated` value does not imply a provider. |
-| Per-field review/provenance | Row-level status only | Future field-level provenance/review | C | Deferred | Do not fabricate per-field state. |
-| Localized media/site delivery | No equivalent | Future localized/site media/projection | C | Deferred | Remains intentionally absent. |
+| Prototype region | Final equivalent | Domain source | Result | Notes |
+|---|---|---|---|---|
+| Source → Target | Explicit direction, shareable source selector | Active Locales + existing BrandTranslation | Converged | UI reference is independent of canonical source hash. |
+| Dense locale navigation | Compact language/code/status strip, Source marker | Active Locales + row enum states | Converged | Target and source differ; no locale management. |
+| Side-by-side fields | Field / Target / Source rows for six approved fields | BrandTranslation | Converged | Tablet pairs within field; mobile source then target. |
+| Source copy | Field copy and Copy all, overwrite confirmation | Existing reference values | Converged | Client-side only, explicit Save. |
+| Workflow overview | Compact status/row/current context and secondary actions | Existing Phase 15 actions and hashes | Adapted | No field-level completeness engine. |
+| Translation activity | Bounded real audit feed | Existing translation audit | Converged | No fake events or history subsystem. |
+| Donut / field counts | Omitted | No authoritative per-field completeness | Intentional divergence | No 78% or invented Complete/In Progress counts. |
+| Localized elements | Omitted | No hero/footer/support fields | Intentional divergence | Only the approved six-field contract. |
+| Add Language / AI / publication | Omitted | Separate or deferred domains | Intentional divergence | No machine provider, Site or Published/Synced semantics. |
 
 ## Phase 17 CA-012 convergence decision
 
@@ -123,9 +124,8 @@ The reviewed 1440×1000 and 1280×900 frames show the aligned Primary logo/Asset
 
 ## Remaining bounded backlog
 
-Only A/B/D work is eligible. Category C rows above are explicitly excluded.
+No A/B/D convergence work remains for CA-011…CA-015 after Phase 18.5. Category C capabilities above remain explicitly deferred.
 
-| Screen | Prototype region / class | Exact acceptance target |
-|---|---|---|
-| CA-015 | Locale health/status mapping (B/D) | Make all active locales and common statuses scannable, preserve exact-locale navigation and bound the selector at 390. |
-| CA-015 | Source/target editor and activity (A/D) | Match the prototype's two-column desktop balance for supported `BrandTranslation` fields and stack logically on mobile, with activity kept secondary. |
+## Phase 18.5 CA-015 convergence decision
+
+The separate Source Context sidebar is replaced by actual localized reference text beside every editable field. Existing canonical hash/outdated authority remains intact. English Approved → German Outdated, English → French Missing, outdated reference, tablet/mobile and independent English LTR → Arabic RTL references demonstrate the final workspace. Screenshots use persisted Zotac fixture records, not hardcoded view values. Source selection and copy introduce no write on GET or before Save and no additional locale-by-locale queries.

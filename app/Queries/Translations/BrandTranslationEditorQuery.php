@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Queries\Translations;
 
 use App\Data\Translations\BrandTranslationEditorData;
+use App\Enums\TranslationStatus;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\Locale;
 use App\Models\Translations\BrandTranslation;
 use App\Services\Translations\TranslationSourceHashService;
+use Illuminate\Validation\ValidationException;
 
 final readonly class BrandTranslationEditorQuery
 {
@@ -17,7 +19,7 @@ final readonly class BrandTranslationEditorQuery
         private BrandTranslationActivityQuery $activity,
     ) {}
 
-    public function forBrand(CentralBrand $brand, ?Locale $selectedLocale = null): BrandTranslationEditorData
+    public function forBrand(CentralBrand $brand, ?Locale $selectedLocale = null, ?string $sourceCode = null): BrandTranslationEditorData
     {
         $locales = Locale::query()
             ->active()
@@ -37,6 +39,34 @@ final readonly class BrandTranslationEditorQuery
             ? $translations->get($selectedLocale->getKey())
             : null;
         $translation = $translation instanceof BrandTranslation ? $translation : null;
+        $sourceRank = static fn (?BrandTranslation $row): int => match ($row?->getRawOriginal('status')) {
+            TranslationStatus::Approved->value => 0,
+            TranslationStatus::HumanReviewed->value => 1,
+            TranslationStatus::MachineTranslated->value => 2,
+            TranslationStatus::Outdated->value => 3,
+            default => 4,
+        };
+        $sourceLocales = $locales
+            ->reject(fn (Locale $locale): bool => $selectedLocale?->is($locale) === true)
+            ->sortBy(fn (Locale $locale): int => $sourceRank($translations->get($locale->getKey())))
+            ->values();
+        $sourceLocale = $sourceCode !== null ? $sourceLocales->firstWhere('code', $sourceCode) : null;
+
+        if ($sourceCode !== null && ! $sourceLocale instanceof Locale) {
+            throw ValidationException::withMessages([
+                'source' => 'Choose an active source language different from the target.',
+            ]);
+        }
+
+        if ($sourceCode === null) {
+            $usableSources = $sourceLocales->filter(fn (Locale $locale): bool => $translations->has($locale->getKey())
+                && $sourceRank($translations->get($locale->getKey())) < 4);
+            $sourceLocale = $usableSources->firstWhere('is_default', true)
+                ?? $usableSources->first()
+                ?? $sourceLocales->first(fn (Locale $locale): bool => $translations->has($locale->getKey()));
+        }
+
+        $sourceTranslation = $sourceLocale instanceof Locale ? $translations->get($sourceLocale->getKey()) : null;
         $currentSourceHash = $this->sourceHashes->forBrand($brand);
 
         return new BrandTranslationEditorData(
@@ -45,6 +75,9 @@ final readonly class BrandTranslationEditorQuery
             translationsByLocale: $translations,
             selectedLocale: $selectedLocale,
             translation: $translation,
+            sourceLocale: $sourceLocale,
+            sourceTranslation: $sourceTranslation instanceof BrandTranslation ? $sourceTranslation : null,
+            sourceLocales: $sourceLocales,
             currentSourceHash: $currentSourceHash,
             sourceHashMatches: $translation instanceof BrandTranslation
                 && is_string($translation->source_hash)

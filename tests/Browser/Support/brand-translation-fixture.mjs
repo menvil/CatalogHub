@@ -26,7 +26,7 @@ function updateBrandTranslationLocales(statements) {
     const database = resolve(root, `storage/logs/browser-harness-${port}.sqlite`)
     const command = statements.join(' ')
 
-    execFileSync('php', ['artisan', 'tinker', '--execute', command], {
+    return execFileSync('php', ['artisan', 'tinker', '--execute', command], {
         cwd: root,
         env: {
             ...process.env,
@@ -40,5 +40,18 @@ function updateBrandTranslationLocales(statements) {
             SESSION_DRIVER: 'file',
         },
         stdio: 'pipe',
+        encoding: 'utf8',
     })
+}
+
+export function clearSourceTagline() {
+    updateBrandTranslationLocales([
+        "App\\Models\\Translations\\BrandTranslation::query()->where('brand_id', 24)->where('locale', 'en-US')->update(['tagline' => null]);",
+    ])
+}
+
+export function workspacePersistence() {
+    return JSON.parse(updateBrandTranslationLocales([
+        "echo json_encode(['brand' => App\\Models\\CentralCatalog\\CentralBrand::query()->findOrFail(24)->getRawOriginal(), 'rows' => App\\Models\\Translations\\BrandTranslation::query()->where('brand_id', 24)->orderBy('id')->get()->map(fn ($row) => $row->getRawOriginal()), 'audit' => App\\Models\\AuditLogEntry::query()->count()]);",
+    ]).trim())
 }

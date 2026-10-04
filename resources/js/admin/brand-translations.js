@@ -1,37 +1,66 @@
+function copyableFields() {
+    return [...document.querySelectorAll('[data-brand-translation-copy-source]')]
+        .map((trigger) => ({
+            target: document.getElementById(trigger.dataset.brandTranslationCopyTarget),
+            sourceValue: trigger.dataset.brandTranslationSourceValue,
+        }))
+        .filter(({ target, sourceValue }) => (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)
+            && typeof sourceValue === 'string' && sourceValue.trim() !== '');
+}
+
+function updateCounter(target) {
+    const counter = document.querySelector(`[data-brand-translation-counter="${target.id}"]`);
+    if (counter) {
+        counter.textContent = `${[...target.value].length} / ${target.maxLength}`;
+    }
+}
+
 export function bootBrandTranslations() {
     if (window.__catalogHubBrandTranslationsBooted) {
         return;
     }
-
     window.__catalogHubBrandTranslationsBooted = true;
+
+    document.addEventListener('change', (event) => {
+        if (event.target instanceof HTMLSelectElement && event.target.matches('[data-brand-translation-source-selector]')) {
+            const url = new URL(window.location.href);
+            if (event.target.value) {
+                url.searchParams.set('source', event.target.value);
+            } else {
+                url.searchParams.delete('source');
+            }
+            window.location.assign(url.href);
+        }
+    });
+
+    document.addEventListener('input', (event) => {
+        if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+            updateCounter(event.target);
+        }
+    });
 
     document.addEventListener('click', (event) => {
         if (! (event.target instanceof Element)) {
             return;
         }
-
-        const trigger = event.target.closest('[data-brand-translation-copy-source]');
-
+        const trigger = event.target.closest('[data-brand-translation-copy-source], [data-brand-translation-copy-all]');
         if (! trigger) {
             return;
         }
-
-        const targetId = trigger.dataset.brandTranslationCopyTarget;
-        const sourceValue = trigger.dataset.brandTranslationSourceValue;
-        const target = targetId ? document.getElementById(targetId) : null;
-
-        if (! (target instanceof HTMLInputElement) || typeof sourceValue !== 'string') {
+        const copyAll = trigger.hasAttribute('data-brand-translation-copy-all');
+        const fields = copyableFields().filter(({ target }) => copyAll || target.id === trigger.dataset.brandTranslationCopyTarget);
+        if (fields.length === 0) {
             return;
         }
-
-        if (target.value.trim() !== '' && target.value !== sourceValue
-            && ! window.confirm('Replace the current localized name with the canonical Brand name?')) {
+        if (fields.some(({ target, sourceValue }) => target.value.trim() !== '' && target.value !== sourceValue)
+            && ! window.confirm('Replace current target values with source values?')) {
             return;
         }
-
-        target.value = sourceValue;
-        target.dispatchEvent(new Event('input', { bubbles: true }));
-        target.dispatchEvent(new Event('change', { bubbles: true }));
-        target.focus({ preventScroll: true });
+        for (const { target, sourceValue } of fields) {
+            target.value = sourceValue;
+            target.dispatchEvent(new Event('input', { bubbles: true }));
+            target.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        fields[0].target.focus({ preventScroll: true });
     });
 }

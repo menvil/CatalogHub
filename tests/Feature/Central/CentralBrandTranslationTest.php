@@ -59,7 +59,7 @@ final class CentralBrandTranslationTest extends TestCase
             ->assertOk()
             ->assertSee('data-screen-id="CA-015"', false)
             ->assertSee('Samsung')
-            ->assertSee('No translation row exists for this active locale. Nothing is persisted until Save.');
+            ->assertSee('No saved translation yet. Save to create one.');
         $this->get(route('central.brands.translations.edit', [$archived, $locale->code]))->assertOk();
 
         $this->actingAs($catalogEditor)
@@ -103,15 +103,15 @@ final class CentralBrandTranslationTest extends TestCase
     public function test_active_locale_selector_is_ordered_bounded_and_excludes_inactive_locales(): void
     {
         $brand = CentralBrand::factory()->create();
-        $selected = Locale::factory()->create(['code' => 'de-DE', 'native_name' => 'Deutsch', 'position' => 2]);
-        Locale::factory()->create(['code' => 'en-US', 'native_name' => 'English', 'is_default' => true, 'position' => 99]);
-        Locale::factory()->create(['code' => 'fr-FR', 'native_name' => 'Français', 'position' => 1]);
+        $selected = Locale::factory()->create(['code' => 'de-DE', 'name' => 'German', 'native_name' => 'Deutsch', 'position' => 2]);
+        Locale::factory()->create(['code' => 'en-US', 'name' => 'English', 'native_name' => 'English', 'is_default' => true, 'position' => 99]);
+        Locale::factory()->create(['code' => 'fr-FR', 'name' => 'French', 'native_name' => 'Français', 'position' => 1]);
         Locale::factory()->disabled()->create(['code' => 'es-ES', 'native_name' => 'Español']);
 
         $this->actingAs(User::factory()->create(['role' => UserRole::Translator]))
             ->get(route('central.brands.translations.edit', [$brand, $selected->code]))
             ->assertOk()
-            ->assertSeeInOrder(['English', 'en-US', 'Français', 'fr-FR', 'Deutsch', 'de-DE'])
+            ->assertSeeInOrder(['English', 'en-US', 'French', 'fr-FR', 'German', 'de-DE'])
             ->assertDontSee('Español');
 
         $oneLocale = DatabaseQueryCounter::measure(fn () => app(BrandTranslationEditorQuery::class)->forBrand($brand, $selected));

@@ -90,12 +90,15 @@ Route::middleware(['auth', EnsureCentralAdminAccess::class])
                 ->name('central.brands.translations.edit');
             Route::post('/brands/{brand}/translations/{locale:code}', [CentralBrandTranslationController::class, 'save'])
                 ->withoutScopedBindings()
+                ->middleware('can:central.mutation.execute')
                 ->name('central.brands.translations.save');
             Route::post('/brands/{brand}/translations/{locale:code}/approve', [CentralBrandTranslationController::class, 'approve'])
                 ->withoutScopedBindings()
+                ->middleware('can:central.mutation.execute')
                 ->name('central.brands.translations.approve');
             Route::post('/brands/{brand}/translations/{locale:code}/outdated', [CentralBrandTranslationController::class, 'markOutdated'])
                 ->withoutScopedBindings()
+                ->middleware('can:central.mutation.execute')
                 ->name('central.brands.translations.outdated');
 
             Route::get('/products/{product}/translations/{locale}', [TranslationEditorController::class, 'editProduct'])

@@ -8,6 +8,10 @@ const source = readFileSync(resolve(import.meta.dirname, '../../resources/js/adm
 test('copy from source is explicit, overwrite-aware, and only updates the local form control', () => {
     for (const contract of [
         'data-brand-translation-copy-source',
+        'data-brand-translation-copy-all',
+        'HTMLTextAreaElement',
+        'data-brand-translation-counter',
+        'sourceValue.trim()',
         'brandTranslationCopyTarget',
         'brandTranslationSourceValue',
         'window.confirm',

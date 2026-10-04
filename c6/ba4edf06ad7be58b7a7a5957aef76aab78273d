@@ -1,0 +1,134 @@
+app/Console/Commands/DiagnoseCategoryHierarchyCommand.php
+  s_44ede181af91ce::t_d431de9a9fa488 1-4,6-13,15-21
+docs/architecture/category-foundation.md
+  s_44ede181af91ce::t_3039f327bcdcf8 1-19
+  s_44ede181af91ce::t_0f4cb9a3950cea 20-57
+app/Models/CentralCatalog/CategoryHierarchyScope.php
+  s_44ede181af91ce::t_3039f327bcdcf8 1-31
+app/Services/Categories/CategoryHierarchy.php
+  s_44ede181af91ce::t_3039f327bcdcf8 1-13,15-54,59-62,70-104
+  s_44ede181af91ce::t_c86396ee5b277c 14
+app/Actions/CentralCatalog/ReorderCentralCategoriesAction.php
+  s_44ede181af91ce::t_fc09a923aef4b3 1-20,22-43,45-47,49-54
+docs/planning/roadmap-v2-screen-driven.md
+  s_44ede181af91ce::t_feea888b117cc6 5,13,157
+tests/Feature/Categories/CategoryFoundationConcurrencyTest.php
+  s_44ede181af91ce::t_feea888b117cc6 7-75
+composer.json
+  ai_agent 84
+docs/architecture/audit.md
+  s_44ede181af91ce::t_feea888b117cc6 11,36-43
+app/Actions/CentralCatalog/ArchiveCentralCategoryAction.php
+  s_44ede181af91ce::t_fc09a923aef4b3 1-12,14-41
+  ai_agent 13
+app/Actions/CategorySchema/UpdateAttributeOptionAction.php
+  s_44ede181af91ce::t_feea888b117cc6 27
+  s_44ede181af91ce::t_ac801afc69c1b9 5,8-9,18,20-25,28,48,55-57
+app/Actions/CategorySchema/MarkCategorySchemaReviewedAction.php
+  s_44ede181af91ce::t_4c39d1ecd4c71f 5-6,8-9,12-14,16-18,20,22-24,26-27,29-47,49-50
+  ai_agent 15
+app/Actions/CategorySchema/CloneCategorySchemaAction.php
+  s_44ede181af91ce::t_feea888b117cc6 26-27
+  s_44ede181af91ce::t_ac801afc69c1b9 5,10-11,16,18-24,28
+app/Filament/Resources/CentralCategoryResource.php
+  s_44ede181af91ce::t_d431de9a9fa488 52,57-62,65,67-68,70-72,81-84,93,103-106,142
+app/Actions/CategorySchema/UpdateAttributeDefinitionAction.php
+  s_44ede181af91ce::t_feea888b117cc6 30
+  s_44ede181af91ce::t_ac801afc69c1b9 21,23-28,31,47,62-64
+app/Enums/SchemaMutationOrigin.php
+  s_44ede181af91ce::t_ac801afc69c1b9 1-17
+app/Actions/CentralCatalog/ActivateCentralCategoryAction.php
+  ai_agent 13
+  s_44ede181af91ce::t_fc09a923aef4b3 1-12,14-41
+app/Actions/CategorySchema/CreateAttributeOptionAction.php
+  s_44ede181af91ce::t_ac801afc69c1b9 5,9-10,21,23-28,31
+  s_44ede181af91ce::t_feea888b117cc6 30
+app/Actions/CentralCatalog/ReparentCentralCategoryAction.php
+  s_44ede181af91ce::t_fc09a923aef4b3 1-45,47-53,55-62
+app/Models/CentralCatalog/CentralCategory.php
+  s_44ede181af91ce::t_fc09a923aef4b3 18-20,41-48
+  s_44ede181af91ce::t_c86396ee5b277c 30-31
+app/Enums/AuditAction.php
+  s_44ede181af91ce::t_fc09a923aef4b3 27-38
+app/Services/Categories/CategoryLock.php
+  s_44ede181af91ce::t_fc09a923aef4b3 1-18,20-25
+app/Actions/CategorySchema/DeleteAttributeOptionAction.php
+  s_44ede181af91ce::t_feea888b117cc6 23
+  s_44ede181af91ce::t_ac801afc69c1b9 5,8-9,13,15-21,24
+tests/Feature/Database/CategoryFoundationMigrationTest.php
+  ai_agent 41-43
+docs/planning/categories-schema-migration-map.md
+  s_44ede181af91ce::t_feea888b117cc6 3,59-64,67,92
+app/Services/CategorySchema/SchemaRevision.php
+  s_44ede181af91ce::t_ac801afc69c1b9 1-22,24-38,40,42-49,52-86
+  s_44ede181af91ce::t_4c39d1ecd4c71f 50-51
+  s_44ede181af91ce::t_c86396ee5b277c 39,41
+app/Actions/CentralCatalog/RestoreCentralCategoryAction.php
+  ai_agent 13
+  s_44ede181af91ce::t_fc09a923aef4b3 1-12,14-41
+app/Actions/CategorySchema/ArchiveCategorySchemaAction.php
+  s_44ede181af91ce::t_4c39d1ecd4c71f 5-6,8,11-13,15-16,18,20-22,24-38,40-41,43-44
+  ai_agent 14
+app/Actions/CategorySchema/ApproveCategorySchemaAction.php
+  s_44ede181af91ce::t_4c39d1ecd4c71f 5-6,8,11-13,16-17,19,21,23,25-26,28-46,48-49
+  ai_agent 14
+app/Actions/CategorySchema/MoveAttributeDefinitionAction.php
+  s_44ede181af91ce::t_ac801afc69c1b9 5,9-10,15,17-22,26
+  s_44ede181af91ce::t_feea888b117cc6 24-25
+app/Filament/Resources/CentralCategoryResource/Pages/CreateCentralCategory.php
+  s_44ede181af91ce::t_d431de9a9fa488 5,10,15-20,22-26
+app/Actions/CategorySchema/CreateAttributeSectionAction.php
+  s_44ede181af91ce::t_ac801afc69c1b9 5,8-9,20,22-27,30
+  s_44ede181af91ce::t_feea888b117cc6 29
+app/Actions/CentralCatalog/CreateCentralCategoryAction.php
+  s_44ede181af91ce::t_fc09a923aef4b3 1-49,51-58
+app/Actions/CategorySchema/DeleteAttributeSectionAction.php
+  s_44ede181af91ce::t_feea888b117cc6 24
+  s_44ede181af91ce::t_ac801afc69c1b9 5,8-9,14,16-22,25
+database/migrations/2026_10_04_200000_add_category_foundation_revisions.php
+  s_44ede181af91ce::t_3039f327bcdcf8 1-55
+app/Actions/CategorySchema/RestoreCategorySchemaAction.php
+  ai_agent 13
+  s_44ede181af91ce::t_4c39d1ecd4c71f 1-12,14-46
+app/Filament/Resources/CentralCategoryResource/Pages/EditCentralCategory.php
+  s_44ede181af91ce::t_d431de9a9fa488 5-7,9-10,12-15,17-18,23-42,47,51-62,69-76,88,91-92
+tests/Feature/Categories/CategoryHierarchyActionsTest.php
+  s_44ede181af91ce::t_0f4cb9a3950cea 224-253,255-265
+  s_44ede181af91ce::t_307b92885850f1 1-7,9-151,153,155-191,193-223,266-283
+  s_44ede181af91ce::t_feea888b117cc6 8,254
+app/Services/Categories/CategoryAccess.php
+  s_44ede181af91ce::t_3039f327bcdcf8 1-37
+docs/architecture/authorization.md
+  s_44ede181af91ce::t_feea888b117cc6 51
+app/Services/Audit/AuditRecorder.php
+  s_44ede181af91ce::t_fc09a923aef4b3 45-49
+app/Actions/CategorySchema/CreateAttributeDefinitionAction.php
+  s_44ede181af91ce::t_ac801afc69c1b9 22,24-29,32
+  s_44ede181af91ce::t_feea888b117cc6 31
+app/Filament/Resources/CentralCategoryResource/Pages/CategorySchemaBuilder.php
+  s_44ede181af91ce::t_d431de9a9fa488 50-57,72,119,127,138,149,159,170,182,191,196-197,202-203,208-209,217,228-245,249-256,259
+app/Actions/CentralCatalog/UpdateCentralCategoryAction.php
+  s_44ede181af91ce::t_fc09a923aef4b3 1-11,13-48
+  ai_agent 12
+docs/architecture/adr/0003-categories-schema-ownership.md
+  s_44ede181af91ce::t_feea888b117cc6 7-10,43,127
+app/Actions/CategorySchema/UpdateAttributeSectionAction.php
+  s_44ede181af91ce::t_ac801afc69c1b9 5,7-8,17,19-24,27,45,54-56
+  s_44ede181af91ce::t_feea888b117cc6 26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "c6ba4edf06ad7be58b7a7a5957aef76aab78273d",
+  "prompts": {},
+  "sessions": {
+    "s_44ede181af91ce": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a10821-5e4f-73f3-a218-1cbf8ec83499",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

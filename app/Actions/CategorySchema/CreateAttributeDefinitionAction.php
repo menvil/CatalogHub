@@ -3,8 +3,11 @@
 namespace App\Actions\CategorySchema;
 
 use App\Actions\CategorySchema\Concerns\ValidatesAttributeDefinitionData;
+use App\Enums\SchemaMutationOrigin;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeSection;
+use App\Models\User;
+use App\Services\CategorySchema\SchemaRevision;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -16,8 +19,17 @@ final class CreateAttributeDefinitionAction
     /**
      * @param  array<string, mixed>  $data
      */
-    public function handle(AttributeSection $section, array $data): AttributeDefinition
+    public function handle(AttributeSection $section, array $data, ?User $actor = null): AttributeDefinition
     {
+        $categoryId = $section->central_category_id;
+
+        return app(SchemaRevision::class)->mutate($categoryId, SchemaMutationOrigin::AttributeCreated, $section->id, fn () => $this->perform($section, $data), $actor);
+    }
+
+    private function perform(AttributeSection $section, array $data): AttributeDefinition
+    {
+        $section = AttributeSection::query()->findOrFail($section->id);
+
         $validated = Validator::make($data, $this->validationRules($section->central_category_id))->validate();
 
         return DB::transaction(function () use ($section, $validated): AttributeDefinition {

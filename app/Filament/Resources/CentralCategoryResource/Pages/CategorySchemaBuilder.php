@@ -13,13 +13,18 @@ use App\Actions\CategorySchema\DeleteAttributeSectionAction;
 use App\Actions\CategorySchema\ExportCategorySchemaAction;
 use App\Actions\CategorySchema\MarkCategorySchemaReviewedAction;
 use App\Actions\CategorySchema\MoveAttributeDefinitionAction;
+use App\Actions\CategorySchema\RestoreCategorySchemaAction;
 use App\Actions\CategorySchema\UpdateAttributeDefinitionAction;
 use App\Actions\CategorySchema\UpdateAttributeOptionAction;
 use App\Actions\CategorySchema\UpdateAttributeSectionAction;
 use App\DTO\CategorySchema\CategorySchemaIssue;
+use App\Enums\CategorySchemaStatus;
+use App\Enums\Permission;
+use App\Exceptions\CategorySchema\CannotTransitionCategorySchemaStatusException;
 use App\Filament\Resources\CentralCategoryResource;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Services\Categories\CategoryAccess;
 use App\Services\CategorySchema\CategorySchemaPreviewBuilder;
 use App\Services\CategorySchema\CategorySchemaValidator;
 use Filament\Actions\Action;
@@ -29,6 +34,8 @@ use Filament\Forms\Components\Toggle;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Locked;
 
 final class CategorySchemaBuilder extends Page
 {
@@ -42,9 +49,29 @@ final class CategorySchemaBuilder extends Page
 
     private ?CentralCategory $cachedCategory = null;
 
+    #[Locked]
+    public int $schemaRevision = 1;
+
+    public static function canAccess(array $parameters = []): bool
+    {
+        return app(CategoryAccess::class)->allows(Permission::CatalogSchemaManage);
+    }
+
+    public static function authorizeResourceAccess(): void
+    {
+        abort_unless(self::canAccess(), 403);
+    }
+
+    public function getResourceBreadcrumbs(): array
+    {
+        return CentralCategoryResource::canViewAny() ? parent::getResourceBreadcrumbs() : [];
+    }
+
     public function mount(int|string $record): void
     {
+        abort_unless(self::canAccess(), 403);
         $this->record = $this->resolveRecord($record);
+        $this->schemaRevision = $this->getCategory()->schema_revision;
     }
 
     public function getTitle(): string
@@ -91,6 +118,7 @@ final class CategorySchemaBuilder extends Page
         $section = $this->getCategory()->attributeSections()->findOrFail($sectionId);
 
         $action->handle($section, $data);
+        $this->reloadSchema();
     }
 
     public function deleteSection(int $sectionId, DeleteAttributeSectionAction $action): void
@@ -98,6 +126,7 @@ final class CategorySchemaBuilder extends Page
         $section = $this->getCategory()->attributeSections()->findOrFail($sectionId);
 
         $action->handle($section);
+        $this->reloadSchema();
     }
 
     /**
@@ -108,6 +137,7 @@ final class CategorySchemaBuilder extends Page
         $section = $this->getCategory()->attributeSections()->findOrFail($sectionId);
 
         $action->handle($section, $data);
+        $this->reloadSchema();
     }
 
     /**
@@ -118,6 +148,7 @@ final class CategorySchemaBuilder extends Page
         $attribute = $this->getCategory()->attributeDefinitions()->findOrFail($attributeId);
 
         $action->handle($attribute, $data);
+        $this->reloadSchema();
     }
 
     public function moveAttribute(int $attributeId, int $targetSectionId, int $position, MoveAttributeDefinitionAction $action): void
@@ -127,6 +158,7 @@ final class CategorySchemaBuilder extends Page
         $targetSection = $category->attributeSections()->findOrFail($targetSectionId);
 
         $action->handle($attribute, $targetSection, $position);
+        $this->reloadSchema();
     }
 
     /**
@@ -137,6 +169,7 @@ final class CategorySchemaBuilder extends Page
         $attribute = $this->getCategory()->attributeDefinitions()->findOrFail($attributeId);
 
         $action->handle($attribute, $data);
+        $this->reloadSchema();
     }
 
     /**
@@ -148,6 +181,7 @@ final class CategorySchemaBuilder extends Page
         $option = $attribute->options()->findOrFail($optionId);
 
         $action->handle($option, $data);
+        $this->reloadSchema();
     }
 
     public function deleteOption(int $attributeId, int $optionId, DeleteAttributeOptionAction $action): void
@@ -156,21 +190,25 @@ final class CategorySchemaBuilder extends Page
         $option = $attribute->options()->findOrFail($optionId);
 
         $action->handle($option);
+        $this->reloadSchema();
     }
 
     public function markReviewed(MarkCategorySchemaReviewedAction $action): void
     {
-        $action->handle($this->getCategory());
+        $action->handle($this->getCategory(), $this->schemaRevision);
+        $this->reloadSchema();
     }
 
     public function approveSchema(ApproveCategorySchemaAction $action): void
     {
-        $action->handle($this->getCategory());
+        $action->handle($this->getCategory(), $this->schemaRevision);
+        $this->reloadSchema();
     }
 
     public function archiveSchema(ArchiveCategorySchemaAction $action): void
     {
-        $action->handle($this->getCategory());
+        $action->handle($this->getCategory(), $this->schemaRevision);
+        $this->reloadSchema();
     }
 
     public function cloneSchemaFrom(int $sourceCategoryId, CloneCategorySchemaAction $action): void
@@ -178,6 +216,7 @@ final class CategorySchemaBuilder extends Page
         $source = CentralCategory::query()->findOrFail($sourceCategoryId);
 
         $action->handle($source, $this->getCategory());
+        $this->reloadSchema();
     }
 
     /**
@@ -188,11 +227,42 @@ final class CategorySchemaBuilder extends Page
         return $action->handle($this->getCategory());
     }
 
+    public function restoreSchema(RestoreCategorySchemaAction $action): void
+    {
+        try {
+            $action->handle($this->getCategory(), $this->schemaRevision);
+        } catch (CannotTransitionCategorySchemaStatusException $exception) {
+            throw ValidationException::withMessages(['schema_status' => $exception->getMessage()]);
+        }
+        $this->reloadSchema();
+    }
+
+    private function reloadSchema(): void
+    {
+        $this->cachedCategory = null;
+        $this->record = $this->getRecord()->fresh();
+        $this->schemaRevision = $this->getCategory()->schema_revision;
+    }
+
+    private function mayMutateSchema(): bool
+    {
+        return app(CategoryAccess::class)->allows(Permission::CatalogSchemaManage, true);
+    }
+
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('review')->visible(fn (): bool => $this->mayMutateSchema() && $this->getCategory()->schema_status === CategorySchemaStatus::Draft)
+                ->action(fn (MarkCategorySchemaReviewedAction $action) => $this->markReviewed($action)),
+            Action::make('approve')->visible(fn (): bool => $this->mayMutateSchema() && $this->getCategory()->schema_status === CategorySchemaStatus::Reviewed)
+                ->action(fn (ApproveCategorySchemaAction $action) => $this->approveSchema($action)),
+            Action::make('archiveSchema')->requiresConfirmation()->visible(fn (): bool => $this->mayMutateSchema() && $this->getCategory()->schema_status === CategorySchemaStatus::Approved)
+                ->action(fn (ArchiveCategorySchemaAction $action) => $this->archiveSchema($action)),
+            Action::make('restoreSchema')->visible(fn (): bool => $this->mayMutateSchema() && $this->getCategory()->schema_status === CategorySchemaStatus::Archived)
+                ->action(fn (RestoreCategorySchemaAction $action) => $this->restoreSchema($action)),
             Action::make('createSection')
                 ->label('Add section')
+                ->visible(fn (): bool => app(CategoryAccess::class)->allows(Permission::CatalogSchemaManage, true) && $this->getCategory()->schema_status !== CategorySchemaStatus::Archived)
                 ->icon(Heroicon::OutlinedPlus)
                 ->schema([
                     TextInput::make('name')
@@ -220,6 +290,7 @@ final class CategorySchemaBuilder extends Page
                 ])
                 ->action(function (array $data, CreateAttributeSectionAction $action): void {
                     $action->handle($this->getCategory(), $data);
+                    $this->reloadSchema();
                 }),
         ];
     }

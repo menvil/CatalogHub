@@ -68,3 +68,11 @@ export function workspacePersistence() {
         "echo json_encode(['brand' => App\\Models\\CentralCatalog\\CentralBrand::query()->findOrFail(24)->getRawOriginal(), 'rows' => App\\Models\\Translations\\BrandTranslation::query()->where('brand_id', 24)->orderBy('id')->get()->map(fn ($row) => $row->getRawOriginal()), 'locales' => App\\Models\\Locale::query()->orderBy('id')->get()->map(fn ($locale) => $locale->getRawOriginal()), 'audit' => App\\Models\\AuditLogEntry::query()->count()]);",
     ]).trim())
 }
+
+export function setLongBrandTranslationIdentity() {
+    updateBrandTranslationLocales([
+        "App\\Models\\CentralCatalog\\CentralBrand::query()->whereKey(24)->update(['slug' => str_repeat('long-slug-', 24)]);",
+        "App\\Models\\Locale::query()->where('code', 'en-US')->update(['name' => 'English '.str_repeat('reference language ', 10)]);",
+        "App\\Models\\Locale::query()->where('code', 'de-DE')->update(['name' => 'German '.str_repeat('target language ', 10)]);",
+    ])
+}

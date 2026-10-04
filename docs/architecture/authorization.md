@@ -48,4 +48,6 @@ Brand translation read, Save, explicit Approve, and explicit Mark Outdated route
 
 ## Executable coverage
 
+Phase 19.0 freezes the future Categories / Schema split in [ADR-0003](adr/0003-categories-schema-ownership.md#permission-freeze): CA-016…CA-018 use `catalog.categories.manage`, CA-019…CA-025 use `catalog.schema.manage`, and CA-026 uses `translations.manage`; all writes additionally require `central.mutation.execute`. Phase 19.1 closes the legacy Category resource blanket permission: CategoryAccess requires an active Central panel/page actor and owning module capability; all action writes additionally require Central mutation. Legacy Category create/edit/lifecycle uses categories permission, and its schema page can be reached directly with schema permission alone. Existing role grants stay unchanged; schema-only actors do not gain Category list/create/edit. See [foundation contract](category-foundation.md) and `CategoryPermissionsTest`. No new screens are delivered.
+
 `tests/Feature/Auth/AuthorizationMatrixTest.php` covers all six roles, two independent sites, unassigned users, disabled users, query tampering, and a forbidden cross-site mutation with no database side effect. Focused policy, middleware, membership, disabled-user, and audit suites cover the underlying contracts.

@@ -17,6 +17,8 @@ reference_version: final-convergence-v7
 
 # CA-014 — Brand Media / Logo
 
+**Final converged / accepted — Brands Phase 18.6.** See [section acceptance and closure](../brands-section-acceptance.md) for the cross-screen, permission and verification evidence.
+
 CA-014 is the finished Brand logo workspace. Its primary task is deliberately narrow: inspect the current logo and, when necessary, replace it with a secure upload or a compatible existing `MediaAsset`. Upload and Shared Media selection stay out of the default reading flow until the user requests them. The approved Brand domain still contains exactly one media role: `brand_logo`.
 
 ## Canonical assignment

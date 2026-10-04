@@ -2,8 +2,11 @@
 
 namespace App\Actions\CategorySchema;
 
+use App\Enums\SchemaMutationOrigin;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Models\User;
+use App\Services\CategorySchema\SchemaRevision;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -14,8 +17,17 @@ final class CreateAttributeSectionAction
     /**
      * @param  array<string, mixed>  $data
      */
-    public function handle(CentralCategory $category, array $data): AttributeSection
+    public function handle(CentralCategory $category, array $data, ?User $actor = null): AttributeSection
     {
+        $categoryId = $category->id;
+
+        return app(SchemaRevision::class)->mutate($categoryId, SchemaMutationOrigin::SectionCreated, $category->id, fn () => $this->perform($category, $data), $actor);
+    }
+
+    private function perform(CentralCategory $category, array $data): AttributeSection
+    {
+        $category = CentralCategory::query()->findOrFail($category->id);
+
         $validated = Validator::make($data, [
             'name' => ['required', 'string', 'max:255'],
             'code' => [

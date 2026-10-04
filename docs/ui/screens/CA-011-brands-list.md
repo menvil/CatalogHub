@@ -4,7 +4,7 @@ context: central-admin
 purpose: Operate and locate canonical Brands with their derived catalog health.
 roles: authorized Central Admin catalog user
 route: /admin/central/brands
-viewports: desktop=1440x1000;medium=1024x900;tablet=768x1024;mobile=390x844
+viewports: desktop=1440x1000;compact-desktop=1280x900;medium=1024x900;tablet=768x1024;mobile=390x844
 fixture: brands-list-v3
 regions: central-shell;header-actions;summary-metrics;operational-filters;brand-health-table;row-actions;pagination
 actions: new-brand;view-detail;edit-brand;search;filter-country;filter-status;filter-category-coverage;filter-translation;filter-quality;sort;paginate;clear-filters
@@ -16,6 +16,8 @@ reference_version: brands-list-final-convergence-v3
 ---
 
 # CA-011 — Brands List
+
+**Final converged / accepted — Brands Phase 18.6.** See [section acceptance and closure](../brands-section-acceptance.md) for the cross-screen, permission and verification evidence.
 
 ## Product contract
 
@@ -67,13 +69,13 @@ Quality has its own column and shows the authoritative score plus `Complete` or 
 
 ## Read architecture and performance
 
-`CentralBrandListReadModelQuery` composes the database-backed Brand paginator with a bounded set of bulk reads: active Locales once, all relevant translations once, exact canonical logo assignments/variants once, Product counts in the page query, and one grouped distinct-Category count for the current page. `CentralBrandQualityBatchQuery` constructs the existing evaluator inputs and invokes `CentralBrandQualityEvaluator` in memory; `CentralBrandQualityQuery` delegates its single-Brand result to that same path. Query-count regression covers 1 versus 20 Brands and quality parity with CA-012.
+`CentralBrandListReadModelQuery` composes the database-backed Brand paginator with a bounded set of bulk reads: active Locales once, translations and exact canonical logo assignments/variants in bulk for the catalog-wide KPI/health filters, Product counts in the page query, and one grouped distinct-Category count for the current page. `CentralBrandQualityBatchQuery` constructs the existing evaluator inputs and invokes `CentralBrandQualityEvaluator` in memory; `CentralBrandQualityQuery` delegates its single-Brand result to that same path. Query-count regression covers 1 versus 20 Brands and quality parity with CA-012.
 
 No schema or cached percentage/count/health columns are introduced.
 
 ## Responsive and empty states
 
-The layout uses explicit breakpoints rather than incidental flex wrapping. At 1440px the five equal-priority KPIs and all six controls form single rows. At 1024px filters use three columns and the wide table scrolls only inside its surface. At 768px filters use two columns and the same contained table behavior applies. Below 640px filters use one column, New Brand follows the heading at full width, and table rows become intentional compact two-column cards: the 72×44 identity area, name, slug, lifecycle, translation coverage/reasons, Quality, Product and Category context, and action menu remain available. KPI cards use two columns at 390px with the fifth deliberately spanning the final row; below 368px they become one column. No state causes page-level horizontal overflow.
+The layout uses explicit breakpoints rather than incidental flex wrapping. At 1440px the five equal-priority KPIs and all six controls form single rows. At 1280px and 1024px filters use three columns and the wide table scrolls only inside its surface. At 768px filters use two columns and the same contained table behavior applies. Below 640px filters use one column, New Brand follows the heading at full width, and table rows become intentional compact two-column cards: the 72×44 identity area, name, slug, lifecycle, translation coverage/reasons, Quality, Product and Category context, and action menu remain available. KPI cards use two columns at 390px with the fifth deliberately spanning the final row; below 368px they become one column. No state causes page-level horizontal overflow.
 
 Database-empty state explains the catalog is empty and offers New Brand; filtered-empty state offers the same global Clear filters contract. Zero metrics remain numeric zero without divide-by-zero output. Select menus choose top or bottom placement from the available viewport space; the footer per-page menu therefore opens upward when needed and never expands the document merely to expose its options. Row-action panels use the same viewport-aware principle with fixed overlay positioning, so a one-result table and contained horizontal scrolling cannot clip View/Edit.
 

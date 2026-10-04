@@ -23,8 +23,8 @@ final class BrowserHarnessContractTest extends TestCase
         ));
         $config = (string) file_get_contents($root.'/playwright.config.mjs');
 
-        self::assertSame('1.62.1', $package['devDependencies']['@playwright/test'] ?? null);
-        self::assertSame('1.62.1', $lock['packages']['node_modules/@playwright/test']['version'] ?? null);
+        self::assertSame('1.63.0', $package['devDependencies']['@playwright/test'] ?? null);
+        self::assertSame('1.63.0', $lock['packages']['node_modules/@playwright/test']['version'] ?? null);
         self::assertStringContainsString('CATALOGHUB_BROWSER_PORT=8014', $package['scripts']['test:browser'] ?? '');
         self::assertStringContainsString('CATALOGHUB_BROWSER_PORT=8015', $package['scripts']['test:visual'] ?? '');
         self::assertStringContainsString("trace: 'retain-on-failure'", $config);

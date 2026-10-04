@@ -12,12 +12,19 @@ use App\Exceptions\CategorySchema\CannotTransitionCategorySchemaStatusException;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class CategorySchemaStatusActionsTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->actingAs(User::factory()->centralAdmin()->create());
+    }
 
     public function test_casts_category_schema_status_to_enum(): void
     {
@@ -43,6 +50,7 @@ class CategorySchemaStatusActionsTest extends TestCase
     {
         $category = CentralCategory::factory()->create([
             'schema_status' => CategorySchemaStatus::Reviewed,
+            'schema_reviewed_revision' => 1,
         ]);
 
         app(ApproveCategorySchemaAction::class)->handle($category);
@@ -54,6 +62,7 @@ class CategorySchemaStatusActionsTest extends TestCase
     {
         $category = CentralCategory::factory()->create([
             'schema_status' => CategorySchemaStatus::Reviewed,
+            'schema_reviewed_revision' => 1,
         ]);
         $attribute = AttributeDefinition::factory()->for($category, 'category')->create([
             'data_type' => AttributeDataType::Decimal,

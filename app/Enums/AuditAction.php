@@ -24,6 +24,18 @@ enum AuditAction: string
     case CatalogBrandLogoAssigned = 'catalog.brand.logo.assigned';
     case CatalogBrandLogoRemoved = 'catalog.brand.logo.removed';
     case CatalogBrandTranslationSaved = 'catalog.brand.translation.saved';
+    case CatalogCategoryCreated = 'catalog.category.created';
+    case CatalogCategoryUpdated = 'catalog.category.updated';
+    case CatalogCategoryReparented = 'catalog.category.reparented';
+    case CatalogCategoryReordered = 'catalog.category.reordered';
+    case CatalogCategoryActivated = 'catalog.category.activated';
+    case CatalogCategoryArchived = 'catalog.category.archived';
+    case CatalogCategoryRestored = 'catalog.category.restored';
+    case CatalogCategorySchemaReviewed = 'catalog.category.schema.reviewed';
+    case CatalogCategorySchemaApproved = 'catalog.category.schema.approved';
+    case CatalogCategorySchemaArchived = 'catalog.category.schema.archived';
+    case CatalogCategorySchemaRestored = 'catalog.category.schema.restored';
+    case CatalogCategorySchemaInvalidated = 'catalog.category.schema.invalidated';
     case TranslationApproved = 'translation.approved';
     case TranslationMarkedOutdated = 'translation.marked_outdated';
 }

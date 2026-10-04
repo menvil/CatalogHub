@@ -1,0 +1,160 @@
+<?php
+
+namespace Tests\Feature\Categories;
+
+use App\Actions\CategorySchema\CreateAttributeSectionAction;
+use App\Actions\CategorySchema\MarkCategorySchemaReviewedAction;
+use App\Actions\CentralCatalog\CreateCentralCategoryAction;
+use App\Enums\UserRole;
+use App\Filament\Resources\CentralCategoryResource;
+use App\Filament\Resources\CentralCategoryResource\Pages\CategorySchemaBuilder;
+use App\Filament\Resources\CentralCategoryResource\Pages\CreateCentralCategory;
+use App\Filament\Resources\CentralCategoryResource\Pages\EditCentralCategory;
+use App\Filament\Resources\CentralCategoryResource\Pages\ListCentralCategories;
+use App\Models\AuditLogEntry;
+use App\Models\CentralCatalog\CentralCategory;
+use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
+use Tests\TestCase;
+
+final class CategoryPermissionsTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_category_only_can_use_category_resource_but_not_schema_routes_or_actions(): void
+    {
+        $actor = User::factory()->create(['role' => UserRole::CatalogEditor]);
+        $category = CentralCategory::factory()->create();
+        $this->actingAs($actor)->get(CentralCategoryResource::getUrl('index'))->assertOk();
+        $this->get(CategorySchemaBuilder::getUrl(['record' => $category]))->assertForbidden();
+        try {
+            app(CreateAttributeSectionAction::class)->handle($category, ['name' => 'Specs', 'code' => 'specs']);
+            self::fail('Category permission mutated schema');
+        } catch (AuthorizationException) {
+            self::assertSame(0, $category->attributeSections()->count());
+            self::assertSame(0, AuditLogEntry::query()->count());
+        }
+        app(CreateCentralCategoryAction::class)->handle($actor, ['name' => 'Allowed', 'slug' => 'allowed'], 0);
+    }
+
+    public function test_schema_only_actor_reaches_schema_without_category_capability_and_cannot_create_categories(): void
+    {
+        config(['cataloghub_permissions.roles.catalog_editor' => ['central.panel.access', 'central.page.access', 'central.mutation.execute', 'catalog.schema.manage']]);
+        $actor = User::factory()->create(['role' => UserRole::CatalogEditor]);
+        $category = CentralCategory::factory()->create();
+        $this->actingAs($actor)->get(CategorySchemaBuilder::getUrl(['record' => $category]))->assertOk();
+        $this->get(CentralCategoryResource::getUrl('index'))->assertForbidden();
+        app(CreateAttributeSectionAction::class)->handle($category, ['name' => 'Specs', 'code' => 'specs']);
+        self::assertSame(2, $category->fresh()->schema_revision);
+        $this->expectException(AuthorizationException::class);
+        app(CreateCentralCategoryAction::class)->handle($actor, ['name' => 'Denied', 'slug' => 'denied'], 0);
+    }
+
+    public function test_translation_site_only_disabled_and_guest_actors_fail_closed(): void
+    {
+        $category = CentralCategory::factory()->create();
+        foreach ([UserRole::Translator, UserRole::SiteAdmin, UserRole::Moderator] as $role) {
+            $actor = User::factory()->create(['role' => $role]);
+            $this->actingAs($actor)->get(CentralCategoryResource::getUrl('index'))->assertForbidden();
+            $this->get(CategorySchemaBuilder::getUrl(['record' => $category]))->assertForbidden();
+            foreach ([false, true] as $schema) {
+                try {
+                    if ($schema) {
+                        app(MarkCategorySchemaReviewedAction::class)->handle($category, 1, $actor);
+                    } else {
+                        app(CreateCentralCategoryAction::class)->handle($actor, ['name' => 'Denied', 'slug' => 'denied'], 0);
+                    }
+                    self::fail('Unauthorized mutation succeeded');
+                } catch (AuthorizationException) {
+                    self::assertSame(0, AuditLogEntry::query()->count());
+                }
+            }
+        }
+        $disabled = User::factory()->centralAdmin()->disabled()->create();
+        try {
+            app(CreateCentralCategoryAction::class)->handle($disabled, ['name' => 'Denied', 'slug' => 'denied'], 0);
+            self::fail('Disabled mutation succeeded');
+        } catch (AuthorizationException) {
+            self::assertSame(1, CentralCategory::query()->count());
+        }
+        auth()->logout();
+        $this->expectException(AuthorizationException::class);
+        app(CreateAttributeSectionAction::class)->handle($category, ['name' => 'Denied', 'code' => 'denied']);
+    }
+
+    public function test_read_capability_does_not_imply_central_mutation_and_gets_are_read_only(): void
+    {
+        config(['cataloghub_permissions.roles.catalog_editor' => ['central.panel.access', 'central.page.access', 'catalog.schema.manage', 'catalog.categories.manage']]);
+        $actor = User::factory()->create(['role' => UserRole::CatalogEditor]);
+        $category = CentralCategory::factory()->create();
+        $this->actingAs($actor);
+        $before = $category->fresh()->toJson();
+        $this->get(CentralCategoryResource::getUrl('index'))->assertOk();
+        $this->get(CategorySchemaBuilder::getUrl(['record' => $category]))->assertOk();
+        self::assertFalse(CentralCategoryResource::canCreate());
+        self::assertFalse(CentralCategoryResource::canEdit($category));
+        foreach ([false, true] as $schema) {
+            try {
+                if ($schema) {
+                    app(CreateAttributeSectionAction::class)->handle($category, ['name' => 'Denied', 'code' => 'denied']);
+                } else {
+                    app(CreateCentralCategoryAction::class)->handle($actor, ['name' => 'Denied', 'slug' => 'denied'], 0);
+                }
+                self::fail('Missing Central mutation accepted');
+            } catch (AuthorizationException) {
+                self::assertSame(0, AuditLogEntry::query()->count());
+            }
+        }
+        self::assertSame($before, $category->fresh()->toJson());
+    }
+
+    public function test_legacy_create_edit_parent_and_lifecycle_use_authoritative_actions(): void
+    {
+        $actor = User::factory()->centralAdmin()->create();
+        $this->actingAs($actor);
+        Livewire::test(CreateCentralCategory::class)->fillForm(['name' => 'Parent', 'slug' => 'parent'])->call('create')->assertHasNoFormErrors();
+        $parent = CentralCategory::query()->sole();
+        Livewire::test(CreateCentralCategory::class)->fillForm(['name' => 'Child', 'slug' => 'child', 'parent_id' => $parent->id, 'new_hierarchy_revision' => 0])->call('create')->assertHasNoFormErrors();
+        $child = CentralCategory::query()->where('slug', 'child')->sole();
+        self::assertSame($parent->id, $child->parent_id);
+        Livewire::test(EditCentralCategory::class, ['record' => $child->id])
+            ->fillForm(['name' => 'Changed', 'parent_id' => null, 'new_hierarchy_revision' => 1])->call('save')->assertHasNoFormErrors();
+        self::assertNull($child->fresh()->parent_id);
+        self::assertSame('Changed', $child->fresh()->name);
+        self::assertSame(1, $child->fresh()->position);
+        self::assertSame(1, AuditLogEntry::query()->where('action', 'catalog.category.reparented')->count());
+        self::assertSame(1, AuditLogEntry::query()->where('action', 'catalog.category.updated')->count());
+        Livewire::test(EditCentralCategory::class, ['record' => $child->id])->callAction('archive')->assertHasNoActionErrors();
+        self::assertSame('archived', $child->fresh()->status->value);
+    }
+
+    public function test_legacy_native_reorder_and_status_payloads_cannot_bypass_actions(): void
+    {
+        $actor = User::factory()->centralAdmin()->create();
+        $this->actingAs($actor);
+        $a = CentralCategory::factory()->create(['position' => 0]);
+        $b = CentralCategory::factory()->create(['position' => 1]);
+        Livewire::test(ListCentralCategories::class)->call('reorderTable', [$b->id, $a->id]);
+        self::assertSame([0, 1], [$a->fresh()->position, $b->fresh()->position]);
+        Livewire::test(EditCentralCategory::class, ['record' => $a->id])
+            ->fillForm(['status' => 'active', 'schema_status' => 'approved'])
+            ->call('save')->assertHasNoFormErrors();
+        self::assertSame('draft', $a->fresh()->status->value);
+        self::assertSame('draft', $a->fresh()->schema_status->value);
+        self::assertSame(0, AuditLogEntry::query()->count());
+    }
+
+    public function test_legacy_identity_validation_failure_rolls_back_combined_reparent_and_audit(): void
+    {
+        $actor = User::factory()->centralAdmin()->create();
+        $this->actingAs($actor);
+        $parent = CentralCategory::factory()->create();
+        $child = CentralCategory::factory()->create(['parent_id' => $parent->id]);
+        Livewire::test(EditCentralCategory::class, ['record' => $child->id])
+            ->fillForm(['slug' => $parent->slug, 'parent_id' => null, 'new_hierarchy_revision' => 0])->call('save')->assertHasFormErrors(['slug']);
+        self::assertSame($parent->id, $child->fresh()->parent_id);
+        self::assertSame(0, AuditLogEntry::query()->count());
+    }
+}

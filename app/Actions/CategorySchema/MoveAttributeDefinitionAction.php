@@ -2,15 +2,28 @@
 
 namespace App\Actions\CategorySchema;
 
+use App\Enums\SchemaMutationOrigin;
 use App\Exceptions\CategorySchema\CannotMoveAttributeDefinitionException;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeSection;
+use App\Models\User;
+use App\Services\CategorySchema\SchemaRevision;
 use Illuminate\Support\Facades\DB;
 
 final class MoveAttributeDefinitionAction
 {
-    public function handle(AttributeDefinition $attribute, AttributeSection $targetSection, int $position): AttributeDefinition
+    public function handle(AttributeDefinition $attribute, AttributeSection $targetSection, int $position, ?User $actor = null): AttributeDefinition
     {
+        $categoryId = $attribute->central_category_id;
+
+        return app(SchemaRevision::class)->mutate($categoryId, SchemaMutationOrigin::AttributeMoved, $attribute->id, fn () => $this->perform($attribute, $targetSection, $position), $actor);
+    }
+
+    private function perform(AttributeDefinition $attribute, AttributeSection $targetSection, int $position): AttributeDefinition
+    {
+        $attribute = AttributeDefinition::query()->findOrFail($attribute->id);
+        $targetSection = AttributeSection::query()->findOrFail($targetSection->id);
+
         if ($attribute->central_category_id !== $targetSection->central_category_id) {
             throw CannotMoveAttributeDefinitionException::targetSectionBelongsToDifferentCategory();
         }

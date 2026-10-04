@@ -8,7 +8,7 @@ Administrative mutations write their domain state and audit entry in one databas
 
 ## Brand activity contract
 
-Categories / Schema does not yet have Brand-grade action audit. Phase 19.0 reserves its future event names, semantic snapshot fields, subjects, transaction/no-op rules and aggregated global-entity activity in [ADR-0003's audit registry](adr/0003-categories-schema-ownership.md#required-audit-registry-future-implementation). This is planning only; no new enum events or actions exist until the owning foundation/implementation phase.
+Phase 19.1 implements Category core and schema lifecycle/invalidation audit through the existing AuditAction/AuditRecorder architecture. Its [foundation contract](category-foundation.md) records transaction, snapshot, no-op and rollback behavior. [ADR-0003's registry](adr/0003-categories-schema-ownership.md#required-audit-registry-future-implementation) retains reserved future per-entity/config/translation events; those are not implemented prematurely.
 
 All Brand events use `CentralBrand` as the subject, `central` context for Central Admin requests, and a null site. The registry is:
 
@@ -33,3 +33,11 @@ Brand Country persistence is an intentional schema/event exception: `central_bra
 External-identity audit is intentionally Brand-centric: the subject is `CentralBrand`, never the identity row or `ImportSource`. Snapshots exclude `central_brand_external_identity_id`, Brand/source database IDs, `external_id_hash`, source description, and `config_json`; they never serialize an ImportSource model. Human linkage history is not import observation history.
 
 Derived Category coverage is not a Brand mutation and is not Brand-audited. Product category/status changes retain their Product-domain history without cascading `Brand categories changed` noise.
+
+## Phase 19.1 Category activity contract
+
+Implemented events: `catalog.category.created`, `.updated`, `.reparented`, `.reordered`, `.activated`, `.archived`, `.restored`; and `catalog.category.schema.reviewed`, `.approved`, `.archived`, `.restored`, `.invalidated`.
+
+Core snapshots are event-specific: creation uses Category/source identity, parent reference, position/status and affected scope revision; identity update uses changed name/slug fields; reparent/order uses parent reference, deterministic ordered IDs and old/new scope revisions; lifecycle uses status only. Category is the subject except sibling reorder, whose stable hierarchy-scope subject also represents root without inventing a Category. Central context always has null Site.
+
+Schema snapshots use Category identity, schema status/revision, reviewed/approved revisions and (invalidation only) bounded enum reason/origin entity identity. Actor/time are recorded by the audit entry and attributed state, not invented for legacy rows. Semantic invalidation emits exactly one event even when the schema is already Draft. No-op/GET/rejected actions emit none. Domain writes and audit share one transaction; tests inject AuditRecorder failures to prove rollback of create/identity/order/reparent/lifecycle/schema changes. Arbitrary models, template/config JSON, Product values and translated bodies are excluded.

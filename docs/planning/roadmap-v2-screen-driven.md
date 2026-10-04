@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Roadmap version | 2.2.0 |
+| Roadmap version | 2.3.0 |
 | Status | Proposed; contract/registry approval required |
 | Delivery mode | Serial-first |
 | Unit of delivery | One agent, one active work package/MR |
@@ -10,7 +10,7 @@
 
 ## Current section — Categories / Schema (Phase 19)
 
-Brands CA-011…CA-015 closed in Phase 18.6 / PR #611. Current work is **19.0 discovery + visual gap audit + architecture freeze only**, based on develop `fea2cc7bc71e2972074d7ebe2b7e20319abf04b4`. No feature implementation starts in this MR. [ADR-0003](../architecture/adr/0003-categories-schema-ownership.md), [screen audit](../ui/categories-schema-visual-gap-audit.md) and [migration map](categories-schema-migration-map.md) replace the original Phase 03 assumption for CA-016…CA-026. Units / Measurements CA-027…CA-032 remains a later dedicated section.
+Brands CA-011…CA-015 closed in Phase 18.6 / PR #611. Phase 19.0 merged in PR #612. **Category Core & Hierarchy Foundation — COMPLETE (19.1)**, based on develop `864ea5e4aeca0267ff24954e0fce27413d23644a`. Next: **19.2 Global Attribute + Category Assignment Foundation**. No CA-016/new screen has started. See the [foundation contract](../architecture/category-foundation.md). [ADR-0003](../architecture/adr/0003-categories-schema-ownership.md), [screen audit](../ui/categories-schema-visual-gap-audit.md) and [migration map](categories-schema-migration-map.md) replace the original Phase 03 assumption for CA-016…CA-026. Units / Measurements CA-027…CA-032 remains a later dedicated section.
 
 ## Execution rules
 
@@ -154,7 +154,7 @@ Each row is one serial work package/MR and depends on the preceding merged gate.
 | Phase | Work package | Schema/model changes | Required gate before next phase |
 | --- | --- | --- | --- |
 | 19.0 | Discovery + Architecture Freeze | None implemented; document required future changes | Full domain/FK/service audit, A/B/C/D screen tables, frozen decisions/permissions/audit/deferred list; exact sources/hashes; validation; no feature code. Stop here in this MR. |
-| 19.1 | Category Core & Hierarchy Foundation | Hierarchy/schema revision + review/approval metadata | Cycle-safe/revision-checked hierarchy, archive/restore, transactional actions/audit, capability split; inventory legacy shapes. No CA-016 UI. |
+| 19.1 | Category Core & Hierarchy Foundation — **COMPLETE** | Dedicated hierarchy scope/revision table; schema revision + review/approval metadata, safe additive backfill | Shared root mutex and sibling revisions, deterministic locks/order, explicit Category lifecycle, schema invalidation/lifecycle, transactional audit, capability split and read-only legacy diagnostics; SQLite/PostgreSQL/MariaDB acceptance. No CA-016 UI. |
 | 19.2 | Global Attribute + Category Assignment Foundation | Assignments/crosswalk/global uniqueness, measurement pair FKs, Locale identity reconciliation, Import membership transition | Preserve Product values/Import mapping/draft/content/option/translation/display references, review deduplication collisions, no cascade loss; expand with compatibility. |
 | 19.3 | Schema Consumer Convergence | Facet assignment FK, comparison base rows, versioned projection/export contract, retire obsolete columns/flags after cutover | Product Specs, Imports, Facets, Search, Public comparison, Projections, translations and units consume new ownership; freshness fan-out/rebuild; losslessness/concurrency tests pass. |
 | 19.4 | CA-016 Categories List | None beyond merged foundations | Real counts, hierarchy/search/lifecycle/derived schema/Locale/Site selection semantics, responsive list acceptance. |

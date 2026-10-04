@@ -2,9 +2,12 @@
 
 namespace App\Actions\CategorySchema;
 
+use App\Enums\SchemaMutationOrigin;
 use App\Exceptions\CategorySchema\CannotManageAttributeOptionException;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
+use App\Models\User;
+use App\Services\CategorySchema\SchemaRevision;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -15,8 +18,17 @@ final class CreateAttributeOptionAction
     /**
      * @param  array<string, mixed>  $data
      */
-    public function handle(AttributeDefinition $attribute, array $data): AttributeOption
+    public function handle(AttributeDefinition $attribute, array $data, ?User $actor = null): AttributeOption
     {
+        $categoryId = $attribute->central_category_id;
+
+        return app(SchemaRevision::class)->mutate($categoryId, SchemaMutationOrigin::OptionCreated, $attribute->id, fn () => $this->perform($attribute, $data), $actor);
+    }
+
+    private function perform(AttributeDefinition $attribute, array $data): AttributeOption
+    {
+        $attribute = AttributeDefinition::query()->findOrFail($attribute->id);
+
         if (! $attribute->data_type->allowsOptions()) {
             throw CannotManageAttributeOptionException::attributeDoesNotAllowOptions();
         }

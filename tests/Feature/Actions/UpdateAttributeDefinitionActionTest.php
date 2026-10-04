@@ -8,6 +8,7 @@ use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -15,6 +16,12 @@ use Tests\TestCase;
 class UpdateAttributeDefinitionActionTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->actingAs(User::factory()->centralAdmin()->create());
+    }
 
     public function test_updates_attribute_definition(): void
     {

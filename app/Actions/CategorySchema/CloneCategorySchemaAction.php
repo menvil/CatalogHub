@@ -2,17 +2,30 @@
 
 namespace App\Actions\CategorySchema;
 
-use App\Enums\CategorySchemaStatus;
+use App\Enums\SchemaMutationOrigin;
 use App\Exceptions\CategorySchema\CannotCloneCategorySchemaException;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Models\User;
+use App\Services\CategorySchema\SchemaRevision;
 use Illuminate\Support\Facades\DB;
 
 final class CloneCategorySchemaAction
 {
-    public function handle(CentralCategory $source, CentralCategory $target): void
+    public function handle(CentralCategory $source, CentralCategory $target, ?User $actor = null): void
     {
+        $categoryId = $target->id;
+        app(SchemaRevision::class)->mutate($categoryId, SchemaMutationOrigin::SchemaCloned, $source->id, function () use ($source, $target): void {
+            $this->perform($source, $target);
+        }, $actor, [$source->id]);
+    }
+
+    private function perform(CentralCategory $source, CentralCategory $target): void
+    {
+        $source = CentralCategory::query()->findOrFail($source->id);
+        $target = CentralCategory::query()->findOrFail($target->id);
+
         if ($source->is($target)) {
             throw CannotCloneCategorySchemaException::sourceAndTargetAreSame();
         }
@@ -87,7 +100,6 @@ final class CloneCategorySchemaAction
                 }
             }
 
-            $lockedTarget->update(['schema_status' => CategorySchemaStatus::Draft]);
         });
     }
 }

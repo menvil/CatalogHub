@@ -37,7 +37,8 @@ final class AttributeDefinition extends Model
     /** @use HasFactory<AttributeDefinitionFactory> */
     use HasFactory;
 
-    public const MAX_POSITION = 4294967295;
+    // PostgreSQL stores Laravel unsignedInteger as signed INTEGER.
+    public const MAX_POSITION = 2147483647;
 
     protected $table = 'attribute_definitions';
 

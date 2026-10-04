@@ -15,6 +15,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * @property CentralCategoryStatus $status
  * @property CategorySchemaStatus $schema_status
+ * @property int $schema_revision
+ * @property int|null $schema_reviewed_revision
+ * @property int|null $schema_approved_revision
  */
 #[Fillable(['parent_id', 'name', 'slug', 'status', 'schema_status', 'position'])]
 final class CentralCategory extends Model
@@ -23,6 +26,8 @@ final class CentralCategory extends Model
     use HasFactory;
 
     protected $table = 'central_categories';
+
+    protected $attributes = ['schema_revision' => 1];
 
     protected static function newFactory(): CentralCategoryFactory
     {
@@ -33,6 +38,14 @@ final class CentralCategory extends Model
     {
         return [
             'position' => 'integer',
+            'parent_id' => 'integer',
+            'schema_revision' => 'integer',
+            'schema_reviewed_revision' => 'integer',
+            'schema_approved_revision' => 'integer',
+            'schema_reviewed_by_user_id' => 'integer',
+            'schema_approved_by_user_id' => 'integer',
+            'schema_reviewed_at' => 'datetime',
+            'schema_approved_at' => 'datetime',
             'status' => CentralCategoryStatus::class,
             'schema_status' => CategorySchemaStatus::class,
         ];

@@ -10,6 +10,7 @@ use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -17,10 +18,16 @@ class CloneCategorySchemaActionTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->actingAs(User::factory()->centralAdmin()->create());
+    }
+
     public function test_clones_category_schema_sections_attributes_and_options(): void
     {
         $source = CentralCategory::factory()->create(['schema_status' => CategorySchemaStatus::Approved]);
-        $target = CentralCategory::factory()->create(['schema_status' => CategorySchemaStatus::Archived]);
+        $target = CentralCategory::factory()->create(['schema_status' => CategorySchemaStatus::Draft]);
 
         $section = AttributeSection::factory()->for($source, 'category')->create([
             'code' => 'display',

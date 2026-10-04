@@ -4,7 +4,10 @@ namespace App\Actions\CategorySchema;
 
 use App\Actions\CategorySchema\Concerns\ValidatesAttributeDefinitionData;
 use App\Enums\AttributeDataType;
+use App\Enums\SchemaMutationOrigin;
 use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\User;
+use App\Services\CategorySchema\SchemaRevision;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -15,8 +18,17 @@ final class UpdateAttributeDefinitionAction
     /**
      * @param  array<string, mixed>  $data
      */
-    public function handle(AttributeDefinition $attribute, array $data): AttributeDefinition
+    public function handle(AttributeDefinition $attribute, array $data, ?User $actor = null): AttributeDefinition
     {
+        $categoryId = $attribute->central_category_id;
+
+        return app(SchemaRevision::class)->mutate($categoryId, SchemaMutationOrigin::AttributeUpdated, $attribute->id, fn () => $this->perform($attribute, $data), $actor);
+    }
+
+    private function perform(AttributeDefinition $attribute, array $data): AttributeDefinition
+    {
+        $attribute = AttributeDefinition::query()->findOrFail($attribute->id);
+
         $validated = Validator::make(
             $data,
             $this->validationRules($attribute->central_category_id, $attribute->getKey()),
@@ -32,7 +44,7 @@ final class UpdateAttributeDefinitionAction
             ]);
         }
 
-        $attribute->update([
+        $attribute->fill([
             'code' => $validated['code'],
             'name' => $validated['name'],
             'data_type' => $dataType,
@@ -46,6 +58,10 @@ final class UpdateAttributeDefinitionAction
             'is_visible' => $validated['is_visible'] ?? $attribute->is_visible,
             'is_searchable' => $validated['is_searchable'] ?? $attribute->is_searchable,
         ]);
+
+        if ($attribute->isDirty()) {
+            $attribute->saveOrFail();
+        }
 
         return $attribute;
     }

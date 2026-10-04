@@ -2,7 +2,10 @@
 
 namespace App\Actions\CategorySchema;
 
+use App\Enums\SchemaMutationOrigin;
 use App\Models\CentralCatalog\AttributeSection;
+use App\Models\User;
+use App\Services\CategorySchema\SchemaRevision;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -11,8 +14,17 @@ final class UpdateAttributeSectionAction
     /**
      * @param  array<string, mixed>  $data
      */
-    public function handle(AttributeSection $section, array $data): AttributeSection
+    public function handle(AttributeSection $section, array $data, ?User $actor = null): AttributeSection
     {
+        $categoryId = $section->central_category_id;
+
+        return app(SchemaRevision::class)->mutate($categoryId, SchemaMutationOrigin::SectionUpdated, $section->id, fn () => $this->perform($section, $data), $actor);
+    }
+
+    private function perform(AttributeSection $section, array $data): AttributeSection
+    {
+        $section = AttributeSection::query()->findOrFail($section->id);
+
         $validated = Validator::make($data, [
             'name' => ['required', 'string', 'max:255'],
             'code' => [
@@ -30,7 +42,7 @@ final class UpdateAttributeSectionAction
             'is_visible' => ['nullable', 'boolean'],
         ])->validate();
 
-        $section->update([
+        $section->fill([
             'code' => $validated['code'],
             'name' => $validated['name'],
             'position' => $validated['position'] ?? $section->position,
@@ -38,6 +50,10 @@ final class UpdateAttributeSectionAction
             'is_collapsible' => $validated['is_collapsible'] ?? $section->is_collapsible,
             'is_visible' => $validated['is_visible'] ?? $section->is_visible,
         ]);
+
+        if ($section->isDirty()) {
+            $section->saveOrFail();
+        }
 
         return $section;
     }

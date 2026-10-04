@@ -919,20 +919,22 @@
         grid-template-columns: repeat(5, minmax(0, 1fr));
     }
 
+    .brand-list-pagination {
+        grid-template-columns: 1fr auto auto;
+    }
+
+    .brand-list-pagination > p {
+        grid-column: auto;
+    }
+}
+
+@media (width >= 90rem) {
     .brand-list-filters {
         grid-template-columns: minmax(12rem, 1.6fr) repeat(5, minmax(7rem, 1fr)) auto;
     }
 
     .brand-list-search,
     .brand-list-active-filters {
-        grid-column: auto;
-    }
-
-    .brand-list-pagination {
-        grid-template-columns: 1fr auto auto;
-    }
-
-    .brand-list-pagination > p {
         grid-column: auto;
     }
 }
@@ -1108,6 +1110,16 @@
 /* CA-015: independent locale direction belongs to field content, never the shell. */
 .brand-translation-heading {
     padding-bottom: .75rem;
+    flex-wrap: wrap;
+}
+
+.brand-translation-heading [data-page-actions] {
+    max-width: 100%;
+}
+
+.brand-translation-heading [data-page-actions] > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .brand-translation-page {

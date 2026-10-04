@@ -4,15 +4,19 @@ namespace App\Filament\Resources;
 
 use App\Enums\CategorySchemaStatus;
 use App\Enums\CentralCategoryStatus;
+use App\Enums\Permission;
 use App\Filament\Resources\CentralCategoryResource\Pages;
 use App\Models\CentralCatalog\CentralCategory;
-use App\Models\User;
+use App\Services\Categories\CategoryAccess;
+use App\Services\Categories\CategoryHierarchy;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -45,20 +49,27 @@ final class CentralCategoryResource extends Resource
 
     public static function canCreate(): bool
     {
-        return self::canManageCategories();
+        return self::canManageCategories(true);
     }
 
     public static function canEdit(Model $record): bool
     {
-        return self::canManageCategories();
+        return self::canManageCategories(true);
     }
 
-    private static function canManageCategories(): bool
+    public static function canDelete(Model $record): bool
     {
-        $user = auth()->user();
+        return false;
+    }
 
-        return $user instanceof User
-            && $user->can('catalog.categories.manage');
+    public static function canDeleteAny(): bool
+    {
+        return false;
+    }
+
+    private static function canManageCategories(bool $mutation = false): bool
+    {
+        return app(CategoryAccess::class)->allows(Permission::CatalogCategoriesManage, $mutation);
     }
 
     public static function form(Schema $schema): Schema
@@ -67,6 +78,10 @@ final class CentralCategoryResource extends Resource
             ->components([
                 Select::make('parent_id')
                     ->label('Parent category')
+                    ->live()
+                    ->afterStateUpdated(function ($state, Set $set): void {
+                        $set('new_hierarchy_revision', app(CategoryHierarchy::class)->revision($state === null || $state === '' ? null : (int) $state));
+                    })
                     ->relationship(
                         'parent',
                         'name',
@@ -75,6 +90,7 @@ final class CentralCategoryResource extends Resource
                             : $query,
                         ignoreRecord: true,
                     )
+                    ->saveRelationshipsUsing(null)
                     ->searchable()
                     ->preload(),
                 TextInput::make('name')
@@ -84,20 +100,10 @@ final class CentralCategoryResource extends Resource
                     ->required()
                     ->maxLength(255)
                     ->unique(ignoreRecord: true),
-                Select::make('status')
-                    ->required()
-                    ->options(CentralCategoryStatus::options())
-                    ->default(CentralCategoryStatus::default()->value),
-                Select::make('schema_status')
-                    ->label('Schema status')
-                    ->required()
-                    ->options(CategorySchemaStatus::options())
-                    ->default(CategorySchemaStatus::default()->value),
-                TextInput::make('position')
-                    ->required()
-                    ->integer()
-                    ->minValue(0)
-                    ->default(0),
+                Hidden::make('old_hierarchy_revision')->default(fn (): int => app(CategoryHierarchy::class)->revision(null)),
+                Hidden::make('new_hierarchy_revision')->default(fn (): int => app(CategoryHierarchy::class)->revision(null)),
+                TextInput::make('status')->disabled()->dehydrated(false)->default('draft'),
+                TextInput::make('schema_status')->label('Schema status')->disabled()->dehydrated(false)->default('draft'),
             ]);
     }
 
@@ -133,6 +139,7 @@ final class CentralCategoryResource extends Resource
                 Action::make('schema')
                     ->label('Schema')
                     ->icon(Heroicon::OutlinedAdjustmentsHorizontal)
+                    ->visible(fn (): bool => app(CategoryAccess::class)->allows(Permission::CatalogSchemaManage))
                     ->url(fn (CentralCategory $record): string => self::getUrl('schema', ['record' => $record])),
                 EditAction::make(),
             ]);

@@ -9,6 +9,7 @@ use App\Enums\AttributeDataType;
 use App\Exceptions\CategorySchema\CannotManageAttributeOptionException;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -16,6 +17,12 @@ use Tests\TestCase;
 class AttributeOptionActionsTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->actingAs(User::factory()->centralAdmin()->create());
+    }
 
     public function test_creates_option_for_enum_attribute(): void
     {

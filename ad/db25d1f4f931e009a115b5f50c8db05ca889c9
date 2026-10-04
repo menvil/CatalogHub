@@ -1,0 +1,39 @@
+app/Http/Requests/CentralAdmin/Translations/BrandTranslationSourceRequest.php
+  s_9298cf6d02b081::t_6b1dcdba98e442 8,31-37
+tests/Feature/Central/BrandTranslationSourceSelectionTest.php
+  s_9298cf6d02b081::t_6b1dcdba98e442 107,110
+resources/views/central-admin/brands/translations.blade.php
+  s_9298cf6d02b081::t_c0e0eb1533fba0 165,167,182
+tests/Frontend/visual-runner.test.mjs
+  s_9298cf6d02b081::t_fbdcc05348c84c 24,35-36,55
+resources/js/admin/brand-translations.js
+  s_9298cf6d02b081::t_c0e0eb1533fba0 26-32,40
+tests/Browser/Acceptance/brand-translations.spec.mjs
+  s_9298cf6d02b081::t_c0e0eb1533fba0 278-285
+tools/visual/lifecycle.mjs
+  s_9298cf6d02b081::t_fbdcc05348c84c 10-14,27-35,49-54
+tools/visual/run.mjs
+  s_9298cf6d02b081::t_fbdcc05348c84c 2,15-33,40-45,51,53,57,80,83,90,92-93
+tests/Frontend/visual-lifecycle.test.mjs
+  s_9298cf6d02b081::t_88a76d3be43b0f 6-47
+docs/testing/visual-tests.md
+  s_9298cf6d02b081::t_e1f6363a211d25 11-12,15
+tests/Frontend/visual-environment.test.mjs
+  s_9298cf6d02b081::t_fbdcc05348c84c 43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "addb25d1f4f931e009a115b5f50c8db05ca889c9",
+  "prompts": {},
+  "sessions": {
+    "s_9298cf6d02b081": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a105d9-5bc1-7c82-a8c4-0457a79f1d44",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

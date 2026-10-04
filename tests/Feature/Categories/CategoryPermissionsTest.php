@@ -4,6 +4,7 @@ namespace Tests\Feature\Categories;
 
 use App\Actions\CategorySchema\CreateAttributeSectionAction;
 use App\Actions\CategorySchema\MarkCategorySchemaReviewedAction;
+use App\Actions\CategorySchema\RestoreCategorySchemaAction;
 use App\Actions\CentralCatalog\CreateCentralCategoryAction;
 use App\Enums\CentralCategoryStatus;
 use App\Enums\UserRole;
@@ -170,6 +171,20 @@ final class CategoryPermissionsTest extends TestCase
                 $page->assertActionHidden('activate')->assertActionHidden('archive')->assertActionVisible('restore');
             }
         }
+    }
+
+    public function test_concurrent_schema_restore_rejection_is_a_validation_response(): void
+    {
+        $this->actingAs(User::factory()->centralAdmin()->create());
+        $category = CentralCategory::factory()->create(['schema_status' => 'archived']);
+        $page = Livewire::test(CategorySchemaBuilder::class, ['record' => $category->id]);
+        app(RestoreCategorySchemaAction::class)->handle($category);
+        app(MarkCategorySchemaReviewedAction::class)->handle($category->fresh());
+        $before = $category->fresh()->getRawOriginal();
+        $auditCount = AuditLogEntry::query()->count();
+        $page->call('restoreSchema')->assertHasErrors(['schema_status']);
+        self::assertSame($before, $category->fresh()->getRawOriginal());
+        self::assertSame($auditCount, AuditLogEntry::query()->count());
     }
 
     public function test_clearing_the_parent_select_with_an_empty_string_reparents_to_root(): void

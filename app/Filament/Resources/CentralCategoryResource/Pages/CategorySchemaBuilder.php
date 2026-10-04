@@ -20,6 +20,7 @@ use App\Actions\CategorySchema\UpdateAttributeSectionAction;
 use App\DTO\CategorySchema\CategorySchemaIssue;
 use App\Enums\CategorySchemaStatus;
 use App\Enums\Permission;
+use App\Exceptions\CategorySchema\CannotTransitionCategorySchemaStatusException;
 use App\Filament\Resources\CentralCategoryResource;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
@@ -33,6 +34,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
 
 final class CategorySchemaBuilder extends Page
@@ -227,7 +229,11 @@ final class CategorySchemaBuilder extends Page
 
     public function restoreSchema(RestoreCategorySchemaAction $action): void
     {
-        $action->handle($this->getCategory(), $this->schemaRevision);
+        try {
+            $action->handle($this->getCategory(), $this->schemaRevision);
+        } catch (CannotTransitionCategorySchemaStatusException $exception) {
+            throw ValidationException::withMessages(['schema_status' => $exception->getMessage()]);
+        }
         $this->reloadSchema();
     }
 

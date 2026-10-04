@@ -17,7 +17,6 @@ use App\Models\CentralCatalog\CentralCategory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
-use RuntimeException;
 use Tests\TestCase;
 
 class CategorySchemaStatusActionsTest extends TestCase
@@ -182,7 +181,7 @@ class CategorySchemaStatusActionsTest extends TestCase
             }
             app($action)->handle($category);
             self::fail('A vetoed model save was accepted.');
-        } catch (RuntimeException $exception) {
+        } catch (CannotTransitionCategorySchemaStatusException|CannotApproveCategorySchemaException $exception) {
             self::assertInstanceOf($exceptionClass, $exception);
             self::assertSame('Category schema status could not be persisted.', $exception->getMessage());
         } finally {

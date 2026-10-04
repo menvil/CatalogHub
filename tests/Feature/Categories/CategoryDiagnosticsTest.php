@@ -25,6 +25,7 @@ final class CategoryDiagnosticsTest extends TestCase
 
     protected function tearDown(): void
     {
+        $this->truncateTablesForAllConnections();
         RefreshDatabaseState::$migrated = false;
         parent::tearDown();
     }

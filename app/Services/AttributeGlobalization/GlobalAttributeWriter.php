@@ -93,7 +93,7 @@ final readonly class GlobalAttributeWriter
         }, 3);
     }
 
-    private function uniqueCode(string $code, ?int $ignoreId = null): void
+    public function uniqueCode(string $code, ?int $ignoreId = null): void
     {
         $query = AttributeDefinition::query()->where(fn ($q) => $q->where('code', $code)->orWhere('canonical_code', $code));
         if ($ignoreId !== null) {

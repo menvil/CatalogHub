@@ -52,25 +52,26 @@ final class AttributeDependencies
         if (ContentRelation::query()->toBase()->where('related_type', 'attribute')->where('related_id', $id)->exists()) {
             $dependencies[] = 'content_relations';
         }
-        $drafts = NormalizedProductDraft::query()->toBase()->orderBy('id');
+        $assignmentCategoryIds = $definition->assignments()->pluck('central_category_id')->all();
+        $drafts = NormalizedProductDraft::query()->whereIn('status', ['pending_review', 'approved'])->orderBy('id');
         if ($categoryId !== null) {
             $drafts->where('category_id', $categoryId);
         }
         foreach ($drafts->cursor() as $draft) {
-            $candidates = json_decode((string) $draft->attributes_json, true);
+            $candidates = $draft->getAttribute('attributes_json');
             if (! is_array($candidates)) {
                 $dependencies[] = 'unreadable_draft_payload';
                 break;
             }
             foreach ($candidates as $candidate) {
                 if (! is_array($candidate) || ((int) ($candidate['attribute_definition_id'] ?? 0) === $id)
-                    || (($candidate['code'] ?? null) === $definition->code && ($categoryId !== null || (int) $draft->category_id === (int) $definition->central_category_id || $definition->assignments()->where('central_category_id', $draft->category_id)->exists()))) {
+                    || (($candidate['code'] ?? null) === $definition->code && ($categoryId !== null || (int) $draft->category_id === (int) $definition->central_category_id || in_array($draft->category_id, $assignmentCategoryIds, true)))) {
                     $dependencies[] = 'normalized_drafts';
                     break 2;
                 }
             }
         }
-        if ($categoryId === null && $definition->assignments()->count() > 1) {
+        if ($categoryId === null && count($assignmentCategoryIds) > 1) {
             $dependencies[] = 'multiple_category_assignments';
         }
         if ($categoryId !== null && (bool) $definition->is_comparable) {

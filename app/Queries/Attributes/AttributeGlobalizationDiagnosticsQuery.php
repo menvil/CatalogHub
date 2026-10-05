@@ -37,7 +37,8 @@ final class AttributeGlobalizationDiagnosticsQuery
         }
         $definitions = AttributeDefinition::query()->orderBy('id')->get();
         $assignments = CategoryAttributeAssignment::query()->orderBy('id')->get();
-        $crosswalks = AttributeDefinitionCrosswalk::query()->orderBy('legacy_definition_id')->get();
+        $crosswalks = AttributeDefinitionCrosswalk::query()->orderBy('legacy_definition_id')->get()->keyBy('legacy_definition_id');
+        $assignmentsById = $assignments->keyBy('id');
         $missingAssignments = [];
         $assignmentDrift = [];
         $unresolved = [];
@@ -56,7 +57,7 @@ final class AttributeGlobalizationDiagnosticsQuery
             if ($definition->central_category_id !== null && ! isset($membership[$definition->central_category_id.':'.$definition->id])) {
                 $missingAssignments[] = $definition->id;
             }
-            $localAssignment = $assignments->first(fn ($a) => $a->central_category_id === $definition->central_category_id && $a->attribute_definition_id === $definition->id);
+            $localAssignment = $assignmentsById->get($membership[$definition->central_category_id.':'.$definition->id] ?? null);
             if ($localAssignment !== null) {
                 foreach (LegacyAttributeBackfill::LOCAL_FIELDS as $field) {
                     if ($localAssignment->getAttribute($field) !== $definition->getAttribute($field)) {
@@ -64,7 +65,7 @@ final class AttributeGlobalizationDiagnosticsQuery
                     }
                 }
             }
-            $crosswalk = $crosswalks->firstWhere('legacy_definition_id', $definition->id);
+            $crosswalk = $crosswalks->get($definition->id);
             if ($definition->canonical_code === null || ($definition->central_category_id !== null && ($crosswalk === null || $crosswalk->canonical_definition_id === null))) {
                 $unresolved[] = $definition->id;
             }
@@ -80,6 +81,21 @@ final class AttributeGlobalizationDiagnosticsQuery
         $incompatible = [];
         $optionConflicts = [];
         $displayConflicts = [];
+        $duplicateDefinitionIds = [];
+        foreach ($groups as $group) {
+            if (count($group) > 1) {
+                foreach ($group as $definition) {
+                    $duplicateDefinitionIds[] = $definition->id;
+                }
+            }
+        }
+        $options = AttributeOption::query()->whereIn('attribute_definition_id', $duplicateDefinitionIds)->orderBy('code')->get(['id', 'attribute_definition_id', 'code', 'label', 'position', 'is_visible']);
+        $optionsByDefinition = $options->groupBy('attribute_definition_id');
+        $rulesByDefinition = AttributeDisplayRule::query()->whereIn('attribute_definition_id', $duplicateDefinitionIds)->orderBy('id')->get()->groupBy('attribute_definition_id');
+        $translationsByDefinition = AttributeTranslation::query()->whereIn('attribute_definition_id', $duplicateDefinitionIds)->orderBy('locale_id')->orderBy('id')->get()->groupBy('attribute_definition_id');
+        $translationsByOption = AttributeOptionTranslation::query()->whereIn('attribute_option_id', $options->pluck('id'))->orderBy('locale_id')->orderBy('id')->get()->groupBy('attribute_option_id');
+        $valuesByDefinition = CentralProductAttributeValue::query()->whereIn('attribute_definition_id', $duplicateDefinitionIds)->select(['attribute_definition_id', 'value_type'])->distinct()->orderBy('value_type')->get()->groupBy('attribute_definition_id');
+        $mappingsByDefinition = AttributeMapping::query()->whereIn('attribute_definition_id', $duplicateDefinitionIds)->orderBy('raw_key')->get(['attribute_definition_id', 'raw_key', 'mapping_type', 'status'])->groupBy('attribute_definition_id');
         foreach ($groups as $code => $group) {
             if (count($group) < 2) {
                 continue;
@@ -89,18 +105,18 @@ final class AttributeGlobalizationDiagnosticsQuery
             $optionHashes = [];
             $displayHashes = [];
             foreach ($group as $definition) {
-                $options = AttributeOption::query()->where('attribute_definition_id', $definition->id)->orderBy('code')->get(['id', 'code', 'label', 'position', 'is_visible']);
+                $options = $optionsByDefinition->get($definition->id, collect());
                 $optionHash = $this->hash($options->map(fn ($o) => $o->only(['code', 'label', 'position', 'is_visible']))->all());
-                $displayHash = $this->hash(AttributeDisplayRule::query()->where('attribute_definition_id', $definition->id)->orderBy('id')->get()->map(fn ($r) => $r->except(['id', 'attribute_definition_id', 'created_at', 'updated_at']))->all());
+                $displayHash = $this->hash($rulesByDefinition->get($definition->id, collect())->map(fn ($r) => $r->except(['id', 'attribute_definition_id', 'created_at', 'updated_at']))->all());
                 $optionHashes[] = $optionHash;
                 $displayHashes[] = $displayHash;
-                $translations = AttributeTranslation::query()->where('attribute_definition_id', $definition->id)->orderBy('locale_id')->orderBy('id')->get()->map(fn ($r) => $r->except(['id', 'attribute_definition_id', 'created_at', 'updated_at']))->all();
+                $translations = $translationsByDefinition->get($definition->id, collect())->map(fn ($r) => $r->except(['id', 'attribute_definition_id', 'created_at', 'updated_at']))->all();
                 $optionTranslations = [];
                 foreach ($options as $option) {
-                    $optionTranslations[$option->code] = AttributeOptionTranslation::query()->where('attribute_option_id', $option->id)->orderBy('locale_id')->get()->map(fn ($r) => $r->except(['id', 'attribute_option_id', 'created_at', 'updated_at']))->all();
+                    $optionTranslations[$option->code] = $translationsByOption->get($option->id, collect())->map(fn ($r) => $r->except(['id', 'attribute_option_id', 'created_at', 'updated_at']))->all();
                 }
-                $valueShapes = CentralProductAttributeValue::query()->where('attribute_definition_id', $definition->id)->orderBy('value_type')->pluck('value_type')->unique()->values()->all();
-                $mappingShapes = AttributeMapping::query()->where('attribute_definition_id', $definition->id)->orderBy('raw_key')->get(['raw_key', 'mapping_type', 'status'])->toArray();
+                $valueShapes = $valuesByDefinition->get($definition->id, collect())->pluck('value_type')->unique()->values()->all();
+                $mappingShapes = $mappingsByDefinition->get($definition->id, collect())->map(fn ($r) => $r->only(['raw_key', 'mapping_type', 'status']))->all();
                 $fingerprints[] = $this->hash([$definition->only(['name', 'data_type', 'dimension', 'canonical_unit', 'measurement_dimension_id', 'canonical_measurement_unit_id']), $optionHash, $displayHash, $translations, $optionTranslations, $valueShapes, $mappingShapes]);
             }
             $record = ['code' => $code, 'definition_ids' => $ids, 'status' => 'explicit_reconciliation_required'];
@@ -129,10 +145,10 @@ final class AttributeGlobalizationDiagnosticsQuery
         $productHash = hash_init('sha256');
         $productCount = 0;
         $canonicalIds = $crosswalks->pluck('canonical_definition_id', 'legacy_definition_id')->all();
-        foreach (CentralProductAttributeValue::query()->with('product:id,central_category_id')->orderBy('id')->cursor() as $value) {
+        foreach (CentralProductAttributeValue::query()->with('product:id,central_category_id')->orderBy('id')->lazyById(500) as $value) {
             $productCount++;
             hash_update($productHash, json_encode($value->getRawOriginal(), JSON_THROW_ON_ERROR)."\n");
-            if (! isset($membership[$value->product->central_category_id.':'.$value->attribute_definition_id])) {
+            if ($value->product === null || ! isset($membership[$value->product->central_category_id.':'.$value->attribute_definition_id])) {
                 $productMembership[] = ['value_id' => $value->id, 'product_id' => $value->central_product_id, 'definition_id' => $value->attribute_definition_id];
             }
             // Actual selected crosswalk target only; same code is never a proposed merge decision.

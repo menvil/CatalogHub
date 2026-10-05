@@ -7,10 +7,23 @@ use App\Models\Translations\AttributeSectionTranslation;
 use App\Models\Translations\AttributeTranslation;
 use App\Models\Translations\CategoryTranslation;
 use App\Models\Translations\UnitTranslation;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
 
 final class TranslationLocaleIdentity
 {
+    /** @template T of Model
+     * @param  T  $owner
+     * @return T
+     */
+    public function lockOwner(Model $owner): Model
+    {
+        // Acquire SQLite's write lock too, without changing facts or timestamps.
+        $owner::query()->whereKey($owner->getKey())->toBase()->update(['id' => $owner->getKey()]);
+
+        return $owner::query()->whereKey($owner->getKey())->lockForUpdate()->firstOrFail();
+    }
+
     public function assertUnambiguous(string $table, string $ownerColumn, int $ownerId, int $localeId): void
     {
         if ((match ($table) {

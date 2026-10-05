@@ -97,7 +97,7 @@ final class AttributeGlobalizationMigrationTest extends TestCase
         foreach ($tables as $table) {
             $before[$table] = $this->rows($table);
         }
-        $migration->up();
+        $this->withoutLiveBackfill(fn () => $migration->up());
         $localeMigration->up();
         foreach ($tables as $table) {
             foreach ($this->rows($table) as $index => $row) {
@@ -134,7 +134,7 @@ final class AttributeGlobalizationMigrationTest extends TestCase
         self::assertSame($stableOutput, json_encode($query->report($actor), JSON_THROW_ON_ERROR));
         $this->artisan('catalog:diagnose-attribute-globalization', ['--actor' => $actor->id])->assertExitCode(1);
         $localeMigration->down();
-        $migration->down();
+        $this->withoutLiveBackfill(fn () => $migration->down());
         foreach ($tables as $table) {
             self::assertSame($before[$table], $this->rows($table), $table.' downgrade changed facts');
         }
@@ -143,9 +143,72 @@ final class AttributeGlobalizationMigrationTest extends TestCase
         $localeMigration->up();
     }
 
+    public function test_frozen_backfill_preserves_inventory_across_batch_boundaries(): void
+    {
+        $localeMigration = require database_path('migrations/2026_10_05_000002_expand_translation_locale_identity.php');
+        $migration = require database_path('migrations/2026_10_05_000001_expand_global_attribute_ownership.php');
+        $localeMigration->down();
+        $migration->down();
+        $a = CentralCategory::factory()->create();
+        $b = CentralCategory::factory()->create();
+        $source = ImportSource::factory()->create();
+        $timestamp = now()->toDateTimeString();
+        $rows = [];
+        for ($index = 0; $index <= 500; $index++) {
+            $rows[] = ['central_category_id' => $index === 500 ? $b->id : $a->id, 'code' => in_array($index, [0, 500], true) ? 'collision' : 'batch_'.$index,
+                'name' => 'Batch', 'data_type' => 'enum', 'position' => $index, 'is_required' => $index % 2, 'is_visible' => true, 'is_searchable' => false, 'is_sortable' => true,
+                'created_at' => $timestamp, 'updated_at' => $timestamp];
+        }
+        foreach (array_chunk($rows, 250) as $chunk) {
+            DB::table('attribute_definitions')->insert($chunk);
+        }
+        $options = [];
+        $mappings = [];
+        foreach (DB::table('attribute_definitions')->orderBy('id')->get() as $definition) {
+            $options[] = ['attribute_definition_id' => $definition->id, 'code' => 'yes', 'label' => 'Yes', 'position' => 0, 'is_visible' => true, 'created_at' => $timestamp, 'updated_at' => $timestamp];
+            $mappings[] = ['import_source_id' => $source->id, 'category_id' => $definition->central_category_id, 'attribute_definition_id' => $definition->id,
+                'raw_key' => 'raw_'.$definition->id, 'normalized_raw_key' => 'raw_'.$definition->id, 'mapping_type' => 'attribute', 'status' => 'reviewed', 'confidence' => '0.8750', 'created_at' => $timestamp, 'updated_at' => $timestamp];
+        }
+        foreach (array_chunk($options, 250) as $chunk) {
+            DB::table('attribute_options')->insert($chunk);
+        }
+        foreach (array_chunk($mappings, 250) as $chunk) {
+            DB::table('attribute_mappings')->insert($chunk);
+        }
+        $before = [];
+        foreach (['attribute_definitions', 'attribute_options', 'attribute_mappings'] as $table) {
+            $before[$table] = $this->rows($table);
+        }
+        $this->withoutLiveBackfill(fn () => $migration->up());
+        $localeMigration->up();
+        self::assertSame(501, DB::table('category_attribute_assignments')->count());
+        self::assertSame(501, DB::table('attribute_definition_crosswalks')->count());
+        self::assertSame(501, DB::table('attribute_option_crosswalks')->count());
+        self::assertSame(501, DB::table('attribute_mappings')->whereNotNull('category_attribute_assignment_id')->count());
+        self::assertSame(2, DB::table('attribute_definitions')->whereNull('canonical_code')->count());
+        $localeMigration->down();
+        $this->withoutLiveBackfill(fn () => $migration->down());
+        foreach ($before as $table => $rows) {
+            self::assertSame($rows, $this->rows($table));
+        }
+        $migration->up();
+        $localeMigration->up();
+    }
+
     /** @return list<array<string, mixed>> */
     private function rows(string $table): array
     {
         return DB::table($table)->orderBy('id')->get()->map(fn ($row) => (array) $row)->all();
+    }
+
+    private function withoutLiveBackfill(callable $operation): void
+    {
+        $service = app(LegacyAttributeBackfill::class);
+        $this->app->bind(LegacyAttributeBackfill::class, fn () => throw new \RuntimeException('Historical migration resolved the live backfill service.'));
+        try {
+            $operation();
+        } finally {
+            $this->app->instance(LegacyAttributeBackfill::class, $service);
+        }
     }
 }

@@ -29,6 +29,9 @@ final readonly class CategoryAssignmentWriter
     {
         return $this->mutate($category->id, $expectedRevision, $actor, function (CentralCategory $locked, User $actor) use ($definition, $data): CategoryAttributeAssignment {
             $definition = AttributeDefinition::query()->whereKey($definition->id)->lockForUpdate()->firstOrFail();
+            if ($definition->canonical_code === null) {
+                throw ValidationException::withMessages(['attribute_definition_id' => 'Resolve canonical identity before assigning the definition.']);
+            }
             if (CategoryAttributeAssignment::query()->where('central_category_id', $locked->id)->where('attribute_definition_id', $definition->id)->exists()) {
                 throw ValidationException::withMessages(['attribute_definition_id' => 'The definition is already assigned.']);
             }

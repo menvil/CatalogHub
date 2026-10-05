@@ -1,6 +1,5 @@
 <?php
 
-use App\Services\AttributeGlobalization\LegacyAttributeBackfill;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -8,6 +7,11 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    private const LOCAL_FIELDS = ['attribute_section_id', 'position', 'is_required', 'is_visible', 'is_searchable', 'is_sortable'];
+
+    /** @var array<string, array{dimension_id: int|null, unit_id: int|null, status: string}> */
+    private array $measurementCache = [];
+
     public function up(): void
     {
         Schema::create('attribute_identity_scopes', function (Blueprint $table): void {
@@ -72,12 +76,13 @@ return new class extends Migration
         Schema::table('normalized_product_drafts', function (Blueprint $table): void {
             $table->unsignedInteger('attribute_identity_version')->default(1);
         });
-        app(LegacyAttributeBackfill::class)->run();
+        $this->backfill();
         $this->constraints(true);
     }
 
     public function down(): void
     {
+        $this->measurementCache = [];
         if ((int) DB::table('attribute_identity_scopes')->where('id', 1)->value('write_epoch') !== 0
             || DB::table('attribute_definitions')->whereNull('central_category_id')->exists()
             || DB::table('category_attribute_assignments as a')->join('attribute_definitions as d', 'd.id', '=', 'a.attribute_definition_id')->whereColumn('a.central_category_id', '!=', 'd.central_category_id')->exists()) {
@@ -90,10 +95,11 @@ return new class extends Migration
                 }
             }
         }
+        $crosswalkIds = DB::table('attribute_definition_crosswalks')->pluck('legacy_definition_id')->flip()->all();
         foreach (DB::table('attribute_definitions')->orderBy('id')->cursor() as $definition) {
-            $expected = app(LegacyAttributeBackfill::class)->measurement($definition->dimension, $definition->canonical_unit, $definition->data_type);
+            $expected = $this->measurement($definition->dimension, $definition->canonical_unit, $definition->data_type);
             $hasRelationalAuthority = $definition->measurement_dimension_id !== null || $definition->canonical_measurement_unit_id !== null
-                || DB::table('attribute_definition_crosswalks')->where('legacy_definition_id', $definition->id)->exists();
+                || isset($crosswalkIds[$definition->id]);
             if ($hasRelationalAuthority && ($definition->measurement_dimension_id !== $expected['dimension_id'] || $definition->canonical_measurement_unit_id !== $expected['unit_id'])) {
                 throw new RuntimeException('Relational measurement authority has new writes. Automatic downgrade is unsafe.');
             }
@@ -117,6 +123,89 @@ return new class extends Migration
             $table->unsignedBigInteger('central_category_id')->nullable(false)->change();
         });
         Schema::drop('attribute_identity_scopes');
+    }
+
+    /** Frozen expand behavior: application backfill services may evolve independently. */
+    private function backfill(): void
+    {
+        $this->measurementCache = [];
+        DB::transaction(function (): void {
+            $duplicateCodes = DB::table('attribute_definitions')->select('code')->groupBy('code')->havingRaw('COUNT(*) > 1');
+            $duplicateIds = DB::table('attribute_definitions as definitions')
+                ->joinSub($duplicateCodes, 'duplicates', fn ($join) => $join->on('definitions.code', '=', 'duplicates.code'))
+                ->pluck('definitions.id')->flip()->all();
+            DB::table('attribute_definitions')->whereNotNull('central_category_id')->orderBy('id')->chunkById(500, function ($definitions) use ($duplicateIds): void {
+                $assignments = [];
+                $crosswalks = [];
+                foreach ($definitions as $definition) {
+                    $row = (array) $definition;
+                    $assignments[] = [
+                        'central_category_id' => $definition->central_category_id, 'attribute_definition_id' => $definition->id,
+                        ...array_intersect_key($row, array_flip(self::LOCAL_FIELDS)),
+                        'created_at' => $definition->created_at, 'updated_at' => $definition->updated_at,
+                    ];
+                    $duplicate = isset($duplicateIds[$definition->id]);
+                    $measurement = $this->measurement($definition->dimension, $definition->canonical_unit, $definition->data_type);
+                    DB::table('attribute_definitions')->where('id', $definition->id)->update([
+                        'canonical_code' => $duplicate ? null : $definition->code,
+                        'measurement_dimension_id' => $measurement['dimension_id'], 'canonical_measurement_unit_id' => $measurement['unit_id'],
+                    ]);
+                    $crosswalks[] = [
+                        'legacy_definition_id' => $definition->id, 'legacy_category_id' => $definition->central_category_id, 'legacy_code' => $definition->code,
+                        'canonical_definition_id' => $duplicate ? null : $definition->id, 'canonical_code' => $duplicate ? null : $definition->code,
+                        'identity_status' => $duplicate ? 'unresolved_code_collision' : 'identity_preserved',
+                        'measurement_status' => $measurement['status'], 'reason' => $duplicate ? 'Explicit canonical selection or distinct approved code required.' : null,
+                    ];
+                }
+                DB::table('category_attribute_assignments')->insertOrIgnore($assignments);
+                DB::table('attribute_definition_crosswalks')->insertOrIgnore($crosswalks);
+            });
+            DB::table('attribute_options')->orderBy('id')->chunkById(500, function ($options): void {
+                DB::table('attribute_option_crosswalks')->insertOrIgnore($options->map(fn ($option) => [
+                    'legacy_option_id' => $option->id, 'legacy_definition_id' => $option->attribute_definition_id, 'legacy_code' => $option->code,
+                    'canonical_option_id' => $option->id, 'canonical_code' => $option->code, 'status' => 'identity_preserved',
+                ])->all());
+            });
+            DB::table('attribute_mappings')->whereNotNull('attribute_definition_id')->whereNull('category_attribute_assignment_id')->orderBy('id')->chunkById(500, function ($mappings): void {
+                $assignments = DB::table('category_attribute_assignments')->whereIn('attribute_definition_id', $mappings->pluck('attribute_definition_id'))
+                    ->get()->keyBy(fn ($assignment) => $assignment->central_category_id.':'.$assignment->attribute_definition_id);
+                foreach ($mappings as $mapping) {
+                    $assignment = $assignments->get($mapping->category_id.':'.$mapping->attribute_definition_id);
+                    if ($assignment !== null) {
+                        DB::table('attribute_mappings')->where('id', $mapping->id)->update(['category_attribute_assignment_id' => $assignment->id]);
+                    }
+                }
+            });
+        });
+    }
+
+    /** @return array{dimension_id: int|null, unit_id: int|null, status: string} */
+    private function measurement(?string $dimension, ?string $unit, string $type): array
+    {
+        $key = json_encode([$dimension, $unit, $type], JSON_THROW_ON_ERROR);
+        if (isset($this->measurementCache[$key])) {
+            return $this->measurementCache[$key];
+        }
+        $status = 'unmeasured';
+        $dimensionId = null;
+        $unitId = null;
+        if ($dimension !== null || $unit !== null) {
+            $dimensionRow = DB::table('measurement_dimensions')->where('code', $dimension)->first();
+            $unitRow = DB::table('measurement_units')->where('code', $unit)->first();
+            $status = match (true) {
+                $dimension === null || $unit === null => 'incomplete_pair',
+                $dimensionRow === null || $unitRow === null => 'unknown_catalog_code',
+                (int) $unitRow->dimension_id !== (int) $dimensionRow->id => 'incompatible_pair',
+                ! in_array($type, ['integer', 'decimal'], true) => 'measured_non_numeric',
+                default => 'resolved_exact',
+            };
+            if ($status === 'resolved_exact') {
+                $dimensionId = (int) $dimensionRow->id;
+                $unitId = (int) $unitRow->id;
+            }
+        }
+
+        return $this->measurementCache[$key] = ['dimension_id' => $dimensionId, 'unit_id' => $unitId, 'status' => $status];
     }
 
     private function constraints(bool $create): void

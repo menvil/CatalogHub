@@ -8,6 +8,7 @@ use App\Enums\SchemaMutationOrigin;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\User;
 use App\Services\AttributeGlobalization\AttributeDependencies;
+use App\Services\AttributeGlobalization\GlobalAttributeWriter;
 use App\Services\AttributeGlobalization\LegacyAttributeBackfill;
 use App\Services\CategorySchema\SchemaRevision;
 use Illuminate\Support\Facades\Validator;
@@ -71,11 +72,11 @@ final class UpdateAttributeDefinitionAction
                 throw ValidationException::withMessages(['data_type' => 'Measured definitions require a numeric type.']);
             }
             $attribute->fill(['measurement_dimension_id' => $measurement['dimension_id'], 'canonical_measurement_unit_id' => $measurement['unit_id']]);
-            if (in_array('code', $dangerous, true) && $attribute->canonical_code !== null) {
-                if (AttributeDefinition::query()->where('id', '!=', $attribute->id)->where(fn ($q) => $q->where('code', $attribute->code)->orWhere('canonical_code', $attribute->code))->exists()) {
-                    throw ValidationException::withMessages(['code' => 'Code is reserved by another canonical or legacy meaning.']);
+            if (in_array('code', $dangerous, true)) {
+                app(GlobalAttributeWriter::class)->uniqueCode($attribute->code, $attribute->id);
+                if ($attribute->canonical_code !== null) {
+                    $attribute->canonical_code = $attribute->code;
                 }
-                $attribute->canonical_code = $attribute->code;
             }
         }
         if ($attribute->isDirty()) {

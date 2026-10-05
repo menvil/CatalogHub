@@ -8,16 +8,28 @@ use App\Actions\CategorySchema\MarkCategorySchemaReviewedAction;
 use App\Actions\CategorySchema\MoveCategoryAttributeAssignmentAction;
 use App\Actions\CategorySchema\UpdateCategoryAttributeAssignmentAction;
 use App\Actions\CategorySchema\UpdateGlobalAttributeDefinitionAction;
+use App\Actions\Translations\SaveAttributeOptionTranslationAction;
+use App\Actions\Translations\SaveAttributeSectionTranslationAction;
+use App\Actions\Translations\SaveAttributeTranslationAction;
+use App\Actions\Translations\SaveCategoryTranslationAction;
+use App\Actions\Translations\SaveUnitTranslationAction;
 use App\Models\AuditLogEntry;
 use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\AttributeOption;
+use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Models\Locale;
+use App\Models\MeasurementUnit;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 use Throwable;
 
@@ -125,6 +137,56 @@ final class AttributeGlobalizationConcurrencyTest extends TestCase
                 self::assertSame(1, AttributeDefinition::query()->where('code', 'global_code')->count());
                 self::assertSame(1, AuditLogEntry::query()->where('action', 'catalog.attribute.created')->count());
             });
+    }
+
+    #[DataProvider('translationOwners')]
+    public function test_translation_identity_check_and_creation_serialize_even_with_deferred_key(string $type, string $table, string $ownerColumn, string $field): void
+    {
+        $owner = match ($type) {
+            'category' => CentralCategory::factory()->create(),
+            'attribute' => AttributeDefinition::factory()->global()->create(),
+            'section' => AttributeSection::factory()->create(),
+            'option' => AttributeOption::factory()->create(),
+            'unit' => MeasurementUnit::factory()->create(),
+            default => throw new \LogicException('Unexpected translation owner.'),
+        };
+        $locale = Locale::factory()->create();
+        if ($type !== 'option') {
+            Schema::table($table, fn ($blueprint) => $blueprint->dropUnique($table.'_owner_locale_id_unique'));
+        }
+        $this->race($owner->getTable(),
+            fn () => $this->saveTranslation($owner, $locale, [$field => 'Parent']),
+            fn () => $this->saveTranslation($owner, $locale, [$field => 'Child']),
+            function (string $outcome) use ($owner, $locale, $table, $ownerColumn, $field): void {
+                self::assertSame('success', $outcome);
+                $rows = DB::table($table)->where($ownerColumn, $owner->id)->where('locale_id', $locale->id)->get();
+                self::assertCount(1, $rows);
+                self::assertSame('Child', $rows->sole()->$field);
+            });
+    }
+
+    public static function translationOwners(): array
+    {
+        return [
+            ['category', 'category_translations', 'category_id', 'name'],
+            ['attribute', 'attribute_translations', 'attribute_definition_id', 'label'],
+            ['section', 'attribute_section_translations', 'attribute_section_id', 'name'],
+            ['option', 'attribute_option_translations', 'attribute_option_id', 'label'],
+            ['unit', 'unit_translations', 'measurement_unit_id', 'short_name'],
+        ];
+    }
+
+    /** @param array<string, mixed> $data */
+    private function saveTranslation(Model $owner, Locale $locale, array $data): Model
+    {
+        return match (true) {
+            $owner instanceof CentralCategory => app(SaveCategoryTranslationAction::class)->handle($owner, $locale, $data),
+            $owner instanceof AttributeDefinition => app(SaveAttributeTranslationAction::class)->handle($owner, $locale, $data),
+            $owner instanceof AttributeSection => app(SaveAttributeSectionTranslationAction::class)->handle($owner, $locale, $data),
+            $owner instanceof AttributeOption => app(SaveAttributeOptionTranslationAction::class)->handle($owner, $locale, $data),
+            $owner instanceof MeasurementUnit => app(SaveUnitTranslationAction::class)->handle($owner, $locale, $data),
+            default => throw new \LogicException('Unexpected translation owner.'),
+        };
     }
 
     /** @param callable(): mixed $parentAction

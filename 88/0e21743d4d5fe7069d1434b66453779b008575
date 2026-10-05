@@ -1,0 +1,26 @@
+app/Services/AttributeGlobalization/LegacyAttributeCompatibility.php
+  ai_agent 5
+  s_2fa7ebcb64b5d7::t_786150bd92b372 11-12,17-24
+tests/Feature/Attributes/GlobalAttributeFoundationTest.php
+  s_2fa7ebcb64b5d7::t_be5d88e6084523 331-334
+docs/architecture/attribute-globalization-foundation.md
+  s_2fa7ebcb64b5d7::t_81461f89b8edfb 93
+app/Filament/Resources/ContentItemResource/RelationManagers/RelationsRelationManager.php
+  ai_agent 105
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "880e21743d4d5fe7069d1434b66453779b008575",
+  "prompts": {},
+  "sessions": {
+    "s_2fa7ebcb64b5d7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a10bab-fdb4-7a82-968a-02b602445703",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

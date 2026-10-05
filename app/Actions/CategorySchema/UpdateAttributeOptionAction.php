@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\CategorySchema\SchemaRevision;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 final class UpdateAttributeOptionAction
 {
@@ -49,6 +50,10 @@ final class UpdateAttributeOptionAction
             'position' => ['nullable', 'integer', 'min:0', 'max:'.AttributeOption::MAX_POSITION],
             'is_visible' => ['nullable', 'boolean'],
         ])->validate();
+
+        if ($validated['code'] !== $option->code) {
+            throw ValidationException::withMessages(['code' => 'Option code is immutable. Explicit reconciliation required to change option identity.']);
+        }
 
         $option->fill([
             'code' => $validated['code'],

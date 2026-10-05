@@ -7,6 +7,9 @@ use App\Enums\AttributeDataType;
 use App\Enums\SchemaMutationOrigin;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\User;
+use App\Services\AttributeGlobalization\AttributeDependencies;
+use App\Services\AttributeGlobalization\AttributeIdentityReservation;
+use App\Services\AttributeGlobalization\LegacyAttributeBackfill;
 use App\Services\CategorySchema\SchemaRevision;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -59,6 +62,26 @@ final class UpdateAttributeDefinitionAction
             'is_searchable' => $validated['is_searchable'] ?? $attribute->is_searchable,
         ]);
 
+        $dangerous = array_intersect(array_keys($attribute->getDirty()), ['code', 'data_type', 'dimension', 'canonical_unit']);
+        if ($dangerous !== []) {
+            app(AttributeIdentityReservation::class)->assertResolved($attribute);
+        }
+        if ($dangerous !== [] && app(AttributeDependencies::class)->forDefinition($attribute->fresh() ?? $attribute) !== []) {
+            throw ValidationException::withMessages(['attribute' => 'Explicit migration required: dependent data prevents canonical identity/type/measurement changes.']);
+        }
+        if ($dangerous !== []) {
+            $measurement = app(LegacyAttributeBackfill::class)->measurement($attribute->dimension, $attribute->canonical_unit, $attribute->data_type->value);
+            if ($measurement['status'] === 'measured_non_numeric') {
+                throw ValidationException::withMessages(['data_type' => 'Measured definitions require a numeric type.']);
+            }
+            $attribute->fill(['measurement_dimension_id' => $measurement['dimension_id'], 'canonical_measurement_unit_id' => $measurement['unit_id']]);
+            if (in_array('code', $dangerous, true)) {
+                app(AttributeIdentityReservation::class)->uniqueCode($attribute->code, $attribute->id);
+                if ($attribute->canonical_code !== null) {
+                    $attribute->canonical_code = $attribute->code;
+                }
+            }
+        }
         if ($attribute->isDirty()) {
             $attribute->saveOrFail();
         }

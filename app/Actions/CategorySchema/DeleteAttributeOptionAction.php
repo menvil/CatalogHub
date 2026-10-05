@@ -7,6 +7,7 @@ use App\Exceptions\CategorySchema\CannotManageAttributeOptionException;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\User;
 use App\Services\CategorySchema\SchemaRevision;
+use Illuminate\Validation\ValidationException;
 
 final class DeleteAttributeOptionAction
 {
@@ -26,6 +27,6 @@ final class DeleteAttributeOptionAction
             throw CannotManageAttributeOptionException::attributeDoesNotAllowOptions();
         }
 
-        $option->delete();
+        throw ValidationException::withMessages(['option' => 'Option removal requires an explicit audited retirement workflow. Hide the option with is_visible=false instead.']);
     }
 }

@@ -3,9 +3,20 @@
 namespace App\Services\Categories;
 
 use App\Models\CentralCatalog\CentralCategory;
+use App\Services\AttributeGlobalization\AttributeIdentityLock;
 
 final class CategoryLock
 {
+    /** @param list<int> $ids
+     * @return array<int, CentralCategory>
+     */
+    public function acquireSchema(array $ids): array
+    {
+        app(AttributeIdentityLock::class)->acquire();
+
+        return $this->acquire($ids);
+    }
+
     /** @param list<int> $ids
      * @return array<int, CentralCategory>
      */

@@ -34,6 +34,12 @@ final class CentralCategory extends Model
         return CentralCategoryFactory::new();
     }
 
+    /** @return HasMany<CategoryAttributeAssignment, $this> */
+    public function attributeAssignments(): HasMany
+    {
+        return $this->hasMany(CategoryAttributeAssignment::class, 'central_category_id');
+    }
+
     protected function casts(): array
     {
         return [

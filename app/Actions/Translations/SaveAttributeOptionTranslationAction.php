@@ -6,6 +6,7 @@ use App\Enums\TranslationStatus;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\Locale;
 use App\Models\Translations\AttributeOptionTranslation;
+use App\Services\Translations\TranslationLocaleIdentity;
 use App\Services\Translations\TranslationSourceHashService;
 use App\Services\Translations\TranslationStatsService;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,10 @@ final readonly class SaveAttributeOptionTranslationAction
     public function handle(AttributeOption $option, Locale $locale, array $data): AttributeOptionTranslation
     {
         $translation = DB::transaction(function () use ($data, $locale, $option): AttributeOptionTranslation {
+            $option = app(TranslationLocaleIdentity::class)->lockOwner($option);
+            $locale = Locale::query()->lockForUpdate()->findOrFail($locale->id);
+            app(TranslationLocaleIdentity::class)->assertUnambiguous('attribute_option_translations', 'attribute_option_id', $option->id, $locale->id);
+
             $translation = AttributeOptionTranslation::query()->updateOrCreate(
                 ['attribute_option_id' => $option->id, 'locale_id' => $locale->id],
                 [
@@ -31,7 +36,7 @@ final readonly class SaveAttributeOptionTranslationAction
             $translation->forceFill(['source_hash' => $this->hashService->forAttributeOption($option)])->save();
 
             return $translation;
-        });
+        }, 3);
 
         TranslationStatsService::forgetDashboardCache();
 

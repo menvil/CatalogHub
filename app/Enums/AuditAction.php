@@ -36,6 +36,12 @@ enum AuditAction: string
     case CatalogCategorySchemaArchived = 'catalog.category.schema.archived';
     case CatalogCategorySchemaRestored = 'catalog.category.schema.restored';
     case CatalogCategorySchemaInvalidated = 'catalog.category.schema.invalidated';
+    case CatalogAttributeCreated = 'catalog.attribute.created';
+    case CatalogAttributeUpdated = 'catalog.attribute.updated';
+    case CatalogCategoryAttributeAssigned = 'catalog.category.attribute.assigned';
+    case CatalogCategoryAttributeConfigured = 'catalog.category.attribute.configured';
+    case CatalogCategoryAttributeMoved = 'catalog.category.attribute.moved';
+    case CatalogCategoryAttributeUnassigned = 'catalog.category.attribute.unassigned';
     case TranslationApproved = 'translation.approved';
     case TranslationMarkedOutdated = 'translation.marked_outdated';
 }

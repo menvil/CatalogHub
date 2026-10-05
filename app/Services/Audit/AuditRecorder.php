@@ -18,6 +18,12 @@ class AuditRecorder
     /** @var list<string> */
     private const CATEGORY_SCHEMA_SNAPSHOT_FIELDS = ['category_id', 'name', 'slug', 'schema_status', 'schema_revision', 'schema_reviewed_revision', 'schema_approved_revision', 'reason', 'origin_type', 'origin_id'];
 
+    /** @var list<string> */
+    private const GLOBAL_ATTRIBUTE_FIELDS = ['definition_id', 'code', 'name', 'data_type', 'measurement_dimension_id', 'dimension', 'canonical_measurement_unit_id', 'canonical_unit', 'changed_fields', 'affected_category_count'];
+
+    /** @var list<string> */
+    private const ASSIGNMENT_FIELDS = ['assignment_id', 'category_id', 'definition_id', 'code', 'attribute_section_id', 'section_code', 'position', 'is_required', 'is_visible', 'is_searchable', 'is_sortable', 'changed_fields'];
+
     /** @var array<string, list<string>> */
     private const SNAPSHOT_FIELDS = [
         AuditAction::RoleAssigned->value => ['role'],
@@ -50,6 +56,12 @@ class AuditRecorder
         AuditAction::CatalogCategorySchemaArchived->value => self::CATEGORY_SCHEMA_SNAPSHOT_FIELDS,
         AuditAction::CatalogCategorySchemaRestored->value => self::CATEGORY_SCHEMA_SNAPSHOT_FIELDS,
         AuditAction::CatalogCategorySchemaInvalidated->value => self::CATEGORY_SCHEMA_SNAPSHOT_FIELDS,
+        AuditAction::CatalogAttributeCreated->value => self::GLOBAL_ATTRIBUTE_FIELDS,
+        AuditAction::CatalogAttributeUpdated->value => self::GLOBAL_ATTRIBUTE_FIELDS,
+        AuditAction::CatalogCategoryAttributeAssigned->value => self::ASSIGNMENT_FIELDS,
+        AuditAction::CatalogCategoryAttributeConfigured->value => self::ASSIGNMENT_FIELDS,
+        AuditAction::CatalogCategoryAttributeMoved->value => self::ASSIGNMENT_FIELDS,
+        AuditAction::CatalogCategoryAttributeUnassigned->value => self::ASSIGNMENT_FIELDS,
         AuditAction::TranslationApproved->value => ['translation_id', 'locale', 'status', 'changed_fields'],
         AuditAction::TranslationMarkedOutdated->value => ['translation_id', 'locale', 'status', 'changed_fields'],
     ];

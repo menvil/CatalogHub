@@ -4,6 +4,11 @@ namespace App\Enums;
 
 enum SchemaMutationOrigin: string
 {
+    case AttributeAssigned = 'assignment.assign';
+    case AssignmentConfigured = 'assignment.configure';
+    case AssignmentMoved = 'assignment.move';
+    case AttributeUnassigned = 'assignment.unassign';
+    case GlobalAttributeUpdated = 'global_attribute.update';
     case SectionCreated = 'section.create';
     case SectionUpdated = 'section.update';
     case SectionDeleted = 'section.delete';

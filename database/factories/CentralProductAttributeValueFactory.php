@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -13,6 +14,15 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class CentralProductAttributeValueFactory extends Factory
 {
     protected $model = CentralProductAttributeValue::class;
+
+    public function forAssignment(CategoryAttributeAssignment $assignment): static
+    {
+        return $this->state(fn () => [
+            'central_product_id' => CentralProduct::factory()->state(['central_category_id' => $assignment->central_category_id]),
+            'attribute_definition_id' => $assignment->attribute_definition_id,
+            'value_type' => $assignment->definition->data_type->value,
+        ]);
+    }
 
     public function definition(): array
     {

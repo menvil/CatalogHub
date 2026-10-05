@@ -11,6 +11,7 @@ use App\Models\Imports\NormalizedProductDraft;
 use App\Models\MediaAsset;
 use App\Models\MediaAssignment;
 use App\Models\User;
+use App\Services\AttributeGlobalization\AttributeIdentityLock;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use LogicException;
@@ -30,7 +31,12 @@ final class PublishNormalizedProductDraftToCentralAction
         }
 
         return DB::transaction(function () use ($draft): CentralProduct {
+            app(AttributeIdentityLock::class)->acquire();
             $lockedDraft = NormalizedProductDraft::query()->lockForUpdate()->findOrFail($draft->id);
+
+            if ($lockedDraft->attribute_identity_version !== 1) {
+                throw new LogicException('Explicit attribute identity migration required before publishing this draft version.');
+            }
 
             if ($lockedDraft->status !== 'approved') {
                 throw new LogicException("Draft [{$lockedDraft->id}] cannot be published from status [{$lockedDraft->status}].");

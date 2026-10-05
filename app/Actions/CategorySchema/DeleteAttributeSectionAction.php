@@ -27,7 +27,7 @@ final class DeleteAttributeSectionAction
             /** @var AttributeSection $lockedSection */
             $lockedSection = $section->newQuery()->whereKey($section->getKey())->lockForUpdate()->firstOrFail();
 
-            if ($lockedSection->attributes()->exists()) {
+            if ($lockedSection->attributes()->exists() || $lockedSection->assignments()->exists()) {
                 throw CannotDeleteAttributeSectionException::hasAttributes();
             }
 

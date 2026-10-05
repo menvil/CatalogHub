@@ -6,8 +6,10 @@ use App\Enums\TranslationStatus;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\Locale;
 use App\Models\Translations\AttributeTranslation;
+use App\Services\Translations\TranslationLocaleIdentity;
 use App\Services\Translations\TranslationSourceHashService;
 use App\Services\Translations\TranslationStatsService;
+use Illuminate\Support\Facades\DB;
 
 final readonly class SaveAttributeTranslationAction
 {
@@ -16,18 +18,27 @@ final readonly class SaveAttributeTranslationAction
     /** @param array<string, mixed> $data */
     public function handle(AttributeDefinition $attribute, Locale $locale, array $data): AttributeTranslation
     {
-        $translation = AttributeTranslation::query()->updateOrCreate(
-            ['attribute_definition_id' => $attribute->id, 'locale' => $locale->code],
-            [
-                'locale_id' => $locale->id,
-                'label' => $data['label'] ?? null,
-                'short_label' => $data['short_label'] ?? null,
-                'help_text' => $data['help_text'] ?? null,
-                'status' => $data['status'] ?? TranslationStatus::HumanReviewed,
-            ],
-        );
+        $translation = DB::transaction(function () use ($attribute, $locale, $data): AttributeTranslation {
+            $attribute = app(TranslationLocaleIdentity::class)->lockOwner($attribute);
+            $locale = Locale::query()->lockForUpdate()->findOrFail($locale->id);
+            app(TranslationLocaleIdentity::class)->assertUnambiguous('attribute_translations', 'attribute_definition_id', $attribute->id, $locale->id);
 
-        $translation->forceFill(['source_hash' => $this->hashService->forAttribute($attribute)])->save();
+            $translation = AttributeTranslation::query()->updateOrCreate(
+                ['attribute_definition_id' => $attribute->id, 'locale_id' => $locale->id],
+                [
+                    'locale' => $locale->code,
+                    'label' => $data['label'] ?? null,
+                    'short_label' => $data['short_label'] ?? null,
+                    'help_text' => $data['help_text'] ?? null,
+                    'status' => $data['status'] ?? TranslationStatus::HumanReviewed,
+                ],
+            );
+
+            $translation->forceFill(['source_hash' => $this->hashService->forAttribute($attribute)])->save();
+
+            return $translation;
+        }, 3);
+
         TranslationStatsService::forgetDashboardCache();
 
         return $translation;

@@ -18,6 +18,7 @@ use App\Models\MediaAssignment;
 use App\Models\Site;
 use App\Models\SiteProduct;
 use App\Models\SiteProductProjection;
+use App\Services\AttributeGlobalization\LegacyAttributeBackfill;
 use App\Support\Normalization\BrandInputNormalizer;
 use Database\Seeders\ImperialMeasurementUnitsSeeder;
 use Database\Seeders\MeasurementDimensionsSeeder;
@@ -40,6 +41,7 @@ class PublicDemoSeeder extends Seeder
         $categories = CentralCategory::query()->whereIn('slug', ['monitors', 'keyboards', 'mice'])->get()->keyBy('slug');
         $brands = $this->seedBrands();
         $attributes = $this->seedSchemas($categories->all());
+        app(LegacyAttributeBackfill::class)->run();
         $products = $this->seedProducts($categories->all(), $brands, $attributes);
         $this->seedMedia($products['aurora-27-pro']);
 

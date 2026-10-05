@@ -3,6 +3,8 @@
 namespace App\Models\CentralCatalog;
 
 use App\Enums\AttributeDataType;
+use App\Models\MeasurementDimension;
+use App\Models\MeasurementUnit;
 use App\Models\Translations\AttributeTranslation;
 use Database\Factories\AttributeDefinitionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -17,6 +19,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $options_count
  */
 #[Fillable([
+    'canonical_code',
+    'measurement_dimension_id',
+    'canonical_measurement_unit_id',
     'central_category_id',
     'attribute_section_id',
     'code',
@@ -122,6 +127,24 @@ final class AttributeDefinition extends Model
     public function scopeComparable(Builder $query): Builder
     {
         return $query->where('is_comparable', true);
+    }
+
+    /** @return HasMany<CategoryAttributeAssignment, $this> */
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(CategoryAttributeAssignment::class, 'attribute_definition_id');
+    }
+
+    /** @return BelongsTo<MeasurementDimension, $this> */
+    public function measurementDimension(): BelongsTo
+    {
+        return $this->belongsTo(MeasurementDimension::class, 'measurement_dimension_id');
+    }
+
+    /** @return BelongsTo<MeasurementUnit, $this> */
+    public function canonicalMeasurementUnit(): BelongsTo
+    {
+        return $this->belongsTo(MeasurementUnit::class, 'canonical_measurement_unit_id');
     }
 
     /**

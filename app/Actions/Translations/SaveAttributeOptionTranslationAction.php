@@ -6,6 +6,7 @@ use App\Enums\TranslationStatus;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\Locale;
 use App\Models\Translations\AttributeOptionTranslation;
+use App\Services\Translations\TranslationLocaleIdentity;
 use App\Services\Translations\TranslationSourceHashService;
 use App\Services\Translations\TranslationStatsService;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,8 @@ final readonly class SaveAttributeOptionTranslationAction
     /** @param array<string, mixed> $data */
     public function handle(AttributeOption $option, Locale $locale, array $data): AttributeOptionTranslation
     {
+        app(TranslationLocaleIdentity::class)->assertUnambiguous('attribute_option_translations', 'attribute_option_id', $option->id, $locale->id);
+
         $translation = DB::transaction(function () use ($data, $locale, $option): AttributeOptionTranslation {
             $translation = AttributeOptionTranslation::query()->updateOrCreate(
                 ['attribute_option_id' => $option->id, 'locale_id' => $locale->id],

@@ -6,6 +6,7 @@ use App\Enums\TranslationStatus;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\Locale;
 use App\Models\Translations\AttributeTranslation;
+use App\Services\Translations\TranslationLocaleIdentity;
 use App\Services\Translations\TranslationSourceHashService;
 use App\Services\Translations\TranslationStatsService;
 
@@ -16,10 +17,12 @@ final readonly class SaveAttributeTranslationAction
     /** @param array<string, mixed> $data */
     public function handle(AttributeDefinition $attribute, Locale $locale, array $data): AttributeTranslation
     {
+        app(TranslationLocaleIdentity::class)->assertUnambiguous('attribute_translations', 'attribute_definition_id', $attribute->id, $locale->id);
+
         $translation = AttributeTranslation::query()->updateOrCreate(
-            ['attribute_definition_id' => $attribute->id, 'locale' => $locale->code],
+            ['attribute_definition_id' => $attribute->id, 'locale_id' => $locale->id],
             [
-                'locale_id' => $locale->id,
+                'locale' => $locale->code,
                 'label' => $data['label'] ?? null,
                 'short_label' => $data['short_label'] ?? null,
                 'help_text' => $data['help_text'] ?? null,

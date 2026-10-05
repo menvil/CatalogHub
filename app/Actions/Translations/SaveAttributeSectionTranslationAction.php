@@ -6,6 +6,7 @@ use App\Enums\TranslationStatus;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\Locale;
 use App\Models\Translations\AttributeSectionTranslation;
+use App\Services\Translations\TranslationLocaleIdentity;
 use App\Services\Translations\TranslationSourceHashService;
 use App\Services\Translations\TranslationStatsService;
 
@@ -16,10 +17,12 @@ final readonly class SaveAttributeSectionTranslationAction
     /** @param array<string, mixed> $data */
     public function handle(AttributeSection $section, Locale $locale, array $data): AttributeSectionTranslation
     {
+        app(TranslationLocaleIdentity::class)->assertUnambiguous('attribute_section_translations', 'attribute_section_id', $section->id, $locale->id);
+
         $translation = AttributeSectionTranslation::query()->updateOrCreate(
-            ['attribute_section_id' => $section->id, 'locale' => $locale->code],
+            ['attribute_section_id' => $section->id, 'locale_id' => $locale->id],
             [
-                'locale_id' => $locale->id,
+                'locale' => $locale->code,
                 'name' => $data['name'] ?? null,
                 'description' => $data['description'] ?? null,
                 'status' => $data['status'] ?? TranslationStatus::HumanReviewed,

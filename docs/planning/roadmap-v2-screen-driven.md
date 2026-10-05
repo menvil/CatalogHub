@@ -10,7 +10,7 @@
 
 ## Current section — Categories / Schema (Phase 19)
 
-Brands CA-011…CA-015 closed in Phase 18.6 / PR #611. Phase 19.0 merged in PR #612. **Category Core & Hierarchy Foundation — COMPLETE (19.1)**, based on develop `864ea5e4aeca0267ff24954e0fce27413d23644a`. Next: **19.2 Global Attribute + Category Assignment Foundation**. No CA-016/new screen has started. See the [foundation contract](../architecture/category-foundation.md). [ADR-0003](../architecture/adr/0003-categories-schema-ownership.md), [screen audit](../ui/categories-schema-visual-gap-audit.md) and [migration map](categories-schema-migration-map.md) replace the original Phase 03 assumption for CA-016…CA-026. Units / Measurements CA-027…CA-032 remains a later dedicated section.
+Brands CA-011…CA-015 closed in Phase 18.6 / PR #611. Phase 19.0 merged in PR #612. **Category Core & Hierarchy Foundation — COMPLETE (19.1)**, based on develop `864ea5e4aeca0267ff24954e0fce27413d23644a`. **Global Attribute + Category Assignment Foundation — COMPLETE (19.2)** delivers the additive backend ownership/reconciliation contract at base `d68ee07f134ecc49c7a7df2a4490adc33924b3b6`: [implementation](../architecture/attribute-globalization-foundation.md). Next: **19.3 Schema Consumer Convergence**. No CA-016/new screen has started. See the [foundation contract](../architecture/category-foundation.md). [ADR-0003](../architecture/adr/0003-categories-schema-ownership.md), [screen audit](../ui/categories-schema-visual-gap-audit.md) and [migration map](categories-schema-migration-map.md) replace the original Phase 03 assumption for CA-016…CA-026. Units / Measurements CA-027…CA-032 remains a later dedicated section.
 
 ## Execution rules
 
@@ -196,7 +196,7 @@ Phase 19 replaces the original Category/Schema Phase 03 schedule and incorrect n
 
 ### Roadmap amendment 2.3.0 — 2026-10-05
 
-Phase 19.1 completes Category Core & Hierarchy Foundation: additive hierarchy scopes/revisions and schema review/approval metadata, authoritative lifecycle/hierarchy actions, schema invalidation, permissions, audit and legacy diagnostics. The existing Filament resource uses this foundation without implementing a new screen. Next is 19.2 Global Attribute + Category Assignment Foundation; CA-016 and all later screens remain pending.
+Phase 19.1 completes Category Core & Hierarchy Foundation: additive hierarchy scopes/revisions and schema review/approval metadata, authoritative lifecycle/hierarchy actions, schema invalidation, permissions, audit and legacy diagnostics. The existing Filament resource uses this foundation without implementing a new screen. Phase 19.2 adds global definitions/assignments, durable crosswalks, exact relational measurements, guarded Locale identity keys, Import membership expansion, diagnostics and transactional fan-out. Next is 19.3 Schema Consumer Convergence; no consumer authority cutover or CA screen is complete.
 
 ## Phase 04 — Central Imports
 

@@ -26,7 +26,7 @@ final readonly class ApproveCategorySchemaAction
         $expectedRevision ??= $category->schema_revision;
 
         return DB::transaction(function () use ($category, $expectedRevision, $actor): CentralCategory {
-            $locked = $this->locks->acquire([$category->id])[$category->id];
+            $locked = $this->locks->acquireSchema([$category->id])[$category->id];
             $this->revision->expect($locked, $expectedRevision);
             if ($locked->schema_status === CategorySchemaStatus::Approved && $locked->schema_approved_revision === $locked->schema_revision) {
                 return $locked;

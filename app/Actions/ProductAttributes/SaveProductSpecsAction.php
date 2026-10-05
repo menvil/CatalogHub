@@ -5,6 +5,7 @@ namespace App\Actions\ProductAttributes;
 use App\Enums\AttributeDataType;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
+use App\Services\AttributeGlobalization\AttributeIdentityLock;
 use App\Services\ProductAttributes\ProductAttributeValueValidator;
 use App\Services\Units\UnitConverter;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,7 @@ final class SaveProductSpecsAction
     public function handle(CentralProduct $product, array $payload): void
     {
         DB::transaction(function () use ($product, $payload): void {
+            app(AttributeIdentityLock::class)->acquire();
             $validated = $this->validator->validate($product, $payload);
 
             foreach ($validated as $attributeId => $valueData) {

@@ -92,7 +92,7 @@ final class CategoryFoundationConcurrencyTest extends TestCase
     {
         $actor = User::factory()->centralAdmin()->create();
         $category = CentralCategory::factory()->create();
-        $this->race('central_categories',
+        $this->race('attribute_identity_scopes',
             fn () => app(MarkCategorySchemaReviewedAction::class)->handle($category, 1, $actor),
             fn () => app(CreateAttributeSectionAction::class)->handle($category, ['name' => 'Specs', 'code' => 'specs'], $actor),
             function (string $outcome) use ($category): void {

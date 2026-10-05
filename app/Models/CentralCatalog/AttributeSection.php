@@ -91,6 +91,12 @@ final class AttributeSection extends Model
         return $this->hasMany(AttributeDefinition::class, 'attribute_section_id');
     }
 
+    /** @return HasMany<CategoryAttributeAssignment, $this> */
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(CategoryAttributeAssignment::class, 'attribute_section_id');
+    }
+
     /**
      * @return HasMany<AttributeSectionTranslation, $this>
      */

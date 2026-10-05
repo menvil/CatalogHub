@@ -14,6 +14,11 @@ class AttributeDefinitionFactory extends Factory
 {
     protected $model = AttributeDefinition::class;
 
+    public function global(): static
+    {
+        return $this->state(fn (array $attributes) => ['central_category_id' => null, 'canonical_code' => fn (array $resolved) => $resolved['code']]);
+    }
+
     public function definition(): array
     {
         $name = fake()->unique()->words(2, true);

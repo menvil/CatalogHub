@@ -7,9 +7,12 @@ use App\Enums\AuditContext;
 use App\Enums\CategorySchemaStatus;
 use App\Enums\Permission;
 use App\Enums\SchemaMutationOrigin;
+use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\User;
 use App\Queries\Categories\CategorySchemaFingerprintQuery;
+use App\Services\AttributeGlobalization\AttributeIdentityLock;
+use App\Services\AttributeGlobalization\LegacyAttributeCompatibility;
 use App\Services\Audit\AuditRecorder;
 use App\Services\Categories\CategoryAccess;
 use App\Services\Categories\CategoryLock;
@@ -32,28 +35,55 @@ final readonly class SchemaRevision
         $actor = $this->access->authorize(Permission::CatalogSchemaManage, $actor);
 
         return DB::transaction(function () use ($categoryId, $origin, $originId, $mutation, $actor, $readCategoryIds): mixed {
-            $category = $this->locks->acquire([$categoryId, ...$readCategoryIds])[$categoryId];
-            if ($category->schema_status === CategorySchemaStatus::Archived) {
-                throw ValidationException::withMessages(['schema_status' => 'Restore the archived schema before changing it.']);
+            app(AttributeIdentityLock::class)->acquire();
+            $definitionId = match ($origin) {
+                SchemaMutationOrigin::AttributeUpdated, SchemaMutationOrigin::AttributeMoved => $originId,
+                SchemaMutationOrigin::OptionCreated => $originId,
+                SchemaMutationOrigin::OptionUpdated, SchemaMutationOrigin::OptionDeleted => AttributeOption::query()->findOrFail($originId)->attribute_definition_id,
+                default => null,
+            };
+            $bridge = app(LegacyAttributeCompatibility::class);
+            $ids = $bridge->affectedCategoryIds($categoryId, $definitionId);
+            $locked = $this->locks->acquire([...$ids, ...$readCategoryIds]);
+            $this->assertMutable($locked[$categoryId]);
+            $bridge->synchronizeCategory($categoryId);
+            $before = [];
+            foreach ($ids as $id) {
+                $before[$id] = $this->fingerprints->forCategory($id);
             }
-            $fingerprint = $this->fingerprints->forCategory($categoryId);
+            $legacyBefore = $bridge->snapshotCategory($categoryId);
             $result = $mutation();
-            if ($fingerprint !== $this->fingerprints->forCategory($categoryId)) {
-                $before = $this->snapshot($category);
-                $category->forceFill([
-                    'schema_revision' => $category->schema_revision + 1,
-                    'schema_status' => CategorySchemaStatus::Draft,
-                    ...$this->clearAttribution(),
-                ])->saveOrFail();
-                $this->audit->record(AuditAction::CatalogCategorySchemaInvalidated, AuditContext::Central, $actor, $category, null, $before, [
-                    ...$this->snapshot($category), 'reason' => $origin->value,
-                    'origin_type' => explode('.', $origin->value)[0],
-                    'origin_id' => $result instanceof Model ? $result->getKey() : $originId,
-                ]);
+            $bridge->synchronizeCategory($categoryId, $legacyBefore);
+            foreach ($ids as $id) {
+                if ($before[$id] !== $this->fingerprints->forCategory($id)) {
+                    $this->invalidate($locked[$id], $origin, $result instanceof Model ? (int) $result->getKey() : $originId, $actor);
+                }
             }
 
             return $result;
         }, 3);
+    }
+
+    public function assertMutable(CentralCategory $category): void
+    {
+        if ($category->schema_status === CategorySchemaStatus::Archived) {
+            throw ValidationException::withMessages(['schema_status' => 'Restore the archived schema before changing it.']);
+        }
+    }
+
+    public function invalidate(CentralCategory $category, SchemaMutationOrigin $origin, ?int $originId, User $actor): void
+    {
+        $this->assertMutable($category);
+        $before = $this->snapshot($category);
+        $category->forceFill([
+            'schema_revision' => $category->schema_revision + 1,
+            'schema_status' => CategorySchemaStatus::Draft,
+            ...$this->clearAttribution(),
+        ])->saveOrFail();
+        $this->audit->record(AuditAction::CatalogCategorySchemaInvalidated, AuditContext::Central, $actor, $category, null, $before, [
+            ...$this->snapshot($category), 'reason' => $origin->value,
+            'origin_type' => explode('.', $origin->value)[0], 'origin_id' => $originId,
+        ]);
     }
 
     public function expect(CentralCategory $category, int $expectedRevision): void

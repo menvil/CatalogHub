@@ -3,6 +3,7 @@
 namespace App\Models\Imports;
 
 use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\CentralCatalog\CentralCategory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -24,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'raw_key',
     'normalized_raw_key',
     'attribute_definition_id',
+    'category_attribute_assignment_id',
     'confidence',
     'status',
     'mapping_type',
@@ -31,6 +33,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 final class AttributeMapping extends Model
 {
+    /** @return BelongsTo<CategoryAttributeAssignment, $this> */
+    public function assignment(): BelongsTo
+    {
+        return $this->belongsTo(CategoryAttributeAssignment::class, 'category_attribute_assignment_id');
+    }
+
     protected function casts(): array
     {
         return [

@@ -1,0 +1,41 @@
+app/Actions/CategorySchema/UpdateAttributeOptionAction.php
+  s_2fa7ebcb64b5d7::t_66326b4a7ececb 54-55
+app/Services/AttributeGlobalization/CategoryAssignmentWriter.php
+  s_2fa7ebcb64b5d7::t_66326b4a7ececb 25,32,112
+app/Actions/CategorySchema/CreateAttributeOptionAction.php
+  s_2fa7ebcb64b5d7::t_66326b4a7ececb 10,54
+app/Queries/Attributes/AttributeGlobalizationDiagnosticsQuery.php
+  s_2fa7ebcb64b5d7::t_66326b4a7ececb 10,45,70,79-84,214,221
+app/Actions/CategorySchema/UpdateAttributeDefinitionAction.php
+  s_2fa7ebcb64b5d7::t_66326b4a7ececb 11,66-68,79
+app/Services/AttributeGlobalization/AttributeIdentityReservation.php
+  s_2fa7ebcb64b5d7::t_1ff03ca0c5d0e6 1-64
+app/Actions/CategorySchema/DeleteAttributeOptionAction.php
+  s_2fa7ebcb64b5d7::t_66326b4a7ececb 30
+app/Services/AttributeGlobalization/GlobalAttributeWriter.php
+  s_2fa7ebcb64b5d7::t_66326b4a7ececb 22,35,72-74,82
+tests/Feature/Actions/AttributeOptionActionsTest.php
+  s_2fa7ebcb64b5d7::t_2b7aac9e3a65bd 123,194,201-207
+tests/Feature/Attributes/AttributeIdentityIntegrityTest.php
+  s_2fa7ebcb64b5d7::t_578fad9d0b8709 1-99,101-181
+tests/Feature/Categories/CategorySchemaRevisionTest.php
+  s_2fa7ebcb64b5d7::t_2b7aac9e3a65bd 121-133
+app/Actions/CategorySchema/CreateAttributeDefinitionAction.php
+  s_2fa7ebcb64b5d7::t_66326b4a7ececb 10,39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "9f6b79d0aeb0d3d0eef549de10b20cc16cf90421",
+  "prompts": {},
+  "sessions": {
+    "s_2fa7ebcb64b5d7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a10bab-fdb4-7a82-968a-02b602445703",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

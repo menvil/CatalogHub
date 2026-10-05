@@ -120,7 +120,7 @@ class AttributeOptionActionsTest extends TestCase
             'data_type' => AttributeDataType::Enum,
         ]);
         $option = AttributeOption::factory()->for($attribute, 'attribute')->create([
-            'code' => 'old',
+            'code' => 'ips',
             'label' => 'Old',
             'position' => 1,
             'is_visible' => true,
@@ -191,16 +191,20 @@ class AttributeOptionActionsTest extends TestCase
         ]);
     }
 
-    public function test_deletes_option_for_enum_attribute(): void
+    public function test_rejects_hard_removal_of_even_unreferenced_enum_option(): void
     {
         $attribute = AttributeDefinition::factory()->create([
             'data_type' => AttributeDataType::Enum,
         ]);
         $option = AttributeOption::factory()->for($attribute, 'attribute')->create();
 
-        app(DeleteAttributeOptionAction::class)->handle($option);
-
-        $this->assertDatabaseMissing('attribute_options', ['id' => $option->id]);
+        try {
+            app(DeleteAttributeOptionAction::class)->handle($option);
+            self::fail('Option identity was removed.');
+        } catch (ValidationException $exception) {
+            self::assertStringContainsString('is_visible=false', $exception->errors()['option'][0]);
+            $this->assertDatabaseHas('attribute_options', ['id' => $option->id]);
+        }
     }
 
     public function test_does_not_delete_option_for_non_enum_attribute(): void

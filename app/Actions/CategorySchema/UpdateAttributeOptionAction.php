@@ -7,7 +7,6 @@ use App\Exceptions\CategorySchema\CannotManageAttributeOptionException;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\User;
-use App\Services\AttributeGlobalization\AttributeDependencies;
 use App\Services\CategorySchema\SchemaRevision;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -52,8 +51,8 @@ final class UpdateAttributeOptionAction
             'is_visible' => ['nullable', 'boolean'],
         ])->validate();
 
-        if ($validated['code'] !== $option->code && array_diff(app(AttributeDependencies::class)->forDefinition($option->attribute), ['options']) !== []) {
-            throw ValidationException::withMessages(['code' => 'Explicit migration required: dependent data prevents changing option identity.']);
+        if ($validated['code'] !== $option->code) {
+            throw ValidationException::withMessages(['code' => 'Option code is immutable. Explicit reconciliation required to change option identity.']);
         }
 
         $option->fill([

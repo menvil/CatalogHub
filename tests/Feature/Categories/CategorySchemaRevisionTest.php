@@ -118,6 +118,19 @@ final class CategorySchemaRevisionTest extends TestCase
         $category = CentralCategory::factory()->create();
         $mutation = $this->mutation($case, $category);
         $this->approve($category);
+        if ($case === 'option-delete') {
+            $before = $category->fresh()->getRawOriginal();
+            $auditCount = AuditLogEntry::query()->count();
+            try {
+                $mutation();
+                self::fail('Hard option removal was allowed.');
+            } catch (ValidationException) {
+                self::assertSame($before, $category->fresh()->getRawOriginal());
+                self::assertSame($auditCount, AuditLogEntry::query()->count());
+            }
+
+            return;
+        }
         $mutation();
         $current = $category->fresh();
         self::assertSame(2, $current->schema_revision);

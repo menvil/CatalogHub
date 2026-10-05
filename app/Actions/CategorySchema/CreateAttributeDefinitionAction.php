@@ -7,6 +7,7 @@ use App\Enums\SchemaMutationOrigin;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\User;
+use App\Services\AttributeGlobalization\AttributeIdentityReservation;
 use App\Services\CategorySchema\SchemaRevision;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -34,6 +35,8 @@ final class CreateAttributeDefinitionAction
 
         return DB::transaction(function () use ($section, $validated): AttributeDefinition {
             $section->newQuery()->whereKey($section->getKey())->lockForUpdate()->firstOrFail();
+
+            app(AttributeIdentityReservation::class)->legacyCreateCode($validated['code']);
 
             $position = $validated['position']
                 ?? ((int) $section->attributes()->max('position') + 1);

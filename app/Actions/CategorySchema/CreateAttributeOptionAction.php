@@ -7,6 +7,7 @@ use App\Exceptions\CategorySchema\CannotManageAttributeOptionException;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\User;
+use App\Services\AttributeGlobalization\AttributeIdentityReservation;
 use App\Services\CategorySchema\SchemaRevision;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -49,6 +50,8 @@ final class CreateAttributeOptionAction
 
         return DB::transaction(function () use ($attribute, $validated): AttributeOption {
             $attribute->newQuery()->whereKey($attribute->getKey())->lockForUpdate()->firstOrFail();
+
+            app(AttributeIdentityReservation::class)->optionCode($attribute->id, $validated['code']);
 
             $position = $validated['position']
                 ?? ((int) $attribute->options()->max('position') + 1);

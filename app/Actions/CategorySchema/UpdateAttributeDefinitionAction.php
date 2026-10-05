@@ -8,7 +8,7 @@ use App\Enums\SchemaMutationOrigin;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\User;
 use App\Services\AttributeGlobalization\AttributeDependencies;
-use App\Services\AttributeGlobalization\GlobalAttributeWriter;
+use App\Services\AttributeGlobalization\AttributeIdentityReservation;
 use App\Services\AttributeGlobalization\LegacyAttributeBackfill;
 use App\Services\CategorySchema\SchemaRevision;
 use Illuminate\Support\Facades\Validator;
@@ -63,6 +63,9 @@ final class UpdateAttributeDefinitionAction
         ]);
 
         $dangerous = array_intersect(array_keys($attribute->getDirty()), ['code', 'data_type', 'dimension', 'canonical_unit']);
+        if ($dangerous !== []) {
+            app(AttributeIdentityReservation::class)->assertResolved($attribute);
+        }
         if ($dangerous !== [] && app(AttributeDependencies::class)->forDefinition($attribute->fresh() ?? $attribute) !== []) {
             throw ValidationException::withMessages(['attribute' => 'Explicit migration required: dependent data prevents canonical identity/type/measurement changes.']);
         }
@@ -73,7 +76,7 @@ final class UpdateAttributeDefinitionAction
             }
             $attribute->fill(['measurement_dimension_id' => $measurement['dimension_id'], 'canonical_measurement_unit_id' => $measurement['unit_id']]);
             if (in_array('code', $dangerous, true)) {
-                app(GlobalAttributeWriter::class)->uniqueCode($attribute->code, $attribute->id);
+                app(AttributeIdentityReservation::class)->uniqueCode($attribute->code, $attribute->id);
                 if ($attribute->canonical_code !== null) {
                     $attribute->canonical_code = $attribute->code;
                 }

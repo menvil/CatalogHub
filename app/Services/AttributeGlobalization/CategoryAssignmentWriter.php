@@ -22,16 +22,14 @@ use Illuminate\Validation\ValidationException;
 
 final readonly class CategoryAssignmentWriter
 {
-    public function __construct(private CategoryAccess $access, private CategoryLock $locks, private SchemaRevision $revisions, private AttributeIdentityLock $identityLock, private AttributeDependencies $dependencies, private AuditRecorder $audit) {}
+    public function __construct(private CategoryAccess $access, private CategoryLock $locks, private SchemaRevision $revisions, private AttributeIdentityLock $identityLock, private AttributeDependencies $dependencies, private AttributeIdentityReservation $identities, private AuditRecorder $audit) {}
 
     /** @param array<string, mixed> $data */
     public function assign(CentralCategory $category, AttributeDefinition $definition, array $data, int $expectedRevision, ?User $actor = null): CategoryAttributeAssignment
     {
         return $this->mutate($category->id, $expectedRevision, $actor, function (CentralCategory $locked, User $actor) use ($definition, $data): CategoryAttributeAssignment {
             $definition = AttributeDefinition::query()->whereKey($definition->id)->lockForUpdate()->firstOrFail();
-            if ($definition->canonical_code === null) {
-                throw ValidationException::withMessages(['attribute_definition_id' => 'Resolve canonical identity before assigning the definition.']);
-            }
+            $this->identities->assertResolved($definition, 'attribute_definition_id');
             if (CategoryAttributeAssignment::query()->where('central_category_id', $locked->id)->where('attribute_definition_id', $definition->id)->exists()) {
                 throw ValidationException::withMessages(['attribute_definition_id' => 'The definition is already assigned.']);
             }
@@ -111,7 +109,7 @@ final readonly class CategoryAssignmentWriter
             if ($dependencies !== []) {
                 throw ValidationException::withMessages(['assignment' => 'Explicit migration required: '.implode(', ', $dependencies).'.']);
             }
-            if ($definition->central_category_id === $category->id && $definition->canonical_code === null) {
+            if ($definition->central_category_id === $category->id && ! $this->identities->resolved($definition)) {
                 throw ValidationException::withMessages(['assignment' => 'Resolve canonical identity before removing legacy membership.']);
             }
             $before = $this->snapshot($locked);

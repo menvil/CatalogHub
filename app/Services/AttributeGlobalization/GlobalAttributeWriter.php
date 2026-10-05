@@ -19,7 +19,7 @@ use Illuminate\Validation\ValidationException;
 
 final readonly class GlobalAttributeWriter
 {
-    public function __construct(private CategoryAccess $access, private AttributeIdentityLock $identityLock, private CategoryLock $categories, private GlobalAttributeValidation $validation, private AttributeDependencies $dependencies, private SchemaRevision $revisions, private AuditRecorder $audit) {}
+    public function __construct(private CategoryAccess $access, private AttributeIdentityLock $identityLock, private CategoryLock $categories, private GlobalAttributeValidation $validation, private AttributeIdentityReservation $identities, private AttributeDependencies $dependencies, private SchemaRevision $revisions, private AuditRecorder $audit) {}
 
     /** @param array<string, mixed> $data */
     public function create(array $data, ?User $actor = null): AttributeDefinition
@@ -32,7 +32,7 @@ final readonly class GlobalAttributeWriter
             if ($validated['data_type'] === 'json') {
                 throw ValidationException::withMessages(['data_type' => 'New JSON authoring requires an explicit structured contract.']);
             }
-            $this->uniqueCode($validated['code']);
+            $this->identities->uniqueCode($validated['code']);
             $definition = AttributeDefinition::query()->create([...$validated, 'canonical_code' => $validated['code']]);
             $this->audit->record(AuditAction::CatalogAttributeCreated, AuditContext::Central, $actor, $definition, null, null, $this->snapshot($definition, 0));
             $this->identityLock->recordTargetWrite();
@@ -69,6 +69,9 @@ final readonly class GlobalAttributeWriter
                 $this->revisions->assertMutable($category);
             }
             $dangerous = array_intersect($changed, ['code', 'data_type', 'measurement_dimension_id', 'canonical_measurement_unit_id', 'dimension', 'canonical_unit']);
+            if ($dangerous !== []) {
+                $this->identities->assertResolved($locked);
+            }
             if (in_array('data_type', $changed, true) && $locked->data_type->value === 'json') {
                 throw ValidationException::withMessages(['data_type' => 'New JSON authoring requires an explicit structured contract.']);
             }
@@ -76,7 +79,7 @@ final readonly class GlobalAttributeWriter
                 throw ValidationException::withMessages(['attribute' => 'Explicit migration required: dependent data prevents canonical identity/type/measurement changes.']);
             }
             if (in_array('code', $changed, true)) {
-                $this->uniqueCode($locked->code, $locked->id);
+                $this->identities->uniqueCode($locked->code, $locked->id);
                 $locked->canonical_code = $locked->code;
             }
             $locked->saveOrFail();
@@ -91,17 +94,6 @@ final readonly class GlobalAttributeWriter
 
             return $locked;
         }, 3);
-    }
-
-    public function uniqueCode(string $code, ?int $ignoreId = null): void
-    {
-        $query = AttributeDefinition::query()->where(fn ($q) => $q->where('code', $code)->orWhere('canonical_code', $code));
-        if ($ignoreId !== null) {
-            $query->where('id', '!=', $ignoreId);
-        }
-        if ($query->exists() || AttributeDefinitionCrosswalk::query()->toBase()->where('legacy_code', $code)->when($ignoreId !== null, fn ($q) => $q->where('legacy_definition_id', '!=', $ignoreId))->exists()) {
-            throw ValidationException::withMessages(['code' => 'Code is already reserved by a canonical or unresolved legacy meaning.']);
-        }
     }
 
     /** @return array<string, mixed> */

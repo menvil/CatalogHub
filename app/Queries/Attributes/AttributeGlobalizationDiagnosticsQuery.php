@@ -7,6 +7,7 @@ use App\Models\AttributeDisplayRule;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeDefinitionCrosswalk;
 use App\Models\CentralCatalog\AttributeOption;
+use App\Models\CentralCatalog\AttributeOptionCrosswalk;
 use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
 use App\Models\ContentRelation;
@@ -41,7 +42,7 @@ final class AttributeGlobalizationDiagnosticsQuery
         $assignmentsById = $assignments->keyBy('id');
         $missingAssignments = [];
         $assignmentDrift = [];
-        $unresolved = [];
+        $unresolved = $crosswalks->whereNull('canonical_definition_id')->keys()->all();
         $measurements = [];
         $groups = [];
         $nameGroups = [];
@@ -66,7 +67,7 @@ final class AttributeGlobalizationDiagnosticsQuery
                 }
             }
             $crosswalk = $crosswalks->get($definition->id);
-            if ($definition->canonical_code === null || ($definition->central_category_id !== null && ($crosswalk === null || $crosswalk->canonical_definition_id === null))) {
+            if ($definition->canonical_code === null || ($definition->central_category_id !== null && $crosswalk === null)) {
                 $unresolved[] = $definition->id;
             }
             $mapping = app(LegacyAttributeBackfill::class)->measurement($definition->dimension, $definition->canonical_unit, $definition->data_type->value);
@@ -75,6 +76,12 @@ final class AttributeGlobalizationDiagnosticsQuery
                 $measurements[] = ['definition_id' => $definition->id, 'status' => $mapping['status']];
             }
         }
+        $unresolved = array_values(array_unique($unresolved));
+        sort($unresolved, SORT_NUMERIC);
+        $optionIdentityProblems = AttributeOptionCrosswalk::query()->toBase()
+            ->leftJoin('attribute_options as canonical', 'canonical.id', '=', 'attribute_option_crosswalks.canonical_option_id')
+            ->where(fn ($query) => $query->whereNull('canonical.id')->orWhere('status', '!=', 'identity_preserved')->orWhereColumn('canonical_code', '!=', 'canonical.code')->orWhereNull('canonical_code'))
+            ->orderBy('legacy_option_id')->get(['legacy_option_id', 'legacy_definition_id', 'canonical_option_id', 'status'])->map(fn ($row) => (array) $row)->all();
         ksort($groups, SORT_STRING);
         $duplicates = [];
         $possible = [];
@@ -204,14 +211,14 @@ final class AttributeGlobalizationDiagnosticsQuery
                 $contentProblems[] = $relation->id;
             }
         }
-        $blockers = count($assignmentDrift) + count($missingAssignments) + count($duplicates) + count($unresolved) + count($measurements) + count($productMembership) + count($mergeConflicts) + count($mappingProblems) + count($draftProblems) + count($translations) + count($facetProblems) + count($contentProblems);
+        $blockers = count($optionIdentityProblems) + count($assignmentDrift) + count($missingAssignments) + count($duplicates) + count($unresolved) + count($measurements) + count($productMembership) + count($mergeConflicts) + count($mappingProblems) + count($draftProblems) + count($translations) + count($facetProblems) + count($contentProblems);
 
         return ['report_version' => 1, 'identity_version' => 1, 'cutover_ready' => $blockers === 0, 'blocker_count' => $blockers,
             'total_legacy_definitions' => $crosswalks->pluck('legacy_definition_id')->merge($definitions->whereNotNull('central_category_id')->pluck('id'))->unique()->count(),
             'assignment_backfill' => ['total_assignments' => $assignments->count(), 'missing_definition_ids' => $missingAssignments, 'legacy_field_mismatches' => $assignmentDrift, 'checksum' => $this->hash($assignments->map(fn ($r) => $r->only(['central_category_id', 'attribute_definition_id', ...LegacyAttributeBackfill::LOCAL_FIELDS]))->all())],
             'globally_duplicate_codes' => $duplicates, 'possible_equivalence_groups' => $possible, 'incompatible_same_code_groups' => $incompatible, 'different_code_candidates' => $differentCodeCandidates,
             'product_facts' => ['count' => $productCount, 'checksum' => hash_final($productHash)], 'product_membership_problems' => $productMembership, 'product_value_merge_conflicts' => $mergeConflicts,
-            'option_code_conflicts' => $optionConflicts, 'measurement_mapping_failures' => $measurements, 'translation_locale_collisions' => $translations, 'mapping_membership_problems' => $mappingProblems,
+            'option_code_conflicts' => $optionConflicts, 'option_identity_problems' => $optionIdentityProblems, 'measurement_mapping_failures' => $measurements, 'translation_locale_collisions' => $translations, 'mapping_membership_problems' => $mappingProblems,
             'draft_non_fk_references' => $drafts, 'draft_reference_problems' => $draftProblems, 'display_rule_conflicts' => $displayConflicts,
             'facet_dependencies' => FacetDefinition::query()->whereNotNull('attribute_definition_id')->orderBy('id')->get(['id', 'category_id', 'attribute_definition_id'])->toArray(), 'facet_membership_problems' => $facetProblems,
             'content_dependencies' => ContentRelation::query()->where('related_type', 'attribute')->orderBy('id')->get(['id', 'related_id'])->toArray(), 'content_reference_problems' => $contentProblems,

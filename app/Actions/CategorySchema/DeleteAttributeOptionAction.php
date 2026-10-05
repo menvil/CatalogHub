@@ -6,7 +6,6 @@ use App\Enums\SchemaMutationOrigin;
 use App\Exceptions\CategorySchema\CannotManageAttributeOptionException;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\User;
-use App\Services\AttributeGlobalization\AttributeDependencies;
 use App\Services\CategorySchema\SchemaRevision;
 use Illuminate\Validation\ValidationException;
 
@@ -28,9 +27,6 @@ final class DeleteAttributeOptionAction
             throw CannotManageAttributeOptionException::attributeDoesNotAllowOptions();
         }
 
-        if (array_diff(app(AttributeDependencies::class)->forDefinition($option->attribute), ['options']) !== []) {
-            throw ValidationException::withMessages(['option' => 'Explicit migration required: dependent data prevents deleting option identity. Hide the option instead.']);
-        }
-        $option->delete();
+        throw ValidationException::withMessages(['option' => 'Option removal requires an explicit audited retirement workflow. Hide the option with is_visible=false instead.']);
     }
 }

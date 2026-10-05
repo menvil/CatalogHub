@@ -102,7 +102,7 @@ final class RelationsRelationManager extends RelationManager
     /** @return array<int|string, string> */
     private function attributeOptions(): array
     {
-        return AttributeDefinition::query()
+        return app(LegacyAttributeCompatibility::class)->contentReferenceDefinitions()
             ->with('category')
             ->orderBy('central_category_id')
             ->orderBy('position')

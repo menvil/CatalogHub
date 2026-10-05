@@ -2,15 +2,26 @@
 
 namespace App\Services\AttributeGlobalization;
 
+use App\Enums\Permission;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeDefinitionCrosswalk;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeOptionCrosswalk;
 use App\Models\CentralCatalog\CategoryAttributeAssignment;
+use App\Services\Categories\CategoryAccess;
+use Illuminate\Database\Eloquent\Builder;
 
 /** One bridge for the temporary legacy authoring paths; no consumer cutover. */
 final class LegacyAttributeCompatibility
 {
+    /** Existing Content references retain their bounded legacy read contract.
+     * @return Builder<AttributeDefinition>
+     */
+    public function contentReferenceDefinitions(): Builder
+    {
+        return AttributeDefinition::query()->when(! app(CategoryAccess::class)->allows(Permission::CatalogSchemaManage), fn ($query) => $query->whereNotNull('central_category_id'));
+    }
+
     public function referenceLabel(AttributeDefinition $definition): string
     {
         return $definition->category === null

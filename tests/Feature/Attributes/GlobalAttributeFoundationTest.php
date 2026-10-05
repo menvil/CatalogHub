@@ -328,6 +328,10 @@ final class GlobalAttributeFoundationTest extends TestCase
         $bridge = app(LegacyAttributeCompatibility::class);
         self::assertSame('Size [global_size]', $bridge->referenceLabel($global));
         self::assertSame($legacy->category->name.' — Legacy size', $bridge->referenceLabel($legacy));
+        $this->actingAs(User::factory()->create(['role' => 'catalog_editor']));
+        self::assertSame([$legacy->id], $bridge->contentReferenceDefinitions()->pluck('id')->all());
+        $this->actingAs(User::factory()->centralAdmin()->create());
+        self::assertSame([$global->id, $legacy->id], $bridge->contentReferenceDefinitions()->orderBy('id')->pluck('id')->all());
     }
 
     public function test_temporary_definition_editor_audits_canonical_change_and_invalidates_all_assignments(): void

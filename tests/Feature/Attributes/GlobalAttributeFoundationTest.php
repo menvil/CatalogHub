@@ -258,6 +258,34 @@ final class GlobalAttributeFoundationTest extends TestCase
         }
     }
 
+    public function test_unrelated_unreferenced_code_edit_preserves_unresolved_legacy_measurement(): void
+    {
+        $actor = User::factory()->centralAdmin()->create();
+        $definition = AttributeDefinition::factory()->create(['code' => 'legacy_size', 'data_type' => 'decimal', 'dimension' => 'unknown_dimension', 'canonical_unit' => 'unknown_unit']);
+        app(LegacyAttributeBackfill::class)->run();
+        $updated = app(UpdateGlobalAttributeDefinitionAction::class)->handle($definition, ['code' => 'approved_size'], $actor);
+        self::assertSame('unknown_dimension', $updated->dimension);
+        self::assertSame('unknown_unit', $updated->canonical_unit);
+        self::assertNull($updated->measurement_dimension_id);
+        self::assertNull($updated->canonical_measurement_unit_id);
+        $report = app(AttributeGlobalizationDiagnosticsQuery::class)->report($actor);
+        self::assertSame([['definition_id' => $definition->id, 'status' => 'unknown_catalog_code']], $report['measurement_mapping_failures']);
+        self::assertFalse($report['cutover_ready']);
+    }
+
+    public function test_durable_legacy_inventory_count_survives_safe_membership_removal(): void
+    {
+        $actor = User::factory()->centralAdmin()->create();
+        $definition = AttributeDefinition::factory()->create(['code' => 'legacy_label']);
+        app(LegacyAttributeBackfill::class)->run();
+        app(UnassignAttributeFromCategoryAction::class)->handle($definition->assignments()->sole(), 1, $actor);
+        self::assertNull($definition->fresh()->central_category_id);
+        $report = app(AttributeGlobalizationDiagnosticsQuery::class)->report($actor);
+        self::assertSame(1, $report['total_legacy_definitions']);
+        self::assertTrue($report['cutover_ready']);
+        self::assertSame($definition->id, AttributeDefinitionCrosswalk::query()->sole()->legacy_definition_id);
+    }
+
     public function test_unassignment_preserves_global_meaning_and_options_but_product_dependency_blocks_removal(): void
     {
         $actor = User::factory()->centralAdmin()->create();

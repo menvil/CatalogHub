@@ -191,7 +191,7 @@ final class AttributeGlobalizationDiagnosticsQuery
         $blockers = count($assignmentDrift) + count($missingAssignments) + count($duplicates) + count($unresolved) + count($measurements) + count($productMembership) + count($mergeConflicts) + count($mappingProblems) + count($draftProblems) + count($translations) + count($facetProblems) + count($contentProblems);
 
         return ['report_version' => 1, 'identity_version' => 1, 'cutover_ready' => $blockers === 0, 'blocker_count' => $blockers,
-            'total_legacy_definitions' => $definitions->whereNotNull('central_category_id')->count(),
+            'total_legacy_definitions' => $crosswalks->pluck('legacy_definition_id')->merge($definitions->whereNotNull('central_category_id')->pluck('id'))->unique()->count(),
             'assignment_backfill' => ['total_assignments' => $assignments->count(), 'missing_definition_ids' => $missingAssignments, 'legacy_field_mismatches' => $assignmentDrift, 'checksum' => $this->hash($assignments->map(fn ($r) => $r->only(['central_category_id', 'attribute_definition_id', ...LegacyAttributeBackfill::LOCAL_FIELDS]))->all())],
             'globally_duplicate_codes' => $duplicates, 'possible_equivalence_groups' => $possible, 'incompatible_same_code_groups' => $incompatible, 'different_code_candidates' => $differentCodeCandidates,
             'product_facts' => ['count' => $productCount, 'checksum' => hash_final($productHash)], 'product_membership_problems' => $productMembership, 'product_value_merge_conflicts' => $mergeConflicts,

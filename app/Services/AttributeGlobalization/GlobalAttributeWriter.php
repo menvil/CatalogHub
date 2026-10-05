@@ -55,7 +55,7 @@ final readonly class GlobalAttributeWriter
             $validated = $this->validation->validate([...$input, ...$data]);
             // Missing legacy relational mappings cannot be silently cleared by ordinary edits.
             if (($locked->dimension !== null || $locked->canonical_unit !== null) && $locked->measurement_dimension_id === null
-                && array_diff(array_keys($data), ['name']) === []) {
+                && ! array_key_exists('measurement_dimension_id', $data) && ! array_key_exists('canonical_measurement_unit_id', $data)) {
                 $validated['dimension'] = $locked->dimension;
                 $validated['canonical_unit'] = $locked->canonical_unit;
             }

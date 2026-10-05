@@ -105,7 +105,7 @@ final readonly class GlobalAttributeWriter
     }
 
     /** @return array<string, mixed> */
-    private function snapshot(AttributeDefinition $definition, int $count): array
+    public function snapshot(AttributeDefinition $definition, int $count): array
     {
         return ['definition_id' => $definition->id, ...array_intersect_key($definition->getAttributes(), array_flip(['code', 'name', 'data_type', 'measurement_dimension_id', 'dimension', 'canonical_measurement_unit_id', 'canonical_unit'])), 'affected_category_count' => $count];
     }

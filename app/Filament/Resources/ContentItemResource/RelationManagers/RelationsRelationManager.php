@@ -8,6 +8,7 @@ use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\ContentItem;
+use App\Services\AttributeGlobalization\LegacyAttributeCompatibility;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -107,7 +108,7 @@ final class RelationsRelationManager extends RelationManager
             ->orderBy('position')
             ->get()
             ->mapWithKeys(fn (AttributeDefinition $attribute): array => [
-                $attribute->getKey() => $attribute->category->name.' — '.$attribute->name,
+                $attribute->getKey() => app(LegacyAttributeCompatibility::class)->referenceLabel($attribute),
             ])
             ->all();
     }

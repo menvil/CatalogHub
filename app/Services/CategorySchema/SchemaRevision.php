@@ -7,11 +7,13 @@ use App\Enums\AuditContext;
 use App\Enums\CategorySchemaStatus;
 use App\Enums\Permission;
 use App\Enums\SchemaMutationOrigin;
+use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\User;
 use App\Queries\Categories\CategorySchemaFingerprintQuery;
 use App\Services\AttributeGlobalization\AttributeIdentityLock;
+use App\Services\AttributeGlobalization\GlobalAttributeWriter;
 use App\Services\AttributeGlobalization\LegacyAttributeCompatibility;
 use App\Services\Audit\AuditRecorder;
 use App\Services\Categories\CategoryAccess;
@@ -52,11 +54,25 @@ final readonly class SchemaRevision
                 $before[$id] = $this->fingerprints->forCategory($id);
             }
             $legacyBefore = $bridge->snapshotCategory($categoryId);
+            $canonicalBefore = $origin === SchemaMutationOrigin::AttributeUpdated && $definitionId !== null
+                ? app(GlobalAttributeWriter::class)->snapshot(AttributeDefinition::query()->findOrFail($definitionId), 0) : null;
             $result = $mutation();
             $bridge->synchronizeCategory($categoryId, $legacyBefore);
+            $invalidatedCount = 0;
             foreach ($ids as $id) {
                 if ($before[$id] !== $this->fingerprints->forCategory($id)) {
                     $this->invalidate($locked[$id], $origin, $result instanceof Model ? (int) $result->getKey() : $originId, $actor);
+                    $invalidatedCount++;
+                }
+            }
+            if ($canonicalBefore !== null) {
+                $definition = AttributeDefinition::query()->findOrFail($definitionId);
+                $canonicalAfter = app(GlobalAttributeWriter::class)->snapshot($definition, 0);
+                $changed = array_keys(array_filter($canonicalAfter, fn ($value, $field) => $value !== $canonicalBefore[$field], ARRAY_FILTER_USE_BOTH));
+                if ($changed !== []) {
+                    $this->audit->record(AuditAction::CatalogAttributeUpdated, AuditContext::Central, $actor, $definition, null,
+                        [...$canonicalBefore, 'affected_category_count' => $invalidatedCount, 'changed_fields' => $changed],
+                        [...$canonicalAfter, 'affected_category_count' => $invalidatedCount, 'changed_fields' => $changed]);
                 }
             }
 

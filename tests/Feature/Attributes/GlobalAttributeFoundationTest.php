@@ -8,6 +8,7 @@ use App\Actions\CategorySchema\DeleteAttributeOptionAction;
 use App\Actions\CategorySchema\DeleteAttributeSectionAction;
 use App\Actions\CategorySchema\MoveCategoryAttributeAssignmentAction;
 use App\Actions\CategorySchema\UnassignAttributeFromCategoryAction;
+use App\Actions\CategorySchema\UpdateAttributeDefinitionAction;
 use App\Actions\CategorySchema\UpdateAttributeOptionAction;
 use App\Actions\CategorySchema\UpdateCategoryAttributeAssignmentAction;
 use App\Actions\CategorySchema\UpdateGlobalAttributeDefinitionAction;
@@ -35,6 +36,7 @@ use App\Models\MeasurementUnit;
 use App\Models\User;
 use App\Queries\Attributes\AttributeGlobalizationDiagnosticsQuery;
 use App\Services\AttributeGlobalization\LegacyAttributeBackfill;
+use App\Services\AttributeGlobalization\LegacyAttributeCompatibility;
 use App\Services\Audit\AuditRecorder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
@@ -317,6 +319,33 @@ final class GlobalAttributeFoundationTest extends TestCase
         self::assertSame($one, $query->report($actor));
         self::assertSame($before, AuditLogEntry::query()->count());
         $this->artisan('catalog:diagnose-attribute-globalization', ['--actor' => $actor->id])->assertSuccessful();
+    }
+
+    public function test_existing_content_identity_label_supports_global_definition_without_a_legacy_category(): void
+    {
+        $global = AttributeDefinition::factory()->global()->create(['code' => 'global_size', 'name' => 'Size']);
+        $legacy = AttributeDefinition::factory()->create(['name' => 'Legacy size']);
+        $bridge = app(LegacyAttributeCompatibility::class);
+        self::assertSame('Size [global_size]', $bridge->referenceLabel($global));
+        self::assertSame($legacy->category->name.' — Legacy size', $bridge->referenceLabel($legacy));
+    }
+
+    public function test_temporary_definition_editor_audits_canonical_change_and_invalidates_all_assignments(): void
+    {
+        $actor = User::factory()->centralAdmin()->create();
+        $definition = AttributeDefinition::factory()->create(['code' => 'size', 'data_type' => 'decimal']);
+        app(LegacyAttributeBackfill::class)->run();
+        $other = CategoryAttributeAssignment::factory()->for($definition, 'definition')->create();
+        $action = app(UpdateAttributeDefinitionAction::class);
+        $data = ['code' => 'size', 'name' => 'Canonical size', 'data_type' => 'decimal'];
+        $action->handle($definition, $data, $actor);
+        self::assertSame(2, $definition->category->fresh()->schema_revision);
+        self::assertSame(2, $other->category->fresh()->schema_revision);
+        $event = AuditLogEntry::query()->where('action', 'catalog.attribute.updated')->sole();
+        self::assertSame(2, $event->after_json['affected_category_count']);
+        self::assertSame(['name'], $event->after_json['changed_fields']);
+        $action->handle($definition, $data, $actor);
+        self::assertSame(1, AuditLogEntry::query()->where('action', 'catalog.attribute.updated')->count());
     }
 
     #[DataProvider('dependencyOwners')]

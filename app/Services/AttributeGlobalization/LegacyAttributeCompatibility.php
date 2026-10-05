@@ -11,6 +11,13 @@ use App\Models\CentralCatalog\CategoryAttributeAssignment;
 /** One bridge for the temporary legacy authoring paths; no consumer cutover. */
 final class LegacyAttributeCompatibility
 {
+    public function referenceLabel(AttributeDefinition $definition): string
+    {
+        return $definition->category === null
+            ? $definition->name.' ['.$definition->code.']'
+            : $definition->category->name.' — '.$definition->name;
+    }
+
     /** @param array<int, array<string, mixed>> $before */
     public function synchronizeCategory(int $categoryId, array $before = []): void
     {

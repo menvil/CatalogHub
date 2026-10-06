@@ -29,6 +29,7 @@ use App\Services\AttributeGlobalization\LegacyAttributeBackfill;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\AttributeIdentityRace;
 use Tests\TestCase;
@@ -88,7 +89,7 @@ final class SchemaConsumerConcurrencyTest extends TestCase
                     try {
                         $child();
                         self::fail('Old definition pointer was accepted after finalization.');
-                    } catch (CannotSaveProductSpecsException|\Illuminate\Validation\ValidationException) {
+                    } catch (CannotSaveProductSpecsException|ValidationException) {
                         self::assertSame(0, CentralProductAttributeValue::query()->count());
                     }
                 }

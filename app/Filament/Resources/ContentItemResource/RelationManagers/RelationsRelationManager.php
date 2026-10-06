@@ -103,8 +103,9 @@ final class RelationsRelationManager extends RelationManager
     {
         return AttributeDefinition::query()
 
-            ->orderBy('central_category_id')
-            ->orderBy('position')
+            ->orderBy('name')
+            ->orderBy('code')
+            ->orderBy('id')
             ->get()
             ->mapWithKeys(fn (AttributeDefinition $attribute): array => [
                 $attribute->getKey() => $attribute->name.' ('.$attribute->code.')',

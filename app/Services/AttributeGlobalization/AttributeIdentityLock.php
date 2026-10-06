@@ -3,47 +3,33 @@
 namespace App\Services\AttributeGlobalization;
 
 use App\Models\CentralCatalog\AttributeIdentityScope;
-use App\Queries\Attributes\AttributeIdentityConnectionLockQuery;
-use Illuminate\Support\Facades\DB;
+use App\Services\SchemaCutoverV2\IdentityMutex;
 use Illuminate\Validation\ValidationException;
 
 /** Shared membership/identity mutex, always before Category and definition locks. */
 final class AttributeIdentityLock
 {
-    private int $deploymentHolds = 0;
-
     public function acquire(): void
     {
-        app(AttributeIdentityConnectionLockQuery::class)->acquire();
-        AttributeIdentityScope::query()->toBase()->where('id', 1)->increment('write_epoch', 0);
-        AttributeIdentityScope::query()->toBase()->where('id', 1)->lockForUpdate()->firstOrFail();
+        (new IdentityMutex)->acquire();
     }
 
     /** Holds the MariaDB mutex across DDL transaction boundaries. */
     public function deployment(\Closure $operation): void
     {
-        app(AttributeIdentityConnectionLockQuery::class)->acquire();
-        $this->deploymentHolds++;
-        try {
-            $operation();
-        } finally {
-            $this->deploymentHolds--;
-            $this->releaseAfterTransaction();
-        }
+        (new IdentityMutex)->deployment($operation);
     }
 
     public function releaseAfterTransaction(): void
     {
-        if ($this->deploymentHolds === 0 && DB::transactionLevel() === 0) {
-            app(AttributeIdentityConnectionLockQuery::class)->release();
-        }
+        (new IdentityMutex)->releaseAfterTransaction();
     }
 
     public function acquireConsumerRead(): void
     {
         $this->acquire();
         $version = (int) AttributeIdentityScope::query()->whereKey(1)->value('consumer_version');
-        if ($version !== SchemaConsumerVersion::CURRENT && ! ($version === 0 && $this->deploymentHolds > 0)) {
+        if ($version !== SchemaConsumerVersion::CURRENT && ! ($version === 0 && (new IdentityMutex)->deploymentHeld())) {
             throw ValidationException::withMessages(['attribute_identity_version' => 'Target identity reads are paused until cutover/rebuild completes.']);
         }
     }

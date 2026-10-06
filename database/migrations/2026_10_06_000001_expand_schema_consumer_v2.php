@@ -12,6 +12,7 @@ return new class extends Migration
         Schema::table('attribute_identity_scopes', function (Blueprint $table): void {
             $table->unsignedInteger('consumer_version')->default(1);
             $table->unsignedBigInteger('cutover_write_epoch')->nullable();
+            $table->boolean('cutover_ready_for_finalization')->default(false);
         });
         Schema::table('facet_definitions', function (Blueprint $table): void {
             $table->foreignId('category_attribute_assignment_id')->nullable();
@@ -88,6 +89,6 @@ return new class extends Migration
             $table->dropIndex('facet_assignment_category_idx');
             $table->dropColumn('category_attribute_assignment_id');
         });
-        Schema::table('attribute_identity_scopes', fn (Blueprint $table) => $table->dropColumn(['consumer_version', 'cutover_write_epoch']));
+        Schema::table('attribute_identity_scopes', fn (Blueprint $table) => $table->dropColumn(['consumer_version', 'cutover_write_epoch', 'cutover_ready_for_finalization']));
     }
 };

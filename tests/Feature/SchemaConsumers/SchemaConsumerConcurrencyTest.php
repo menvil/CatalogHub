@@ -12,6 +12,7 @@ use App\Actions\Imports\PublishNormalizedProductDraftToCentralAction;
 use App\Actions\Imports\RejectNormalizedProductDraftAction;
 use App\Actions\ProductAttributes\SaveProductSpecsAction;
 use App\Domains\Projections\SiteSyncService;
+use App\Exceptions\ProductAttributes\CannotSaveProductSpecsException;
 use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
@@ -23,6 +24,7 @@ use App\Models\SiteProductProjection;
 use App\Models\SiteSearchDocument;
 use App\Models\User;
 use App\Services\AttributeGlobalization\AttributeReconciliationWriter;
+use App\Services\AttributeGlobalization\FinalizeSchemaConsumersV2;
 use App\Services\AttributeGlobalization\LegacyAttributeBackfill;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
@@ -73,8 +75,23 @@ final class SchemaConsumerConcurrencyTest extends TestCase
             default => throw new \InvalidArgumentException('Unknown writer.'),
         };
         $this->race('attribute_identity_scopes', fn () => $migration->up(), $child,
-            function (string $outcome) use ($writer, $assignment, $canonical, $product, $draft): void {
-                self::assertSame($writer === 'specs' ? 'validation-error' : 'success', $outcome);
+            function (string $outcome) use ($writer, $assignment, $canonical, $product, $draft, $actor, $child): void {
+                self::assertSame('validation-error', $outcome);
+                self::assertSame(0, (int) DB::table('attribute_identity_scopes')->value('consumer_version'));
+                self::assertSame(0, CentralProductAttributeValue::query()->count());
+                self::assertTrue(CategoryAttributeAssignment::query()->findOrFail($assignment->id)->is_visible);
+                self::assertNotSame('rejected', NormalizedProductDraft::query()->findOrFail($draft->id)->status);
+                app(FinalizeSchemaConsumersV2::class)->run($actor);
+                if ($writer !== 'specs') {
+                    $child();
+                } else {
+                    try {
+                        $child();
+                        self::fail('Old definition pointer was accepted after finalization.');
+                    } catch (CannotSaveProductSpecsException|\Illuminate\Validation\ValidationException) {
+                        self::assertSame(0, CentralProductAttributeValue::query()->count());
+                    }
+                }
                 self::assertSame(2, (int) DB::table('attribute_identity_scopes')->value('consumer_version'));
                 self::assertSame($canonical, CategoryAttributeAssignment::query()->findOrFail($assignment->id)->attribute_definition_id);
                 self::assertSame(2, NormalizedProductDraft::query()->findOrFail($draft->id)->attribute_identity_version);

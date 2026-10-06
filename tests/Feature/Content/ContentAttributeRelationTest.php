@@ -11,8 +11,10 @@ use App\Models\ContentItem;
 use App\Models\ContentRelation;
 use App\Models\Site;
 use App\Models\User;
+use Filament\Forms\Components\Select;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -80,5 +82,33 @@ class ContentAttributeRelationTest extends TestCase
             'related_type' => ContentRelationTargetType::Attribute->value,
             'related_id' => $attribute->id,
         ]);
+    }
+
+    public function test_attribute_select_preloads_global_options_on_the_contracted_schema_and_creates_relation(): void
+    {
+        self::assertFalse(Schema::hasColumn('attribute_definitions', 'central_category_id'));
+        self::assertFalse(Schema::hasColumn('attribute_definitions', 'position'));
+        $site = Site::factory()->create();
+        $item = ContentItem::factory()->for($site)->create();
+        $z = AttributeDefinition::factory()->create(['name' => 'Z global', 'code' => 'z_global']);
+        $a = AttributeDefinition::factory()->create(['name' => 'A global', 'code' => 'a_global']);
+        $same = AttributeDefinition::factory()->create(['name' => 'A global', 'code' => 'b_global']);
+
+        Livewire::actingAs(User::factory()->siteAdmin($site)->create())
+            ->test(RelationsRelationManager::class, ['ownerRecord' => $item, 'pageClass' => EditContentItem::class])
+            ->mountTableAction('create')
+            ->fillForm(['related_type' => ContentRelationTargetType::Attribute->value])
+            ->assertFormFieldExists('related_id', function (Select $select) use ($a, $same, $z): bool {
+                self::assertTrue($select->isPreloaded());
+                self::assertSame([$a->id => 'A global (a_global)', $same->id => 'A global (b_global)', $z->id => 'Z global (z_global)'], $select->getOptions());
+                self::assertCount(3, $select->getOptionsForJs());
+
+                return true;
+            })
+            ->fillForm(['related_type' => ContentRelationTargetType::Attribute->value, 'related_id' => $a->id, 'relation_type' => 'related', 'position' => 0])
+            ->callMountedTableAction()
+            ->assertHasNoTableActionErrors();
+
+        $this->assertDatabaseHas('content_relations', ['content_item_id' => $item->id, 'related_type' => 'attribute', 'related_id' => $a->id]);
     }
 }

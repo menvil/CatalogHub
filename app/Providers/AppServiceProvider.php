@@ -16,6 +16,7 @@ use App\Models\Translations\AttributeOptionTranslation;
 use App\Models\Translations\AttributeSectionTranslation;
 use App\Models\Translations\AttributeTranslation;
 use App\Models\Translations\CategoryTranslation;
+use App\Models\Translations\ProductTranslation;
 use App\Models\Translations\UnitTranslation;
 use App\Models\User;
 use App\Observers\CentralProductObserver;
@@ -139,7 +140,7 @@ class AppServiceProvider extends ServiceProvider
             Event::listen($event, fn () => app(AttributeIdentityLock::class)->releaseAfterTransaction());
         }
         foreach ([AttributeTranslation::class, AttributeOptionTranslation::class,
-            AttributeSectionTranslation::class, CategoryTranslation::class, UnitTranslation::class] as $translation) {
+            AttributeSectionTranslation::class, CategoryTranslation::class, UnitTranslation::class, ProductTranslation::class] as $translation) {
             $translation::observe(SchemaTranslationProjectionObserver::class);
         }
         CentralProduct::observe(CentralProductObserver::class);

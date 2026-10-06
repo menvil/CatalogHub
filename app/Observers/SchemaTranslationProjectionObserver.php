@@ -8,11 +8,13 @@ use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Models\CentralCatalog\CentralProduct;
 use App\Models\MeasurementUnit;
 use App\Models\Translations\AttributeOptionTranslation;
 use App\Models\Translations\AttributeSectionTranslation;
 use App\Models\Translations\AttributeTranslation;
 use App\Models\Translations\CategoryTranslation;
+use App\Models\Translations\ProductTranslation;
 use App\Models\Translations\UnitTranslation;
 use Illuminate\Database\Eloquent\Model;
 
@@ -20,7 +22,7 @@ final class SchemaTranslationProjectionObserver
 {
     public function saved(Model $translation): void
     {
-        if (! $translation->wasRecentlyCreated && ! $translation->wasChanged(['label', 'short_label', 'help_text', 'description', 'name', 'title', 'symbol', 'short_name', 'long_name', 'plural_name', 'symbol_position', 'space_between_value_and_unit', 'status'])) {
+        if (! $translation->wasRecentlyCreated && ! $translation->wasChanged(['label', 'short_label', 'help_text', 'description', 'name', 'title', 'subtitle', 'short_description', 'seo_title', 'seo_description', 'symbol', 'short_name', 'long_name', 'plural_name', 'symbol_position', 'space_between_value_and_unit', 'status'])) {
             return;
         }
         $this->invalidate($translation);
@@ -33,6 +35,15 @@ final class SchemaTranslationProjectionObserver
 
     private function invalidate(Model $translation): void
     {
+        if ($translation instanceof ProductTranslation) {
+            $product = CentralProduct::query()->find($translation->product_id);
+            if ($product !== null) {
+                app(ProjectionStaleDetector::class)->markStaleForProduct($product, 'product_translation_updated');
+            }
+
+            return;
+        }
+
         $definitionIds = match (true) {
             $translation instanceof AttributeTranslation => [$translation->attribute_definition_id],
             $translation instanceof AttributeOptionTranslation => AttributeOption::query()->whereKey($translation->attribute_option_id)->pluck('attribute_definition_id')->all(),

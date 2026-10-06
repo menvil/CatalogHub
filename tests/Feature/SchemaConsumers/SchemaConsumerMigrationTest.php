@@ -21,6 +21,7 @@ use App\Models\User;
 use App\Queries\Attributes\AttributeGlobalizationDiagnosticsQuery;
 use App\Queries\Attributes\SchemaConsumerPreflightV2Query;
 use App\Services\AttributeGlobalization\AttributeReconciliationWriter;
+use App\Services\AttributeGlobalization\FinalizeSchemaConsumersV2;
 use App\Services\AttributeGlobalization\LegacyAttributeBackfill;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
@@ -57,6 +58,7 @@ final class SchemaConsumerMigrationTest extends TestCase
         self::assertTrue(Schema::hasColumn('attribute_definitions', 'central_category_id'));
         self::assertSame(1, (int) DB::table('attribute_identity_scopes')->value('consumer_version'));
         $this->migration()->up();
+        app(FinalizeSchemaConsumersV2::class)->run(User::factory()->centralAdmin()->create());
         self::assertFalse(Schema::hasColumn('attribute_definitions', 'central_category_id'));
         self::assertTrue(app(SchemaConsumerPreflightV2Query::class)->report()['cutover_ready']);
     }
@@ -69,6 +71,7 @@ final class SchemaConsumerMigrationTest extends TestCase
         $product = CentralProduct::factory()->create(['central_category_id' => $category->id]);
         $translation = ProductTranslation::factory()->create(['product_id' => $product->id]);
         $this->migration()->up();
+        app(FinalizeSchemaConsumersV2::class)->run(User::factory()->centralAdmin()->create());
         $epoch = (int) DB::table('attribute_identity_scopes')->value('write_epoch');
         DB::table('central_categories')->where('id', $category->id)->increment('schema_revision', 0);
         self::assertSame($epoch, (int) DB::table('attribute_identity_scopes')->value('write_epoch'));
@@ -139,6 +142,7 @@ final class SchemaConsumerMigrationTest extends TestCase
         self::assertTrue($result['report']['cutover_ready']);
         self::assertTrue(app(AttributeReconciliationWriter::class)->run($plan, true, $actor)['already_applied']);
         $this->migration()->up();
+        app(FinalizeSchemaConsumersV2::class)->run(User::factory()->centralAdmin()->create());
         self::assertSame(['size', 'length'], AttributeDefinition::query()->orderBy('id')->pluck('code')->all());
         self::assertSame(2, DB::table('attribute_definition_crosswalks')->count());
     }
@@ -174,6 +178,7 @@ final class SchemaConsumerMigrationTest extends TestCase
         self::assertTrue(app(AttributeReconciliationWriter::class)->run($plan, false, $actor)['report']['cutover_ready']);
         app(AttributeReconciliationWriter::class)->run($plan, true, $actor);
         $this->migration()->up();
+        app(FinalizeSchemaConsumersV2::class)->run(User::factory()->centralAdmin()->create());
         $factAfter = (array) DB::table('central_product_attribute_values')->where('id', $valueId)->first();
         self::assertSame($target, $factAfter['attribute_definition_id']);
         self::assertSame('red', $factAfter['value_enum_code']);
@@ -221,6 +226,7 @@ final class SchemaConsumerMigrationTest extends TestCase
         self::assertSame($text, $translation->fresh()->getRawOriginal());
         self::assertSame($parent->id, (int) DB::table('schema_consumer_section_decisions')->where('section_id', $child->id)->value('legacy_parent_id'));
         $this->migration()->up();
+        app(FinalizeSchemaConsumersV2::class)->run(User::factory()->centralAdmin()->create());
         self::assertSame(2, AttributeSection::query()->count());
         self::assertSame($text, $translation->fresh()->getRawOriginal());
     }
@@ -246,6 +252,7 @@ final class SchemaConsumerMigrationTest extends TestCase
         self::assertTrue(app(AttributeReconciliationWriter::class)->run($plan, true, $actor)['already_applied']);
         self::assertSame('locale_id:'.$previousLocale->id.':'.$locale->id, SchemaConsumerDecision::query()->sole()->decision);
         $this->migration()->up();
+        app(FinalizeSchemaConsumersV2::class)->run(User::factory()->centralAdmin()->create());
         self::assertSame('historical-alias', $translation->fresh()->locale);
     }
 

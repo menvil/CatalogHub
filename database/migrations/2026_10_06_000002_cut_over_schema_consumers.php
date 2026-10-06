@@ -1,11 +1,8 @@
 <?php
 
-use App\Domains\Projections\SiteSyncService;
-use App\Models\Imports\NormalizedProductDraft;
-use App\Models\Site;
-use App\Queries\Attributes\SchemaConsumerPreflightV2Query;
-use App\Services\AttributeGlobalization\AttributeIdentityLock;
-use App\Services\AttributeGlobalization\DraftAttributeIdentityV2;
+use App\Queries\SchemaCutoverV2\DraftAttributeIdentityV2Query;
+use App\Queries\SchemaCutoverV2\SchemaConsumerPreflightV2Query;
+use App\Services\SchemaCutoverV2\IdentityMutex;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -21,12 +18,12 @@ return new class extends Migration
 
     public function up(): void
     {
-        app(AttributeIdentityLock::class)->deployment(fn () => $this->withPortableDdl(fn () => $this->cutover()));
+        (new IdentityMutex)->deployment(fn () => $this->withPortableDdl(fn () => $this->cutover()));
     }
 
     public function down(): void
     {
-        app(AttributeIdentityLock::class)->deployment(fn () => $this->withPortableDdl(fn () => $this->restoreLegacySchema()));
+        (new IdentityMutex)->deployment(fn () => $this->withPortableDdl(fn () => $this->restoreLegacySchema()));
     }
 
     private function withPortableDdl(Closure $operation): void
@@ -56,8 +53,8 @@ return new class extends Migration
     private function cutover(): void
     {
         $this->ddlTransaction(function (): void {
-            app(AttributeIdentityLock::class)->acquire();
-            app(SchemaConsumerPreflightV2Query::class)->assertReady();
+            (new IdentityMutex)->acquire();
+            (new SchemaConsumerPreflightV2Query)->assertReady();
             DB::table('attribute_identity_scopes')->where('id', 1)->update(['consumer_version' => 0]);
             Schema::create('schema_consumer_rollback_rows', function (Blueprint $table): void {
                 $table->string('owner_table');
@@ -84,9 +81,9 @@ return new class extends Migration
             $factProof = $this->factProof();
             DB::transaction(function () use ($factProof): void {
                 $this->repointReviewedIdentities();
-                foreach (NormalizedProductDraft::query()->whereIn('status', ['pending_review', 'approved'])->where('attribute_identity_version', 1)->orderBy('id')->cursor() as $draft) {
+                foreach (DB::table('normalized_product_drafts')->whereIn('status', ['pending_review', 'approved'])->where('attribute_identity_version', 1)->orderBy('id')->cursor() as $draft) {
                     DB::table('normalized_product_drafts')->where('id', $draft->id)->update([
-                        'attributes_json' => json_encode(app(DraftAttributeIdentityV2::class)->candidates($draft), JSON_THROW_ON_ERROR), 'attribute_identity_version' => 2]);
+                        'attributes_json' => json_encode((new DraftAttributeIdentityV2Query)->candidates($draft), JSON_THROW_ON_ERROR), 'attribute_identity_version' => 2]);
                 }
                 if ($factProof !== $this->factProof()) {
                     throw new RuntimeException('Cutover changed Product fact snapshots or row counts; pointer transaction rolled back.');
@@ -94,15 +91,9 @@ return new class extends Migration
                 foreach (['site_product_projections', 'site_category_projections', 'site_search_documents'] as $table) {
                     DB::table($table)->update(['status' => 'stale', 'stale_at' => now()]);
                 }
-                // Current outputs are rebuilt; archived catalog snapshots are separate immutable owners.
-                foreach (Site::query()->orderBy('id')->cursor() as $site) {
-                    $counts = app(SiteSyncService::class)->syncSite($site);
-                    if ($counts['failures'] !== []) {
-                        throw new RuntimeException('Target projection/search rebuild failed; identity transaction rolled back.');
-                    }
-                }
+
             });
-            app(SchemaConsumerPreflightV2Query::class)->assertReady();
+            (new SchemaConsumerPreflightV2Query)->assertReady();
             foreach (['attribute_mappings', 'facet_definitions'] as $table) {
                 Schema::table($table, fn (Blueprint $blueprint) => $blueprint->dropColumn('attribute_definition_id'));
             }
@@ -117,16 +108,23 @@ return new class extends Migration
             $this->check('attribute_sections', 'attribute_section_flat_check', '(parent_id IS NULL)');
             Schema::table('normalized_product_drafts', fn (Blueprint $table) => $table->unsignedInteger('attribute_identity_version')->default(2)->change());
             $this->localeKeys();
-            DB::table('attribute_identity_scopes')->where('id', 1)->update(['consumer_version' => 2, 'cutover_write_epoch' => DB::table('attribute_identity_scopes')->where('id', 1)->value('write_epoch')]);
             $this->epochTriggers(true);
             $this->assertSqliteForeignKeys();
+            // A populated deployment remains paused until the post-migration runtime rebuild succeeds.
+            $emptyInstall = ! DB::table('central_categories')->exists() && ! DB::table('central_products')->exists()
+                && ! DB::table('attribute_definitions')->exists() && ! DB::table('sites')->exists();
+            DB::table('attribute_identity_scopes')->where('id', 1)->update([
+                'consumer_version' => $emptyInstall ? 2 : 0,
+                'cutover_ready_for_finalization' => true,
+                'cutover_write_epoch' => DB::table('attribute_identity_scopes')->where('id', 1)->value('write_epoch'),
+            ]);
         });
     }
 
     private function restoreLegacySchema(): void
     {
         $this->ddlTransaction(function (): void {
-            app(AttributeIdentityLock::class)->acquire();
+            (new IdentityMutex)->acquire();
             $scope = DB::table('attribute_identity_scopes')->where('id', 1)->first();
             if ($scope->write_epoch !== $scope->cutover_write_epoch) {
                 throw new RuntimeException('Target identity writes exist after cutover. Downgrade refused: restore backup and replay with a reviewed inverse transformation.');
@@ -200,7 +198,7 @@ return new class extends Migration
                 Schema::table($key['table'], fn (Blueprint $table) => $table->dropUnique($key['table'].'_owner_locale_id_unique'));
                 DB::table('translation_locale_identity_states')->where('owner_table', $key['table'])->update(['unique_installed' => false]);
             }
-            DB::table('attribute_identity_scopes')->where('id', 1)->update(['consumer_version' => 1, 'cutover_write_epoch' => null]);
+            DB::table('attribute_identity_scopes')->where('id', 1)->update(['consumer_version' => 1, 'cutover_write_epoch' => null, 'cutover_ready_for_finalization' => false]);
             foreach (DB::table('schema_consumer_rollback_rows')->where('owner_table', 'locale_owner_key_added')->get() as $row) {
                 $key = json_decode($row->fields_json, true, 512, JSON_THROW_ON_ERROR);
                 Schema::table($key['table'], fn (Blueprint $table) => $table->dropIndex($key['table'].'_owner_support_idx'));
@@ -215,8 +213,8 @@ return new class extends Migration
     {
         if (in_array(DB::getDriverName(), ['mysql', 'mariadb'], true)) {
             DB::transaction(function (): void {
-                app(AttributeIdentityLock::class)->acquire();
-                app(SchemaConsumerPreflightV2Query::class)->assertReady();
+                (new IdentityMutex)->acquire();
+                (new SchemaConsumerPreflightV2Query)->assertReady();
             });
             $operation();
         } else {

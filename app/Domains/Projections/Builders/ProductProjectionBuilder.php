@@ -204,7 +204,12 @@ final class ProductProjectionBuilder
             $canonicalUnit = $value?->canonical_unit ?: $attribute->canonicalMeasurementUnit?->code;
             $sourceUnit = filled($canonicalUnit) ? $this->measurementUnit($canonicalUnit) : null;
             $display = $this->displayValue($attribute, $canonicalValue, $canonicalUnit, $site, $locale, $sourceUnit);
-            $options = $attribute->options->map(fn ($option) => ['code' => $option->code,
+            $referencedCodes = match ($attribute->data_type) {
+                AttributeDataType::Enum => [$canonicalValue],
+                AttributeDataType::MultiEnum => is_array($canonicalValue) ? $canonicalValue : [],
+                default => [],
+            };
+            $options = $attribute->options->filter(fn ($option) => $option->is_visible || in_array($option->code, $referencedCodes, true))->values()->map(fn ($option) => ['code' => $option->code,
                 'label' => $this->translatedString($option, 'label', $locale, $option->label), 'is_visible' => $option->is_visible])->all();
             if (! in_array($attribute->data_type, [AttributeDataType::Integer, AttributeDataType::Decimal], true)) {
                 $labels = array_column($options, 'label', 'code');

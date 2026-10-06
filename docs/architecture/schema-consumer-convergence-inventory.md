@@ -250,3 +250,12 @@ Typed translation stats/editor/missing/outdated queries, Product translation sav
 Draft rejection is also an import write: its transaction now takes the identity gate before the draft lock, preventing active-to-historical status changes from racing cutover conversion. It uses the same active Central Product mutation admission as draft approval/publish.
 
 `EnumNormalizer` also serializes `metadata.option_id`. Active v1 conversion now repoints that specific identity through the explicit option crosswalk while retaining label/provenance evidence; v2 validates option ID and code consistency. Arbitrary metadata is not rewritten.
+
+
+## PR #615 final-head review sweep
+
+The Content relation Attribute Select was a newly confirmed post-contraction consumer: its preload options still ordered definitions by retired Category/position columns. It now orders global canonical name/code/id, with a mounted Livewire form test that executes the options query before relation creation.
+
+ProductTranslation was missing from derived-output invalidation despite ProductProjectionBuilder consuming localized title/subtitle/descriptions. The shared observer now invalidates only the owning Product/search output on meaningful text/status saves or deletion. Category and shared schema translation fan-out remains intact and tested.
+
+The final retired-column search includes app code, Filament closures, commands/reports, exporters, queue jobs, views and normal factories/seeders. Remaining old Definition field references are confined to historical pre-v2 inventory/backfill and immutable v2 migration preflight against pre-contraction rows; target reads use assignments/relational measurement identity. Matching Section/Option/Facet local fields and immutable Product unit snapshots are separate owners, not retired Definition authority. The historical migration no longer invokes mutable runtime services/models; post-DDL finalization owns rebuild/activation.

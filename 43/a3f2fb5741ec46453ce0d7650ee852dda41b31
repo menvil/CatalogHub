@@ -1,0 +1,19 @@
+tests/Feature/Database/InitialAttributeArchitectureTest.php
+  s_2fa7ebcb64b5d7::t_c6e36755ba9c9f 12-13,43,77-123
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "43a3f2fb5741ec46453ce0d7650ee852dda41b31",
+  "prompts": {},
+  "sessions": {
+    "s_2fa7ebcb64b5d7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a10bab-fdb4-7a82-968a-02b602445703",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

@@ -2,7 +2,6 @@
 
 namespace App\Queries\Categories;
 
-use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\SiteCategory;
 
@@ -54,7 +53,6 @@ final class CategoryHierarchyDiagnosticsQuery
             'with_product_ids' => CentralCategory::query()->has('products')->orderBy('id')->pluck('id')->all(),
             'site_selected_ids' => SiteCategory::query()->orderBy('central_category_id')->distinct()->pluck('central_category_id')->all(),
             'schema_states' => $categories->groupBy(fn ($row) => $row->getRawOriginal('schema_status'))->map(fn ($rows) => $rows->pluck('id')->all())->sortKeys()->all(),
-            'nested_section_ids' => AttributeSection::query()->whereNotNull('parent_id')->orderBy('id')->pluck('id')->all(),
             'issues' => $issues,
         ];
     }

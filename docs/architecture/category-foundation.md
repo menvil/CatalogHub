@@ -14,7 +14,7 @@ The following shapes are checked by runtime actions and current-state diagnostic
 | Archived Categories | Existing Draft/Active/Archived enum and status fixtures | Archive preserves all dependent rows; restore only to Draft |
 | Products and Site selections | Product SET NULL FK and SiteCategory RESTRICT; Product/Site fixture tests | Archive only; never delete/detach via Category actions |
 | Draft/Reviewed/Approved/Archived schemas | Existing enum/status actions and fixtures | Revision-bound review/approval; actor/time record actual lifecycle actions |
-| Flat AttributeSections | Initial flat-shape constraint and same-Category assignment FK | Domain/DB rejects nesting; no legacy flattening workflow |
+| Flat AttributeSections | No parent column or self FK; same-Category assignment FK | Structurally flat from birth; unsupported parent input rejects |
 
 Initial installation requires no repair, reconciliation or finalization command.
 
@@ -48,7 +48,7 @@ The fingerprint is an internal change detector, not an audit snapshot or content
 
 Implemented AuditAction names are the seven `catalog.category.*` core events and five `catalog.category.schema.*` lifecycle/invalidation events reserved in ADR-0003. Every event has an action-specific allowlist and null Central audit Site. Root reorder uses the actual hierarchy-scope record as subject because there is no root Category; parent identity/reference, ordered Category IDs and scope revision identify the intent. Other Category/schema events use Category. No GET, rejected operation or no-op audit; audit failure rolls back content/order/revision/lifecycle together. Section/global Attribute/assignment/option, facet and comparison mutations use their implemented allowlisted events; see the audit contract.
 
-Run `php artisan catalog:diagnose-category-hierarchy` against the operator-selected database. It reads IDs, roots/nesting, archived/schema states, Product/Site usage, nested Sections and deterministic cycle/self-parent/missing-parent/order issues. Exit 1 means issues require a separately reviewed repair, exit 0 means no detected Category hierarchy issue. The command does not repair or audit. Initial Section constraints reject nesting; the diagnostic may report constraint-bypassing corruption without repairing it.
+Run `php artisan catalog:diagnose-category-hierarchy` against the operator-selected database. It reads IDs, roots/nesting, archived/schema states, Product/Site usage and deterministic cycle/self-parent/missing-parent/order issues. Exit 1 means issues require a separately reviewed repair, exit 0 means no detected Category hierarchy issue. The command does not repair or audit. Sections have no hierarchy column or relationships, so nested-Section diagnostics are unnecessary.
 
 Tests cover action invariants, safe archive, every existing invalidation path, no-ops/rejections, attribution, stale revisions, read-only GETs, permission isolation, existing temporary forms, audit rollback and initial schema reset/recreate. Coordinated two-process tests cover root reorder, same-parent scope creation, opposite reparent and review-versus-mutation. SQLite uses a temporary shared-file copy in these tests; PostgreSQL/MariaDB run the same tests through `composer test:database-boundaries`.
 

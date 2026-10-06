@@ -24,9 +24,6 @@ final class CategorySchemaValidator
         ]);
 
         foreach ($category->attributeSections as $section) {
-            if ($section->parent_id !== null) {
-                $result->add(new CategorySchemaIssue(CategorySchemaIssueSeverity::Error, 'invalid_section_shape', 'Sections must have one visible level.', 'attribute_section', $section->id));
-            }
             if ($section->assignments->isEmpty()) {
                 $result->add(new CategorySchemaIssue(
                     severity: CategorySchemaIssueSeverity::Warning,

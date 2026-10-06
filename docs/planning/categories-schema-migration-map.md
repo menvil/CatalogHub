@@ -8,7 +8,7 @@ After the first valuable environment exists, migrations are immutable and future
 
 | Creation | Final contract |
 | --- | --- |
-| Central Categories/Products and Category-owned Sections | Stable identities, independent lifecycle/schema approval; flat Section DB shape; archive-first workflows |
+| Central Categories/Products and Category-owned Sections | Stable identities, independent lifecycle/schema approval; Sections structurally flat with no parent column/self FK; archive-first workflows |
 | MeasurementDimensions/MeasurementUnits | Existing catalog, unique unit `(id, dimension_id)` supporting composite identity |
 | `2026_07_09_000023_000000_create_attribute_definitions_table.php` | Global code uniqueness, reference name/type, complete compatible relational measurement pair; no local ownership |
 | `2026_07_09_000023_100000_create_attribute_options_table.php` | Global definition-owned stable option codes/labels/order/visibility |
@@ -29,7 +29,7 @@ The four Phase 19.2/19.3 expand/cutover migrations are removed. No migration cre
 | Dependent owner | Authoritative reference | Integrity |
 | --- | --- | --- |
 | CategoryAttributeAssignment | Category + global Definition | Unique pair; restrictive deletes; composite Section/Category FK |
-| Product fact | Product + global Definition | Unique Product/definition; runtime Product Category membership; removal dependency guard under shared mutex |
+| Product fact | Product + global Definition | Unique Product/definition; definition FK RESTRICT; Product FK CASCADE; runtime Category membership and removal guard under shared mutex |
 | AttributeMapping | Category + nullable assignment | Composite assignment/Category FK; null/unmapped remains supported |
 | Attribute FacetDefinition | Category + assignment | Composite FK; DB source-shape check; facet code owns public query key |
 | Brand/Rating FacetDefinition | Category, no assignment | Source-shape check prevents fabricated attribute membership |

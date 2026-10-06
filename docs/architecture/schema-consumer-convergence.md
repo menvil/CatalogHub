@@ -24,7 +24,7 @@ The application is ready immediately. There is no legacy preflight, reconciliati
 | Facet independent definition pointer | Assignment for Attribute source; null for Brand/Rating | No |
 | Translation owner+locale-code uniqueness | Typed owner+locale_id | No; denormalized locale code remains for runtime display/resolution |
 
-Global definitions/options are reused across Categories without copying meaning or translations. Sections, assignments, facets and comparison rows own Category-specific behavior. Product facts reference the global definition once per Product.
+Global definitions/options are reused across Categories without copying meaning or translations. Sections, assignments, facets and comparison rows own Category-specific behavior. Product facts reference the global definition once per Product. That FK uses RESTRICT so direct definition deletion cannot remove facts; the Product FK retains CASCADE for deletion of the owning Product. Sections are structurally flat from birth, with no parent column, self FK or hierarchy relationships.
 
 ## Consumers
 

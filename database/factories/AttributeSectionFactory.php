@@ -20,7 +20,6 @@ class AttributeSectionFactory extends Factory
 
         return [
             'central_category_id' => CentralCategory::factory(),
-            'parent_id' => null,
             'code' => Str::snake($name),
             'name' => str($name)->headline()->toString(),
             'position' => 0,

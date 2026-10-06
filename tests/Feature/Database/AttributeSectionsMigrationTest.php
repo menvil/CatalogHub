@@ -4,7 +4,6 @@ namespace Tests\Feature\Database;
 
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
-use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -19,7 +18,6 @@ class AttributeSectionsMigrationTest extends TestCase
         $this->assertTrue(Schema::hasColumns('attribute_sections', [
             'id',
             'central_category_id',
-            'parent_id',
             'code',
             'name',
             'position',
@@ -44,17 +42,11 @@ class AttributeSectionsMigrationTest extends TestCase
         ));
     }
 
-    public function test_attribute_section_parent_must_belong_to_same_category(): void
+    public function test_sections_are_structurally_flat_from_birth(): void
     {
-        $parentCategory = CentralCategory::factory()->create();
-        $childCategory = CentralCategory::factory()->create();
-        $parent = AttributeSection::factory()->for($parentCategory, 'category')->create();
-
-        $this->expectException(QueryException::class);
-
-        AttributeSection::factory()
-            ->for($childCategory, 'category')
-            ->create(['parent_id' => $parent->id]);
+        self::assertFalse(Schema::hasColumn('attribute_sections', 'parent_id'));
+        self::assertFalse(collect(Schema::getForeignKeys('attribute_sections'))
+            ->contains(fn (array $key): bool => $key['foreign_table'] === 'attribute_sections'));
     }
 
     public function test_category_deletion_removes_unassigned_flat_sections(): void

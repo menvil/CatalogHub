@@ -54,7 +54,6 @@ final class CategoryDiagnosticsTest extends TestCase
             self::assertSame($report, $query->report());
             self::assertSame([$a->id, $b->id], $report['root_ids']);
             self::assertSame([$a->id], $report['archived_ids']);
-            self::assertSame([], $report['nested_section_ids']);
             self::assertContains('self_parent', array_column($report['issues'], 'code'));
             self::assertContains('cycle', array_column($report['issues'], 'code'));
             self::assertContains('non_contiguous_positions', array_column($report['issues'], 'code'));

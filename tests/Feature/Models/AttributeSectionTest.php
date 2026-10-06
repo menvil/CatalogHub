@@ -4,7 +4,6 @@ namespace Tests\Feature\Models;
 
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
-use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -20,11 +19,12 @@ class AttributeSectionTest extends TestCase
         $this->assertTrue($section->category->is($category));
     }
 
-    public function test_target_section_rejects_nested_shape_at_database_boundary(): void
+    public function test_section_model_has_no_nested_relationships(): void
     {
-        $parent = AttributeSection::factory()->create();
-        $this->expectException(QueryException::class);
-        AttributeSection::factory()->create(['central_category_id' => $parent->central_category_id, 'parent_id' => $parent->id]);
+        $methods = get_class_methods(new AttributeSection);
+        self::assertNotContains('parent', $methods);
+        self::assertNotContains('children', $methods);
+        self::assertNotContains('parent_id', (new AttributeSection)->getFillable());
     }
 
     public function test_attribute_section_flags_are_cast_to_booleans(): void

@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('central_product_attribute_values', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('central_product_id')->constrained('central_products')->cascadeOnDelete();
-            $table->foreignId('attribute_definition_id')->constrained('attribute_definitions')->cascadeOnDelete();
+            $table->foreignId('attribute_definition_id')->constrained('attribute_definitions')->restrictOnDelete();
             $table->text('raw_value')->nullable();
             $table->string('value_type');
             $table->text('value_text')->nullable();

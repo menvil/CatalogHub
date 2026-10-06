@@ -20,7 +20,7 @@ final class CategorySchemaFingerprintQuery
         // Raw driver values are compared within one transaction/connection only;
         // this is not a persisted hash stable across databases or connections.
         $sections = AttributeSection::query()->where('central_category_id', $categoryId)->orderBy('id')
-            ->get(['id', 'parent_id', 'code', 'name', 'position', 'display_style', 'is_collapsible', 'is_visible'])->map(fn ($row) => $row->getRawOriginal());
+            ->get(['id', 'code', 'name', 'position', 'display_style', 'is_collapsible', 'is_visible'])->map(fn ($row) => $row->getRawOriginal());
         $assignments = CategoryAttributeAssignment::query()->where('central_category_id', $categoryId)->orderBy('id')
             ->get(['id', 'attribute_definition_id', 'attribute_section_id', 'position', 'is_required', 'is_visible', 'is_searchable', 'is_sortable'])->map(fn ($row) => $row->getRawOriginal());
         $global = AttributeDefinition::query()->whereIn('id', $assignments->pluck('attribute_definition_id'))->orderBy('id')

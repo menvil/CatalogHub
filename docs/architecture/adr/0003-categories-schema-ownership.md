@@ -36,7 +36,7 @@ Product values continue referencing canonical definition IDs, with membership va
 
 ### F03 — Local, flat sections
 
-Sections remain Category-local. Keep code as stable machine identity, not a routable slug; name is source/reference text. Phase 19 authoring uses one visible section level. The initial database enforces flat Section shape and same-Category assignment placement. No nested legacy rows or flattening workflow exists; do not add nested UX. Section code changes require dependency analysis because exports/projections use it. No global section library, section lifecycle, stored icon or canonical description. Visibility uses existing `is_visible`; collapse in the editor is local presentation state, distinct from public `is_collapsible`. Localized name/description use `AttributeSectionTranslation`.
+Sections remain Category-local. Keep code as stable machine identity, not a routable slug; name is source/reference text. Phase 19 authoring uses one visible section level. Sections are structurally flat from birth: no parent_id column, self FK or parent/children relationships. Same-Category assignment placement uses a composite FK. No nested legacy rows or flattening workflow exists; do not add nested UX. Section code changes require dependency analysis because exports/projections use it. No global section library, section lifecycle, stored icon or canonical description. Visibility uses existing `is_visible`; collapse in the editor is local presentation state, distinct from public `is_collapsible`. Localized name/description use `AttributeSectionTranslation`.
 
 ### F04 — Types and semantics
 

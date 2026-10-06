@@ -21,3 +21,9 @@ After the first environment contains valuable non-disposable CatalogHub data, ex
 | C: obsolete fixtures/tests | Legacy factory states, v1 conversion/cutover/reconciliation/inverse rollback/finalization tests and cutover races | Delete or replace with final schema and ordinary runtime tests. Keep cross-consumer acceptance, translation freshness, Content Select and runtime concurrency coverage. |
 
 No Category UI phase starts here. This is consolidation of the existing Phase 19.3 backend, in the same PR #615.
+
+## Final integrity cleanup
+
+Product facts have a restrictive canonical-definition FK from initial creation. Product deletion retains its own fact cascade. Database regression coverage isolates the fact FK from assignment restrictions and compares the complete raw fact row after rejected deletion.
+
+Sections are structurally flat from birth: no parent_id, self FK, flat-shape triggers/check or parent/children relationships. There is no approved future nesting capability. Create/update still explicitly reject unsupported parent input; schema validation, clone, fingerprint and diagnostics have no dead nesting branches. Category hierarchy is independent and unchanged.

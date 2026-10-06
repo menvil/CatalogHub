@@ -31,10 +31,6 @@ final class DeleteAttributeSectionAction
                 throw CannotDeleteAttributeSectionException::hasAttributes();
             }
 
-            if ($lockedSection->children()->exists()) {
-                throw CannotDeleteAttributeSectionException::hasChildren();
-            }
-
             $lockedSection->delete();
         });
     }

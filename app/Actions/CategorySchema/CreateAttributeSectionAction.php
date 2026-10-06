@@ -59,7 +59,6 @@ final class CreateAttributeSectionAction
 
             return AttributeSection::query()->create([
                 'central_category_id' => $category->getKey(),
-                'parent_id' => null,
                 'code' => $validated['code'],
                 'name' => $validated['name'],
                 'position' => $position,

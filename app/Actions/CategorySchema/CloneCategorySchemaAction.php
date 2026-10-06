@@ -10,7 +10,6 @@ use App\Models\CentralCatalog\CentralCategory;
 use App\Models\User;
 use App\Services\CategorySchema\SchemaRevision;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 final class CloneCategorySchemaAction
 {
@@ -49,7 +48,6 @@ final class CloneCategorySchemaAction
             foreach ($source->attributeSections as $section) {
                 $clonedSection = AttributeSection::query()->create([
                     'central_category_id' => $lockedTarget->getKey(),
-                    'parent_id' => null,
                     'code' => $section->code,
                     'name' => $section->name,
                     'position' => $section->position,
@@ -61,11 +59,6 @@ final class CloneCategorySchemaAction
                 $sectionMap[$section->getKey()] = $clonedSection;
             }
 
-            foreach ($source->attributeSections as $section) {
-                if ($section->parent_id !== null) {
-                    throw ValidationException::withMessages(['source' => 'Explicit reviewed Section flattening required.']);
-                }
-            }
             foreach ($source->attributeAssignments as $assignment) {
                 CategoryAttributeAssignment::query()->create([
                     'central_category_id' => $target->id, 'attribute_definition_id' => $assignment->attribute_definition_id,

@@ -9,6 +9,8 @@ use App\Models\CentralCatalog\CentralProductAttributeValue;
 use App\Models\FacetDefinition;
 use App\Models\Imports\AttributeMapping;
 use App\Models\Imports\NormalizedProductDraft;
+use App\Models\MeasurementUnit;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\DB;
@@ -38,6 +40,7 @@ final class InitialAttributeArchitectureTest extends TestCase
             self::assertFalse(Schema::hasTable($table), $table);
         }
         self::assertSame(['id'], Schema::getColumnListing('attribute_identity_scopes'));
+        self::assertFalse(Schema::hasColumn('attribute_sections', 'parent_id'));
         self::assertFalse(Schema::hasColumn('attribute_mappings', 'attribute_definition_id'));
         self::assertFalse(Schema::hasColumn('facet_definitions', 'attribute_definition_id'));
         foreach (['normalized_product_drafts', 'site_product_projections', 'site_category_projections', 'site_search_documents'] as $table) {
@@ -69,6 +72,55 @@ final class InitialAttributeArchitectureTest extends TestCase
         if (DB::getDriverName() === 'sqlite') {
             self::assertSame([], DB::select('PRAGMA foreign_key_check'));
         }
+    }
+
+    public function test_definition_deletion_cannot_cascade_durable_product_facts(): void
+    {
+        $keys = collect(Schema::getForeignKeys('central_product_attribute_values'));
+        $definitionKey = $keys->firstWhere('columns', ['attribute_definition_id']);
+        $productKey = $keys->firstWhere('columns', ['central_product_id']);
+        self::assertNotNull($definitionKey);
+        self::assertSame('attribute_definitions', $definitionKey['foreign_table']);
+        self::assertContains(strtolower($definitionKey['on_delete']), ['restrict', 'no action']);
+        self::assertNotNull($productKey);
+        self::assertSame('cascade', strtolower($productKey['on_delete']));
+
+        $unit = MeasurementUnit::factory()->create();
+        $definition = AttributeDefinition::factory()->create(['data_type' => 'decimal',
+            'measurement_dimension_id' => $unit->dimension_id, 'canonical_measurement_unit_id' => $unit->id]);
+        $assignment = CategoryAttributeAssignment::factory()->for($definition, 'definition')->create();
+        $fact = CentralProductAttributeValue::factory()->forAssignment($assignment)->create([
+            'raw_value' => '55.125 measured', 'value_text' => null, 'value_number' => '55.125000',
+            'value_min' => '55.000000', 'value_max' => '55.250000', 'source_unit' => $unit->code,
+            'canonical_value' => '55.125000', 'canonical_unit' => $unit->code, 'confidence' => '0.9750',
+            'source_type' => 'import', 'source_id' => 'durable-fact',
+            'source_reference' => ['row' => 7, 'source' => 'fixture'],
+        ]);
+        $before = (array) DB::table('central_product_attribute_values')->where('id', $fact->id)->first();
+
+        // First prove the ordinary assigned fixture rejects direct SQL deletion.
+        foreach ([false, true] as $withoutAssignment) {
+            if ($withoutAssignment) {
+                // Isolate the fact FK: assignment RESTRICT must not mask a fact CASCADE regression.
+                DB::table('category_attribute_assignments')->where('id', $assignment->id)->delete();
+            }
+            try {
+                DB::transaction(fn () => DB::table('attribute_definitions')->where('id', $definition->id)->delete());
+                self::fail('The database must reject deleting a definition with durable Product facts.');
+            } catch (QueryException) {
+                self::assertTrue(AttributeDefinition::query()->whereKey($definition->id)->exists());
+                self::assertSame($before, (array) DB::table('central_product_attribute_values')->where('id', $fact->id)->first());
+            }
+        }
+    }
+
+    public function test_product_deletion_still_cascades_its_own_facts(): void
+    {
+        $assignment = CategoryAttributeAssignment::factory()->create();
+        $fact = CentralProductAttributeValue::factory()->forAssignment($assignment)->create();
+        DB::table('central_products')->where('id', $fact->central_product_id)->delete();
+        self::assertFalse(CentralProductAttributeValue::query()->whereKey($fact->id)->exists());
+        self::assertTrue(AttributeDefinition::query()->whereKey($assignment->attribute_definition_id)->exists());
     }
 
     public function test_initial_migration_history_can_reset_and_recreate_without_finalization(): void

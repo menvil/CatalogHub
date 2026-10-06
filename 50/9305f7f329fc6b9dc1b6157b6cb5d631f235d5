@@ -1,0 +1,31 @@
+app/Models/CentralCatalog/CategoryComparisonAttribute.php
+  s_2fa7ebcb64b5d7::t_2e8bedd43347e1 1-33
+app/Models/CentralCatalog/SchemaConsumerSectionDecision.php
+  s_2fa7ebcb64b5d7::t_921c598eba4bb6 1-18
+app/Services/AttributeGlobalization/DraftAttributeIdentityV2.php
+  s_2fa7ebcb64b5d7::t_88cba48a63d5f4 1-19,21,23-31,37,39-55,57-63,66-67,70-76,83-99,102-150
+app/Actions/CategorySchema/UpdateAssignedAttributeAction.php
+  s_2fa7ebcb64b5d7::t_5d11ab745dd834 1-38
+app/Services/AttributeGlobalization/SchemaConsumerVersion.php
+  s_2fa7ebcb64b5d7::t_2e8bedd43347e1 1-11
+database/migrations/2026_10_06_000001_expand_schema_consumer_v2.php
+  s_2fa7ebcb64b5d7::t_2e8bedd43347e1 1-93
+database/migrations/2026_10_06_000002_cut_over_schema_consumers.php
+  s_2fa7ebcb64b5d7::t_d4504fdaf1d930 1-406
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "509305f7f329fc6b9dc1b6157b6cb5d631f235d5",
+  "prompts": {},
+  "sessions": {
+    "s_2fa7ebcb64b5d7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a10bab-fdb4-7a82-968a-02b602445703",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

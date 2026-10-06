@@ -26,7 +26,7 @@ final class ComparisonViewModelBuilder
             return $error('Products must belong to the same category, site and locale.');
         }
         foreach ($projections as $p) {
-            if (($p->payload_json['attribute_identity_version'] ?? null) !== 2) {
+            if (($p->payload_json['schema_version'] ?? null) !== 1) {
                 return $error('Rebuild comparison projections before comparing.');
             }
         }

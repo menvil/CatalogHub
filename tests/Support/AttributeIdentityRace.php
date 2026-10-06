@@ -45,9 +45,8 @@ trait AttributeIdentityRace
         $parentPid = getmypid();
         $handled = false;
         $childTable = DB::getDriverName() === 'sqlite' ? ($sqliteChildFirstWrite ?? $lockedTable) : $lockedTable;
-        $namedMutex = in_array(DB::getDriverName(), ['mysql', 'mariadb'], true);
-        DB::listen(function (QueryExecuted $query) use ($lockedTable, $locked, $started, $lockTime, $parentPid, $namedMutex, &$handled): void {
-            if ($handled || getmypid() !== $parentPid || ! ($namedMutex ? str_contains($query->sql, 'GET_LOCK(') : str_starts_with(strtolower($query->sql), 'update') && str_contains($query->sql, $lockedTable))) {
+        DB::listen(function (QueryExecuted $query) use ($lockedTable, $locked, $started, $lockTime, $parentPid, &$handled): void {
+            if ($handled || getmypid() !== $parentPid || ! (str_starts_with(strtolower($query->sql), 'update') && str_contains($query->sql, $lockedTable))) {
                 return;
             }
             $handled = true;
@@ -71,15 +70,15 @@ trait AttributeIdentityRace
                 exit(1);
             }
             $attempted = false;
-            DB::connection($childConnection)->beforeExecuting(function (string $sql) use ($childTable, $started, $namedMutex, &$attempted): void {
-                if (! $attempted && ($namedMutex ? str_contains($sql, 'GET_LOCK(') : (str_starts_with(strtolower($sql), 'update') || str_starts_with(strtolower($sql), 'insert')) && str_contains($sql, $childTable))) {
+            DB::connection($childConnection)->beforeExecuting(function (string $sql) use ($childTable, $started, &$attempted): void {
+                if (! $attempted && ((str_starts_with(strtolower($sql), 'update') || str_starts_with(strtolower($sql), 'insert')) && str_contains($sql, $childTable))) {
                     $attempted = true;
                     touch($started);
                 }
             });
             $timed = false;
-            DB::listen(function (QueryExecuted $query) use ($childTable, $lockTime, $namedMutex, &$timed): void {
-                if (! $timed && ($namedMutex ? str_contains($query->sql, 'GET_LOCK(') : (str_starts_with(strtolower($query->sql), 'update') || str_starts_with(strtolower($query->sql), 'insert')) && str_contains($query->sql, $childTable))) {
+            DB::listen(function (QueryExecuted $query) use ($childTable, $lockTime, &$timed): void {
+                if (! $timed && ((str_starts_with(strtolower($query->sql), 'update') || str_starts_with(strtolower($query->sql), 'insert')) && str_contains($query->sql, $childTable))) {
                     $timed = true;
                     file_put_contents($lockTime, (string) $query->time);
                 }

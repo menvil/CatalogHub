@@ -90,7 +90,7 @@ final class ProductProjectionBuilder
         $attributes = $this->buildAttributes($product, $site, $locale);
         $rating = Review::query()->visiblePublicly()->forSite($site)->forProduct($product)->avg('rating');
         $payload = [
-            'attribute_identity_version' => 2, 'rating' => ['value' => $rating === null ? null : (float) $rating],
+            'schema_version' => 1, 'rating' => ['value' => $rating === null ? null : (float) $rating],
             'schema_revision' => $product->category === null ? 0 : $product->category->schema_revision,
             'product' => [
                 'id' => (int) $product->getKey(),

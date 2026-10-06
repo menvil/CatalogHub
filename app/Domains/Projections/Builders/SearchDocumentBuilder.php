@@ -186,8 +186,8 @@ final class SearchDocumentBuilder
      */
     private function attributesFromPayload(array $payload): array
     {
-        if (($payload['attribute_identity_version'] ?? null) !== 2 || ! is_array($payload['attributes'] ?? null)) {
-            throw new \LogicException('Rebuild target v2 projection before indexing attribute identity.');
+        if (($payload['schema_version'] ?? null) !== 1 || ! is_array($payload['attributes'] ?? null)) {
+            throw new \LogicException('Unsupported projection schema contract.');
         }
 
         return $payload['attributes'];

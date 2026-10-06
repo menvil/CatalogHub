@@ -13,7 +13,7 @@ final class MarkTranslationOutdatedAction
     public function handle(Model $translation, bool $forgetDashboardCache = true): Model
     {
         return DB::transaction(function () use ($translation, $forgetDashboardCache): Model {
-            app(AttributeIdentityLock::class)->acquireTarget();
+            app(AttributeIdentityLock::class)->acquire();
             $translation = $translation::query()->whereKey($translation->getKey())->lockForUpdate()->firstOrFail();
             if ($translation->getAttribute('status') === TranslationStatus::Outdated) {
                 return $translation;

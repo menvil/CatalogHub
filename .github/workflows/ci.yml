@@ -498,9 +498,7 @@ jobs:
           DB_USERNAME: cataloghub
           DB_PASSWORD: cataloghub
         run: |
-          # Target writes intentionally close the downgrade boundary. The
-          # consumer migration tests above prove refusal after those writes.
-          # Exercise the inverse on a fresh database before any v2 seed/write.
+          # Reset/recreate the initial target schema; no cutover or finalization step.
           php artisan migrate:fresh --force
           php artisan migrate:reset --force
           php artisan migrate --force
@@ -632,9 +630,7 @@ jobs:
           DB_USERNAME: cataloghub
           DB_PASSWORD: cataloghub
         run: |
-          # Target writes intentionally close the downgrade boundary. The
-          # consumer migration tests above prove refusal after those writes.
-          # Exercise the inverse on a fresh database before any v2 seed/write.
+          # Reset/recreate the initial target schema; no cutover or finalization step.
           php artisan migrate:fresh --force
           php artisan migrate:reset --force
           php artisan migrate --force

@@ -27,7 +27,7 @@ final class RejectNormalizedProductDraftAction
         }
 
         return DB::transaction(function () use ($draft, $reason): NormalizedProductDraft {
-            app(AttributeIdentityLock::class)->acquireTarget();
+            app(AttributeIdentityLock::class)->acquire();
             $lockedDraft = NormalizedProductDraft::query()->lockForUpdate()->findOrFail($draft->id);
 
             if ($lockedDraft->status !== 'pending_review') {

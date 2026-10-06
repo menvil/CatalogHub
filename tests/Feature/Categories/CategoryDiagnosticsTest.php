@@ -30,9 +30,8 @@ final class CategoryDiagnosticsTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_legacy_shapes_are_detected_deterministically_without_repair_or_audit(): void
+    public function test_corrupt_hierarchy_is_detected_deterministically_without_repair_or_audit(): void
     {
-        (require database_path('migrations/2026_10_06_000002_cut_over_schema_consumers.php'))->down();
         $a = CentralCategory::factory()->create(['position' => 7, 'status' => 'archived', 'schema_status' => 'approved']);
         $b = CentralCategory::factory()->create(['position' => 7]);
         $c = CentralCategory::factory()->create();
@@ -41,7 +40,6 @@ final class CategoryDiagnosticsTest extends TestCase
         $e = CentralCategory::factory()->create(['parent_id' => $d->id]);
         $d->update(['parent_id' => $e->id]);
         $section = AttributeSection::factory()->for($a, 'category')->create();
-        $nested = AttributeSection::factory()->for($a, 'category')->for($section, 'parent')->create();
         // Reproduce legacy corruption without privileged or database-specific FK disabling.
         Schema::table('central_categories', fn (Blueprint $table) => $table->dropForeign(['parent_id']));
         $orphanId = null;
@@ -56,7 +54,7 @@ final class CategoryDiagnosticsTest extends TestCase
             self::assertSame($report, $query->report());
             self::assertSame([$a->id, $b->id], $report['root_ids']);
             self::assertSame([$a->id], $report['archived_ids']);
-            self::assertSame([$nested->id], $report['nested_section_ids']);
+            self::assertSame([], $report['nested_section_ids']);
             self::assertContains('self_parent', array_column($report['issues'], 'code'));
             self::assertContains('cycle', array_column($report['issues'], 'code'));
             self::assertContains('non_contiguous_positions', array_column($report['issues'], 'code'));

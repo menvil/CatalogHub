@@ -22,14 +22,13 @@ use Illuminate\Validation\ValidationException;
 
 final readonly class CategoryAssignmentWriter
 {
-    public function __construct(private CategoryAccess $access, private CategoryLock $locks, private SchemaRevision $revisions, private AttributeIdentityLock $identityLock, private AttributeDependencies $dependencies, private AttributeIdentityReservation $identities, private AuditRecorder $audit) {}
+    public function __construct(private CategoryAccess $access, private CategoryLock $locks, private SchemaRevision $revisions, private AttributeDependencies $dependencies, private AuditRecorder $audit) {}
 
     /** @param array<string, mixed> $data */
     public function assign(CentralCategory $category, AttributeDefinition $definition, array $data, int $expectedRevision, ?User $actor = null): CategoryAttributeAssignment
     {
         return $this->mutate($category->id, $expectedRevision, $actor, function (CentralCategory $locked, User $actor) use ($definition, $data): CategoryAttributeAssignment {
             $definition = AttributeDefinition::query()->whereKey($definition->id)->lockForUpdate()->firstOrFail();
-            $this->identities->assertResolved($definition, 'attribute_definition_id');
             if (CategoryAttributeAssignment::query()->where('central_category_id', $locked->id)->where('attribute_definition_id', $definition->id)->exists()) {
                 throw ValidationException::withMessages(['attribute_definition_id' => 'The definition is already assigned.']);
             }
@@ -107,14 +106,10 @@ final readonly class CategoryAssignmentWriter
             if ($dependencies !== []) {
                 throw ValidationException::withMessages(['assignment' => 'Explicit migration required: '.implode(', ', $dependencies).'.']);
             }
-            if (! $this->identities->resolved($definition)) {
-                throw ValidationException::withMessages(['assignment' => 'Resolve canonical identity before removing legacy membership.']);
-            }
             $before = $this->snapshot($locked);
             $locked->delete();
             $this->revisions->invalidate($category, SchemaMutationOrigin::AttributeUnassigned, $locked->id, $actor);
             $this->audit->record(AuditAction::CatalogCategoryAttributeUnassigned, AuditContext::Central, $actor, $category, null, $before, null);
-            $this->identityLock->recordTargetWrite();
         });
     }
 
@@ -167,7 +162,6 @@ final readonly class CategoryAssignmentWriter
     {
         $this->revisions->invalidate($category, $origin, $assignment->id, $actor);
         $this->audit->record($action, AuditContext::Central, $actor, $category, null, $before, [...$this->snapshot($assignment), 'changed_fields' => $changed]);
-        $this->identityLock->recordTargetWrite();
     }
 
     /** @return array<string, mixed> */

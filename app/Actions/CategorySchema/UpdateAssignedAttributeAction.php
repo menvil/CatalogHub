@@ -19,7 +19,7 @@ final class UpdateAssignedAttributeAction
     {
         $actor = app(CategoryAccess::class)->authorize(Permission::CatalogSchemaManage, $actor);
         DB::transaction(function () use ($assignment, $data, $expectedRevision, $actor): void {
-            app(AttributeIdentityLock::class)->acquireTarget();
+            app(AttributeIdentityLock::class)->acquire();
             $fields = array_flip(['attribute_section_id', 'position', 'is_required', 'is_visible', 'is_searchable', 'is_sortable']);
             $local = array_intersect_key($data, $fields);
             $canonical = array_diff_key($data, $fields);

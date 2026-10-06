@@ -90,7 +90,7 @@ class ComparePageTest extends TestCase
             'title' => $title,
             'status' => ProjectionStatus::Active,
             'payload_json' => [
-                'attribute_identity_version' => 2,
+                'schema_version' => 1,
                 'comparison' => [['category_attribute_assignment_id' => $assignment->id, 'position' => $comparison->fresh()->position]],
                 'attributes' => [['assignment_id' => $assignment->id, 'definition_id' => $definition->id, 'data_type' => 'string', 'has_value' => true, 'canonical_value' => $displayValue, 'display_value' => $displayValue, 'measurement_dimension_id' => null, 'canonical_measurement_unit_id' => null, 'label' => 'Resolution', 'section' => ['id' => null, 'label' => 'Ungrouped']]],
                 'category' => ['id' => $category->id, 'label' => $category->name, 'slug' => $category->slug],

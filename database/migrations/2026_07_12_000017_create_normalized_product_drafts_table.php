@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('title');
             $table->string('slug')->nullable();
             $table->json('normalized_payload_json');
+            $table->unsignedInteger('schema_version')->default(1);
             $table->json('attributes_json');
             $table->json('media_json');
             $table->decimal('confidence', 5, 4)->default(0);

@@ -10,7 +10,6 @@ use App\Actions\Imports\SaveAttributeMappingAction;
 use App\Actions\ProductAttributes\SaveProductSpecsAction;
 use App\Enums\CategorySchemaStatus;
 use App\Models\AuditLogEntry;
-use App\Models\CentralCatalog\AttributeIdentityScope;
 use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\CentralCatalog\CategoryComparisonAttribute;
 use App\Models\CentralCatalog\CentralProduct;
@@ -33,7 +32,7 @@ final class SchemaConsumerMutationTest extends TestCase
     use RefreshDatabase;
 
     #[DataProvider('schemaOwners')]
-    public function test_authoritative_configuration_invalidates_once_noop_preserves_epoch_and_archived_rejects(string $owner): void
+    public function test_authoritative_configuration_invalidates_once_noop_preserves_revision_and_archived_rejects(string $owner): void
     {
         $actor = User::factory()->centralAdmin()->create();
         $assignment = CategoryAttributeAssignment::factory()->create();
@@ -54,10 +53,8 @@ final class SchemaConsumerMutationTest extends TestCase
         self::assertSame(2, $category->fresh()->schema_revision);
         self::assertSame(CategorySchemaStatus::Draft, $category->fresh()->schema_status);
         self::assertNull($category->fresh()->schema_approved_at);
-        $epoch = AttributeIdentityScope::query()->value('write_epoch');
         $audit = AuditLogEntry::query()->count();
         $save(2, true);
-        self::assertSame($epoch, AttributeIdentityScope::query()->value('write_epoch'));
         self::assertSame($audit, AuditLogEntry::query()->count());
         $category->forceFill(['schema_status' => CategorySchemaStatus::Archived])->save();
         try {
@@ -70,11 +67,10 @@ final class SchemaConsumerMutationTest extends TestCase
     }
 
     #[DataProvider('schemaOwners')]
-    public function test_audit_failure_rolls_back_configuration_revision_and_epoch(string $owner): void
+    public function test_audit_failure_rolls_back_configuration_revision(string $owner): void
     {
         $actor = User::factory()->centralAdmin()->create();
         $assignment = CategoryAttributeAssignment::factory()->create();
-        $epoch = AttributeIdentityScope::query()->value('write_epoch');
         $this->mock(AuditRecorder::class)->shouldReceive('record')->andThrow(new RuntimeException('audit unavailable'));
         try {
             if ($owner === 'facet') {
@@ -87,7 +83,6 @@ final class SchemaConsumerMutationTest extends TestCase
             self::assertSame(0, FacetDefinition::query()->count());
             self::assertSame(0, CategoryComparisonAttribute::query()->count());
             self::assertSame(1, $assignment->category->fresh()->schema_revision);
-            self::assertSame($epoch, AttributeIdentityScope::query()->value('write_epoch'));
         }
     }
 

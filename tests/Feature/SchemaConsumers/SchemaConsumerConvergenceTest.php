@@ -34,12 +34,10 @@ use App\Models\SiteSearchDocument;
 use App\Models\Translations\AttributeSectionTranslation;
 use App\Models\Translations\AttributeTranslation;
 use App\Models\User;
-use App\Queries\Attributes\SchemaConsumerPreflightV2Query;
-use App\Services\AttributeGlobalization\DraftAttributeIdentityV2;
 use App\Services\Imports\AttributeNormalizer;
+use App\Services\Imports\DraftAttributeIdentity;
 use App\Services\ProductAttributes\MissingRequiredAttributesResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -48,14 +46,13 @@ final class SchemaConsumerConvergenceTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_fresh_target_schema_has_no_retired_authority_and_clean_preflight(): void
+    public function test_fresh_target_schema_has_no_retired_authority(): void
     {
         foreach (['central_category_id', 'attribute_section_id', 'canonical_code', 'dimension', 'canonical_unit', 'position', 'is_required', 'is_visible', 'is_searchable', 'is_sortable', 'is_filterable', 'is_comparable'] as $field) {
             self::assertFalse(Schema::hasColumn('attribute_definitions', $field), $field);
         }
         self::assertFalse(Schema::hasColumn('attribute_mappings', 'attribute_definition_id'));
         self::assertFalse(Schema::hasColumn('facet_definitions', 'attribute_definition_id'));
-        self::assertTrue(app(SchemaConsumerPreflightV2Query::class)->report()['cutover_ready']);
     }
 
     public function test_shared_canonical_meaning_respects_local_required_visibility_search_sort_and_facet_code(): void
@@ -92,32 +89,18 @@ final class SchemaConsumerConvergenceTest extends TestCase
         self::assertEquals(27, $searchB->sortValues['screen_size']);
         self::assertStringContainsString('55', $searchA->searchText);
         self::assertSame($fact, CentralProductAttributeValue::query()->where('central_product_id', $tv->id)->sole()->getRawOriginal());
-        self::assertTrue(app(SchemaConsumerPreflightV2Query::class)->report()['cutover_ready']);
     }
 
-    public function test_historical_option_code_collision_is_a_cutover_blocker(): void
-    {
-        $definition = AttributeDefinition::factory()->create(['data_type' => 'enum']);
-        foreach (['first', 'second'] as $code) {
-            $option = $definition->options()->create(['code' => $code, 'label' => $code]);
-            DB::table('attribute_option_crosswalks')->insert(['legacy_option_id' => $option->id, 'legacy_definition_id' => $definition->id,
-                'legacy_code' => 'historical', 'canonical_option_id' => $option->id, 'canonical_code' => $code, 'status' => 'identity_preserved']);
-        }
-        $report = app(SchemaConsumerPreflightV2Query::class)->report();
-        self::assertFalse($report['cutover_ready']);
-        self::assertCount(1, $report['blockers']['historical_option_code_conflicts']);
-    }
-
-    public function test_v2_enum_draft_rejects_conflicting_metadata_option_identity(): void
+    public function test_enum_draft_rejects_conflicting_metadata_option_identity(): void
     {
         $assignment = CategoryAttributeAssignment::factory()->create(['attribute_definition_id' => AttributeDefinition::factory()->create(['data_type' => 'enum'])->id]);
         $one = $assignment->definition->options()->create(['code' => 'first', 'label' => 'First']);
         $two = $assignment->definition->options()->create(['code' => 'second', 'label' => 'Second']);
-        $draft = NormalizedProductDraft::factory()->create(['category_id' => $assignment->central_category_id, 'attribute_identity_version' => 2,
+        $draft = NormalizedProductDraft::factory()->create(['category_id' => $assignment->central_category_id, 'schema_version' => 1,
             'attributes_json' => [['category_attribute_assignment_id' => $assignment->id, 'attribute_definition_id' => $assignment->attribute_definition_id,
                 'code' => $assignment->definition->code, 'value_type' => 'enum', 'value_enum_code' => $one->code, 'metadata' => ['option_id' => $two->id]]]]);
         $this->expectException(ValidationException::class);
-        app(DraftAttributeIdentityV2::class)->candidates($draft);
+        app(DraftAttributeIdentity::class)->candidates($draft);
     }
 
     public function test_clone_and_export_keep_global_ids_and_options_shared(): void
@@ -130,7 +113,7 @@ final class SchemaConsumerConvergenceTest extends TestCase
         self::assertSame($assignment->attribute_definition_id, $target->attributeAssignments()->sole()->attribute_definition_id);
         self::assertSame(1, AttributeDefinition::query()->count());
         $export = app(ExportCategorySchemaAction::class)->handle($target, $actor);
-        self::assertSame(2, $export['attribute_identity_version']);
+        self::assertSame(1, $export['schema_version']);
         self::assertSame($assignment->attribute_definition_id, $export['definitions'][0]['id']);
         self::assertFalse($export['definitions'][0]['options'][0]['is_visible']);
         self::assertArrayNotHasKey('is_required', $export['definitions'][0]);
@@ -180,8 +163,8 @@ final class SchemaConsumerConvergenceTest extends TestCase
             'source_type' => 'attribute', 'facet_type' => 'range', 'code' => 'diagonal_filter'], $tvCategory->fresh()->schema_revision, $actor);
         $override = SiteFacetOverride::factory()->create(['site_id' => $site->id, 'facet_definition_id' => $facet->id, 'label_override' => 'Site diagonal']);
         $candidate = app(AttributeNormalizer::class)->candidate($assignments[1], '27 inch');
-        $draft = NormalizedProductDraft::factory()->create(['category_id' => $monitorCategory->id, 'attribute_identity_version' => 2, 'attributes_json' => [$candidate]]);
-        self::assertSame($assignments[1]->id, app(DraftAttributeIdentityV2::class)->candidates($draft)[0]['category_attribute_assignment_id']);
+        $draft = NormalizedProductDraft::factory()->create(['category_id' => $monitorCategory->id, 'schema_version' => 1, 'attributes_json' => [$candidate]]);
+        self::assertSame($assignments[1]->id, app(DraftAttributeIdentity::class)->candidates($draft)[0]['category_attribute_assignment_id']);
         $facts = CentralProductAttributeValue::query()->orderBy('id')->get()->toJson();
         $sync = app(SiteSyncService::class);
         $first = $sync->syncSite($site);
@@ -190,7 +173,7 @@ final class SchemaConsumerConvergenceTest extends TestCase
         self::assertSame(3, $first['products']);
         $checksums = SiteSearchDocument::query()->orderBy('id')->pluck('checksum')->all();
         self::assertCount(5, $checksums);
-        self::assertSame(0, SiteSearchDocument::query()->where('attribute_identity_version', '!=', 2)->count());
+        self::assertSame(0, SiteSearchDocument::query()->where('schema_version', '!=', 1)->count());
         $second = $sync->syncSite($site);
         self::assertSame($first, $second);
         self::assertSame($checksums, SiteSearchDocument::query()->orderBy('id')->pluck('checksum')->all());
@@ -201,6 +184,5 @@ final class SchemaConsumerConvergenceTest extends TestCase
         self::assertTrue($comparison['sections'][0]['attributes'][0]['is_equal']);
         self::assertSame(['IPS historical', 'IPS historical'], $comparison['sections'][0]['attributes'][1]['values']);
         self::assertSame($override->id, SiteFacetOverride::query()->sole()->id);
-        self::assertTrue(app(SchemaConsumerPreflightV2Query::class)->report()['cutover_ready']);
     }
 }

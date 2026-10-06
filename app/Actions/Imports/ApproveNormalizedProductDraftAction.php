@@ -6,8 +6,8 @@ use App\Enums\Permission;
 use App\Models\Imports\NormalizedProductDraft;
 use App\Models\User;
 use App\Services\AttributeGlobalization\AttributeIdentityLock;
-use App\Services\AttributeGlobalization\DraftAttributeIdentityV2;
 use App\Services\Categories\CategoryAccess;
+use App\Services\Imports\DraftAttributeIdentity;
 use Illuminate\Support\Facades\DB;
 use LogicException;
 
@@ -18,7 +18,7 @@ final class ApproveNormalizedProductDraftAction
         $user = app(CategoryAccess::class)->authorize(Permission::CatalogProductsManage, $user);
 
         return DB::transaction(function () use ($draft, $user): NormalizedProductDraft {
-            app(AttributeIdentityLock::class)->acquireTarget();
+            app(AttributeIdentityLock::class)->acquire();
             $lockedDraft = NormalizedProductDraft::query()->lockForUpdate()->findOrFail($draft->id);
 
             if ($lockedDraft->status !== 'pending_review') {
@@ -29,18 +29,16 @@ final class ApproveNormalizedProductDraftAction
                 throw new LogicException("Draft [{$lockedDraft->id}] has unresolved critical normalization errors.");
             }
 
-            if ($lockedDraft->attribute_identity_version !== 2) {
-                throw new LogicException('Migrate active draft identity before approval.');
+            if ($lockedDraft->schema_version !== 1) {
+                throw new LogicException('Unsupported draft schema version.');
             }
-            app(DraftAttributeIdentityV2::class)->candidates($lockedDraft);
+            app(DraftAttributeIdentity::class)->candidates($lockedDraft);
             $lockedDraft->forceFill([
                 'status' => 'approved',
                 'approved_by_user_id' => $user->id,
                 'approved_at' => now(),
             ])->save();
             $lockedDraft->importBatch()->increment('approved_count');
-
-            app(AttributeIdentityLock::class)->recordTargetWrite();
 
             return $lockedDraft->refresh();
         });

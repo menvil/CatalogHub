@@ -75,8 +75,8 @@ final class SchemaConsumerTranslationFreshnessTest extends TestCase
             self::assertSame($copy[$field], $rebuilt->payload_json['product'][$field]);
         }
         self::assertSame('New translated title', $search->fresh()->title);
-        self::assertSame(2, $rebuilt->attribute_identity_version);
-        self::assertSame(2, $search->fresh()->attribute_identity_version);
+        self::assertSame(1, $rebuilt->schema_version);
+        self::assertSame(1, $search->fresh()->schema_version);
         $save->handle($product, $locale, $copy);
         self::assertSame('active', $rebuilt->fresh()->getRawOriginal('status'));
         self::assertSame('active', $search->fresh()->getRawOriginal('status'));

@@ -6,7 +6,6 @@ use App\Contracts\Imports\AttributeValueNormalizerInterface;
 use App\Data\Imports\NormalizedAttributeValueData;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\CategoryAttributeAssignment;
-use App\Services\AttributeGlobalization\AttributeIdentityReservation;
 use Illuminate\Validation\ValidationException;
 
 final readonly class AttributeNormalizer
@@ -22,7 +21,6 @@ final readonly class AttributeNormalizer
             throw ValidationException::withMessages(['assignment' => 'Import assignment no longer exists.']);
         }
         $definition = $assignment->definition;
-        app(AttributeIdentityReservation::class)->assertResolved($definition);
         $normalized = $this->normalize($definition, $rawValue);
 
         return ['category_attribute_assignment_id' => $assignment->id, 'attribute_definition_id' => $definition->id, 'code' => $definition->code,

@@ -36,7 +36,7 @@ final readonly class SchemaRevision
         $actor = $this->access->authorize(Permission::CatalogSchemaManage, $actor);
 
         return DB::transaction(function () use ($categoryId, $origin, $originId, $mutation, $actor, $readCategoryIds): mixed {
-            app(AttributeIdentityLock::class)->acquireTarget();
+            app(AttributeIdentityLock::class)->acquire();
             $definitionId = match ($origin) {
                 SchemaMutationOrigin::AttributeUpdated, SchemaMutationOrigin::AttributeMoved => $originId,
                 SchemaMutationOrigin::OptionCreated => $originId,
@@ -58,15 +58,10 @@ final readonly class SchemaRevision
                 $before[$id] = $this->fingerprints->forCategory($id);
             }
             $result = $mutation();
-            $changed = false;
             foreach ($ids as $id) {
                 if ($before[$id] !== $this->fingerprints->forCategory($id)) {
                     $this->invalidate($locked[$id], $origin, $result instanceof Model ? (int) $result->getKey() : $originId, $actor);
-                    $changed = true;
                 }
-            }
-            if ($changed) {
-                app(AttributeIdentityLock::class)->recordTargetWrite();
             }
 
             return $result;

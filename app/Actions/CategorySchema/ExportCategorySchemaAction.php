@@ -22,11 +22,11 @@ final class ExportCategorySchemaAction
         }
 
         return DB::transaction(function () use ($category): array {
-            app(AttributeIdentityLock::class)->acquireConsumerRead();
+            app(AttributeIdentityLock::class)->acquire();
             $category->load(['attributeSections' => fn ($q) => $q->ordered(),
                 'attributeAssignments' => fn ($q) => $q->ordered()->with(['definition.options' => fn ($q) => $q->ordered()])]);
 
-            return ['attribute_identity_version' => 2, 'category' => [...$category->only(['id', 'slug', 'name', 'schema_revision']), 'schema_status' => $category->schema_status->value],
+            return ['schema_version' => 1, 'category' => [...$category->only(['id', 'slug', 'name', 'schema_revision']), 'schema_status' => $category->schema_status->value],
                 'sections' => $category->attributeSections->map(fn ($s) => $s->only(['id', 'code', 'name', 'position', 'display_style', 'is_visible', 'is_collapsible']))->all(),
                 'definitions' => $category->attributeAssignments->pluck('definition')->unique('id')->sortBy('id')->map(fn ($d) => [
                     ...$d->only(['id', 'code', 'name', 'measurement_dimension_id', 'canonical_measurement_unit_id']), 'data_type' => $d->data_type->value,

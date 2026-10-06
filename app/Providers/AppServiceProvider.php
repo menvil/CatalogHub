@@ -50,8 +50,6 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Database\Events\TransactionCommitted;
-use Illuminate\Database\Events\TransactionRolledBack;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -136,9 +134,6 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('system.super-admin', fn (User $user): bool => $user->isSuperAdmin());
 
-        foreach ([TransactionCommitted::class, TransactionRolledBack::class] as $event) {
-            Event::listen($event, fn () => app(AttributeIdentityLock::class)->releaseAfterTransaction());
-        }
         foreach ([AttributeTranslation::class, AttributeOptionTranslation::class,
             AttributeSectionTranslation::class, CategoryTranslation::class, UnitTranslation::class, ProductTranslation::class] as $translation) {
             $translation::observe(SchemaTranslationProjectionObserver::class);

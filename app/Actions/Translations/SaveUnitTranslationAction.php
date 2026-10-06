@@ -28,7 +28,6 @@ final readonly class SaveUnitTranslationAction
         $translation = DB::transaction(function () use ($unit, $locale, $data, $symbolPosition): UnitTranslation {
             $unit = app(TranslationLocaleIdentity::class)->lockOwner($unit);
             $locale = Locale::query()->lockForUpdate()->findOrFail($locale->id);
-            app(TranslationLocaleIdentity::class)->assertUnambiguous('unit_translations', 'measurement_unit_id', $unit->id, $locale->id);
 
             $translation = UnitTranslation::query()->updateOrCreate(
                 ['measurement_unit_id' => $unit->id, 'locale_id' => $locale->id],

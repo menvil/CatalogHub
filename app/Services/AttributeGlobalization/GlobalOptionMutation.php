@@ -24,11 +24,10 @@ final class GlobalOptionMutation
         $actor = app(CategoryAccess::class)->authorize(Permission::CatalogSchemaManage, $actor);
 
         return DB::transaction(function () use ($definition, $option, $write, $actor): AttributeOption {
-            app(AttributeIdentityLock::class)->acquireTarget();
+            app(AttributeIdentityLock::class)->acquire();
             $ids = $definition->assignments()->orderBy('central_category_id')->pluck('central_category_id')->all();
             $categories = app(CategoryLock::class)->acquire($ids);
             $definition = AttributeDefinition::query()->whereKey($definition->id)->lockForUpdate()->firstOrFail();
-            app(AttributeIdentityReservation::class)->assertResolved($definition);
             foreach ($categories as $category) {
                 app(SchemaRevision::class)->assertMutable($category);
             }
@@ -46,7 +45,6 @@ final class GlobalOptionMutation
                 'changed_fields' => array_keys(array_filter($after, fn ($value, $key) => $before === null || $value !== $before[$key], ARRAY_FILTER_USE_BOTH))];
             app(AuditRecorder::class)->record($option === null ? AuditAction::CatalogAttributeOptionCreated : AuditAction::CatalogAttributeOptionUpdated,
                 AuditContext::Central, $actor, $definition, null, $snapshot($before), $snapshot($after));
-            app(AttributeIdentityLock::class)->recordTargetWrite();
 
             return $result;
         }, 3);

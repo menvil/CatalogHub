@@ -8,7 +8,6 @@ use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\User;
-use App\Services\AttributeGlobalization\AttributeIdentityReservation;
 use App\Services\CategorySchema\SchemaRevision;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -68,7 +67,6 @@ final class CloneCategorySchemaAction
                 }
             }
             foreach ($source->attributeAssignments as $assignment) {
-                app(AttributeIdentityReservation::class)->assertResolved($assignment->definition, 'source');
                 CategoryAttributeAssignment::query()->create([
                     'central_category_id' => $target->id, 'attribute_definition_id' => $assignment->attribute_definition_id,
                     'attribute_section_id' => $assignment->attribute_section_id === null ? null : $sectionMap[$assignment->attribute_section_id]->id,

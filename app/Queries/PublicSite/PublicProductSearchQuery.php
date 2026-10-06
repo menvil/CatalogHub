@@ -17,7 +17,7 @@ final class PublicProductSearchQuery implements RawSqlPersistenceBoundary
     {
         $pattern = LiteralLikePattern::containing(mb_strtolower($term));
 
-        return SiteSearchDocument::query()->where('attribute_identity_version', 2)
+        return SiteSearchDocument::query()->where('schema_version', 1)
             ->where('site_id', $site->id)
             ->where('locale', $locale)
             ->where('document_type', 'product')

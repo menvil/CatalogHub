@@ -56,7 +56,7 @@ final class SnapshotGenerationService
             'status' => 'pending',
             'snapshot_type' => $snapshotType,
             'storage_disk' => 'local',
-            'metadata_json' => ['included_sections' => $sections, ...(array_intersect($sections, ['attributes', 'attribute_values', 'translations', 'site_config']) !== [] ? ['attribute_identity_version' => 2] : [])],
+            'metadata_json' => ['included_sections' => $sections, ...(array_intersect($sections, ['attributes', 'attribute_values', 'translations', 'site_config']) !== [] ? ['schema_version' => 1] : [])],
             'created_by_user_id' => $admin->getKey(),
         ]);
         $snapshot->markGenerating();
@@ -70,7 +70,7 @@ final class SnapshotGenerationService
 
         try {
             DB::transaction(function () use ($sections, $snapshot): void {
-                app(AttributeIdentityLock::class)->acquireConsumerRead();
+                app(AttributeIdentityLock::class)->acquire();
                 foreach ($sections as $section) {
                     $this->exporter($section)->export($snapshot);
                 }

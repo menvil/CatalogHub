@@ -15,7 +15,7 @@ final class AttributeValuesJsonlExporter implements JsonlExporter
             ->orderBy('id')
             ->cursor()
             ->map(fn (CentralProductAttributeValue $value): array => [
-                'attribute_identity_version' => 2, 'id' => $value->getKey(),
+                'schema_version' => 1, 'id' => $value->getKey(),
                 'product_id' => $value->central_product_id,
                 'attribute_definition_id' => $value->attribute_definition_id,
                 'raw_value' => $value->raw_value,

@@ -45,7 +45,7 @@ final class SiteSyncService
         $job = $this->startJob($site, 'product', 'product', (int) $product->getKey(), $locale);
         try {
             return DB::transaction(function () use ($site, $product, $locale, $job): SiteProductProjection {
-                app(AttributeIdentityLock::class)->acquireConsumerRead();
+                app(AttributeIdentityLock::class)->acquire();
                 $product = CentralProduct::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
 
                 return $this->syncProductLocked($site, $product, $locale, $job);
@@ -93,7 +93,7 @@ final class SiteSyncService
         $job = $this->startJob($site, 'category', 'category', (int) $category->getKey(), $locale);
         try {
             return DB::transaction(function () use ($site, $category, $locale, $job): SiteCategoryProjection {
-                app(AttributeIdentityLock::class)->acquireConsumerRead();
+                app(AttributeIdentityLock::class)->acquire();
                 $category = CentralCategory::query()->whereKey($category->id)->lockForUpdate()->firstOrFail();
 
                 return $this->syncCategoryLocked($site, $category, $locale, $job);
@@ -260,7 +260,7 @@ final class SiteSyncService
             'title' => $projection->title,
             'status' => $projection->status,
             'payload_json' => $projection->payload,
-            'attribute_identity_version' => 2, 'schema_revision' => $projection->payload['schema_revision'] ?? 0,
+            'schema_version' => 1, 'schema_revision' => $projection->payload['schema_revision'] ?? 0,
             'seo_json' => $projection->seo,
             'media_json' => $projection->media,
             'search_summary_json' => [
@@ -299,7 +299,7 @@ final class SiteSyncService
             'title' => $projection->title,
             'status' => $projection->status,
             'payload_json' => $projection->payload,
-            'attribute_identity_version' => 2, 'schema_revision' => $projection->payload['schema_revision'] ?? 0,
+            'schema_version' => 1, 'schema_revision' => $projection->payload['schema_revision'] ?? 0,
             'seo_json' => $projection->seo,
             'facets_json' => $projection->facets,
             'comparison_json' => $projection->comparison,
@@ -336,7 +336,7 @@ final class SiteSyncService
             'filter_values_json' => $document->filterValues,
             'sort_values_json' => $document->sortValues,
             'payload_json' => $document->payload,
-            'attribute_identity_version' => 2, 'schema_revision' => $document->payload['schema_revision'] ?? 0,
+            'schema_version' => 1, 'schema_revision' => $document->payload['schema_revision'] ?? 0,
             'checksum' => $document->checksum,
             'built_at' => $builtAt,
             'stale_at' => null,

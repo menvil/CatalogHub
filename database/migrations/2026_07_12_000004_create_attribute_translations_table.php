@@ -22,7 +22,7 @@ return new class extends Migration
             $table->foreignId('approved_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
-            $table->unique(['attribute_definition_id', 'locale']);
+            $table->unique(['attribute_definition_id', 'locale_id'], 'attribute_definition_id_locale_identity_unique');
             $table->index(['locale', 'status']);
         });
     }

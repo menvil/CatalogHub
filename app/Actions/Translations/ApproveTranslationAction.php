@@ -15,7 +15,7 @@ final class ApproveTranslationAction
     public function handle(Model $translation, User $user, bool $forgetDashboardCache = true): Model
     {
         return DB::transaction(function () use ($translation, $user, $forgetDashboardCache): Model {
-            app(AttributeIdentityLock::class)->acquireTarget();
+            app(AttributeIdentityLock::class)->acquire();
             $translation = $translation::query()->whereKey($translation->getKey())->lockForUpdate()->firstOrFail();
             if ($translation->getAttribute('status') === TranslationStatus::Approved) {
                 return $translation;

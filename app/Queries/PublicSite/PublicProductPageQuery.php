@@ -17,7 +17,7 @@ final readonly class PublicProductPageQuery
 
     public function get(Site $site, string $locale, string $slug): PublicProductPageData
     {
-        $projection = SiteProductProjection::query()->where('attribute_identity_version', 2)
+        $projection = SiteProductProjection::query()->where('schema_version', 1)
             ->where('site_id', $site->id)
             ->where('locale', $locale)
             ->where('slug', $slug)

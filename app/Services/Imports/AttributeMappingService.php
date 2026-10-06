@@ -54,7 +54,7 @@ final class AttributeMappingService
         $rawKey = trim($rawKey);
 
         return DB::transaction(function () use ($sourceId, $categoryId, $rawKey): AttributeMapping {
-            app(AttributeIdentityLock::class)->acquireTarget();
+            app(AttributeIdentityLock::class)->acquire();
 
             return AttributeMapping::query()->firstOrCreate(
                 [

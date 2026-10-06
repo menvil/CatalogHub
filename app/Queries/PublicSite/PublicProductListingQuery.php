@@ -34,12 +34,12 @@ final readonly class PublicProductListingQuery implements StablePaginationBounda
         $centralCategory->setAttribute($centralCategory->getKeyName(), $category->central_category_id);
         $centralCategory->exists = true;
         $documents = $this->facets->apply(
-            SiteSearchDocument::query()->where('attribute_identity_version', 2)->where('locale', $locale),
+            SiteSearchDocument::query()->where('schema_version', 1)->where('locale', $locale),
             $site,
             $centralCategory,
             $filters,
         )->paginate($perPage, ['*'], 'page', $page);
-        $projections = SiteProductProjection::query()->where('attribute_identity_version', 2)
+        $projections = SiteProductProjection::query()->where('schema_version', 1)
             ->where('site_id', $site->id)
             ->where('locale', $locale)
             ->where('status', ProjectionStatus::Active)

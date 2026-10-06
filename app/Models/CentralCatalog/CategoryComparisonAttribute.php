@@ -14,6 +14,11 @@ final class CategoryComparisonAttribute extends Model
     /** @use HasFactory<CategoryComparisonAttributeFactory> */
     use HasFactory;
 
+    protected static function newFactory(): CategoryComparisonAttributeFactory
+    {
+        return CategoryComparisonAttributeFactory::new();
+    }
+
     protected function casts(): array
     {
         return ['position' => 'integer', 'is_visible' => 'boolean'];

@@ -5,31 +5,26 @@ namespace Tests\Feature\SchemaConsumers;
 use App\Actions\CategorySchema\MarkCategorySchemaReviewedAction;
 use App\Actions\CategorySchema\SaveCategoryComparisonAction;
 use App\Actions\CategorySchema\UnassignAttributeFromCategoryAction;
-use App\Actions\CategorySchema\UpdateCategoryAttributeAssignmentAction;
 use App\Actions\CategorySchema\UpdateGlobalAttributeDefinitionAction;
 use App\Actions\Facets\SaveCategoryFacetAction;
 use App\Actions\Imports\PublishNormalizedProductDraftToCentralAction;
-use App\Actions\Imports\RejectNormalizedProductDraftAction;
+use App\Actions\Imports\SaveAttributeMappingAction;
 use App\Actions\ProductAttributes\SaveProductSpecsAction;
 use App\Domains\Projections\SiteSyncService;
-use App\Exceptions\ProductAttributes\CannotSaveProductSpecsException;
 use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
+use App\Models\Imports\AttributeMapping;
+use App\Models\Imports\ImportSource;
 use App\Models\Imports\NormalizedProductDraft;
 use App\Models\Site;
 use App\Models\SiteProduct;
 use App\Models\SiteProductProjection;
 use App\Models\SiteSearchDocument;
 use App\Models\User;
-use App\Services\AttributeGlobalization\AttributeReconciliationWriter;
-use App\Services\AttributeGlobalization\FinalizeSchemaConsumersV2;
-use App\Services\AttributeGlobalization\LegacyAttributeBackfill;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\AttributeIdentityRace;
 use Tests\TestCase;
@@ -50,68 +45,40 @@ final class SchemaConsumerConcurrencyTest extends TestCase
         parent::tearDown();
     }
 
-    #[DataProvider('cutoverWriters')]
-    public function test_cutover_serializes_with_specs_publish_and_schema_and_writers_reload_identity(string $writer): void
+    public function test_reviewed_mapping_creation_and_unassignment_cannot_commit_incompatible_membership(): void
     {
-        $migration = require database_path('migrations/2026_10_06_000002_cut_over_schema_consumers.php');
-        $migration->down();
         $actor = User::factory()->centralAdmin()->create();
-        $a = CentralCategory::factory()->create();
-        $b = CentralCategory::factory()->create();
-        $legacy = DB::table('attribute_definitions')->insertGetId(['central_category_id' => $a->id, 'code' => 'legacy_meaning', 'name' => 'Meaning', 'data_type' => 'string']);
-        $canonical = DB::table('attribute_definitions')->insertGetId(['central_category_id' => $b->id, 'code' => 'canonical_meaning', 'name' => 'Meaning', 'data_type' => 'string']);
-        app(LegacyAttributeBackfill::class)->run();
-        app(AttributeReconciliationWriter::class)->run(['version' => 1,
-            'expected_write_epoch' => (int) DB::table('attribute_identity_scopes')->value('write_epoch'),
-            'definitions' => [['legacy_definition_id' => $legacy, 'canonical_definition_id' => $canonical, 'canonical_code' => 'canonical_meaning']]], true, $actor);
-        $assignment = CategoryAttributeAssignment::query()->where('central_category_id', $a->id)->sole();
-        $product = CentralProduct::factory()->for($a, 'category')->create();
-        $draft = NormalizedProductDraft::factory()->create(['category_id' => $a->id, 'matched_central_product_id' => $product->id,
-            'attribute_identity_version' => 1, 'status' => $writer === 'reject' ? 'pending_review' : 'approved', 'attributes_json' => [['attribute_definition_id' => $legacy, 'code' => 'legacy_meaning', 'value_type' => 'string', 'value' => 'Reviewed']]]);
-        $child = match ($writer) {
-            'specs' => fn () => app(SaveProductSpecsAction::class)->handle($product, [$legacy => ['value_text' => 'Stale pointer']], $actor),
-            'publish' => fn () => app(PublishNormalizedProductDraftToCentralAction::class)->handle($draft, $actor),
-            'reject' => fn () => app(RejectNormalizedProductDraftAction::class)->handle($draft, $actor, 'Reviewed rejection'),
-            'schema' => fn () => app(UpdateCategoryAttributeAssignmentAction::class)->handle($assignment, ['is_visible' => false], 2, $actor),
-            default => throw new \InvalidArgumentException('Unknown writer.'),
-        };
-        $this->race('attribute_identity_scopes', fn () => $migration->up(), $child,
-            function (string $outcome) use ($writer, $assignment, $canonical, $product, $draft, $actor, $child): void {
+        $assignment = CategoryAttributeAssignment::factory()->create();
+        $source = ImportSource::factory()->create();
+        $this->race('attribute_identity_scopes',
+            fn () => app(UnassignAttributeFromCategoryAction::class)->handle($assignment, 1, $actor),
+            fn () => app(SaveAttributeMappingAction::class)->handle(null, ['import_source_id' => $source->id,
+                'category_id' => $assignment->central_category_id, 'raw_key' => 'Spec', 'mapping_type' => 'attribute',
+                'status' => 'reviewed', 'confidence' => 1, 'category_attribute_assignment_id' => $assignment->id], $actor),
+            function (string $outcome): void {
                 self::assertSame('validation-error', $outcome);
-                self::assertSame(0, (int) DB::table('attribute_identity_scopes')->value('consumer_version'));
-                self::assertSame(0, CentralProductAttributeValue::query()->count());
-                self::assertTrue(CategoryAttributeAssignment::query()->findOrFail($assignment->id)->is_visible);
-                self::assertNotSame('rejected', NormalizedProductDraft::query()->findOrFail($draft->id)->status);
-                app(FinalizeSchemaConsumersV2::class)->run($actor);
-                if ($writer !== 'specs') {
-                    $child();
-                } else {
-                    try {
-                        $child();
-                        self::fail('Old definition pointer was accepted after finalization.');
-                    } catch (CannotSaveProductSpecsException|ValidationException) {
-                        self::assertSame(0, CentralProductAttributeValue::query()->count());
-                    }
-                }
-                self::assertSame(2, (int) DB::table('attribute_identity_scopes')->value('consumer_version'));
-                self::assertSame($canonical, CategoryAttributeAssignment::query()->findOrFail($assignment->id)->attribute_definition_id);
-                self::assertSame(2, NormalizedProductDraft::query()->findOrFail($draft->id)->attribute_identity_version);
-                if ($writer === 'publish') {
-                    self::assertSame($canonical, CentralProductAttributeValue::query()->where('central_product_id', $product->id)->sole()->attribute_definition_id);
-                } elseif ($writer === 'reject') {
-                    self::assertSame('rejected', NormalizedProductDraft::query()->findOrFail($draft->id)->status);
-                    self::assertSame(0, CentralProductAttributeValue::query()->count());
-                } elseif ($writer === 'specs') {
-                    self::assertSame(0, CentralProductAttributeValue::query()->count());
-                } else {
-                    self::assertFalse(CategoryAttributeAssignment::query()->findOrFail($assignment->id)->is_visible);
-                }
+                self::assertSame(0, AttributeMapping::query()->count());
+                self::assertSame(0, CategoryAttributeAssignment::query()->count());
             });
     }
 
-    public static function cutoverWriters(): array
+    public function test_import_publish_and_unassignment_serialize_and_preserve_published_fact(): void
     {
-        return [['specs'], ['publish'], ['reject'], ['schema']];
+        $actor = User::factory()->centralAdmin()->create();
+        $assignment = CategoryAttributeAssignment::factory()->create();
+        $draft = NormalizedProductDraft::factory()->create(['category_id' => $assignment->central_category_id,
+            'status' => 'approved', 'attributes_json' => [['category_attribute_assignment_id' => $assignment->id,
+                'attribute_definition_id' => $assignment->attribute_definition_id, 'code' => $assignment->definition->code,
+                'value_type' => 'string', 'value' => 'Published fact']]]);
+        $this->race('attribute_identity_scopes',
+            fn () => app(PublishNormalizedProductDraftToCentralAction::class)->handle($draft, $actor),
+            fn () => app(UnassignAttributeFromCategoryAction::class)->handle($assignment, 1, $actor),
+            function (string $outcome): void {
+                self::assertSame('validation-error', $outcome);
+                self::assertSame(1, CategoryAttributeAssignment::query()->count());
+                self::assertSame('Published fact', CentralProductAttributeValue::query()->sole()->value_text);
+                self::assertSame('published', NormalizedProductDraft::query()->sole()->status);
+            });
     }
 
     public function test_assignment_removal_and_specs_write_cannot_create_an_orphan(): void
@@ -147,8 +114,8 @@ final class SchemaConsumerConcurrencyTest extends TestCase
                 $search = SiteSearchDocument::query()->sole();
                 self::assertSame($category->schema_revision, $projection->schema_revision);
                 self::assertSame($category->schema_revision, $search->schema_revision);
-                self::assertSame(2, $projection->attribute_identity_version);
-                self::assertSame(2, $search->attribute_identity_version);
+                self::assertSame(1, $projection->schema_version);
+                self::assertSame(1, $search->schema_version);
                 self::assertSame('Reviewed global name', $projection->payload_json['attributes'][0]['label']);
             }, 'projection_jobs');
     }

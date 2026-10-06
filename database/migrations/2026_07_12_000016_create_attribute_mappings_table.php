@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('category_id')->constrained('central_categories')->cascadeOnDelete();
             $table->string('raw_key');
             $table->string('normalized_raw_key');
-            $table->foreignId('attribute_definition_id')->nullable();
+            $table->foreignId('category_attribute_assignment_id')->nullable();
             $table->decimal('confidence', 5, 4)->default(0);
             $table->string('status')->default('auto')->index();
             $table->string('mapping_type')->default('attribute');
@@ -26,13 +26,9 @@ return new class extends Migration
                 ['import_source_id', 'category_id', 'normalized_raw_key'],
                 'attribute_mappings_normalized_lookup'
             );
-            $table->foreign(
-                ['attribute_definition_id', 'category_id'],
-                'attribute_mappings_definition_category_fk',
-            )
-                ->references(['id', 'central_category_id'])
-                ->on('attribute_definitions')
-                ->cascadeOnDelete();
+            $table->index(['category_attribute_assignment_id', 'category_id'], 'attribute_mapping_assignment_membership_idx');
+            $table->foreign(['category_attribute_assignment_id', 'category_id'], 'attribute_mapping_assignment_category_fk')
+                ->references(['id', 'central_category_id'])->on('category_attribute_assignments')->restrictOnDelete();
         });
     }
 

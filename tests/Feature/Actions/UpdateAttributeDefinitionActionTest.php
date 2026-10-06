@@ -29,7 +29,7 @@ class UpdateAttributeDefinitionActionTest extends TestCase
     public function test_updates_global_canonical_definition_without_local_ownership(): void
     {
         $this->seed([MeasurementDimensionsSeeder::class, MetricMeasurementUnitsSeeder::class]);
-        $attribute = AttributeDefinition::factory()->create(['code' => 'old_code', 'name' => 'Old name']);
+        $attribute = AttributeDefinition::factory()->create(['code' => 'refresh_rate', 'name' => 'Old name']);
         $unit = MeasurementUnit::query()->where('code', 'hertz')->sole();
         app(UpdateAttributeDefinitionAction::class)->handle($attribute, ['name' => 'Refresh rate', 'code' => 'refresh_rate',
             'data_type' => 'integer', 'measurement_dimension_id' => $unit->dimension_id, 'canonical_measurement_unit_id' => $unit->id]);
@@ -54,7 +54,7 @@ class UpdateAttributeDefinitionActionTest extends TestCase
         $this->assertSame('Refresh rate', $attribute->fresh()->name);
     }
 
-    public function test_rejects_duplicate_attribute_code_inside_category(): void
+    public function test_rejects_canonical_code_changes(): void
     {
         $category = CentralCategory::factory()->create();
         $section = AttributeSection::factory()->for($category, 'category')->create();

@@ -16,16 +16,6 @@ class AttributeDefinitionFactory extends Factory
 {
     protected $model = AttributeDefinition::class;
 
-    /** Explicit historical migration fixture, only valid before ownership contraction. */
-    public function legacy(CentralCategory $category): static
-    {
-        return $this->state(['central_category_id' => $category->id, 'attribute_section_id' => null,
-            'position' => 0, 'is_required' => false, 'is_visible' => true, 'is_searchable' => false,
-            'is_sortable' => false, 'is_filterable' => false, 'is_comparable' => false])->afterMaking(function (AttributeDefinition $definition): void {
-                unset($definition['measurement_dimension_id'], $definition['canonical_measurement_unit_id']);
-            });
-    }
-
     public function global(): static
     {
         return $this;

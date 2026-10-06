@@ -23,7 +23,7 @@ final class AttributesJsonlExporter implements JsonlExporter
     {
         foreach (AttributeSection::query()->orderBy('id')->cursor() as $section) {
             yield [
-                'attribute_identity_version' => 2, 'entity_type' => 'attribute_section',
+                'schema_version' => 1, 'entity_type' => 'attribute_section',
                 'id' => $section->getKey(),
                 'category_id' => $section->central_category_id,
                 'code' => $section->code,
@@ -40,17 +40,17 @@ final class AttributesJsonlExporter implements JsonlExporter
         }
 
         foreach (AttributeDefinition::query()->orderBy('id')->cursor() as $definition) {
-            yield ['attribute_identity_version' => 2, 'entity_type' => 'attribute_definition',
+            yield ['schema_version' => 1, 'entity_type' => 'attribute_definition',
                 ...$definition->only(['id', 'code', 'name', 'data_type', 'measurement_dimension_id', 'canonical_measurement_unit_id', 'created_at', 'updated_at'])];
         }
         foreach (CategoryAttributeAssignment::query()->orderBy('id')->cursor() as $assignment) {
-            yield ['attribute_identity_version' => 2, 'entity_type' => 'category_attribute_assignment',
+            yield ['schema_version' => 1, 'entity_type' => 'category_attribute_assignment',
                 ...$assignment->only(['id', 'central_category_id', 'attribute_definition_id', 'attribute_section_id', 'position', 'is_required', 'is_visible', 'is_searchable', 'is_sortable', 'created_at', 'updated_at'])];
         }
 
         foreach (AttributeOption::query()->orderBy('id')->cursor() as $option) {
             yield [
-                'attribute_identity_version' => 2, 'entity_type' => 'attribute_option',
+                'schema_version' => 1, 'entity_type' => 'attribute_option',
                 'id' => $option->getKey(),
                 'attribute_definition_id' => $option->attribute_definition_id,
                 'code' => $option->code,

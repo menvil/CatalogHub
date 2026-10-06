@@ -20,7 +20,7 @@ class SearchDocumentBuilderTest extends TestCase
             title: 'LG UltraGear 27GP850-B',
             status: ProjectionStatus::Active,
             payload: [
-                'attribute_identity_version' => 2,
+                'schema_version' => 1,
                 'facet_values' => ['refresh_rate' => 165],
                 'attributes' => [['code' => 'refresh_rate', 'canonical_value' => 165, 'display_value' => '165 Hz', 'is_searchable' => true, 'is_sortable' => true]],
                 'product' => ['id' => 123, 'title' => 'LG UltraGear 27GP850-B', 'model' => '27GP850-B'],

@@ -10,7 +10,6 @@ use App\Enums\FacetSourceType;
 use App\Models\CentralCatalog\CategoryComparisonAttribute;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\FacetDefinition;
-use App\Services\AttributeGlobalization\AttributeIdentityReservation;
 
 final class CategorySchemaValidator
 {
@@ -26,7 +25,7 @@ final class CategorySchemaValidator
 
         foreach ($category->attributeSections as $section) {
             if ($section->parent_id !== null) {
-                $result->add(new CategorySchemaIssue(CategorySchemaIssueSeverity::Error, 'invalid_section_shape', 'Section shape requires reviewed flattening/order reconciliation.', 'attribute_section', $section->id));
+                $result->add(new CategorySchemaIssue(CategorySchemaIssueSeverity::Error, 'invalid_section_shape', 'Sections must have one visible level.', 'attribute_section', $section->id));
             }
             if ($section->assignments->isEmpty()) {
                 $result->add(new CategorySchemaIssue(
@@ -41,11 +40,10 @@ final class CategorySchemaValidator
 
         foreach ($category->attributeAssignments as $assignment) {
             $attribute = $assignment->definition;
-            if (! app(AttributeIdentityReservation::class)->resolved($attribute)
-                || ($assignment->section !== null && $assignment->section->central_category_id !== $category->id)
+            if (($assignment->section !== null && $assignment->section->central_category_id !== $category->id)
                 || (($attribute->measurement_dimension_id === null) !== ($attribute->canonical_measurement_unit_id === null))
                 || ($attribute->canonicalMeasurementUnit !== null && ($attribute->canonicalMeasurementUnit->dimension_id !== $attribute->measurement_dimension_id || ! in_array($attribute->data_type, [AttributeDataType::Integer, AttributeDataType::Decimal], true)))) {
-                $result->add(new CategorySchemaIssue(CategorySchemaIssueSeverity::Error, 'invalid_assignment_identity', 'Unresolved or incompatible assignment meaning.', 'category_attribute_assignment', $assignment->id));
+                $result->add(new CategorySchemaIssue(CategorySchemaIssueSeverity::Error, 'invalid_assignment_identity', 'Incompatible assignment meaning.', 'category_attribute_assignment', $assignment->id));
             }
             $visibleOptionsCount = $attribute->options->where('is_visible', true)->count();
 

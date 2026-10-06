@@ -29,7 +29,7 @@ final class SaveProductSpecsAction
     {
         app(CategoryAccess::class)->authorize(Permission::CatalogProductsManage, $actor);
         DB::transaction(function () use ($product, $payload, $expectedSchemaRevision): void {
-            app(AttributeIdentityLock::class)->acquireTarget();
+            app(AttributeIdentityLock::class)->acquire();
             $product = CentralProduct::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
             if ($expectedSchemaRevision !== null && $product->category !== null) {
                 app(SchemaRevision::class)->expect($product->category, $expectedSchemaRevision);
@@ -59,7 +59,6 @@ final class SaveProductSpecsAction
             if (! $changed) {
                 return;
             }
-            app(AttributeIdentityLock::class)->recordTargetWrite();
             app(ProjectionStaleDetector::class)->markStaleForProduct($product);
         });
     }

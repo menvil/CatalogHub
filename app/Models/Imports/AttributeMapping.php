@@ -4,7 +4,9 @@ namespace App\Models\Imports;
 
 use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\CentralCatalog\CentralCategory;
+use Database\Factories\AttributeMappingFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -31,6 +33,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 final class AttributeMapping extends Model
 {
+    /** @use HasFactory<AttributeMappingFactory> */
+    use HasFactory;
+
+    protected static function newFactory(): AttributeMappingFactory
+    {
+        return AttributeMappingFactory::new();
+    }
+
     /** @return BelongsTo<CategoryAttributeAssignment, $this> */
     public function assignment(): BelongsTo
     {

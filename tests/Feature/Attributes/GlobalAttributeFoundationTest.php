@@ -6,6 +6,7 @@ use App\Actions\CategorySchema\AssignAttributeToCategoryAction;
 use App\Actions\CategorySchema\CreateGlobalAttributeDefinitionAction;
 use App\Actions\CategorySchema\DeleteAttributeOptionAction;
 use App\Actions\CategorySchema\DeleteAttributeSectionAction;
+use App\Actions\CategorySchema\ExportCategorySchemaAction;
 use App\Actions\CategorySchema\MoveCategoryAttributeAssignmentAction;
 use App\Actions\CategorySchema\UnassignAttributeFromCategoryAction;
 use App\Actions\CategorySchema\UpdateAttributeDefinitionAction;
@@ -18,7 +19,6 @@ use App\Exceptions\CategorySchema\CannotDeleteAttributeSectionException;
 use App\Models\AttributeDisplayRule;
 use App\Models\AuditLogEntry;
 use App\Models\CentralCatalog\AttributeDefinition;
-use App\Models\CentralCatalog\AttributeDefinitionCrosswalk;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CategoryAttributeAssignment;
@@ -34,7 +34,6 @@ use App\Models\Locale;
 use App\Models\MeasurementDimension;
 use App\Models\MeasurementUnit;
 use App\Models\User;
-use App\Queries\Attributes\AttributeGlobalizationDiagnosticsQuery;
 use App\Services\Audit\AuditRecorder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
@@ -43,12 +42,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
-use Tests\Support\LegacyAttributeEvidence;
 use Tests\TestCase;
 
 final class GlobalAttributeFoundationTest extends TestCase
 {
-    use LegacyAttributeEvidence;
     use RefreshDatabase;
 
     private function createDefinition(): AttributeDefinition
@@ -66,7 +63,6 @@ final class GlobalAttributeFoundationTest extends TestCase
         $section = AttributeSection::factory()->for($a, 'category')->create();
         $one = app(AssignAttributeToCategoryAction::class)->handle($a, $definition, ['attribute_section_id' => $section->id, 'position' => 7, 'is_required' => true, 'is_visible' => false, 'is_searchable' => true, 'is_sortable' => true], 1, $actor);
         $two = app(AssignAttributeToCategoryAction::class)->handle($b, $definition, [], 1, $actor);
-        self::assertNull($definition->central_category_id);
         self::assertSame('display_type', $definition->code);
         self::assertSame($section->id, $one->attribute_section_id);
         self::assertNull($two->attribute_section_id);
@@ -258,31 +254,6 @@ final class GlobalAttributeFoundationTest extends TestCase
         }
     }
 
-    public function test_unresolved_legacy_measurement_evidence_remains_a_cutover_blocker(): void
-    {
-        $actor = User::factory()->centralAdmin()->create();
-        $definition = AttributeDefinition::factory()->create(['code' => 'legacy_size', 'data_type' => 'decimal']);
-        $this->recordLegacyEvidence();
-        AttributeDefinitionCrosswalk::query()->whereKey($definition->id)->update(['measurement_status' => 'unknown_catalog_code']);
-        $report = app(AttributeGlobalizationDiagnosticsQuery::class)->report($actor);
-        self::assertSame([$definition->id], $report['blockers']['measurement_mapping_failures']);
-        self::assertFalse($report['cutover_ready']);
-    }
-
-    public function test_durable_legacy_inventory_count_survives_safe_membership_removal(): void
-    {
-        $actor = User::factory()->centralAdmin()->create();
-        $category = CentralCategory::factory()->create();
-        $definition = AttributeDefinition::factory()->assignedTo($category)->create(['code' => 'legacy_label']);
-        $this->recordLegacyEvidence();
-        app(UnassignAttributeFromCategoryAction::class)->handle($definition->assignments()->sole(), 1, $actor);
-        self::assertNull($definition->fresh()->central_category_id);
-        $report = app(AttributeGlobalizationDiagnosticsQuery::class)->report($actor);
-        self::assertSame(1, $report['legacy_definition_count']);
-        self::assertTrue($report['cutover_ready']);
-        self::assertSame($definition->id, AttributeDefinitionCrosswalk::query()->sole()->legacy_definition_id);
-    }
-
     public function test_unassignment_preserves_global_meaning_and_options_but_product_dependency_blocks_removal(): void
     {
         $actor = User::factory()->centralAdmin()->create();
@@ -297,7 +268,7 @@ final class GlobalAttributeFoundationTest extends TestCase
         app(UnassignAttributeFromCategoryAction::class)->handle($assignment, 1, $actor);
     }
 
-    public function test_new_global_code_is_unique_and_unresolved_legacy_codes_are_reserved(): void
+    public function test_new_global_code_is_unique(): void
     {
         $actor = User::factory()->centralAdmin()->create();
         AttributeDefinition::factory()->create(['code' => 'shared']);
@@ -305,7 +276,7 @@ final class GlobalAttributeFoundationTest extends TestCase
         app(CreateGlobalAttributeDefinitionAction::class)->handle(['code' => 'shared', 'name' => 'Shared', 'data_type' => 'string'], $actor);
     }
 
-    public function test_legacy_option_identity_cannot_change_or_disappear_under_existing_product_facts(): void
+    public function test_option_identity_cannot_change_or_disappear_under_existing_product_facts(): void
     {
         $actor = User::factory()->centralAdmin()->create();
         $category = CentralCategory::factory()->create();
@@ -333,19 +304,6 @@ final class GlobalAttributeFoundationTest extends TestCase
         self::assertSame($before, $fact->fresh()->getRawOriginal());
     }
 
-    public function test_clean_diagnostic_is_deterministic_readonly_and_command_succeeds(): void
-    {
-        $actor = User::factory()->centralAdmin()->create();
-        CategoryAttributeAssignment::factory()->create();
-        $query = app(AttributeGlobalizationDiagnosticsQuery::class);
-        $before = AuditLogEntry::query()->count();
-        $one = $query->report($actor);
-        self::assertTrue($one['cutover_ready']);
-        self::assertSame($one, $query->report($actor));
-        self::assertSame($before, AuditLogEntry::query()->count());
-        $this->artisan('catalog:diagnose-attribute-globalization', ['--actor' => $actor->id])->assertSuccessful();
-    }
-
     public function test_content_references_use_global_identity_without_category_ownership(): void
     {
         $definition = AttributeDefinition::factory()->create(['code' => 'global_size']);
@@ -359,7 +317,6 @@ final class GlobalAttributeFoundationTest extends TestCase
         $actor = User::factory()->centralAdmin()->create();
         $category = CentralCategory::factory()->create();
         $definition = AttributeDefinition::factory()->assignedTo($category)->create(['code' => 'size', 'data_type' => 'decimal']);
-        $this->recordLegacyEvidence();
         $other = CategoryAttributeAssignment::factory()->for($definition, 'definition')->create();
         $action = app(UpdateAttributeDefinitionAction::class);
         $data = ['code' => 'size', 'name' => 'Canonical size', 'data_type' => 'decimal'];
@@ -379,7 +336,6 @@ final class GlobalAttributeFoundationTest extends TestCase
         $actor = User::factory()->centralAdmin()->create();
         $category = CentralCategory::factory()->create();
         $definition = AttributeDefinition::factory()->assignedTo($category)->create(['code' => 'meaning', 'data_type' => 'decimal']);
-        $this->recordLegacyEvidence();
         $assignment = $definition->assignments()->sole();
         match ($owner) {
             'options' => AttributeOption::factory()->for($definition, 'attribute')->create(),
@@ -431,15 +387,6 @@ final class GlobalAttributeFoundationTest extends TestCase
         }
     }
 
-    public function test_new_ownership_writes_block_unsafe_expand_downgrade(): void
-    {
-        $this->createDefinition();
-        $migration = require database_path('migrations/2026_10_05_000001_expand_global_attribute_ownership.php');
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Global ownership has new writes');
-        $migration->down();
-    }
-
     public function test_database_pair_membership_and_complete_pair_are_enforced(): void
     {
         $definition = $this->createDefinition();
@@ -461,31 +408,12 @@ final class GlobalAttributeFoundationTest extends TestCase
         $otherCategory = CentralCategory::factory()->create();
         $definition = AttributeDefinition::factory()->assignedTo($category)->create();
         $other = AttributeDefinition::factory()->assignedTo($otherCategory)->create();
-        $this->recordLegacyEvidence();
         $mapping = AttributeMapping::query()->create(['import_source_id' => ImportSource::factory()->create()->id, 'category_id' => $category->id, 'raw_key' => 'Size', 'normalized_raw_key' => 'size', 'category_attribute_assignment_id' => $definition->assignments()->sole()->id]);
         $this->expectException(QueryException::class);
         DB::transaction(fn () => $mapping->forceFill(['category_attribute_assignment_id' => $other->assignments()->sole()->id])->saveOrFail());
     }
 
-    public function test_selected_crosswalk_product_merge_conflict_is_reported_without_changing_values(): void
-    {
-        $actor = User::factory()->centralAdmin()->create();
-        $category = CentralCategory::factory()->create();
-        $one = AttributeDefinition::factory()->assignedTo($category)->create();
-        $two = AttributeDefinition::factory()->assignedTo($category)->create();
-        $this->recordLegacyEvidence();
-        $product = CentralProduct::factory()->for($category, 'category')->create();
-        foreach ([$one, $two] as $definition) {
-            CentralProductAttributeValue::factory()->create(['central_product_id' => $product->id, 'attribute_definition_id' => $definition->id]);
-        }
-        AttributeDefinitionCrosswalk::query()->whereKey($two->id)->update(['canonical_definition_id' => $one->id]);
-        $report = app(AttributeGlobalizationDiagnosticsQuery::class)->report($actor);
-        self::assertCount(1, $report['blockers']['product_value_merge_conflicts']);
-        self::assertSame(2, CentralProductAttributeValue::query()->count());
-        self::assertFalse($report['cutover_ready']);
-    }
-
-    public function test_collision_free_typed_owners_enforce_locale_id_uniqueness_without_removing_old_keys(): void
+    public function test_typed_owners_enforce_locale_id_uniqueness_from_creation(): void
     {
         $category = CentralCategory::factory()->create();
         $definition = AttributeDefinition::factory()->global()->create(['data_type' => 'enum']);
@@ -522,14 +450,14 @@ final class GlobalAttributeFoundationTest extends TestCase
     {
         $disabled = User::factory()->centralAdmin()->disabled()->create();
         try {
-            app(AttributeGlobalizationDiagnosticsQuery::class)->report($disabled);
+            app(ExportCategorySchemaAction::class)->handle(CentralCategory::factory()->create(), $disabled);
             self::fail('Disabled schema read admitted');
         } catch (AuthorizationException) {
             self::assertSame(0, AuditLogEntry::query()->count());
         }
         config(['cataloghub_permissions.roles.catalog_editor' => ['central.panel.access', 'central.page.access', 'catalog.schema.manage']]);
         $actor = User::factory()->create(['role' => 'catalog_editor']);
-        self::assertTrue(app(AttributeGlobalizationDiagnosticsQuery::class)->report($actor)['cutover_ready']);
+        self::assertSame(1, app(ExportCategorySchemaAction::class)->handle(CentralCategory::factory()->create(), $actor)['schema_version']);
         $this->expectException(AuthorizationException::class);
         app(CreateGlobalAttributeDefinitionAction::class)->handle(['code' => 'test', 'name' => 'Test', 'data_type' => 'string'], $actor);
     }
@@ -539,7 +467,7 @@ final class GlobalAttributeFoundationTest extends TestCase
     {
         $actor = $state === 'guest' ? null : User::factory()->create(['role' => $state]);
         try {
-            app(AttributeGlobalizationDiagnosticsQuery::class)->report($actor);
+            app(ExportCategorySchemaAction::class)->handle(CentralCategory::factory()->create(), $actor);
             self::fail('Unauthorized schema read admitted');
         } catch (AuthorizationException) {
             self::assertSame(0, AuditLogEntry::query()->count());

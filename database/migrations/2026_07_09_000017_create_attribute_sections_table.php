@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -26,8 +27,16 @@ return new class extends Migration
             $table->foreign(['parent_id', 'central_category_id'], 'attr_section_parent_cat_fk')
                 ->references(['id', 'central_category_id'])
                 ->on('attribute_sections')
-                ->cascadeOnDelete();
+                ->restrictOnDelete();
         });
+        if (DB::getDriverName() === 'sqlite') {
+            foreach (['INSERT', 'UPDATE'] as $operation) {
+                $name = 'attribute_section_flat_check_'.strtolower($operation);
+                DB::statement("CREATE TRIGGER {$name} BEFORE {$operation} ON attribute_sections WHEN NEW.parent_id IS NOT NULL BEGIN SELECT RAISE(ABORT, 'attribute_section_flat_check'); END");
+            }
+        } else {
+            DB::statement('ALTER TABLE attribute_sections ADD CONSTRAINT attribute_section_flat_check CHECK (parent_id IS NULL)');
+        }
     }
 
     public function down(): void

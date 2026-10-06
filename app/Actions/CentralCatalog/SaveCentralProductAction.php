@@ -20,7 +20,7 @@ final class SaveCentralProductAction
         app(CategoryAccess::class)->authorize(Permission::CatalogProductsManage, $actor);
 
         return DB::transaction(function () use ($product, $data): CentralProduct {
-            app(AttributeIdentityLock::class)->acquireTarget();
+            app(AttributeIdentityLock::class)->acquire();
             $record = $product === null ? new CentralProduct : CentralProduct::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
             $record->fill($data);
             if ($record->exists && $record->isDirty('central_category_id') && CentralProductAttributeValue::query()->where('central_product_id', $record->id)

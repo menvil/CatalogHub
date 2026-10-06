@@ -42,7 +42,6 @@ enum AuditAction: string
     case CatalogCategoryFacetUpdated = 'catalog.category.facet.updated';
     case CatalogCategoryFacetRemoved = 'catalog.category.facet.removed';
     case CatalogCategoryComparisonUpdated = 'catalog.category.comparison.updated';
-    case CatalogAttributeIdentityReconciled = 'catalog.attribute.identity.reconciled';
     case CatalogAttributeCreated = 'catalog.attribute.created';
     case CatalogAttributeDisplayRuleConfigured = 'catalog.attribute.display_rule.configured';
     case CatalogAttributeUpdated = 'catalog.attribute.updated';

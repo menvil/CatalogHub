@@ -87,7 +87,7 @@ final class CategoryProjectionBuilder
             $status === ProjectionStatus::Active,
         );
         $payload = [
-            'attribute_identity_version' => 2, 'schema_revision' => $category->schema_revision,
+            'schema_version' => 1, 'schema_revision' => $category->schema_revision,
             'schema' => app(CategorySchemaPreviewBuilder::class)->build($category),
             'category' => [
                 'id' => (int) $category->getKey(),

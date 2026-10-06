@@ -4,6 +4,12 @@ CatalogHub / Product Catalog Platform.
 
 Laravel monolith for Central Catalog and localized portal projections.
 
+## Pre-launch schema consolidation
+
+CatalogHub has no valuable deployed Category/Attribute data. PR #615 rewrites migration history to make the final global Attribute + Category assignment model the initial schema. Existing disposable developer databases must run `php artisan migrate:fresh --seed`; no finalization command is required.
+
+**Schema freeze rule:** after the first environment contains valuable non-disposable data, existing migrations are immutable. All later schema changes require new forward migrations preserving deployed data. See [the consolidation policy](docs/architecture/pre-launch-schema-consolidation.md).
+
 ## Local Development
 
 PHP 8.5 or newer and PostgreSQL 18.4 or newer are required for the supported runtime. Node.js 26 is required for frontend tooling. The repository includes an `.nvmrc` file for local version selection.
@@ -15,7 +21,7 @@ cp .env.example .env
 php artisan key:generate
 docker compose up -d postgres
 php artisan cataloghub:platform-check
-php artisan migrate
+php artisan migrate:fresh --seed
 php artisan serve
 ```
 

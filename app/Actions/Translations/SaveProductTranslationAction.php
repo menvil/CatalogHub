@@ -21,7 +21,6 @@ final readonly class SaveProductTranslationAction
         return DB::transaction(function () use ($product, $locale, $data): ProductTranslation {
             $product = app(TranslationLocaleIdentity::class)->lockOwner($product);
             $locale = Locale::query()->whereKey($locale->id)->firstOrFail();
-            app(TranslationLocaleIdentity::class)->assertUnambiguous('product_translations', 'product_id', $product->id, $locale->id);
             $translation = ProductTranslation::query()->updateOrCreate(
                 ['product_id' => $product->id, 'locale_id' => $locale->id],
                 [

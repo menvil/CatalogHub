@@ -49,7 +49,7 @@ final readonly class FacetQueryBuilder
         $query
             ->where('site_id', $site->id)
             ->where('document_type', 'product')
-            ->where('status', ProjectionStatus::Active)->where('attribute_identity_version', 2)
+            ->where('status', ProjectionStatus::Active)->where('schema_version', 1)
             ->where('filter_values_json->category_id', $category->id);
 
         $facets = $this->siteFacets->resolve($site, $category);

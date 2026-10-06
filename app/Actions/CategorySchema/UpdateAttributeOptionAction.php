@@ -46,7 +46,7 @@ final class UpdateAttributeOptionAction
         ])->validate();
 
         if ($validated['code'] !== $option->code) {
-            throw ValidationException::withMessages(['code' => 'Option code is immutable. Explicit reconciliation required to change option identity.']);
+            throw ValidationException::withMessages(['code' => 'Option code is immutable. An explicit future migration is required to change option identity.']);
         }
 
         $option->fill([

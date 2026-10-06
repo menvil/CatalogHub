@@ -7,7 +7,6 @@ use App\Enums\AuditContext;
 use App\Enums\Permission;
 use App\Enums\SchemaMutationOrigin;
 use App\Models\CentralCatalog\AttributeDefinition;
-use App\Models\CentralCatalog\AttributeDefinitionCrosswalk;
 use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\User;
 use App\Services\Audit\AuditRecorder;
@@ -19,7 +18,7 @@ use Illuminate\Validation\ValidationException;
 
 final readonly class GlobalAttributeWriter
 {
-    public function __construct(private CategoryAccess $access, private AttributeIdentityLock $identityLock, private CategoryLock $categories, private GlobalAttributeValidation $validation, private AttributeIdentityReservation $identities, private AttributeDependencies $dependencies, private SchemaRevision $revisions, private AuditRecorder $audit) {}
+    public function __construct(private CategoryAccess $access, private AttributeIdentityLock $identityLock, private CategoryLock $categories, private GlobalAttributeValidation $validation, private AttributeDependencies $dependencies, private SchemaRevision $revisions, private AuditRecorder $audit) {}
 
     /** @param array<string, mixed> $data */
     public function create(array $data, ?User $actor = null): AttributeDefinition
@@ -27,15 +26,16 @@ final readonly class GlobalAttributeWriter
         $actor = $this->access->authorize(Permission::CatalogSchemaManage, $actor);
 
         return DB::transaction(function () use ($data, $actor): AttributeDefinition {
-            $this->identityLock->acquireTarget();
+            $this->identityLock->acquire();
             $validated = $this->validation->validate($data);
             if ($validated['data_type'] === 'json') {
                 throw ValidationException::withMessages(['data_type' => 'New JSON authoring requires an explicit structured contract.']);
             }
-            $this->identities->uniqueCode($validated['code']);
+            if (AttributeDefinition::query()->where('code', $validated['code'])->exists()) {
+                throw ValidationException::withMessages(['code' => 'Code already belongs to a global attribute.']);
+            }
             $definition = AttributeDefinition::query()->create($validated);
             $this->audit->record(AuditAction::CatalogAttributeCreated, AuditContext::Central, $actor, $definition, null, null, $this->snapshot($definition, 0));
-            $this->identityLock->recordTargetWrite();
 
             return $definition;
         }, 3);
@@ -47,7 +47,7 @@ final readonly class GlobalAttributeWriter
         $actor = $this->access->authorize(Permission::CatalogSchemaManage, $actor);
 
         return DB::transaction(function () use ($definition, $data, $actor): AttributeDefinition {
-            $this->identityLock->acquireTarget();
+            $this->identityLock->acquire();
             $ids = CategoryAttributeAssignment::query()->where('attribute_definition_id', $definition->id)->orderBy('central_category_id')->pluck('central_category_id')->all();
             $categories = $this->categories->acquire($ids);
             $locked = AttributeDefinition::query()->whereKey($definition->id)->lockForUpdate()->firstOrFail();
@@ -63,9 +63,6 @@ final readonly class GlobalAttributeWriter
                 $this->revisions->assertMutable($category);
             }
             $dangerous = array_intersect($changed, ['code', 'data_type', 'measurement_dimension_id', 'canonical_measurement_unit_id']);
-            if ($dangerous !== []) {
-                $this->identities->assertResolved($locked);
-            }
             if (in_array('data_type', $changed, true) && $locked->data_type->value === 'json') {
                 throw ValidationException::withMessages(['data_type' => 'New JSON authoring requires an explicit structured contract.']);
             }
@@ -73,17 +70,13 @@ final readonly class GlobalAttributeWriter
                 throw ValidationException::withMessages(['attribute' => 'Explicit migration required: dependent data prevents canonical identity/type/measurement changes.']);
             }
             if (in_array('code', $changed, true)) {
-                $this->identities->uniqueCode($locked->code, $locked->id);
+                throw ValidationException::withMessages(['code' => 'Explicit migration required: canonical code identity is immutable.']);
             }
             $locked->saveOrFail();
-            if (in_array('code', $changed, true)) {
-                AttributeDefinitionCrosswalk::query()->where('canonical_definition_id', $locked->id)->update(['canonical_code' => $locked->code]);
-            }
             foreach ($categories as $category) {
                 $this->revisions->invalidate($category, SchemaMutationOrigin::GlobalAttributeUpdated, $locked->id, $actor);
             }
             $this->audit->record(AuditAction::CatalogAttributeUpdated, AuditContext::Central, $actor, $locked, null, [...$before, 'changed_fields' => $changed], [...$this->snapshot($locked, count($categories)), 'changed_fields' => $changed]);
-            $this->identityLock->recordTargetWrite();
 
             return $locked;
         }, 3);

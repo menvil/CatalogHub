@@ -16,6 +16,9 @@ use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
 use App\Models\FacetDefinition;
+use App\Models\Imports\AttributeMapping;
+use App\Models\Imports\ImportSource;
+use App\Models\Locale;
 use App\Models\MeasurementDimension;
 use App\Models\MeasurementUnit;
 use App\Models\MediaAsset;
@@ -23,6 +26,8 @@ use App\Models\MediaAssignment;
 use App\Models\Site;
 use App\Models\SiteProduct;
 use App\Models\SiteProductProjection;
+use App\Models\Translations\AttributeSectionTranslation;
+use App\Models\Translations\AttributeTranslation;
 use App\Support\Normalization\BrandInputNormalizer;
 use Database\Seeders\ImperialMeasurementUnitsSeeder;
 use Database\Seeders\MeasurementDimensionsSeeder;
@@ -47,6 +52,7 @@ class PublicDemoSeeder extends Seeder
         $attributes = $this->seedSchemas($categories->all());
         $products = $this->seedProducts($categories->all(), $brands, $attributes);
         $this->seedMedia($products['aurora-27-pro']);
+        $this->seedTargetSchemaContext($categories->all());
 
         $siteProducts = [
             'tech-compare-global' => array_keys($products),
@@ -163,7 +169,7 @@ class PublicDemoSeeder extends Seeder
             $attributePosition = 0;
             foreach ($definition['attributes'] as $code => $attribute) {
                 // This fixture explicitly declares polling_rate to be one shared meaning.
-                // Production reconciliation never derives that decision from matching codes.
+                // Layout differences reuse this canonical definition.
                 $unit = MeasurementUnit::query()->where('code', $attribute['unit'])->sole();
                 $dimension = MeasurementDimension::query()->where('code', $attribute['dimension'])->sole();
                 $global = AttributeDefinition::query()->updateOrCreate(['code' => $code], ['name' => $attribute['name'], 'data_type' => AttributeDataType::Integer,
@@ -181,6 +187,35 @@ class PublicDemoSeeder extends Seeder
         }
 
         return $attributes;
+    }
+
+    /** @param array<string, CentralCategory> $categories */
+    private function seedTargetSchemaContext(array $categories): void
+    {
+        $source = ImportSource::query()->updateOrCreate(['code' => 'public-demo-schema'],
+            ['name' => 'Public demo schema', 'type' => ImportSource::TYPE_SERIALIZED_PHP, 'status' => 'active']);
+        $enum = AttributeDefinition::query()->updateOrCreate(['code' => 'connection_type'],
+            ['name' => 'Connection type', 'data_type' => AttributeDataType::Enum]);
+        foreach (['wired' => 'Wired', 'wireless' => 'Wireless'] as $position => $label) {
+            $enum->options()->updateOrCreate(['code' => $position], ['label' => $label, 'is_visible' => true]);
+        }
+        $locale = Locale::query()->where('code', 'en-US')->sole();
+        foreach ($categories as $category) {
+            CategoryAttributeAssignment::query()->updateOrCreate(['central_category_id' => $category->id, 'attribute_definition_id' => $enum->id],
+                ['position' => 2, 'is_required' => false, 'is_visible' => false, 'is_searchable' => false, 'is_sortable' => false]);
+            foreach ($category->attributeAssignments()->with('definition')->get() as $assignment) {
+                $definition = $assignment->definition;
+                AttributeMapping::query()->updateOrCreate(['import_source_id' => $source->id, 'category_id' => $category->id, 'raw_key' => $definition->code],
+                    ['normalized_raw_key' => $definition->code, 'category_attribute_assignment_id' => $assignment->id,
+                        'confidence' => 1, 'status' => 'reviewed', 'mapping_type' => 'attribute']);
+                AttributeTranslation::query()->updateOrCreate(['attribute_definition_id' => $definition->id, 'locale_id' => $locale->id],
+                    ['locale' => $locale->code, 'label' => $definition->name, 'status' => 'human_reviewed']);
+            }
+            foreach ($category->attributeSections as $section) {
+                AttributeSectionTranslation::query()->updateOrCreate(['attribute_section_id' => $section->id, 'locale_id' => $locale->id],
+                    ['locale' => $locale->code, 'name' => $section->name, 'status' => 'human_reviewed']);
+            }
+        }
     }
 
     /**

@@ -12,7 +12,7 @@ final class CategoryLock
      */
     public function acquireSchema(array $ids): array
     {
-        app(AttributeIdentityLock::class)->acquireTarget();
+        app(AttributeIdentityLock::class)->acquire();
 
         return $this->acquire($ids);
     }

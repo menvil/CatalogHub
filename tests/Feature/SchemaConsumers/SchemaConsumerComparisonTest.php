@@ -35,7 +35,7 @@ final class SchemaConsumerComparisonTest extends TestCase
     {
         $projections = collect([$left, $right])->map(function ($value) use ($type): SiteProductProjection {
             return new SiteProductProjection(['site_id' => 1, 'locale' => 'en-US', 'title' => 'Product', 'payload_json' => [
-                'attribute_identity_version' => 2, 'category' => ['id' => 1],
+                'schema_version' => 1, 'category' => ['id' => 1],
                 'comparison' => [['category_attribute_assignment_id' => 5]],
                 'attributes' => [['assignment_id' => 5, 'definition_id' => 9, 'label' => 'Canonical meaning',
                     'section' => ['id' => null, 'label' => 'Ungrouped'], 'data_type' => $type,

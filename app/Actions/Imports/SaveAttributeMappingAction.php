@@ -21,7 +21,7 @@ final class SaveAttributeMappingAction
         app(CategoryAccess::class)->authorize(Permission::CatalogSchemaManage, $actor);
 
         return DB::transaction(function () use ($mapping, $data): AttributeMapping {
-            app(AttributeIdentityLock::class)->acquireTarget();
+            app(AttributeIdentityLock::class)->acquire();
             if (array_key_exists('attribute_definition_id', $data)) {
                 throw ValidationException::withMessages(['attribute_definition_id' => 'Choose Category assignment; canonical definition is derived.']);
             }
@@ -41,7 +41,6 @@ final class SaveAttributeMappingAction
             $record->fill($validated);
             if ($record->isDirty()) {
                 $record->saveOrFail();
-                app(AttributeIdentityLock::class)->recordTargetWrite();
             }
 
             return $record;

@@ -9,26 +9,26 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @property int $attribute_identity_version
+ * @property int $schema_version
  * @property int $schema_revision
  * @property ProjectionStatus $status
  * @property array<string, mixed> $payload_json
  * @property array<string, mixed>|null $seo_json
  */
 #[Fillable([
-    'attribute_identity_version', 'schema_revision',
+    'schema_version', 'schema_revision',
     'site_id', 'locale', 'central_product_id', 'central_product_version', 'slug', 'canonical_url',
     'title', 'status', 'payload_json', 'seo_json', 'media_json', 'search_summary_json', 'checksum',
     'built_at', 'stale_at', 'failed_at', 'failure_reason',
 ])]
 final class SiteProductProjection extends Model
 {
-    protected $attributes = ['attribute_identity_version' => 2, 'schema_revision' => 0];
+    protected $attributes = ['schema_version' => 1, 'schema_revision' => 0];
 
     protected function casts(): array
     {
         return [
-            'attribute_identity_version' => 'integer',
+            'schema_version' => 'integer',
             'schema_revision' => 'integer',
             'central_product_version' => 'integer',
             'status' => ProjectionStatus::class,

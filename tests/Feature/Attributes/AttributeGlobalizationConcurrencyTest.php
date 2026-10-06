@@ -26,7 +26,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\AttributeIdentityRace;
 use Tests\TestCase;
@@ -138,7 +137,7 @@ final class AttributeGlobalizationConcurrencyTest extends TestCase
     }
 
     #[DataProvider('translationOwners')]
-    public function test_translation_identity_check_and_creation_serialize_even_with_deferred_key(string $type, string $table, string $ownerColumn, string $field): void
+    public function test_translation_creation_serializes_with_owner_locale_id_key(string $type, string $table, string $ownerColumn, string $field): void
     {
         $owner = match ($type) {
             'category' => CentralCategory::factory()->create(),
@@ -149,9 +148,6 @@ final class AttributeGlobalizationConcurrencyTest extends TestCase
             default => throw new \LogicException('Unexpected translation owner.'),
         };
         $locale = Locale::factory()->create();
-        if ($type !== 'option') {
-            Schema::table($table, fn ($blueprint) => $blueprint->dropUnique($table.'_owner_locale_id_unique'));
-        }
         $this->race('attribute_identity_scopes',
             fn () => $this->saveTranslation($owner, $locale, [$field => 'Parent']),
             fn () => $this->saveTranslation($owner, $locale, [$field => 'Child']),

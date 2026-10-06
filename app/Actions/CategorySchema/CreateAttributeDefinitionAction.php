@@ -18,7 +18,7 @@ final class CreateAttributeDefinitionAction
     public function handle(AttributeSection $section, array $data, ?User $actor = null): AttributeDefinition
     {
         return DB::transaction(function () use ($section, $data, $actor): AttributeDefinition {
-            app(AttributeIdentityLock::class)->acquireTarget();
+            app(AttributeIdentityLock::class)->acquire();
             $category = $section->category()->lockForUpdate()->firstOrFail();
             $canonical = array_intersect_key($data, array_flip(['code', 'name', 'data_type', 'measurement_dimension_id', 'canonical_measurement_unit_id']));
             $local = array_intersect_key($data, array_flip(['position', 'is_required', 'is_visible', 'is_searchable', 'is_sortable']));

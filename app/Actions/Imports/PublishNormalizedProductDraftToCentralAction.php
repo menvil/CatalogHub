@@ -15,8 +15,8 @@ use App\Models\MediaAsset;
 use App\Models\MediaAssignment;
 use App\Models\User;
 use App\Services\AttributeGlobalization\AttributeIdentityLock;
-use App\Services\AttributeGlobalization\DraftAttributeIdentityV2;
 use App\Services\Categories\CategoryAccess;
+use App\Services\Imports\DraftAttributeIdentity;
 use App\Services\ProductAttributes\ProductAttributeValueValidator;
 use Illuminate\Support\Facades\DB;
 use LogicException;
@@ -34,11 +34,11 @@ final class PublishNormalizedProductDraftToCentralAction
         $user = app(CategoryAccess::class)->authorize(Permission::CatalogProductsManage, $user);
 
         return DB::transaction(function () use ($draft): CentralProduct {
-            app(AttributeIdentityLock::class)->acquireTarget();
+            app(AttributeIdentityLock::class)->acquire();
             $lockedDraft = NormalizedProductDraft::query()->lockForUpdate()->findOrFail($draft->id);
 
-            if ($lockedDraft->attribute_identity_version !== 2) {
-                throw new LogicException('Explicit attribute identity migration required before publishing this draft version.');
+            if ($lockedDraft->schema_version !== 1) {
+                throw new LogicException('Unsupported draft schema version.');
             }
 
             if ($lockedDraft->status !== 'approved') {
@@ -62,7 +62,6 @@ final class PublishNormalizedProductDraftToCentralAction
                 'published_central_product_id' => $product->id,
             ])->save();
 
-            app(AttributeIdentityLock::class)->recordTargetWrite();
             app(ProjectionStaleDetector::class)->markStaleForProduct($product);
 
             return $product->refresh();
@@ -105,7 +104,7 @@ final class PublishNormalizedProductDraftToCentralAction
     private function persistAttributes(NormalizedProductDraft $draft, CentralProduct $product): void
     {
         $definitionIds = [];
-        $candidates = app(DraftAttributeIdentityV2::class)->candidates($draft, (int) $product->central_category_id);
+        $candidates = app(DraftAttributeIdentity::class)->candidates($draft, (int) $product->central_category_id);
         $storage = [];
         foreach ($candidates as $candidate) {
             $definition = $this->resolveAttributeDefinition($draft, $candidate, (int) $product->central_category_id);

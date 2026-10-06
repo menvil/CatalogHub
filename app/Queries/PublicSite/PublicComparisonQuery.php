@@ -15,7 +15,7 @@ final class PublicComparisonQuery
      */
     public function findActiveInOrder(Site $site, string $locale, array $slugs): Collection
     {
-        $available = SiteProductProjection::query()->where('attribute_identity_version', 2)
+        $available = SiteProductProjection::query()->where('schema_version', 1)
             ->where('site_id', $site->id)
             ->where('locale', $locale)
             ->where('status', ProjectionStatus::Active)

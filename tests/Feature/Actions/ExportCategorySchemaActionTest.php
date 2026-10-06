@@ -63,7 +63,7 @@ class ExportCategorySchemaActionTest extends TestCase
         $this->assertSame('monitors', $export['category']['slug']);
         $this->assertSame('Monitors', $export['category']['name']);
         $this->assertSame('approved', $export['category']['schema_status']);
-        self::assertSame(2, $export['attribute_identity_version']);
+        self::assertSame(1, $export['schema_version']);
         self::assertSame(['display', 'panel'], array_column($export['sections'], 'code'));
         self::assertSame($attribute->id, $export['definitions'][0]['id']);
         self::assertSame($attribute->measurement_dimension_id, $export['definitions'][0]['measurement_dimension_id']);

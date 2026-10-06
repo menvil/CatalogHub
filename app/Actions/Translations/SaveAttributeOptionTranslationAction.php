@@ -21,7 +21,6 @@ final readonly class SaveAttributeOptionTranslationAction
         $translation = DB::transaction(function () use ($data, $locale, $option): AttributeOptionTranslation {
             $option = app(TranslationLocaleIdentity::class)->lockOwner($option);
             $locale = Locale::query()->lockForUpdate()->findOrFail($locale->id);
-            app(TranslationLocaleIdentity::class)->assertUnambiguous('attribute_option_translations', 'attribute_option_id', $option->id, $locale->id);
 
             $translation = AttributeOptionTranslation::query()->updateOrCreate(
                 ['attribute_option_id' => $option->id, 'locale_id' => $locale->id],

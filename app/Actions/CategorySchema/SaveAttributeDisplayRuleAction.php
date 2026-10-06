@@ -28,7 +28,7 @@ final class SaveAttributeDisplayRuleAction
         $actor = app(CategoryAccess::class)->authorize(Permission::CatalogSchemaManage, $actor);
 
         return DB::transaction(function () use ($rule, $data, $actor): AttributeDisplayRule {
-            app(AttributeIdentityLock::class)->acquireTarget();
+            app(AttributeIdentityLock::class)->acquire();
             $definitionId = $rule === null ? ($data['attribute_definition_id'] ?? null) : $rule->attribute_definition_id;
             if ($rule !== null && isset($data['attribute_definition_id']) && (int) $data['attribute_definition_id'] !== $definitionId) {
                 throw ValidationException::withMessages(['attribute_definition_id' => 'Display rule owner is immutable.']);
@@ -65,7 +65,6 @@ final class SaveAttributeDisplayRuleAction
             }
             app(AuditRecorder::class)->record(AuditAction::CatalogAttributeDisplayRuleConfigured, AuditContext::Central, $actor, $definition, null, $before,
                 [...$record->only(['id', ...$fields]), 'changed_fields' => $changed, 'affected_category_count' => count($categories)]);
-            app(AttributeIdentityLock::class)->recordTargetWrite();
 
             return $record;
         }, 3);

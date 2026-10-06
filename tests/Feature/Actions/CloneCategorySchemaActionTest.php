@@ -11,7 +11,6 @@ use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\User;
-use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -69,12 +68,24 @@ class CloneCategorySchemaActionTest extends TestCase
         $this->assertSame(CategorySchemaStatus::Draft, $target->fresh()->schema_status);
     }
 
-    public function test_nested_sections_cannot_enter_target_clone_data(): void
+    public function test_clones_multiple_flat_sections_with_their_local_order_and_flags(): void
     {
         $source = CentralCategory::factory()->create();
-        $parent = AttributeSection::factory()->for($source, 'category')->create();
-        $this->expectException(QueryException::class);
-        AttributeSection::factory()->for($source, 'category')->for($parent, 'parent')->create();
+        $target = CentralCategory::factory()->create();
+        AttributeSection::factory()->for($source, 'category')->create(['code' => 'second', 'position' => 2,
+            'is_visible' => false, 'is_collapsible' => false, 'display_style' => 'list']);
+        AttributeSection::factory()->for($source, 'category')->create(['code' => 'first', 'position' => 0]);
+        $fields = ['code', 'name', 'position', 'display_style', 'is_visible', 'is_collapsible'];
+        $expected = $source->attributeSections()->ordered()->get()->map(fn ($section) => $section->only($fields))->all();
+
+        app(CloneCategorySchemaAction::class)->handle($source, $target);
+
+        $clones = $target->attributeSections()->ordered()->get();
+        self::assertSame($expected, $clones->map(fn ($section) => $section->only($fields))->all());
+        self::assertSame([], array_intersect($source->attributeSections()->pluck('id')->all(), $clones->pluck('id')->all()));
+        foreach ($clones as $section) {
+            self::assertArrayNotHasKey('parent_id', $section->getAttributes());
+        }
     }
 
     public function test_clones_sectionless_attributes_and_options(): void

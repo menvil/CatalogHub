@@ -39,7 +39,9 @@ use App\Services\AttributeGlobalization\DraftAttributeIdentityV2;
 use App\Services\Imports\AttributeNormalizer;
 use App\Services\ProductAttributes\MissingRequiredAttributesResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 final class SchemaConsumerConvergenceTest extends TestCase
@@ -91,6 +93,31 @@ final class SchemaConsumerConvergenceTest extends TestCase
         self::assertStringContainsString('55', $searchA->searchText);
         self::assertSame($fact, CentralProductAttributeValue::query()->where('central_product_id', $tv->id)->sole()->getRawOriginal());
         self::assertTrue(app(SchemaConsumerPreflightV2Query::class)->report()['cutover_ready']);
+    }
+
+    public function test_historical_option_code_collision_is_a_cutover_blocker(): void
+    {
+        $definition = AttributeDefinition::factory()->create(['data_type' => 'enum']);
+        foreach (['first', 'second'] as $code) {
+            $option = $definition->options()->create(['code' => $code, 'label' => $code]);
+            DB::table('attribute_option_crosswalks')->insert(['legacy_option_id' => $option->id, 'legacy_definition_id' => $definition->id,
+                'legacy_code' => 'historical', 'canonical_option_id' => $option->id, 'canonical_code' => $code, 'status' => 'identity_preserved']);
+        }
+        $report = app(SchemaConsumerPreflightV2Query::class)->report();
+        self::assertFalse($report['cutover_ready']);
+        self::assertCount(1, $report['blockers']['historical_option_code_conflicts']);
+    }
+
+    public function test_v2_enum_draft_rejects_conflicting_metadata_option_identity(): void
+    {
+        $assignment = CategoryAttributeAssignment::factory()->create(['attribute_definition_id' => AttributeDefinition::factory()->create(['data_type' => 'enum'])->id]);
+        $one = $assignment->definition->options()->create(['code' => 'first', 'label' => 'First']);
+        $two = $assignment->definition->options()->create(['code' => 'second', 'label' => 'Second']);
+        $draft = NormalizedProductDraft::factory()->create(['category_id' => $assignment->central_category_id, 'attribute_identity_version' => 2,
+            'attributes_json' => [['category_attribute_assignment_id' => $assignment->id, 'attribute_definition_id' => $assignment->attribute_definition_id,
+                'code' => $assignment->definition->code, 'value_type' => 'enum', 'value_enum_code' => $one->code, 'metadata' => ['option_id' => $two->id]]]]);
+        $this->expectException(ValidationException::class);
+        app(DraftAttributeIdentityV2::class)->candidates($draft);
     }
 
     public function test_clone_and_export_keep_global_ids_and_options_shared(): void

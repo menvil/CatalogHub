@@ -82,6 +82,11 @@ final class DraftAttributeIdentityV2
                 if (! is_array($codes) || array_diff($codes, $vocabulary) !== [] || count($codes) !== count(array_unique($codes))) {
                     $this->invalid('Explicit option vocabulary reconciliation required.');
                 }
+                $optionId = $candidate['metadata']['option_id'] ?? null;
+                if ($version === 2 && $optionId !== null && ($definition->data_type->value !== 'enum'
+                    || ! $definition->options->contains(fn ($option) => $option->id === $optionId && $option->code === ($codes[0] ?? null)))) {
+                    $this->invalid('Draft option ID/code evidence conflicts with canonical vocabulary.');
+                }
             }
             if ($version === 2 && (($candidate['measurement_dimension_id'] ?? null) !== $definition->measurement_dimension_id
                 || ($candidate['canonical_measurement_unit_id'] ?? null) !== $definition->canonical_measurement_unit_id)) {
@@ -110,7 +115,11 @@ final class DraftAttributeIdentityV2
         if (! $definition->data_type->allowsOptions()) {
             return $candidate;
         }
-        $maps = AttributeOptionCrosswalk::query()->where('legacy_definition_id', $identity->legacy_definition_id)->get()->keyBy('legacy_code');
+        $rows = AttributeOptionCrosswalk::query()->where('legacy_definition_id', $identity->legacy_definition_id)->get();
+        if ($rows->count() !== $rows->pluck('legacy_code')->unique()->count()) {
+            $this->invalid('Ambiguous historical option vocabulary requires explicit reconciliation.');
+        }
+        $maps = $rows->keyBy('legacy_code');
         $codes = $definition->data_type->value === 'enum'
             ? [$candidate['value_enum_code'] ?? $candidate['value'] ?? null]
             : ($candidate['value_json'] ?? $candidate['value'] ?? []);
@@ -127,6 +136,14 @@ final class DraftAttributeIdentityV2
         }
         if (count(array_unique($converted)) !== count($converted)) {
             $this->invalid('Option mapping would collapse a multi-enum fact.');
+        }
+        $optionId = $candidate['metadata']['option_id'] ?? null;
+        if ($optionId !== null) {
+            $map = $maps->get($codes[0] ?? null);
+            if ($definition->data_type->value !== 'enum' || $map === null || $map->legacy_option_id !== $optionId) {
+                $this->invalid('Legacy draft option ID/code evidence conflicts.');
+            }
+            $candidate['metadata']['option_id'] = $map->canonical_option_id;
         }
         if ($definition->data_type->value === 'enum') {
             $candidate['value_enum_code'] = $converted[0] ?? null;

@@ -159,7 +159,7 @@ final class SchemaConsumerMigrationTest extends TestCase
             'value_type' => 'enum', 'raw_value' => 'source scarlet', 'value_enum_code' => 'scarlet', 'confidence' => '0.7500', 'source_type' => 'import', 'source_id' => '7']);
         $factBefore = (array) DB::table('central_product_attribute_values')->where('id', $valueId)->first();
         $draft = NormalizedProductDraft::factory()->create(['category_id' => $b->id, 'attribute_identity_version' => 1,
-            'attributes_json' => [['attribute_definition_id' => $source, 'code' => 'colour', 'value_type' => 'enum', 'value_enum_code' => 'scarlet']]]);
+            'attributes_json' => [['attribute_definition_id' => $source, 'code' => 'colour', 'value_type' => 'enum', 'value_enum_code' => 'scarlet', 'metadata' => ['option_id' => $sourceOption, 'option_label' => 'Historical label evidence']]]]);
         $content = ContentRelation::factory()->create(['related_type' => 'attribute', 'related_id' => $source]);
         $mapping = DB::table('attribute_mappings')->insertGetId(['import_source_id' => ImportSource::factory()->create()->id, 'category_id' => $b->id, 'raw_key' => 'Colour', 'normalized_raw_key' => 'colour', 'attribute_definition_id' => $source,
             'category_attribute_assignment_id' => CategoryAttributeAssignment::query()->where('attribute_definition_id', $source)->sole()->id,
@@ -189,6 +189,8 @@ final class SchemaConsumerMigrationTest extends TestCase
         self::assertEquals(0.8750, DB::table('attribute_mappings')->where('id', $mapping)->value('confidence'));
         self::assertSame(1, AttributeDefinition::query()->count());
         self::assertSame(2, DB::table('attribute_definition_crosswalks')->count());
+        self::assertSame($targetOption, $draft->fresh()->attributes_json[0]['metadata']['option_id']);
+        self::assertSame('Historical label evidence', $draft->fresh()->attributes_json[0]['metadata']['option_label']);
         self::assertSame('scarlet', DB::table('attribute_option_crosswalks')->where('legacy_option_id', $sourceOption)->value('legacy_code'));
         self::assertSame(2, $draft->fresh()->attribute_identity_version);
         self::assertSame($target, $draft->fresh()->attributes_json[0]['attribute_definition_id']);

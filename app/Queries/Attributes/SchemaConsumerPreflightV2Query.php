@@ -66,8 +66,14 @@ final class SchemaConsumerPreflightV2Query implements RawSqlPersistenceBoundary
                 $issues['assignment_membership_gaps'][] = $definition->id;
             }
         }
-        foreach ($this->table('attribute_option_crosswalks as x')->leftJoin('attribute_options as o', 'o.id', '=', 'x.canonical_option_id')
-            ->orderBy('x.legacy_option_id')->get(['x.*', 'o.code as target_code', 'o.attribute_definition_id as target_definition_id']) as $row) {
+        $optionCrosswalks = $this->table('attribute_option_crosswalks as x')->leftJoin('attribute_options as o', 'o.id', '=', 'x.canonical_option_id')
+            ->orderBy('x.legacy_option_id')->get(['x.*', 'o.code as target_code', 'o.attribute_definition_id as target_definition_id']);
+        foreach ($optionCrosswalks->groupBy(fn ($row) => $row->legacy_definition_id.':'.$row->legacy_code) as $identity => $rows) {
+            if ($rows->count() > 1) {
+                $issues['historical_option_code_conflicts'][] = ['identity' => $identity, 'option_ids' => $rows->pluck('legacy_option_id')->all()];
+            }
+        }
+        foreach ($optionCrosswalks as $row) {
             $canonicalDefinition = $targets->get($row->legacy_definition_id) ?? $row->legacy_definition_id;
             if ($row->canonical_option_id === null || $row->canonical_code !== $row->target_code || $canonicalDefinition !== ($targets->get($row->target_definition_id) ?? $row->target_definition_id)
                 || ! in_array($row->status, ['identity_preserved', 'reconciled_explicit'], true)) {

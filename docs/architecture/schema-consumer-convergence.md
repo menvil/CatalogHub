@@ -1,6 +1,6 @@
 # Schema Consumer Convergence — Phase 19.3
 
-Implementation base: develop `2fea92e80f2623cf50e411e33d9ee2069601c637`, the merged PR #614 tree. Implementation is in validation. ADR-0003 governs ownership. [The current-consumer inventory](schema-consumer-convergence-inventory.md) was recorded before code changes; Phase 19.0 was not treated as a complete inventory.
+Implementation base: develop `2fea92e80f2623cf50e411e33d9ee2069601c637`, the merged PR #614 tree. **Schema Consumer Convergence — COMPLETE.** Final verification and CI/head evidence are recorded in the PR report. ADR-0003 governs ownership. [The current-consumer inventory](schema-consumer-convergence-inventory.md) was recorded before code changes; Phase 19.0 was not treated as a complete inventory.
 
 ## Final ownership and contraction
 
@@ -36,7 +36,7 @@ Definition/option crosswalk history, identity scope, reconciliation receipts and
 
 `catalog:diagnose-attribute-globalization --actor=ID` is read-only. After the v2 expansion, it reports the v2 preflight even while the database is still version 1. The explicitly historical v1 query only inventories databases before the expansion. Deterministic JSON contains target consumer version, write epoch, counts, Product fact checksum, `cutover_ready`, and sorted blocker classes/identities. Exit 1 means a blocker exists. It does not repair data or serialize Product values/translation bodies/draft JSON into the report.
 
-Blockers cover unresolved/missing definition targets, target chains, future duplicate code and historical vocabulary reservations, missing assignments, Product merge collisions and typed value/option/unit shape, option maps/owner collisions, Locale collisions, mapping membership, active draft identity, facet membership/type/option vocabulary, display-rule scope/unit conflicts, Content target/link collisions, comparison membership, and nested Sections. Old filter/comparison flags without explicit owned authority require a reviewed decision. Matching names/codes do not establish equivalence.
+Blockers cover unresolved/missing definition targets, target chains, future duplicate code and historical vocabulary reservations, missing assignments, Product merge collisions and typed value/option/unit shape, option maps/owner collisions and duplicate historical option-code evidence, Locale collisions, mapping membership, active draft identity, facet membership/type/option vocabulary, display-rule scope/unit conflicts, Content target/link collisions, comparison membership, and nested Sections. Old filter/comparison flags without explicit owned authority require a reviewed decision. Matching names/codes do not establish equivalence.
 
 Frozen v2 preflight/resolver classes are migration contract dependencies. A future consumer version must introduce its own versioned contract rather than alter their identity interpretation.
 
@@ -89,4 +89,4 @@ SQLite schema-copy operations run with foreign keys managed outside the isolated
 
 ## Scope
 
-Backend consumer convergence only. No CA-016, CA-023/024 UI, SEO template engine, CA-026 workspace or second Unit subsystem. Existing temporary forms have backend membership adapters. No visual baseline changes. Next after verification: **19.4 CA-016 Categories List**.
+Backend consumer convergence only. No CA-016, CA-023/024 UI, SEO template engine, CA-026 workspace or second Unit subsystem. Existing temporary forms have backend membership adapters. No visual baseline changes. Next: **19.4 CA-016 Categories List**.

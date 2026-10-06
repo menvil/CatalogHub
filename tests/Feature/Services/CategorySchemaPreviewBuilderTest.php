@@ -24,14 +24,14 @@ class CategorySchemaPreviewBuilderTest extends TestCase
             'position' => 2,
         ]);
         $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'name' => 'Refresh rate',
                 'code' => 'refresh_rate',
                 'data_type' => AttributeDataType::Integer,
                 'position' => 1,
-                'is_filterable' => true,
+                'is_searchable' => true,
             ]);
         AttributeOption::factory()->for($attribute, 'attribute')->create(['position' => 1]);
 
@@ -41,7 +41,7 @@ class CategorySchemaPreviewBuilderTest extends TestCase
         $this->assertSame('display', $preview[0]['code']);
         $this->assertSame('Refresh rate', $preview[0]['attributes'][0]['name']);
         $this->assertSame('integer', $preview[0]['attributes'][0]['data_type']);
-        $this->assertTrue($preview[0]['attributes'][0]['flags']['filterable']);
+        $this->assertTrue($preview[0]['attributes'][0]['flags']['searchable']);
         $this->assertSame(1, $preview[0]['attributes'][0]['options_count']);
     }
 
@@ -51,9 +51,9 @@ class CategorySchemaPreviewBuilderTest extends TestCase
         $second = AttributeSection::factory()->for($category, 'category')->create(['code' => 'second', 'position' => 2]);
         $first = AttributeSection::factory()->for($category, 'category')->create(['code' => 'first', 'position' => 1]);
 
-        AttributeDefinition::factory()->for($category, 'category')->for($first, 'section')->create(['code' => 'b', 'position' => 2]);
-        AttributeDefinition::factory()->for($category, 'category')->for($first, 'section')->create(['code' => 'a', 'position' => 1]);
-        AttributeDefinition::factory()->for($category, 'category')->for($second, 'section')->create(['code' => 'z', 'position' => 1]);
+        AttributeDefinition::factory()->assignedTo($category)->state(['attribute_section_id' => $first->id])->create(['code' => 'b', 'position' => 2]);
+        AttributeDefinition::factory()->assignedTo($category)->state(['attribute_section_id' => $first->id])->create(['code' => 'a', 'position' => 1]);
+        AttributeDefinition::factory()->assignedTo($category)->state(['attribute_section_id' => $second->id])->create(['code' => 'z', 'position' => 1]);
 
         $preview = app(CategorySchemaPreviewBuilder::class)->build($category);
 

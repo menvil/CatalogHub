@@ -30,7 +30,7 @@ class CategorySchemaValidatorTest extends TestCase
     public function test_detects_enum_attribute_without_visible_options_warning(): void
     {
         $category = CentralCategory::factory()->create();
-        $attribute = AttributeDefinition::factory()->for($category, 'category')->create([
+        $attribute = AttributeDefinition::factory()->assignedTo($category)->create([
             'data_type' => AttributeDataType::Enum,
         ]);
         AttributeOption::factory()->for($attribute, 'attribute')->create(['is_visible' => false]);
@@ -44,7 +44,7 @@ class CategorySchemaValidatorTest extends TestCase
     public function test_detects_options_on_non_enum_attribute_error(): void
     {
         $category = CentralCategory::factory()->create();
-        $attribute = AttributeDefinition::factory()->for($category, 'category')->create([
+        $attribute = AttributeDefinition::factory()->assignedTo($category)->create([
             'data_type' => AttributeDataType::Decimal,
         ]);
         AttributeOption::factory()->for($attribute, 'attribute')->create();
@@ -58,7 +58,7 @@ class CategorySchemaValidatorTest extends TestCase
     public function test_detects_hidden_required_attribute_warning(): void
     {
         $category = CentralCategory::factory()->create();
-        AttributeDefinition::factory()->for($category, 'category')->create([
+        AttributeDefinition::factory()->assignedTo($category)->create([
             'is_required' => true,
             'is_visible' => false,
         ]);
@@ -70,12 +70,11 @@ class CategorySchemaValidatorTest extends TestCase
         $this->assertTrue($result->hasIssueCode('hidden_required_attribute'));
     }
 
-    public function test_detects_filterable_and_sortable_text_or_json_warnings(): void
+    public function test_detects_assignment_sortable_text_or_json_warning(): void
     {
         $category = CentralCategory::factory()->create();
-        AttributeDefinition::factory()->for($category, 'category')->create([
+        AttributeDefinition::factory()->assignedTo($category)->create([
             'data_type' => AttributeDataType::Json,
-            'is_filterable' => true,
             'is_sortable' => true,
         ]);
 
@@ -83,7 +82,6 @@ class CategorySchemaValidatorTest extends TestCase
 
         $this->assertFalse($result->hasErrors());
         $this->assertTrue($result->hasWarnings());
-        $this->assertTrue($result->hasIssueCode('filterable_complex_attribute'));
         $this->assertTrue($result->hasIssueCode('sortable_complex_attribute'));
     }
 }

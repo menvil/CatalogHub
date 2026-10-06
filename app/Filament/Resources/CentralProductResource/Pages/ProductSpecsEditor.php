@@ -3,9 +3,11 @@
 namespace App\Filament\Resources\CentralProductResource\Pages;
 
 use App\Actions\ProductAttributes\SaveProductSpecsAction;
+use App\Enums\AttributeDataType;
 use App\Exceptions\ProductAttributes\CannotSaveProductSpecsException;
 use App\Filament\Resources\CentralProductResource;
 use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
 use App\Models\MeasurementDimension;
@@ -18,6 +20,8 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Collection;
+use Livewire\Attributes\Locked;
 
 final class ProductSpecsEditor extends Page
 {
@@ -41,10 +45,38 @@ final class ProductSpecsEditor extends Page
      */
     private array $unitOptionsByDimension = [];
 
+    #[Locked]
+    public ?int $schemaRevision = null;
+
     public function mount(int|string $record): void
     {
         $this->record = $this->resolveRecord($record);
         $this->initializeValues();
+        $this->schemaRevision = $this->getProduct()->category?->schema_revision;
+    }
+
+    /** @return list<array{section: AttributeSection|null, assignments: Collection}> */
+    public function getAssignmentGroups(): array
+    {
+        $category = $this->getProduct()->category;
+        if ($category === null) {
+            return [];
+        }
+        $groups = $category->attributeSections->map(fn ($section) => ['section' => $section, 'assignments' => $category->attributeAssignments->where('attribute_section_id', $section->id)->sortBy(fn ($row) => [$row->position, $row->id])])->all();
+        $ungrouped = $category->attributeAssignments->whereNull('attribute_section_id')->sortBy(fn ($row) => [$row->position, $row->id]);
+        if ($ungrouped->isNotEmpty()) {
+            $groups[] = ['section' => null, 'assignments' => $ungrouped];
+        }
+
+        return $groups;
+    }
+
+    public function selectableOptions(AttributeDefinition $definition): Collection
+    {
+        $existing = $this->getProduct()->attributeValues->firstWhere('attribute_definition_id', $definition->id);
+        $codes = $definition->data_type === AttributeDataType::Enum ? [$existing?->value_enum_code] : ($existing === null ? [] : $existing->value_json ?? []);
+
+        return $definition->options->filter(fn ($option) => $option->is_visible || in_array($option->code, $codes, true));
     }
 
     public function getTitle(): string
@@ -63,8 +95,9 @@ final class ProductSpecsEditor extends Page
 
         return $this->cachedProduct = $product->loadMissing([
             'category.attributeSections' => fn ($query) => $query->ordered(),
-            'category.attributeSections.attributes' => fn ($query) => $query->ordered(),
-            'category.attributeSections.attributes.options' => fn ($query) => $query->ordered(),
+            'category.attributeSections.assignments' => fn ($query) => $query->ordered()->with('definition'),
+            'category.attributeAssignments.definition.options' => fn ($query) => $query->ordered(),
+            'category.attributeSections.assignments.definition.options' => fn ($query) => $query->ordered(),
             'attributeValues.attributeDefinition',
         ]);
     }
@@ -79,12 +112,10 @@ final class ProductSpecsEditor extends Page
             return;
         }
 
-        foreach ($product->category->attributeSections as $section) {
-            foreach ($section->attributes as $attribute) {
-                $existingValue = $product->attributeValues->firstWhere('attribute_definition_id', $attribute->id);
-
-                $this->values[$attribute->id] = $this->stateForAttribute($attribute, $existingValue);
-            }
+        foreach ($product->category->attributeAssignments as $assignment) {
+            $attribute = $assignment->definition;
+            $existingValue = $product->attributeValues->firstWhere('attribute_definition_id', $attribute->id);
+            $this->values[$attribute->id] = $this->stateForAttribute($attribute, $existingValue);
         }
     }
 
@@ -128,11 +159,11 @@ final class ProductSpecsEditor extends Page
      */
     public function unitOptionsFor(AttributeDefinition $attribute): array
     {
-        if (blank($attribute->dimension)) {
+        if (blank($attribute->measurementDimension?->code)) {
             return [];
         }
 
-        $dimensionCode = (string) $attribute->dimension;
+        $dimensionCode = (string) $attribute->measurementDimension->code;
 
         if (array_key_exists($dimensionCode, $this->unitOptionsByDimension)) {
             return $this->unitOptionsByDimension[$dimensionCode];
@@ -186,7 +217,7 @@ final class ProductSpecsEditor extends Page
     public function save(): void
     {
         try {
-            app(SaveProductSpecsAction::class)->handle($this->getProduct(), $this->payloadForSave());
+            app(SaveProductSpecsAction::class)->handle($this->getProduct(), $this->payloadForSave(), auth()->user(), $this->schemaRevision);
         } catch (CannotSaveProductSpecsException $exception) {
             $this->addError('values', $exception->getMessage());
             Notification::make()
@@ -204,6 +235,7 @@ final class ProductSpecsEditor extends Page
         }
 
         $this->initializeValues();
+        $this->schemaRevision = $this->getProduct()->category?->schema_revision;
 
         Notification::make()
             ->title('Product specs saved')

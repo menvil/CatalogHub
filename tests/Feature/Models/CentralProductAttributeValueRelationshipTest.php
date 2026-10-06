@@ -3,6 +3,7 @@
 namespace Tests\Feature\Models;
 
 use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -14,7 +15,7 @@ class CentralProductAttributeValueRelationshipTest extends TestCase
 
     public function test_central_product_has_attribute_values(): void
     {
-        $product = CentralProduct::factory()->create();
+        $product = CentralProduct::factory()->create(['central_category_id' => CentralCategory::factory()]);
         $value = CentralProductAttributeValue::factory()
             ->for($product, 'product')
             ->create();
@@ -25,7 +26,7 @@ class CentralProductAttributeValueRelationshipTest extends TestCase
 
     public function test_attribute_value_belongs_to_product(): void
     {
-        $product = CentralProduct::factory()->create();
+        $product = CentralProduct::factory()->create(['central_category_id' => CentralCategory::factory()]);
         $value = CentralProductAttributeValue::factory()
             ->for($product, 'product')
             ->create();

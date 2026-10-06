@@ -12,6 +12,8 @@ use App\Models\CentralCatalog\CentralProduct;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
 use App\Models\Site;
 use App\Models\SiteProductProjection;
+use Database\Seeders\MeasurementDimensionsSeeder;
+use Database\Seeders\MetricMeasurementUnitsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Group;
 use Tests\TestCase;
@@ -23,6 +25,7 @@ class ProjectionSmokeTest extends TestCase
 
     public function test_active_product_builds_a_localized_persisted_projection(): void
     {
+        $this->seed([MeasurementDimensionsSeeder::class, MetricMeasurementUnitsSeeder::class]);
         $site = Site::factory()->create(['default_locale' => 'en']);
         $brand = CentralBrand::factory()->create(['name' => 'Acme']);
         $category = CentralCategory::factory()->create(['name' => 'Monitors']);
@@ -30,14 +33,13 @@ class ProjectionSmokeTest extends TestCase
             'code' => 'display',
             'name' => 'Display',
         ]);
-        $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+        $attribute = AttributeDefinition::factory()->withCanonicalUnit('hertz')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => 'refresh_rate',
                 'name' => 'Refresh rate',
                 'data_type' => 'integer',
-                'canonical_unit' => 'hertz',
             ]);
         $product = CentralProduct::factory()
             ->for($brand, 'brand')
@@ -76,7 +78,7 @@ class ProjectionSmokeTest extends TestCase
         $this->assertIsArray($firstAttribute);
         $this->assertSame('display', $firstSection['code']);
         $this->assertSame('refresh_rate', $firstAttribute['code']);
-        $this->assertSame('165 hertz', $firstAttribute['display_value']);
+        $this->assertSame('165 Hz', $firstAttribute['display_value']);
         $this->assertSame('active', $projection->status->value);
         $this->assertSame(3, $projection->central_product_version);
         $this->assertDatabaseHas('site_search_documents', [

@@ -56,8 +56,8 @@ class CategorySchemaBuilderTest extends TestCase
         ]);
 
         AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'name' => 'Refresh rate',
                 'code' => 'refresh_rate',

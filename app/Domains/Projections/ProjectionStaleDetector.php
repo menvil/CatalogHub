@@ -33,6 +33,10 @@ final class ProjectionStaleDetector
         CentralCategory $category,
         ?string $reason = null,
     ): int {
+        $productIds = CentralProduct::query()->where('central_category_id', $category->id)->select('id');
+        SiteProductProjection::query()->whereIn('central_product_id', $productIds)->update(['status' => 'stale', 'stale_at' => now()]);
+        SiteSearchDocument::query()->where('document_type', 'product')->whereIn('document_id', $productIds)->update(['status' => 'stale', 'stale_at' => now()]);
+
         return $this->markCategoryIdStale(
             (int) $category->getKey(),
             null,

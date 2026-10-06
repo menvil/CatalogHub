@@ -2,67 +2,33 @@
 
 namespace App\Actions\CategorySchema;
 
-use App\Actions\CategorySchema\Concerns\ValidatesAttributeDefinitionData;
-use App\Enums\SchemaMutationOrigin;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\User;
-use App\Services\AttributeGlobalization\AttributeIdentityReservation;
-use App\Services\CategorySchema\SchemaRevision;
+use App\Services\AttributeGlobalization\AttributeIdentityLock;
+use App\Services\AttributeGlobalization\CategoryAssignmentWriter;
+use App\Services\AttributeGlobalization\GlobalAttributeWriter;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
+/** Existing temporary entry point, now one global create plus local assignment. */
 final class CreateAttributeDefinitionAction
 {
-    use ValidatesAttributeDefinitionData;
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
+    /** @param array<string, mixed> $data */
     public function handle(AttributeSection $section, array $data, ?User $actor = null): AttributeDefinition
     {
-        $categoryId = $section->central_category_id;
-
-        return app(SchemaRevision::class)->mutate($categoryId, SchemaMutationOrigin::AttributeCreated, $section->id, fn () => $this->perform($section, $data), $actor);
-    }
-
-    private function perform(AttributeSection $section, array $data): AttributeDefinition
-    {
-        $section = AttributeSection::query()->findOrFail($section->id);
-
-        $validated = Validator::make($data, $this->validationRules($section->central_category_id))->validate();
-
-        return DB::transaction(function () use ($section, $validated): AttributeDefinition {
-            $section->newQuery()->whereKey($section->getKey())->lockForUpdate()->firstOrFail();
-
-            app(AttributeIdentityReservation::class)->legacyCreateCode($validated['code']);
-
-            $position = $validated['position']
-                ?? ((int) $section->attributes()->max('position') + 1);
-
-            if ($position > AttributeDefinition::MAX_POSITION) {
-                throw ValidationException::withMessages([
-                    'position' => 'The position may not be greater than '.AttributeDefinition::MAX_POSITION.'.',
-                ]);
+        return DB::transaction(function () use ($section, $data, $actor): AttributeDefinition {
+            app(AttributeIdentityLock::class)->acquireTarget();
+            $category = $section->category()->lockForUpdate()->firstOrFail();
+            $canonical = array_intersect_key($data, array_flip(['code', 'name', 'data_type', 'measurement_dimension_id', 'canonical_measurement_unit_id']));
+            $local = array_intersect_key($data, array_flip(['position', 'is_required', 'is_visible', 'is_searchable', 'is_sortable']));
+            if (array_diff(array_keys($data), [...array_keys($canonical), ...array_keys($local)]) !== []) {
+                throw ValidationException::withMessages(['attribute' => 'Only global meaning and assignment-owned configuration are accepted.']);
             }
+            $definition = app(GlobalAttributeWriter::class)->create($canonical, $actor);
+            app(CategoryAssignmentWriter::class)->assign($category, $definition, ['attribute_section_id' => $section->id, ...$local], $category->schema_revision, $actor);
 
-            return AttributeDefinition::query()->create([
-                'central_category_id' => $section->central_category_id,
-                'attribute_section_id' => $section->getKey(),
-                'code' => $validated['code'],
-                'name' => $validated['name'],
-                'data_type' => $validated['data_type'],
-                'dimension' => $validated['dimension'] ?? null,
-                'canonical_unit' => $validated['canonical_unit'] ?? null,
-                'position' => $position,
-                'is_required' => $validated['is_required'] ?? false,
-                'is_filterable' => $validated['is_filterable'] ?? false,
-                'is_sortable' => $validated['is_sortable'] ?? false,
-                'is_comparable' => $validated['is_comparable'] ?? false,
-                'is_visible' => $validated['is_visible'] ?? true,
-                'is_searchable' => $validated['is_searchable'] ?? false,
-            ]);
-        });
+            return $definition;
+        }, 3);
     }
 }

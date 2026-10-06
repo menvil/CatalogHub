@@ -27,13 +27,13 @@ final readonly class GlobalAttributeWriter
         $actor = $this->access->authorize(Permission::CatalogSchemaManage, $actor);
 
         return DB::transaction(function () use ($data, $actor): AttributeDefinition {
-            $this->identityLock->acquire();
+            $this->identityLock->acquireTarget();
             $validated = $this->validation->validate($data);
             if ($validated['data_type'] === 'json') {
                 throw ValidationException::withMessages(['data_type' => 'New JSON authoring requires an explicit structured contract.']);
             }
             $this->identities->uniqueCode($validated['code']);
-            $definition = AttributeDefinition::query()->create([...$validated, 'canonical_code' => $validated['code']]);
+            $definition = AttributeDefinition::query()->create($validated);
             $this->audit->record(AuditAction::CatalogAttributeCreated, AuditContext::Central, $actor, $definition, null, null, $this->snapshot($definition, 0));
             $this->identityLock->recordTargetWrite();
 
@@ -47,18 +47,12 @@ final readonly class GlobalAttributeWriter
         $actor = $this->access->authorize(Permission::CatalogSchemaManage, $actor);
 
         return DB::transaction(function () use ($definition, $data, $actor): AttributeDefinition {
-            $this->identityLock->acquire();
+            $this->identityLock->acquireTarget();
             $ids = CategoryAttributeAssignment::query()->where('attribute_definition_id', $definition->id)->orderBy('central_category_id')->pluck('central_category_id')->all();
             $categories = $this->categories->acquire($ids);
             $locked = AttributeDefinition::query()->whereKey($definition->id)->lockForUpdate()->firstOrFail();
             $input = array_intersect_key($locked->getAttributes(), array_flip(['code', 'name', 'data_type', 'measurement_dimension_id', 'canonical_measurement_unit_id']));
             $validated = $this->validation->validate([...$input, ...$data]);
-            // Missing legacy relational mappings cannot be silently cleared by ordinary edits.
-            if (($locked->dimension !== null || $locked->canonical_unit !== null) && $locked->measurement_dimension_id === null
-                && ! array_key_exists('measurement_dimension_id', $data) && ! array_key_exists('canonical_measurement_unit_id', $data)) {
-                $validated['dimension'] = $locked->dimension;
-                $validated['canonical_unit'] = $locked->canonical_unit;
-            }
             $before = $this->snapshot($locked, count($categories));
             $locked->fill($validated);
             $changed = array_keys($locked->getDirty());
@@ -68,7 +62,7 @@ final readonly class GlobalAttributeWriter
             foreach ($categories as $category) {
                 $this->revisions->assertMutable($category);
             }
-            $dangerous = array_intersect($changed, ['code', 'data_type', 'measurement_dimension_id', 'canonical_measurement_unit_id', 'dimension', 'canonical_unit']);
+            $dangerous = array_intersect($changed, ['code', 'data_type', 'measurement_dimension_id', 'canonical_measurement_unit_id']);
             if ($dangerous !== []) {
                 $this->identities->assertResolved($locked);
             }
@@ -80,7 +74,6 @@ final readonly class GlobalAttributeWriter
             }
             if (in_array('code', $changed, true)) {
                 $this->identities->uniqueCode($locked->code, $locked->id);
-                $locked->canonical_code = $locked->code;
             }
             $locked->saveOrFail();
             if (in_array('code', $changed, true)) {
@@ -99,6 +92,6 @@ final readonly class GlobalAttributeWriter
     /** @return array<string, mixed> */
     public function snapshot(AttributeDefinition $definition, int $count): array
     {
-        return ['definition_id' => $definition->id, ...array_intersect_key($definition->getAttributes(), array_flip(['code', 'name', 'data_type', 'measurement_dimension_id', 'dimension', 'canonical_measurement_unit_id', 'canonical_unit'])), 'affected_category_count' => $count];
+        return ['definition_id' => $definition->id, ...array_intersect_key($definition->getAttributes(), array_flip(['code', 'name', 'data_type', 'measurement_dimension_id', 'canonical_measurement_unit_id'])), 'affected_category_count' => $count];
     }
 }

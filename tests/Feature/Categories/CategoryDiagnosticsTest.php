@@ -32,6 +32,7 @@ final class CategoryDiagnosticsTest extends TestCase
 
     public function test_legacy_shapes_are_detected_deterministically_without_repair_or_audit(): void
     {
+        (require database_path('migrations/2026_10_06_000002_cut_over_schema_consumers.php'))->down();
         $a = CentralCategory::factory()->create(['position' => 7, 'status' => 'archived', 'schema_status' => 'approved']);
         $b = CentralCategory::factory()->create(['position' => 7]);
         $c = CentralCategory::factory()->create();

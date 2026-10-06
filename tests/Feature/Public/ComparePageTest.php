@@ -3,6 +3,9 @@
 namespace Tests\Feature\Public;
 
 use App\Domains\Projections\Enums\ProjectionStatus;
+use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\CategoryAttributeAssignment;
+use App\Models\CentralCatalog\CategoryComparisonAttribute;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Site;
@@ -73,6 +76,10 @@ class ComparePageTest extends TestCase
         string $title,
         string $displayValue,
     ): SiteProductProjection {
+        $definition = AttributeDefinition::query()->where('code', 'resolution')->first()
+            ?? AttributeDefinition::factory()->create(['code' => 'resolution', 'name' => 'Resolution', 'data_type' => 'string']);
+        $assignment = CategoryAttributeAssignment::query()->firstOrCreate(['central_category_id' => $category->id, 'attribute_definition_id' => $definition->id]);
+        $comparison = CategoryComparisonAttribute::query()->firstOrCreate(['central_category_id' => $category->id, 'category_attribute_assignment_id' => $assignment->id]);
         $product = CentralProduct::factory()->create(['central_category_id' => $category->id]);
 
         return SiteProductProjection::query()->create([
@@ -83,6 +90,9 @@ class ComparePageTest extends TestCase
             'title' => $title,
             'status' => ProjectionStatus::Active,
             'payload_json' => [
+                'attribute_identity_version' => 2,
+                'comparison' => [['category_attribute_assignment_id' => $assignment->id, 'position' => $comparison->fresh()->position]],
+                'attributes' => [['assignment_id' => $assignment->id, 'definition_id' => $definition->id, 'data_type' => 'string', 'has_value' => true, 'canonical_value' => $displayValue, 'display_value' => $displayValue, 'measurement_dimension_id' => null, 'canonical_measurement_unit_id' => null, 'label' => 'Resolution', 'section' => ['id' => null, 'label' => 'Ungrouped']]],
                 'category' => ['id' => $category->id, 'label' => $category->name, 'slug' => $category->slug],
                 'spec_sections' => [[
                     'code' => 'display',

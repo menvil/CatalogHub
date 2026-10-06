@@ -140,8 +140,9 @@ final class CategoryFoundationConcurrencyTest extends TestCase
         $outcomeFile = $directory.'/outcome';
         $parentPid = getmypid();
         $handled = false;
-        DB::listen(function (QueryExecuted $query) use ($lockedTable, $locked, $started, $lockTime, $parentPid, &$handled): void {
-            if ($handled || getmypid() !== $parentPid || ! str_starts_with(strtolower($query->sql), 'update') || ! str_contains($query->sql, $lockedTable)) {
+        $namedMutex = $lockedTable === 'attribute_identity_scopes' && in_array(DB::getDriverName(), ['mysql', 'mariadb'], true);
+        DB::listen(function (QueryExecuted $query) use ($lockedTable, $locked, $started, $lockTime, $parentPid, $namedMutex, &$handled): void {
+            if ($handled || getmypid() !== $parentPid || ! ($namedMutex ? str_contains($query->sql, 'GET_LOCK(') : str_starts_with(strtolower($query->sql), 'update') && str_contains($query->sql, $lockedTable))) {
                 return;
             }
             $handled = true;
@@ -165,15 +166,15 @@ final class CategoryFoundationConcurrencyTest extends TestCase
                 exit(1);
             }
             $attempted = false;
-            DB::connection($childConnection)->beforeExecuting(function (string $sql) use ($lockedTable, $started, &$attempted): void {
-                if (! $attempted && str_starts_with(strtolower($sql), 'update') && str_contains($sql, $lockedTable)) {
+            DB::connection($childConnection)->beforeExecuting(function (string $sql) use ($lockedTable, $started, $namedMutex, &$attempted): void {
+                if (! $attempted && ($namedMutex ? str_contains($sql, 'GET_LOCK(') : str_starts_with(strtolower($sql), 'update') && str_contains($sql, $lockedTable))) {
                     $attempted = true;
                     touch($started);
                 }
             });
             $timed = false;
-            DB::listen(function (QueryExecuted $query) use ($lockedTable, $lockTime, &$timed): void {
-                if (! $timed && str_starts_with(strtolower($query->sql), 'update') && str_contains($query->sql, $lockedTable)) {
+            DB::listen(function (QueryExecuted $query) use ($lockedTable, $lockTime, $namedMutex, &$timed): void {
+                if (! $timed && ($namedMutex ? str_contains($query->sql, 'GET_LOCK(') : str_starts_with(strtolower($query->sql), 'update') && str_contains($query->sql, $lockedTable))) {
                     $timed = true;
                     file_put_contents($lockTime, (string) $query->time);
                 }

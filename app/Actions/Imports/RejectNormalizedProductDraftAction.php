@@ -2,9 +2,11 @@
 
 namespace App\Actions\Imports;
 
+use App\Enums\Permission;
 use App\Models\Imports\NormalizedProductDraft;
 use App\Models\User;
-use Illuminate\Auth\Access\AuthorizationException;
+use App\Services\AttributeGlobalization\AttributeIdentityLock;
+use App\Services\Categories\CategoryAccess;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use LogicException;
@@ -16,9 +18,7 @@ final class RejectNormalizedProductDraftAction
         ?User $user,
         string $reason,
     ): NormalizedProductDraft {
-        if (! $user instanceof User || ! ($user->isSuperAdmin() || $user->isCentralAdmin() || $user->isCatalogEditor())) {
-            throw new AuthorizationException('You are not allowed to reject normalized drafts.');
-        }
+        app(CategoryAccess::class)->authorize(Permission::CatalogProductsManage, $user);
 
         $reason = trim($reason);
 
@@ -27,6 +27,7 @@ final class RejectNormalizedProductDraftAction
         }
 
         return DB::transaction(function () use ($draft, $reason): NormalizedProductDraft {
+            app(AttributeIdentityLock::class)->acquireTarget();
             $lockedDraft = NormalizedProductDraft::query()->lockForUpdate()->findOrFail($draft->id);
 
             if ($lockedDraft->status !== 'pending_review') {

@@ -12,8 +12,8 @@ final class NumberNormalizer implements AttributeValueNormalizerInterface
     public function supports(AttributeDefinition $definition): bool
     {
         return in_array($definition->data_type, [AttributeDataType::Integer, AttributeDataType::Decimal], true)
-            && blank($definition->dimension)
-            && blank($definition->canonical_unit);
+            && $definition->measurement_dimension_id === null
+            && $definition->canonical_measurement_unit_id === null;
     }
 
     public function normalize(

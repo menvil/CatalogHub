@@ -16,15 +16,15 @@ class AttributeOrderingTest extends TestCase
         $section = AttributeSection::factory()->create();
 
         AttributeDefinition::factory()
-            ->for($section->category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($section->category)
+            ->state(['attribute_section_id' => $section->id])
             ->create(['code' => 'b', 'position' => 2]);
         AttributeDefinition::factory()
-            ->for($section->category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($section->category)
+            ->state(['attribute_section_id' => $section->id])
             ->create(['code' => 'a', 'position' => 1]);
 
-        $codes = $section->attributes()->ordered()->pluck('code')->all();
+        $codes = $section->assignments()->with('definition')->ordered()->get()->pluck('definition.code')->all();
 
         $this->assertSame(['a', 'b'], $codes);
     }
@@ -34,15 +34,15 @@ class AttributeOrderingTest extends TestCase
         $section = AttributeSection::factory()->create();
 
         $first = AttributeDefinition::factory()
-            ->for($section->category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($section->category)
+            ->state(['attribute_section_id' => $section->id])
             ->create(['code' => 'first', 'position' => 1]);
         $second = AttributeDefinition::factory()
-            ->for($section->category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($section->category)
+            ->state(['attribute_section_id' => $section->id])
             ->create(['code' => 'second', 'position' => 1]);
 
-        $ids = $section->attributes()->ordered()->pluck('id')->all();
+        $ids = $section->assignments()->ordered()->pluck('attribute_definition_id')->all();
 
         $this->assertSame([$first->id, $second->id], $ids);
     }

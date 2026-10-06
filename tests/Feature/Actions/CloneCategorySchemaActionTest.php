@@ -11,6 +11,7 @@ use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -34,13 +35,13 @@ class CloneCategorySchemaActionTest extends TestCase
             'position' => 2,
         ]);
         $attribute = AttributeDefinition::factory()
-            ->for($source, 'category')
-            ->for($section, 'section')
+            ->assignedTo($source)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => 'panel_type',
                 'data_type' => AttributeDataType::Enum,
                 'position' => 1,
-                'is_filterable' => true,
+                'is_searchable' => true,
             ]);
         AttributeOption::factory()->for($attribute, 'attribute')->create([
             'code' => 'ips',
@@ -54,19 +55,12 @@ class CloneCategorySchemaActionTest extends TestCase
             'code' => 'display',
             'position' => 2,
         ]);
-        $this->assertDatabaseHas('attribute_definitions', [
-            'central_category_id' => $target->id,
-            'code' => 'panel_type',
-            'data_type' => AttributeDataType::Enum->value,
-            'position' => 1,
-            'is_filterable' => true,
-        ]);
-
-        $clonedAttribute = AttributeDefinition::query()
-            ->where('central_category_id', $target->id)
-            ->where('code', 'panel_type')
-            ->firstOrFail();
-
+        $clonedAssignment = $target->attributeAssignments()->sole();
+        $clonedAttribute = $clonedAssignment->definition;
+        self::assertSame($attribute->id, $clonedAttribute->id);
+        self::assertSame(1, $clonedAssignment->position);
+        self::assertTrue($clonedAssignment->is_searchable);
+        self::assertSame(1, AttributeDefinition::query()->count());
         $this->assertDatabaseHas('attribute_options', [
             'attribute_definition_id' => $clonedAttribute->id,
             'code' => 'ips',
@@ -75,35 +69,19 @@ class CloneCategorySchemaActionTest extends TestCase
         $this->assertSame(CategorySchemaStatus::Draft, $target->fresh()->schema_status);
     }
 
-    public function test_clones_nested_sections(): void
+    public function test_nested_sections_cannot_enter_target_clone_data(): void
     {
         $source = CentralCategory::factory()->create();
-        $target = CentralCategory::factory()->create();
-        $parent = AttributeSection::factory()->for($source, 'category')->create(['code' => 'display']);
-        AttributeSection::factory()
-            ->for($source, 'category')
-            ->for($parent, 'parent')
-            ->create(['code' => 'panel']);
-
-        app(CloneCategorySchemaAction::class)->handle($source, $target);
-
-        $clonedParent = AttributeSection::query()
-            ->where('central_category_id', $target->id)
-            ->where('code', 'display')
-            ->firstOrFail();
-
-        $this->assertDatabaseHas('attribute_sections', [
-            'central_category_id' => $target->id,
-            'code' => 'panel',
-            'parent_id' => $clonedParent->id,
-        ]);
+        $parent = AttributeSection::factory()->for($source, 'category')->create();
+        $this->expectException(QueryException::class);
+        AttributeSection::factory()->for($source, 'category')->for($parent, 'parent')->create();
     }
 
     public function test_clones_sectionless_attributes_and_options(): void
     {
         $source = CentralCategory::factory()->create();
         $target = CentralCategory::factory()->create();
-        $attribute = AttributeDefinition::factory()->for($source, 'category')->create([
+        $attribute = AttributeDefinition::factory()->assignedTo($source)->create([
             'attribute_section_id' => null,
             'code' => 'loose_attribute',
             'data_type' => AttributeDataType::Enum,
@@ -112,12 +90,11 @@ class CloneCategorySchemaActionTest extends TestCase
 
         app(CloneCategorySchemaAction::class)->handle($source, $target);
 
-        $clonedAttribute = AttributeDefinition::query()
-            ->where('central_category_id', $target->id)
-            ->where('code', 'loose_attribute')
-            ->firstOrFail();
-
-        $this->assertNull($clonedAttribute->attribute_section_id);
+        $assignment = $target->attributeAssignments()->sole();
+        $clonedAttribute = $assignment->definition;
+        self::assertSame($attribute->id, $clonedAttribute->id);
+        self::assertNull($assignment->attribute_section_id);
+        self::assertSame(1, AttributeOption::query()->count());
         $this->assertDatabaseHas('attribute_options', [
             'attribute_definition_id' => $clonedAttribute->id,
             'code' => 'yes',

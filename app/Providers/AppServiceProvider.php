@@ -12,10 +12,17 @@ use App\Listeners\RebuildPriceAffectedProjections;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\Imports\NormalizedProductDraft;
+use App\Models\Translations\AttributeOptionTranslation;
+use App\Models\Translations\AttributeSectionTranslation;
+use App\Models\Translations\AttributeTranslation;
+use App\Models\Translations\CategoryTranslation;
+use App\Models\Translations\UnitTranslation;
 use App\Models\User;
 use App\Observers\CentralProductObserver;
+use App\Observers\SchemaTranslationProjectionObserver;
 use App\Policies\CentralPanelPolicy;
 use App\Policies\SitePanelPolicy;
+use App\Services\AttributeGlobalization\AttributeIdentityLock;
 use App\Services\Imports\AttributeMappingService;
 use App\Services\Imports\AttributeNormalizer;
 use App\Services\Imports\DuplicateDetector;
@@ -42,6 +49,8 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\Events\TransactionCommitted;
+use Illuminate\Database\Events\TransactionRolledBack;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -64,6 +73,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(MediaStorage::class, FilesystemMediaStorage::class);
         $this->app->bind(ImageVariantProcessor::class, GdImageVariantProcessor::class);
 
+        $this->app->singleton(AttributeIdentityLock::class);
         $this->app->scoped(AttributeMappingService::class);
         $this->app->scoped(SiteRuntimeContext::class, function ($app): SiteRuntimeContext {
             $context = $app->make(Request::class)->attributes->get(SiteRuntimeContext::class);
@@ -125,6 +135,13 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('system.super-admin', fn (User $user): bool => $user->isSuperAdmin());
 
+        foreach ([TransactionCommitted::class, TransactionRolledBack::class] as $event) {
+            Event::listen($event, fn () => app(AttributeIdentityLock::class)->releaseAfterTransaction());
+        }
+        foreach ([AttributeTranslation::class, AttributeOptionTranslation::class,
+            AttributeSectionTranslation::class, CategoryTranslation::class, UnitTranslation::class] as $translation) {
+            $translation::observe(SchemaTranslationProjectionObserver::class);
+        }
         CentralProduct::observe(CentralProductObserver::class);
         Event::listen(MarketOfferUpdated::class, RebuildPriceAffectedProjections::class);
         Event::listen(Login::class, [AuditAuthenticationEvent::class, 'handle']);

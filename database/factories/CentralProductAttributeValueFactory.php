@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\CategoryAttributeAssignment;
+use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -24,10 +25,22 @@ class CentralProductAttributeValueFactory extends Factory
         ]);
     }
 
+    public function configure(): static
+    {
+        return $this->afterMaking(function (CentralProductAttributeValue $value): void {
+            $product = CentralProduct::query()->findOrFail($value->central_product_id);
+            if ($product->central_category_id === null) {
+                throw new \InvalidArgumentException('Product value fixture requires a Category assignment.');
+            }
+            CategoryAttributeAssignment::query()->firstOrCreate(['central_category_id' => $product->central_category_id, 'attribute_definition_id' => $value->attribute_definition_id],
+                ['position' => 0, 'is_required' => false, 'is_visible' => true, 'is_searchable' => false, 'is_sortable' => false]);
+        });
+    }
+
     public function definition(): array
     {
         return [
-            'central_product_id' => CentralProduct::factory(),
+            'central_product_id' => CentralProduct::factory()->state(['central_category_id' => CentralCategory::factory()]),
             'attribute_definition_id' => AttributeDefinition::factory(),
             'raw_value' => null,
             'value_type' => 'string',

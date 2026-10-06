@@ -10,7 +10,7 @@ final class PublicCategoryQuery
 {
     public function findActive(Site $site, string $locale, string $slug): SiteCategoryProjection
     {
-        return SiteCategoryProjection::query()
+        return SiteCategoryProjection::query()->where('attribute_identity_version', 2)
             ->where('site_id', $site->id)
             ->where('locale', $locale)
             ->where('slug', $slug)

@@ -4,12 +4,14 @@ namespace App\Actions\CategorySchema;
 
 use App\Enums\SchemaMutationOrigin;
 use App\Exceptions\CategorySchema\CannotCloneCategorySchemaException;
-use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeSection;
+use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\User;
+use App\Services\AttributeGlobalization\AttributeIdentityReservation;
 use App\Services\CategorySchema\SchemaRevision;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 final class CloneCategorySchemaAction
 {
@@ -34,13 +36,13 @@ final class CloneCategorySchemaAction
             /** @var CentralCategory $lockedTarget */
             $lockedTarget = $target->newQuery()->whereKey($target->getKey())->lockForUpdate()->firstOrFail();
 
-            if ($lockedTarget->attributeSections()->exists() || $lockedTarget->attributeDefinitions()->exists()) {
+            if ($lockedTarget->attributeSections()->exists() || $lockedTarget->attributeAssignments()->exists()) {
                 throw CannotCloneCategorySchemaException::targetSchemaIsNotEmpty();
             }
 
             $source->load([
                 'attributeSections' => fn ($query) => $query->ordered(),
-                'attributeDefinitions' => fn ($query) => $query->ordered()->with(['options' => fn ($query) => $query->ordered()]),
+                'attributeAssignments' => fn ($query) => $query->ordered()->with('definition'),
             ]);
 
             $sectionMap = [];
@@ -61,43 +63,17 @@ final class CloneCategorySchemaAction
             }
 
             foreach ($source->attributeSections as $section) {
-                if ($section->parent_id === null) {
-                    continue;
+                if ($section->parent_id !== null) {
+                    throw ValidationException::withMessages(['source' => 'Explicit reviewed Section flattening required.']);
                 }
-
-                $sectionMap[$section->getKey()]->update([
-                    'parent_id' => $sectionMap[$section->parent_id]->getKey(),
-                ]);
             }
-
-            foreach ($source->attributeDefinitions as $attribute) {
-                $clonedAttribute = AttributeDefinition::query()->create([
-                    'central_category_id' => $lockedTarget->getKey(),
-                    'attribute_section_id' => $attribute->attribute_section_id === null
-                        ? null
-                        : $sectionMap[$attribute->attribute_section_id]->getKey(),
-                    'code' => $attribute->code,
-                    'name' => $attribute->name,
-                    'data_type' => $attribute->data_type,
-                    'dimension' => $attribute->dimension,
-                    'canonical_unit' => $attribute->canonical_unit,
-                    'position' => $attribute->position,
-                    'is_required' => $attribute->is_required,
-                    'is_filterable' => $attribute->is_filterable,
-                    'is_sortable' => $attribute->is_sortable,
-                    'is_comparable' => $attribute->is_comparable,
-                    'is_visible' => $attribute->is_visible,
-                    'is_searchable' => $attribute->is_searchable,
+            foreach ($source->attributeAssignments as $assignment) {
+                app(AttributeIdentityReservation::class)->assertResolved($assignment->definition, 'source');
+                CategoryAttributeAssignment::query()->create([
+                    'central_category_id' => $target->id, 'attribute_definition_id' => $assignment->attribute_definition_id,
+                    'attribute_section_id' => $assignment->attribute_section_id === null ? null : $sectionMap[$assignment->attribute_section_id]->id,
+                    ...$assignment->only(['position', 'is_required', 'is_visible', 'is_searchable', 'is_sortable']),
                 ]);
-
-                foreach ($attribute->options as $option) {
-                    $clonedAttribute->options()->create([
-                        'code' => $option->code,
-                        'label' => $option->label,
-                        'position' => $option->position,
-                        'is_visible' => $option->is_visible,
-                    ]);
-                }
             }
 
         });

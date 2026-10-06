@@ -25,7 +25,7 @@ class ProjectionStaleDetectorTest extends TestCase
             'site_id' => $site->id,
             'locale' => 'en',
             'central_product_id' => $product->id,
-            'central_product_version' => $product->updated_at?->timestamp,
+            'central_product_version' => $product->version,
             'slug' => $product->slug,
             'status' => 'active',
             'payload_json' => [],
@@ -93,7 +93,7 @@ class ProjectionStaleDetectorTest extends TestCase
             'site_id' => $site->id,
             'locale' => 'en',
             'central_product_id' => $changed->id,
-            'central_product_version' => max(0, (int) $changed->updated_at?->timestamp - 1),
+            'central_product_version' => max(0, $changed->version - 1),
             'slug' => $changed->slug,
             'status' => 'active',
             'payload_json' => [],
@@ -102,7 +102,8 @@ class ProjectionStaleDetectorTest extends TestCase
             'site_id' => $site->id,
             'locale' => 'en',
             'central_product_id' => $current->id,
-            'central_product_version' => $current->updated_at?->timestamp,
+            'schema_revision' => $current->category->schema_revision ?? 0,
+            'central_product_version' => $current->fresh()->version,
             'slug' => $current->slug,
             'status' => 'active',
             'payload_json' => [],
@@ -128,10 +129,10 @@ class ProjectionStaleDetectorTest extends TestCase
 
         $counts = app(ProjectionStaleDetector::class)->detectStaleForSite($site);
 
-        $this->assertSame(['products' => 1, 'categories' => 1], $counts);
+        $this->assertSame(['products' => 2, 'categories' => 1], $counts);
         $this->assertSame('stale', $changedProjection->refresh()->getRawOriginal('status'));
         $this->assertSame('active', $currentProjection->refresh()->getRawOriginal('status'));
-        $this->assertSame('active', $unversionedProjection->refresh()->getRawOriginal('status'));
+        $this->assertSame('stale', $unversionedProjection->refresh()->getRawOriginal('status'));
         $this->assertSame('stale', $changedCategoryProjection->refresh()->getRawOriginal('status'));
     }
 

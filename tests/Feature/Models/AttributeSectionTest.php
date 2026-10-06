@@ -4,6 +4,7 @@ namespace Tests\Feature\Models;
 
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -19,17 +20,11 @@ class AttributeSectionTest extends TestCase
         $this->assertTrue($section->category->is($category));
     }
 
-    public function test_attribute_section_can_have_parent_and_children(): void
+    public function test_target_section_rejects_nested_shape_at_database_boundary(): void
     {
-        $category = CentralCategory::factory()->create();
-        $parent = AttributeSection::factory()->for($category, 'category')->create();
-        $child = AttributeSection::factory()
-            ->for($category, 'category')
-            ->for($parent, 'parent')
-            ->create();
-
-        $this->assertTrue($child->parent->is($parent));
-        $this->assertTrue($parent->children->first()->is($child));
+        $parent = AttributeSection::factory()->create();
+        $this->expectException(QueryException::class);
+        AttributeSection::factory()->create(['central_category_id' => $parent->central_category_id, 'parent_id' => $parent->id]);
     }
 
     public function test_attribute_section_flags_are_cast_to_booleans(): void

@@ -79,12 +79,12 @@ class FacetQueryBuilderRangeTest extends TestCase
     {
         $site = Site::factory()->create();
         $category = CentralCategory::factory()->create();
-        $attribute = AttributeDefinition::factory()->for($category, 'category')->create([
+        $attribute = AttributeDefinition::factory()->assignedTo($category)->create([
             'code' => 'refresh_rate',
             'data_type' => AttributeDataType::Decimal,
         ]);
         FacetDefinition::factory()->for($category, 'category')->create([
-            'attribute_definition_id' => $attribute->id,
+            'category_attribute_assignment_id' => $attribute->assignments()->sole()->id,
             'code' => 'refresh_rate',
             'source_type' => FacetSourceType::Attribute,
             'facet_type' => FacetType::Range,

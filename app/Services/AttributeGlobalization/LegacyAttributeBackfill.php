@@ -4,6 +4,7 @@ namespace App\Services\AttributeGlobalization;
 
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeDefinitionCrosswalk;
+use App\Models\CentralCatalog\AttributeIdentityScope;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeOptionCrosswalk;
 use App\Models\CentralCatalog\CategoryAttributeAssignment;
@@ -20,6 +21,9 @@ final class LegacyAttributeBackfill
 
     public function run(?int $categoryId = null): void
     {
+        if ((int) (AttributeIdentityScope::query()->whereKey(1)->firstOrFail()->getAttribute('consumer_version') ?? 1) !== 1) {
+            throw new \RuntimeException('Historical v1 backfill is unavailable after consumer cutover.');
+        }
         DB::transaction(function () use ($categoryId): void {
             foreach (AttributeDefinition::query()->toBase()->whereNotNull('central_category_id')->when($categoryId !== null, fn ($q) => $q->where('central_category_id', $categoryId))->orderBy('id')->cursor() as $definition) {
                 $row = (array) $definition;

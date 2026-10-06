@@ -30,19 +30,19 @@ class CreateAttributeDefinitionActionTest extends TestCase
             'name' => 'Refresh rate',
             'code' => 'refresh_rate',
             'data_type' => AttributeDataType::Integer->value,
-            'is_filterable' => true,
+            'is_searchable' => true,
         ]);
 
-        $this->assertTrue($attribute->section->is($section));
-        $this->assertTrue($attribute->category->is($section->category));
+        $this->assertTrue($attribute->assignments()->sole()->section->is($section));
+        $this->assertTrue($attribute->assignments()->sole()->category->is($section->category));
         $this->assertSame('refresh_rate', $attribute->code);
         $this->assertSame(AttributeDataType::Integer, $attribute->data_type);
-        $this->assertTrue($attribute->is_filterable);
-        $this->assertDatabaseHas('attribute_definitions', [
+        $this->assertTrue($attribute->assignments()->sole()->is_searchable);
+        $this->assertDatabaseHas('category_attribute_assignments', [
             'central_category_id' => $section->central_category_id,
             'attribute_section_id' => $section->id,
-            'code' => 'refresh_rate',
-            'position' => 1,
+            'attribute_definition_id' => $attribute->id,
+            'position' => 0,
         ]);
     }
 
@@ -50,7 +50,7 @@ class CreateAttributeDefinitionActionTest extends TestCase
     {
         $category = CentralCategory::factory()->create();
         $section = AttributeSection::factory()->for($category, 'category')->create();
-        AttributeDefinition::factory()->for($category, 'category')->for($section, 'section')->create(['code' => 'weight']);
+        AttributeDefinition::factory()->assignedTo($category)->state(['attribute_section_id' => $section->id])->create(['code' => 'weight']);
 
         $this->expectException(ValidationException::class);
 
@@ -87,12 +87,12 @@ class CreateAttributeDefinitionActionTest extends TestCase
         ]);
     }
 
-    public function test_rejects_auto_position_above_unsigned_integer_range(): void
+    public function test_rejects_explicit_position_above_portable_integer_range(): void
     {
         $section = AttributeSection::factory()->create();
         AttributeDefinition::factory()
-            ->for($section->category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($section->category)
+            ->state(['attribute_section_id' => $section->id])
             ->create(['position' => AttributeDefinition::MAX_POSITION]);
 
         $this->expectException(ValidationException::class);
@@ -101,6 +101,7 @@ class CreateAttributeDefinitionActionTest extends TestCase
             'name' => 'Refresh rate',
             'code' => 'refresh_rate',
             'data_type' => AttributeDataType::Integer->value,
+            'position' => AttributeDefinition::MAX_POSITION + 1,
         ]);
     }
 }

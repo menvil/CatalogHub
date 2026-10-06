@@ -3,12 +3,12 @@
 namespace Tests\Feature\Actions;
 
 use App\Actions\CategorySchema\MoveAttributeDefinitionAction;
-use App\Exceptions\CategorySchema\CannotMoveAttributeDefinitionException;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class MoveAttributeDefinitionActionTest extends TestCase
@@ -28,23 +28,23 @@ class MoveAttributeDefinitionActionTest extends TestCase
         $target = AttributeSection::factory()->for($category, 'category')->create();
 
         $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($source, 'section')
-            ->create(['position' => 1]);
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $source->id])
+            ->create(['position' => 1])->assignments()->sole();
         $targetAttribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($target, 'section')
-            ->create(['code' => 'target_attribute', 'position' => 3]);
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $target->id])
+            ->create(['code' => 'target_attribute', 'position' => 3])->assignments()->sole();
 
-        $movedAttribute = app(MoveAttributeDefinitionAction::class)->handle($attribute, $target, 3);
+        $movedAttribute = app(MoveAttributeDefinitionAction::class)->handle($attribute, $target, 0);
 
         $attribute->refresh();
 
         $this->assertTrue($attribute->section->is($target));
-        $this->assertSame(3, $attribute->position);
+        $this->assertSame(0, $attribute->position);
         $this->assertTrue($movedAttribute->section->is($target));
-        $this->assertSame(3, $movedAttribute->position);
-        $this->assertSame(4, $targetAttribute->fresh()->position);
+        $this->assertSame(0, $movedAttribute->position);
+        $this->assertSame(1, $targetAttribute->fresh()->position);
     }
 
     public function test_closes_source_section_position_gap_after_move(): void
@@ -52,26 +52,26 @@ class MoveAttributeDefinitionActionTest extends TestCase
         $category = CentralCategory::factory()->create();
         $source = AttributeSection::factory()->for($category, 'category')->create();
         $target = AttributeSection::factory()->for($category, 'category')->create();
-        $attribute = AttributeDefinition::factory()->for($category, 'category')->for($source, 'section')->create(['code' => 'a', 'position' => 1]);
-        $remaining = AttributeDefinition::factory()->for($category, 'category')->for($source, 'section')->create(['code' => 'b', 'position' => 2]);
+        $attribute = AttributeDefinition::factory()->assignedTo($category)->state(['attribute_section_id' => $source->id])->create(['code' => 'a', 'position' => 1])->assignments()->sole();
+        $remaining = AttributeDefinition::factory()->assignedTo($category)->state(['attribute_section_id' => $source->id])->create(['code' => 'b', 'position' => 2])->assignments()->sole();
 
-        app(MoveAttributeDefinitionAction::class)->handle($attribute, $target, 1);
+        app(MoveAttributeDefinitionAction::class)->handle($attribute, $target, 0);
 
-        $this->assertSame(1, $remaining->fresh()->position);
+        $this->assertSame(0, $remaining->fresh()->position);
     }
 
     public function test_reorders_attributes_inside_same_section(): void
     {
         $section = AttributeSection::factory()->create();
-        $first = AttributeDefinition::factory()->for($section->category, 'category')->for($section, 'section')->create(['code' => 'a', 'position' => 1]);
-        $second = AttributeDefinition::factory()->for($section->category, 'category')->for($section, 'section')->create(['code' => 'b', 'position' => 2]);
-        $third = AttributeDefinition::factory()->for($section->category, 'category')->for($section, 'section')->create(['code' => 'c', 'position' => 3]);
+        $first = AttributeDefinition::factory()->assignedTo($section->category)->state(['attribute_section_id' => $section->id])->create(['code' => 'a', 'position' => 1])->assignments()->sole();
+        $second = AttributeDefinition::factory()->assignedTo($section->category)->state(['attribute_section_id' => $section->id])->create(['code' => 'b', 'position' => 2])->assignments()->sole();
+        $third = AttributeDefinition::factory()->assignedTo($section->category)->state(['attribute_section_id' => $section->id])->create(['code' => 'c', 'position' => 3])->assignments()->sole();
 
-        app(MoveAttributeDefinitionAction::class)->handle($third, $section, 1);
+        app(MoveAttributeDefinitionAction::class)->handle($third, $section, 0);
 
-        $this->assertSame(2, $first->fresh()->position);
-        $this->assertSame(3, $second->fresh()->position);
-        $this->assertSame(1, $third->fresh()->position);
+        $this->assertSame(1, $first->fresh()->position);
+        $this->assertSame(2, $second->fresh()->position);
+        $this->assertSame(0, $third->fresh()->position);
     }
 
     public function test_does_not_move_attribute_to_section_from_another_category(): void
@@ -79,11 +79,11 @@ class MoveAttributeDefinitionActionTest extends TestCase
         $source = AttributeSection::factory()->create();
         $target = AttributeSection::factory()->create();
         $attribute = AttributeDefinition::factory()
-            ->for($source->category, 'category')
-            ->for($source, 'section')
-            ->create();
+            ->assignedTo($source->category)
+            ->state(['attribute_section_id' => $source->id])
+            ->create()->assignments()->sole();
 
-        $this->expectException(CannotMoveAttributeDefinitionException::class);
+        $this->expectException(ValidationException::class);
 
         app(MoveAttributeDefinitionAction::class)->handle($attribute, $target, 0);
     }
@@ -92,11 +92,11 @@ class MoveAttributeDefinitionActionTest extends TestCase
     {
         $section = AttributeSection::factory()->create();
         $attribute = AttributeDefinition::factory()
-            ->for($section->category, 'category')
-            ->for($section, 'section')
-            ->create();
+            ->assignedTo($section->category)
+            ->state(['attribute_section_id' => $section->id])
+            ->create()->assignments()->sole();
 
-        $this->expectException(CannotMoveAttributeDefinitionException::class);
+        $this->expectException(ValidationException::class);
 
         app(MoveAttributeDefinitionAction::class)->handle($attribute, $section, -1);
     }
@@ -105,12 +105,11 @@ class MoveAttributeDefinitionActionTest extends TestCase
     {
         $section = AttributeSection::factory()->create();
         $attribute = AttributeDefinition::factory()
-            ->for($section->category, 'category')
-            ->for($section, 'section')
-            ->create();
+            ->assignedTo($section->category)
+            ->state(['attribute_section_id' => $section->id])
+            ->create()->assignments()->sole();
 
-        $this->expectException(CannotMoveAttributeDefinitionException::class);
-        $this->expectExceptionMessage('between zero and the maximum portable integer value');
+        $this->expectException(ValidationException::class);
 
         app(MoveAttributeDefinitionAction::class)->handle($attribute, $section, AttributeDefinition::MAX_POSITION + 1);
     }
@@ -121,15 +120,15 @@ class MoveAttributeDefinitionActionTest extends TestCase
         $source = AttributeSection::factory()->for($category, 'category')->create();
         $target = AttributeSection::factory()->for($category, 'category')->create();
         $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($source, 'section')
-            ->create(['position' => 1]);
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $source->id])
+            ->create(['position' => 1])->assignments()->sole();
         AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($target, 'section')
-            ->create(['code' => 'max_position_attribute', 'position' => AttributeDefinition::MAX_POSITION]);
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $target->id])
+            ->create(['code' => 'max_position_attribute', 'position' => AttributeDefinition::MAX_POSITION])->assignments()->sole();
 
-        $this->expectException(CannotMoveAttributeDefinitionException::class);
+        $this->expectException(ValidationException::class);
 
         app(MoveAttributeDefinitionAction::class)->handle($attribute, $target, AttributeDefinition::MAX_POSITION);
     }

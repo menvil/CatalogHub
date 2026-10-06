@@ -8,7 +8,10 @@ use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Models\MeasurementUnit;
 use App\Models\User;
+use Database\Seeders\MeasurementDimensionsSeeder;
+use Database\Seeders\MetricMeasurementUnitsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -23,36 +26,19 @@ class UpdateAttributeDefinitionActionTest extends TestCase
         $this->actingAs(User::factory()->centralAdmin()->create());
     }
 
-    public function test_updates_attribute_definition(): void
+    public function test_updates_global_canonical_definition_without_local_ownership(): void
     {
-        $attribute = AttributeDefinition::factory()->create([
-            'name' => 'Old name',
-            'code' => 'old_code',
-            'data_type' => AttributeDataType::String,
-            'is_filterable' => false,
-        ]);
-
-        app(UpdateAttributeDefinitionAction::class)->handle($attribute, [
-            'name' => 'Refresh rate',
-            'code' => 'refresh_rate',
-            'data_type' => AttributeDataType::Integer->value,
-            'dimension' => 'frequency',
-            'canonical_unit' => 'hertz',
-            'position' => 4,
-            'is_filterable' => true,
-            'is_visible' => false,
-        ]);
-
+        $this->seed([MeasurementDimensionsSeeder::class, MetricMeasurementUnitsSeeder::class]);
+        $attribute = AttributeDefinition::factory()->create(['code' => 'old_code', 'name' => 'Old name']);
+        $unit = MeasurementUnit::query()->where('code', 'hertz')->sole();
+        app(UpdateAttributeDefinitionAction::class)->handle($attribute, ['name' => 'Refresh rate', 'code' => 'refresh_rate',
+            'data_type' => 'integer', 'measurement_dimension_id' => $unit->dimension_id, 'canonical_measurement_unit_id' => $unit->id]);
         $attribute->refresh();
-
-        $this->assertSame('Refresh rate', $attribute->name);
-        $this->assertSame('refresh_rate', $attribute->code);
-        $this->assertSame(AttributeDataType::Integer, $attribute->data_type);
-        $this->assertSame('frequency', $attribute->dimension);
-        $this->assertSame('hertz', $attribute->canonical_unit);
-        $this->assertSame(4, $attribute->position);
-        $this->assertTrue($attribute->is_filterable);
-        $this->assertFalse($attribute->is_visible);
+        self::assertSame('refresh_rate', $attribute->code);
+        self::assertSame('Refresh rate', $attribute->name);
+        self::assertSame(AttributeDataType::Integer, $attribute->data_type);
+        self::assertSame($unit->id, $attribute->canonical_measurement_unit_id);
+        self::assertArrayNotHasKey('position', $attribute->getAttributes());
     }
 
     public function test_allows_keeping_current_attribute_code(): void
@@ -72,8 +58,8 @@ class UpdateAttributeDefinitionActionTest extends TestCase
     {
         $category = CentralCategory::factory()->create();
         $section = AttributeSection::factory()->for($category, 'category')->create();
-        AttributeDefinition::factory()->for($category, 'category')->for($section, 'section')->create(['code' => 'weight']);
-        $attribute = AttributeDefinition::factory()->for($category, 'category')->for($section, 'section')->create(['code' => 'height']);
+        AttributeDefinition::factory()->assignedTo($category)->state(['attribute_section_id' => $section->id])->create(['code' => 'weight']);
+        $attribute = AttributeDefinition::factory()->assignedTo($category)->state(['attribute_section_id' => $section->id])->create(['code' => 'height']);
 
         $this->expectException(ValidationException::class);
 

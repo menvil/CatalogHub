@@ -36,7 +36,7 @@ final readonly class FacetDefinitionData
             id: $facet->id,
             code: $facet->code,
             label: $facet->label_override
-                ?: $facet->attributeDefinition?->name
+                ?: $facet->assignment?->definition?->name
                 ?: Str::headline($facet->code),
             type: $facet->facet_type,
             sourceType: $facet->source_type,
@@ -48,9 +48,9 @@ final readonly class FacetDefinitionData
                 ->map(fn ($option): FacetOptionData => FacetOptionData::fromModel($option))
                 ->values()
                 ->all(),
-            attributeCode: $facet->attributeDefinition?->code,
-            attributeDataType: $facet->attributeDefinition?->data_type,
-            canonicalUnit: $facet->attributeDefinition?->canonical_unit,
+            attributeCode: $facet->assignment?->definition?->code,
+            attributeDataType: $facet->assignment?->definition?->data_type,
+            canonicalUnit: $facet->assignment?->definition?->canonicalMeasurementUnit?->code,
         );
     }
 }

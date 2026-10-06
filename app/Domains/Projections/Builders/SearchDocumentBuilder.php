@@ -40,10 +40,6 @@ final class SearchDocumentBuilder
                 continue;
             }
 
-            if (($attribute['is_filterable'] ?? false) === true) {
-                $filterValues[$code] = $attribute['canonical_value'] ?? null;
-            }
-
             if (($attribute['is_sortable'] ?? false) === true) {
                 $sortValues[$code] = $attribute['canonical_value'] ?? null;
             }
@@ -53,6 +49,7 @@ final class SearchDocumentBuilder
             }
         }
 
+        $filterValues = array_replace($filterValues, $projection->payload['facet_values']);
         $filterValues = array_filter(
             $filterValues,
             fn (mixed $value): bool => $value !== null,
@@ -189,26 +186,11 @@ final class SearchDocumentBuilder
      */
     private function attributesFromPayload(array $payload): array
     {
-        $sections = $payload['spec_sections'] ?? [];
-        $attributes = [];
-
-        if (! is_array($sections)) {
-            return [];
+        if (($payload['attribute_identity_version'] ?? null) !== 2 || ! is_array($payload['attributes'] ?? null)) {
+            throw new \LogicException('Rebuild target v2 projection before indexing attribute identity.');
         }
 
-        foreach ($sections as $section) {
-            if (! is_array($section) || ! is_array($section['attributes'] ?? null)) {
-                continue;
-            }
-
-            foreach ($section['attributes'] as $attribute) {
-                if (is_array($attribute)) {
-                    $attributes[] = $attribute;
-                }
-            }
-        }
-
-        return $attributes;
+        return $payload['attributes'];
     }
 
     /**

@@ -5,6 +5,8 @@ namespace App\Services\Imports;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\Imports\AttributeMapping;
 use App\Models\Imports\RawProduct;
+use App\Services\AttributeGlobalization\AttributeIdentityLock;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 final class AttributeMappingService
@@ -23,7 +25,7 @@ final class AttributeMappingService
             ->where('import_source_id', $sourceId)
             ->where('category_id', $categoryId)
             ->where('status', 'reviewed')
-            ->whereNotNull('attribute_definition_id');
+            ->with('assignment.definition')->whereNotNull('category_attribute_assignment_id');
 
         $mapping = (clone $query)->where('raw_key', trim($rawKey))->first();
 
@@ -36,7 +38,7 @@ final class AttributeMappingService
             $mapping = $normalizedMatches->count() === 1 ? $normalizedMatches->first() : null;
         }
 
-        return $mapping?->attributeDefinition;
+        return $mapping?->assignment?->definition;
     }
 
     public function normalizeRawKey(string $rawKey): string
@@ -51,20 +53,24 @@ final class AttributeMappingService
     {
         $rawKey = trim($rawKey);
 
-        return AttributeMapping::query()->firstOrCreate(
-            [
-                'import_source_id' => $sourceId,
-                'category_id' => $categoryId,
-                'raw_key' => $rawKey,
-            ],
-            [
-                'normalized_raw_key' => $this->normalizeRawKey($rawKey),
-                'attribute_definition_id' => null,
-                'confidence' => 0,
-                'status' => 'auto',
-                'mapping_type' => 'attribute',
-            ]
-        );
+        return DB::transaction(function () use ($sourceId, $categoryId, $rawKey): AttributeMapping {
+            app(AttributeIdentityLock::class)->acquireTarget();
+
+            return AttributeMapping::query()->firstOrCreate(
+                [
+                    'import_source_id' => $sourceId,
+                    'category_id' => $categoryId,
+                    'raw_key' => $rawKey,
+                ],
+                [
+                    'normalized_raw_key' => $this->normalizeRawKey($rawKey),
+                    'category_attribute_assignment_id' => null,
+                    'confidence' => 0,
+                    'status' => 'auto',
+                    'mapping_type' => 'attribute',
+                ]
+            );
+        });
     }
 
     public function usageCount(AttributeMapping $mapping): int

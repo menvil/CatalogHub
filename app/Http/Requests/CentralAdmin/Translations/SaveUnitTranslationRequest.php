@@ -25,7 +25,7 @@ final class SaveUnitTranslationRequest extends SaveTranslationRequest
         $locale = $this->route('locale');
 
         return $unit instanceof MeasurementUnit && $locale instanceof Locale
-            ? $unit->translations()->where('locale', $locale->code)->first()
+            ? $unit->translations()->where('locale_id', $locale->id)->first()
             : null;
     }
 }

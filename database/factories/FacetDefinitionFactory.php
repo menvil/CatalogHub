@@ -6,6 +6,7 @@ use App\Enums\AttributeDataType;
 use App\Enums\FacetSourceType;
 use App\Enums\FacetType;
 use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\FacetDefinition;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -22,7 +23,7 @@ class FacetDefinitionFactory extends Factory
 
         return [
             'category_id' => CentralCategory::factory(),
-            'attribute_definition_id' => null,
+            'category_attribute_assignment_id' => null,
             'code' => Str::snake($label),
             'label_override' => null,
             'facet_type' => FacetType::Checkbox,
@@ -58,14 +59,12 @@ class FacetDefinitionFactory extends Factory
             'facet_type' => FacetType::Boolean,
             'source_type' => FacetSourceType::Attribute,
         ])->afterMaking(function (FacetDefinition $facet): void {
-            if ($facet->attribute_definition_id !== null) {
+            if ($facet->category_attribute_assignment_id !== null) {
                 return;
             }
 
-            $facet->attribute_definition_id = AttributeDefinition::factory()->create([
-                'central_category_id' => $facet->category_id,
-                'data_type' => AttributeDataType::Boolean,
-            ])->id;
+            $facet->category_attribute_assignment_id = CategoryAttributeAssignment::factory()->create(['central_category_id' => $facet->category_id,
+                'attribute_definition_id' => AttributeDefinition::factory()->create(['data_type' => AttributeDataType::Boolean])->id])->id;
         });
     }
 

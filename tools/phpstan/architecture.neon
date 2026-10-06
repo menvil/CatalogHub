@@ -47,6 +47,14 @@ parameters:
     architecture:
         rawSqlExceptions:
             -
+                class: App\Queries\Attributes\SchemaConsumerPreflightV2Query
+                ownerMethods: [report]
+                methods: [havingRaw]
+                reason: 'Portable grouped collision counts over fixed owner/Locale IDs before destructive ownership DDL.'
+                bindings: literal_only
+                behaviorTests: [tests/Feature/SchemaConsumers/SchemaConsumerMigrationTest.php]
+                status: approved
+            -
                 class: App\Queries\CentralCatalog\OrganizationSearchQuery
                 ownerMethods: [search]
                 methods: [whereRaw]
@@ -80,7 +88,7 @@ parameters:
                 status: approved
             -
                 class: App\Queries\Projections\StaleProjectionQuery
-                ownerMethods: [productsForSite, categoriesForSite]
+                ownerMethods: [categoriesForSite]
                 methods: [whereRaw]
                 reason: 'Projection version comparison requires driver-aware timestamp conversion over fixed internal columns.'
                 bindings: internal_only

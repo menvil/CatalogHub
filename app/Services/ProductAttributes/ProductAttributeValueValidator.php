@@ -24,16 +24,16 @@ final class ProductAttributeValueValidator
     {
         $this->unitCompatibilityCache = [];
 
-        $product->loadMissing([
-            'category.attributeDefinitions.options',
-        ]);
+        $product->load(['category.attributeAssignments.definition.options', 'category.attributeAssignments.definition.canonicalMeasurementUnit', 'category.attributeAssignments.definition.measurementDimension']);
 
         if (! $product->category) {
             throw CannotSaveProductSpecsException::because('Product must have a category before specs can be saved.');
         }
 
-        $attributes = $product->category->attributeDefinitions;
+        $attributes = $product->category->attributeAssignments->pluck('definition');
         $validated = [];
+        $product->load('attributeValues');
+        $existingValues = $product->attributeValues->keyBy('attribute_definition_id');
 
         foreach ($payload as $attributeKey => $valueData) {
             if (! is_array($valueData)) {
@@ -45,7 +45,17 @@ final class ProductAttributeValueValidator
                 throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] is referenced more than once.");
             }
 
-            $normalized = $this->validateAttribute($attribute, $valueData);
+            $existing = $existingValues->get($attribute->id);
+            $existingData = $existing?->attributesToArray() ?? [];
+            $normalized = $this->validateAttribute($attribute, [...$existingData, ...$valueData]);
+            if ($attribute->data_type->allowsOptions()) {
+                $historicCodes = $attribute->data_type === AttributeDataType::Enum ? [$existing?->value_enum_code] : ($existing === null ? [] : ($existing->value_json ?? []));
+                $requested = $attribute->data_type === AttributeDataType::Enum ? [$normalized['value_enum_code']] : $normalized['value_json'];
+                $hidden = $attribute->options->where('is_visible', false)->pluck('code')->all();
+                if (array_diff(array_intersect($requested, $hidden), $historicCodes) !== []) {
+                    throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] hidden options are historical values, not new choices.");
+                }
+            }
             $validated[(int) $attribute->id] = $normalized;
         }
 
@@ -149,15 +159,18 @@ final class ProductAttributeValueValidator
      */
     private function validateNumericUnits(AttributeDefinition $attribute, array &$valueData): void
     {
-        if (filled($attribute->canonical_unit) && blank($valueData['canonical_unit'])) {
-            $valueData['canonical_unit'] = $attribute->canonical_unit;
+        $unit = $attribute->canonicalMeasurementUnit;
+        if ($unit !== null && blank($valueData['canonical_unit'])) {
+            $valueData['canonical_unit'] = $unit->code;
         }
 
-        if (filled($attribute->canonical_unit) && filled($valueData['canonical_unit']) && $valueData['canonical_unit'] !== $attribute->canonical_unit) {
-            throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] canonical_unit must be [{$attribute->canonical_unit}].");
+        $unit = $attribute->canonicalMeasurementUnit;
+        if ($unit !== null && filled($valueData['canonical_unit']) && $valueData['canonical_unit'] !== $unit->code) {
+            throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] canonical_unit must be [{$unit->code}].");
         }
 
-        if (blank($attribute->dimension)) {
+        $dimension = $attribute->measurementDimension;
+        if ($dimension === null) {
             return;
         }
 
@@ -170,8 +183,8 @@ final class ProductAttributeValueValidator
                 throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] {$unitField} must be a string.");
             }
 
-            if (! $this->isUnitAllowedForDimension((string) $valueData[$unitField], (string) $attribute->dimension)) {
-                throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] {$unitField} [{$valueData[$unitField]}] is not allowed for dimension [{$attribute->dimension}].");
+            if (! $this->isUnitAllowedForDimension((string) $valueData[$unitField], (string) $dimension->code)) {
+                throw CannotSaveProductSpecsException::because("Attribute [{$attribute->code}] {$unitField} [{$valueData[$unitField]}] is not allowed for dimension [{$dimension->code}].");
             }
         }
     }

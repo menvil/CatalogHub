@@ -49,40 +49,36 @@ final readonly class FacetQueryBuilder
         $query
             ->where('site_id', $site->id)
             ->where('document_type', 'product')
-            ->where('status', ProjectionStatus::Active)
+            ->where('status', ProjectionStatus::Active)->where('attribute_identity_version', 2)
             ->where('filter_values_json->category_id', $category->id);
 
         $facets = $this->siteFacets->resolve($site, $category);
         $this->retainKnownFilters($filters, $facets);
-        $brands = $this->listValues($filters->get('brand'));
+        foreach ($facets->where('sourceType', FacetSourceType::Brand) as $facet) {
+            $brands = $this->listValues($filters->get($facet->code));
+            if ($brands === []) {
+                $filters->forget($facet->code);
 
-        if ($brands !== []) {
-            $filters->replace('brand', $brands);
-            $query->where(function (Builder $brandQuery) use ($brands): void {
+                continue;
+            }
+            $filters->replace($facet->code, $brands);
+            $query->where(function (Builder $brandQuery) use ($brands, $facet): void {
                 foreach ($brands as $brand) {
-                    $brandQuery->orWhere('filter_values_json->brand_slug', $brand);
+                    $brandQuery->orWhere("filter_values_json->{$facet->code}", $brand);
                 }
             });
-
             foreach ($brands as $brand) {
-                $filters->recordAppliedFilter(new AppliedFacetFilter(
-                    code: 'brand',
-                    label: strlen($brand) <= 3 ? Str::upper($brand) : Str::headline($brand),
-                    value: $brand,
-                    queryKeys: ['brand'],
-                ));
+                $filters->recordAppliedFilter(new AppliedFacetFilter(code: $facet->code,
+                    label: strlen($brand) <= 3 ? Str::upper($brand) : Str::headline($brand), value: $brand, queryKeys: [$facet->code]));
             }
-        } else {
-            $filters->forget('brand');
         }
-
         $this->applyMerchantFilter($query, $site, $category, $filters);
         $this->applyEnumFilters($query, $facets, $filters);
         $this->applyBooleanFilters($query, $facets, $filters);
         $this->applyNumericRangeFilters($query, $facets, $filters);
         $this->applyPriceRangeFilter($query, $filters);
         $this->applyInStockFilter($query, $filters);
-        $this->applyRatingFilter($query, $filters);
+        $this->applyRatingFilter($query, $facets, $filters);
         $this->applySorting($query, $filters);
 
         return $query;
@@ -91,15 +87,15 @@ final readonly class FacetQueryBuilder
     /** @param Collection<int, FacetDefinitionData> $facets */
     private function retainKnownFilters(FacetFilterSet $filters, Collection $facets): void
     {
-        $keys = ['brand', 'in_stock', 'merchant_ids', 'price_from', 'price_to', 'rating_min', 'sort'];
+        $keys = ['in_stock', 'merchant_ids', 'price_from', 'price_to', 'sort'];
 
         foreach ($facets as $facet) {
             if ($this->isNumericRangeFacet($facet)) {
                 $keys[] = "{$facet->code}_min";
                 $keys[] = "{$facet->code}_max";
             } elseif ($facet->sourceType === FacetSourceType::Rating) {
-                $keys[] = 'rating_min';
-            } elseif ($this->isEnumFacet($facet) || $this->isBooleanFacet($facet)) {
+                $keys[] = $facet->code.'_min';
+            } elseif ($facet->sourceType === FacetSourceType::Brand || $this->isEnumFacet($facet) || $this->isBooleanFacet($facet)) {
                 $keys[] = $facet->code;
             }
         }
@@ -263,29 +259,25 @@ final readonly class FacetQueryBuilder
     }
 
     /** @param Builder<SiteSearchDocument> $query */
-    private function applyRatingFilter(Builder $query, FacetFilterSet $filters): void
+    private function applyRatingFilter(Builder $query, Collection $facets, FacetFilterSet $filters): void
     {
-        if (! $filters->has('rating_min')) {
-            return;
+        foreach ($facets->where('sourceType', FacetSourceType::Rating) as $facet) {
+            $key = $facet->code.'_min';
+            if (! $filters->has($key)) {
+                continue;
+            }
+            $range = $this->ranges->parse($filters->get($key), null);
+            if ($range === null || $range['min'] === null) {
+                $filters->forget($key);
+
+                continue;
+            }
+            $minimum = max(0.0, min(5.0, $range['min']));
+            $filters->replace($key, $this->ranges->serialize($minimum));
+            $this->applyNumericConstraint($query, 'filter_values_json', $facet->code, '>=', $minimum);
+            $filters->recordAppliedFilter(new AppliedFacetFilter(code: $facet->code, label: $facet->label,
+                value: $this->ranges->serialize($minimum), queryKeys: [$key]));
         }
-
-        $range = $this->ranges->parse($filters->get('rating_min'), null);
-
-        if ($range === null || $range['min'] === null) {
-            $filters->forget('rating_min');
-
-            return;
-        }
-
-        $minimum = max(0.0, min(5.0, $range['min']));
-        $filters->replace('rating_min', $this->ranges->serialize($minimum));
-        $this->applyNumericConstraint($query, 'sort_values_json', 'rating', '>=', $minimum);
-        $filters->recordAppliedFilter(new AppliedFacetFilter(
-            code: 'rating',
-            label: 'Rating',
-            value: $this->ranges->serialize($minimum),
-            queryKeys: ['rating_min'],
-        ));
     }
 
     /** @param Builder<SiteSearchDocument> $query */

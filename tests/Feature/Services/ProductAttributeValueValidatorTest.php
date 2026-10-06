@@ -32,7 +32,7 @@ class ProductAttributeValueValidatorTest extends TestCase
     public function test_rejects_duplicate_attribute_references(): void
     {
         $product = $this->productWithAttribute('refresh_rate', 'decimal');
-        $attribute = $product->category->attributeDefinitions()->firstOrFail();
+        $attribute = $product->category->attributeAssignments()->with('definition')->firstOrFail()->definition;
 
         $this->expectException(CannotSaveProductSpecsException::class);
 
@@ -110,8 +110,8 @@ class ProductAttributeValueValidatorTest extends TestCase
 
     public function test_rejects_source_unit_from_different_dimension(): void
     {
-        $product = $this->productWithNumericAttribute('weight', 'mass', 'kilogram');
         $this->createUnit('mass', 'kilogram', 'kg');
+        $product = $this->productWithNumericAttribute('weight', 'mass', 'kilogram');
         $this->createUnit('volume', 'liter', 'l');
 
         $this->expectException(CannotSaveProductSpecsException::class);
@@ -126,8 +126,8 @@ class ProductAttributeValueValidatorTest extends TestCase
 
     public function test_allows_source_unit_from_same_dimension(): void
     {
-        $product = $this->productWithNumericAttribute('weight', 'mass', 'kilogram');
         $this->createUnit('mass', 'kilogram', 'kg');
+        $product = $this->productWithNumericAttribute('weight', 'mass', 'kilogram');
         $this->createUnit('mass', 'pound', 'lb', '0.45359237');
 
         $validated = app(ProductAttributeValueValidator::class)->validate($product, [
@@ -145,8 +145,8 @@ class ProductAttributeValueValidatorTest extends TestCase
 
     public function test_rejects_canonical_unit_override_when_attribute_defines_one(): void
     {
-        $product = $this->productWithNumericAttribute('weight', 'mass', 'kilogram');
         $this->createUnit('mass', 'kilogram', 'kg');
+        $product = $this->productWithNumericAttribute('weight', 'mass', 'kilogram');
         $this->createUnit('mass', 'pound', 'lb', '0.45359237');
 
         $this->expectException(CannotSaveProductSpecsException::class);
@@ -161,6 +161,7 @@ class ProductAttributeValueValidatorTest extends TestCase
 
     public function test_rejects_non_string_units(): void
     {
+        $this->createUnit('mass', 'kilogram', 'kg');
         $product = $this->productWithNumericAttribute('weight', 'mass', 'kilogram');
 
         $this->expectException(CannotSaveProductSpecsException::class);
@@ -279,8 +280,8 @@ class ProductAttributeValueValidatorTest extends TestCase
         $product = CentralProduct::factory()->for($category, 'category')->create();
 
         AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => $code,
                 'data_type' => $dataType,
@@ -295,14 +296,12 @@ class ProductAttributeValueValidatorTest extends TestCase
         $section = AttributeSection::factory()->for($category, 'category')->create();
         $product = CentralProduct::factory()->for($category, 'category')->create();
 
-        AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+        AttributeDefinition::factory()->measured($dimension, $canonicalUnit)
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => $code,
                 'data_type' => 'decimal',
-                'dimension' => $dimension,
-                'canonical_unit' => $canonicalUnit,
             ]);
 
         return $product;
@@ -337,8 +336,8 @@ class ProductAttributeValueValidatorTest extends TestCase
         $section = AttributeSection::factory()->for($category, 'category')->create();
         $product = CentralProduct::factory()->for($category, 'category')->create();
         $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => $code,
                 'data_type' => $dataType,

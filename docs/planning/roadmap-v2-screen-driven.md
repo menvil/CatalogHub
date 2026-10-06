@@ -196,7 +196,7 @@ Phase 19 replaces the original Category/Schema Phase 03 schedule and incorrect n
 
 ### Roadmap amendment 2.3.0 — 2026-10-05
 
-Phase 19.1 completes Category Core & Hierarchy Foundation: additive hierarchy scopes/revisions and schema review/approval metadata, authoritative lifecycle/hierarchy actions, schema invalidation, permissions, audit and legacy diagnostics. The existing Filament resource uses this foundation without implementing a new screen. Phase 19.2 adds global definitions/assignments, durable crosswalks, exact relational measurements, guarded Locale identity keys, Import membership expansion, diagnostics and transactional fan-out. Next is 19.3 Schema Consumer Convergence; no consumer authority cutover or CA screen is complete.
+Phase 19.1 completes Category Core & Hierarchy Foundation: additive hierarchy scopes/revisions and schema review/approval metadata, authoritative lifecycle/hierarchy actions, schema invalidation, permissions, audit and legacy diagnostics. The existing Filament resource uses this foundation without implementing a new screen. Phase 19.2 adds global definitions/assignments, durable crosswalks, exact relational measurements, guarded Locale identity keys, Import membership expansion, diagnostics and transactional fan-out. Phase 19.3 implements assignment consumer authority, v2 drafts/export/projections/search, real facets and comparison base rows, explicit reconciliation, locked/gated contraction and guarded rollback; see [its contract](../architecture/schema-consumer-convergence.md) for validation status. Next: 19.4 CA-016 Categories List. No CA screen is complete.
 
 ## Phase 04 — Central Imports
 

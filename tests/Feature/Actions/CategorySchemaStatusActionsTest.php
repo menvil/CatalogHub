@@ -67,7 +67,7 @@ class CategorySchemaStatusActionsTest extends TestCase
             'schema_status' => CategorySchemaStatus::Reviewed,
             'schema_reviewed_revision' => 1,
         ]);
-        $attribute = AttributeDefinition::factory()->for($category, 'category')->create([
+        $attribute = AttributeDefinition::factory()->assignedTo($category)->create([
             'data_type' => AttributeDataType::Decimal,
         ]);
         AttributeOption::factory()->for($attribute, 'attribute')->create();

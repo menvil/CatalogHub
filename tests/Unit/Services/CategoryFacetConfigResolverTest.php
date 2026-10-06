@@ -43,14 +43,15 @@ class CategoryFacetConfigResolverTest extends TestCase
 
     public function test_includes_active_options_and_attribute_metadata(): void
     {
-        $attribute = AttributeDefinition::factory()->create([
+        $category = CentralCategory::factory()->create();
+        $attribute = AttributeDefinition::factory()->assignedTo($category)->create([
             'code' => 'panel_type',
             'name' => 'Panel type',
             'data_type' => AttributeDataType::Enum,
         ]);
         $facet = FacetDefinition::factory()->create([
-            'category_id' => $attribute->central_category_id,
-            'attribute_definition_id' => $attribute->id,
+            'category_id' => $category->id,
+            'category_attribute_assignment_id' => $attribute->assignments()->sole()->id,
             'code' => 'panel_type',
             'label_override' => 'Display technology',
             'facet_type' => FacetType::Checkbox,
@@ -68,7 +69,7 @@ class CategoryFacetConfigResolverTest extends TestCase
         ]);
 
         $resolved = app(CategoryFacetConfigResolver::class)
-            ->resolve($attribute->category)
+            ->resolve($category)
             ->sole();
 
         $this->assertSame('Display technology', $resolved->label);

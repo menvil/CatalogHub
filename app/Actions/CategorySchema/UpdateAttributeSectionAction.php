@@ -26,6 +26,7 @@ final class UpdateAttributeSectionAction
         $section = AttributeSection::query()->findOrFail($section->id);
 
         $validated = Validator::make($data, [
+            'parent_id' => ['prohibited'],
             'name' => ['required', 'string', 'max:255'],
             'code' => [
                 'required',

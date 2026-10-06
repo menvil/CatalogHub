@@ -9,16 +9,20 @@ use App\Enums\CentralBrandStatus;
 use App\Enums\CentralProductStatus;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeSection;
+use App\Models\CentralCatalog\CategoryAttributeAssignment;
+use App\Models\CentralCatalog\CategoryComparisonAttribute;
 use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
+use App\Models\FacetDefinition;
+use App\Models\MeasurementDimension;
+use App\Models\MeasurementUnit;
 use App\Models\MediaAsset;
 use App\Models\MediaAssignment;
 use App\Models\Site;
 use App\Models\SiteProduct;
 use App\Models\SiteProductProjection;
-use App\Services\AttributeGlobalization\LegacyAttributeBackfill;
 use App\Support\Normalization\BrandInputNormalizer;
 use Database\Seeders\ImperialMeasurementUnitsSeeder;
 use Database\Seeders\MeasurementDimensionsSeeder;
@@ -41,7 +45,6 @@ class PublicDemoSeeder extends Seeder
         $categories = CentralCategory::query()->whereIn('slug', ['monitors', 'keyboards', 'mice'])->get()->keyBy('slug');
         $brands = $this->seedBrands();
         $attributes = $this->seedSchemas($categories->all());
-        app(LegacyAttributeBackfill::class)->run();
         $products = $this->seedProducts($categories->all(), $brands, $attributes);
         $this->seedMedia($products['aurora-27-pro']);
 
@@ -159,23 +162,21 @@ class PublicDemoSeeder extends Seeder
 
             $attributePosition = 0;
             foreach ($definition['attributes'] as $code => $attribute) {
-                $attributes[$categorySlug.'.'.$code] = AttributeDefinition::query()->updateOrCreate(
-                    ['central_category_id' => $category->id, 'code' => $code],
-                    [
-                        'attribute_section_id' => $section->id,
-                        'name' => $attribute['name'],
-                        'data_type' => AttributeDataType::Integer,
-                        'dimension' => $attribute['dimension'],
-                        'canonical_unit' => $attribute['unit'],
-                        'position' => $attributePosition++,
-                        'is_required' => true,
-                        'is_filterable' => true,
-                        'is_sortable' => true,
-                        'is_comparable' => true,
-                        'is_visible' => true,
-                        'is_searchable' => true,
-                    ],
-                );
+                // This fixture explicitly declares polling_rate to be one shared meaning.
+                // Production reconciliation never derives that decision from matching codes.
+                $unit = MeasurementUnit::query()->where('code', $attribute['unit'])->sole();
+                $dimension = MeasurementDimension::query()->where('code', $attribute['dimension'])->sole();
+                $global = AttributeDefinition::query()->updateOrCreate(['code' => $code], ['name' => $attribute['name'], 'data_type' => AttributeDataType::Integer,
+                    'measurement_dimension_id' => $dimension->id, 'canonical_measurement_unit_id' => $unit->id]);
+                $attributes[$categorySlug.'.'.$code] = $global;
+                $assignment = CategoryAttributeAssignment::query()->updateOrCreate(
+                    ['central_category_id' => $category->id, 'attribute_definition_id' => $global->id],
+                    ['attribute_section_id' => $section->id, 'position' => $attributePosition++, 'is_required' => true, 'is_visible' => true, 'is_searchable' => true, 'is_sortable' => true]);
+                FacetDefinition::query()->updateOrCreate(['category_id' => $category->id, 'code' => $code],
+                    ['category_attribute_assignment_id' => $assignment->id, 'source_type' => 'attribute', 'facet_type' => 'range', 'position' => $assignment->position,
+                        'is_active' => true, 'is_filterable' => true, 'is_visible' => true, 'is_collapsible' => true, 'default_collapsed' => false]);
+                CategoryComparisonAttribute::query()->updateOrCreate(['central_category_id' => $category->id, 'category_attribute_assignment_id' => $assignment->id],
+                    ['position' => $assignment->position, 'is_visible' => true]);
             }
         }
 
@@ -231,9 +232,9 @@ class PublicDemoSeeder extends Seeder
                         'raw_value' => (string) $value,
                         'value_type' => 'integer',
                         'value_number' => $value,
-                        'source_unit' => $attribute->canonical_unit,
+                        'source_unit' => $attribute->canonicalMeasurementUnit?->code,
                         'canonical_value' => $value,
-                        'canonical_unit' => $attribute->canonical_unit,
+                        'canonical_unit' => $attribute->canonicalMeasurementUnit?->code,
                         'confidence' => 1,
                         'source_type' => 'demo_seed',
                     ],

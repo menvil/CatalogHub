@@ -22,7 +22,7 @@ final class SaveAttributeOptionTranslationRequest extends SaveTranslationRequest
         $locale = $this->route('locale');
 
         return $option instanceof AttributeOption && $locale instanceof Locale
-            ? $option->translations()->where('locale', $locale->code)->first()
+            ? $option->translations()->where('locale_id', $locale->id)->first()
             : null;
     }
 }

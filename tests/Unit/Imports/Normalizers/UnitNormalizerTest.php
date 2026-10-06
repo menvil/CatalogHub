@@ -4,6 +4,8 @@ namespace Tests\Unit\Imports\Normalizers;
 
 use App\Enums\AttributeDataType;
 use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\MeasurementDimension;
+use App\Models\MeasurementUnit;
 use App\Services\Imports\Normalizers\UnitNormalizer;
 use Database\Seeders\ImperialMeasurementUnitsSeeder;
 use Database\Seeders\MeasurementDimensionsSeeder;
@@ -62,8 +64,8 @@ class UnitNormalizerTest extends TestCase
         $definition = new AttributeDefinition([
             'name' => 'Temperature',
             'data_type' => AttributeDataType::Integer,
-            'dimension' => 'temperature',
-            'canonical_unit' => 'celsius',
+            'measurement_dimension_id' => MeasurementDimension::query()->where('code', 'temperature')->sole()->id,
+            'canonical_measurement_unit_id' => MeasurementUnit::query()->where('code', 'celsius')->sole()->id,
         ]);
 
         $nearInteger = app(UnitNormalizer::class)->normalize($definition, '32 fahrenheit');
@@ -101,8 +103,8 @@ class UnitNormalizerTest extends TestCase
         return new AttributeDefinition([
             'name' => 'Measured value',
             'data_type' => AttributeDataType::Decimal,
-            'dimension' => $dimension,
-            'canonical_unit' => $canonicalUnit,
+            'measurement_dimension_id' => MeasurementDimension::query()->where('code', $dimension)->sole()->id,
+            'canonical_measurement_unit_id' => MeasurementUnit::query()->where('code', $canonicalUnit)->sole()->id,
         ]);
     }
 }

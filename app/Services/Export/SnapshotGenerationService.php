@@ -4,6 +4,8 @@ namespace App\Services\Export;
 
 use App\Models\CatalogSnapshot;
 use App\Models\User;
+use App\Services\AttributeGlobalization\AttributeIdentityLock;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 use Throwable;
@@ -54,7 +56,7 @@ final class SnapshotGenerationService
             'status' => 'pending',
             'snapshot_type' => $snapshotType,
             'storage_disk' => 'local',
-            'metadata_json' => ['included_sections' => $sections],
+            'metadata_json' => ['included_sections' => $sections, ...(array_intersect($sections, ['attributes', 'attribute_values', 'translations', 'site_config']) !== [] ? ['attribute_identity_version' => 2] : [])],
             'created_by_user_id' => $admin->getKey(),
         ]);
         $snapshot->markGenerating();
@@ -67,9 +69,12 @@ final class SnapshotGenerationService
         ]);
 
         try {
-            foreach ($sections as $section) {
-                $this->exporter($section)->export($snapshot);
-            }
+            DB::transaction(function () use ($sections, $snapshot): void {
+                app(AttributeIdentityLock::class)->acquireConsumerRead();
+                foreach ($sections as $section) {
+                    $this->exporter($section)->export($snapshot);
+                }
+            });
 
             $completed = $snapshot->fresh()->markCompleted();
             Log::info('Catalog snapshot generation completed.', [

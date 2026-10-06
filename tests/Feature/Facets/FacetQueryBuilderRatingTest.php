@@ -4,6 +4,7 @@ namespace Tests\Feature\Facets;
 
 use App\Data\Facets\FacetFilterSet;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Models\FacetDefinition;
 use App\Models\Site;
 use App\Models\SiteSearchDocument;
 use App\Services\Facets\FacetQueryBuilder;
@@ -61,11 +62,12 @@ class FacetQueryBuilderRatingTest extends TestCase
     {
         $site = Site::factory()->create();
         $category = CentralCategory::factory()->create();
+        FacetDefinition::factory()->range()->create(['category_id' => $category->id, 'code' => 'rating']);
 
         foreach ([4.7, 3.2] as $rating) {
             SiteSearchDocument::factory()->create([
                 'site_id' => $site->id,
-                'filter_values_json' => ['category_id' => $category->id],
+                'filter_values_json' => ['category_id' => $category->id, 'rating' => $rating],
                 'sort_values_json' => ['rating' => $rating],
             ]);
         }

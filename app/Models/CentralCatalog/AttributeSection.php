@@ -83,14 +83,6 @@ final class AttributeSection extends Model
         return $this->hasMany(self::class, 'parent_id');
     }
 
-    /**
-     * @return HasMany<AttributeDefinition, $this>
-     */
-    public function attributes(): HasMany
-    {
-        return $this->hasMany(AttributeDefinition::class, 'attribute_section_id');
-    }
-
     /** @return HasMany<CategoryAttributeAssignment, $this> */
     public function assignments(): HasMany
     {

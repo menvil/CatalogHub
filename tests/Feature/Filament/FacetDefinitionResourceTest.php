@@ -34,13 +34,19 @@ class FacetDefinitionResourceTest extends TestCase
         $this->assertTrue(class_exists(EditFacetDefinition::class));
     }
 
-    public function test_catalog_editor_can_view_facet_admin_screen(): void
+    public function test_schema_actor_can_view_facet_admin_screen(): void
     {
-        $user = User::factory()->create(['role' => UserRole::CatalogEditor]);
+        $user = User::factory()->centralAdmin()->create();
 
         $this->actingAs($user)
             ->get(FacetDefinitionResource::getUrl())
             ->assertOk();
+    }
+
+    public function test_category_only_editor_cannot_view_facet_admin_screen(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => UserRole::CatalogEditor]))
+            ->get(FacetDefinitionResource::getUrl())->assertForbidden();
     }
 
     public function test_site_admin_cannot_view_facet_admin_screen(): void
@@ -52,11 +58,11 @@ class FacetDefinitionResourceTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_catalog_editor_can_create_facet_definition(): void
+    public function test_schema_actor_can_create_facet_definition(): void
     {
         $category = CentralCategory::factory()->create();
 
-        Livewire::actingAs(User::factory()->create(['role' => UserRole::CatalogEditor]))
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
             ->test(CreateFacetDefinition::class)
             ->fillForm([
                 'category_id' => $category->id,
@@ -81,7 +87,7 @@ class FacetDefinitionResourceTest extends TestCase
 
     public function test_table_groups_facets_by_category_without_global_reordering(): void
     {
-        $component = Livewire::actingAs(User::factory()->create(['role' => UserRole::CatalogEditor]))
+        $component = Livewire::actingAs(User::factory()->centralAdmin()->create())
             ->test(ListFacetDefinitions::class);
         $instance = $component->instance();
 
@@ -100,7 +106,7 @@ class FacetDefinitionResourceTest extends TestCase
         $category = CentralCategory::factory()->create();
         FacetDefinition::factory()->for($category, 'category')->create(['code' => 'brand']);
 
-        Livewire::actingAs(User::factory()->create(['role' => UserRole::CatalogEditor]))
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
             ->test(CreateFacetDefinition::class)
             ->fillForm([
                 'category_id' => $category->id,
@@ -121,7 +127,7 @@ class FacetDefinitionResourceTest extends TestCase
         $secondCategory = CentralCategory::factory()->create();
         $facet = FacetDefinition::factory()->for($firstCategory, 'category')->create(['code' => 'brand']);
 
-        Livewire::actingAs(User::factory()->create(['role' => UserRole::CatalogEditor]))
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
             ->test(CreateFacetDefinition::class)
             ->fillForm([
                 'category_id' => $secondCategory->id,
@@ -133,7 +139,7 @@ class FacetDefinitionResourceTest extends TestCase
             ->call('create')
             ->assertHasNoFormErrors();
 
-        Livewire::actingAs(User::factory()->create(['role' => UserRole::CatalogEditor]))
+        Livewire::actingAs(User::factory()->centralAdmin()->create())
             ->test(EditFacetDefinition::class, ['record' => $facet->getRouteKey()])
             ->call('save')
             ->assertHasNoFormErrors();

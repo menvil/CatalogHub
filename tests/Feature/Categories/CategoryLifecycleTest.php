@@ -58,8 +58,8 @@ final class CategoryLifecycleTest extends TestCase
         $category = CentralCategory::factory()->create(['schema_status' => CategorySchemaStatus::Approved, 'schema_reviewed_revision' => 1, 'schema_approved_revision' => 1]);
         $child = CentralCategory::factory()->create(['parent_id' => $category->id]);
         $section = AttributeSection::factory()->for($category, 'category')->create();
-        $nested = AttributeSection::factory()->for($category, 'category')->for($section, 'parent')->create();
-        $definition = AttributeDefinition::factory()->for($category, 'category')->for($section, 'section')->create(['data_type' => 'enum']);
+        $ungroupedSection = AttributeSection::factory()->for($category, 'category')->create();
+        $definition = AttributeDefinition::factory()->assignedTo($category)->state(['attribute_section_id' => $section->id])->create(['data_type' => 'enum']);
         $option = AttributeOption::factory()->for($definition, 'attribute')->create();
         $product = CentralProduct::factory()->create(['central_category_id' => $category->id]);
         $value = CentralProductAttributeValue::factory()->create(['central_product_id' => $product->id, 'attribute_definition_id' => $definition->id]);
@@ -71,7 +71,7 @@ final class CategoryLifecycleTest extends TestCase
         self::assertSame($category->id, $product->fresh()->central_category_id);
         self::assertSame($category->id, $selection->fresh()->central_category_id);
         self::assertSame($category->id, $child->fresh()->parent_id);
-        foreach ([$section, $nested, $definition, $option, $value, $translation, $sectionTranslation] as $row) {
+        foreach ([$section, $ungroupedSection, $definition, $option, $value, $translation, $sectionTranslation] as $row) {
             self::assertNotNull($row->fresh());
         }
         self::assertSame(CategorySchemaStatus::Approved, $category->fresh()->schema_status);

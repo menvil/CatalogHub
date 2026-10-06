@@ -2,10 +2,11 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\Permission;
 use App\Filament\Resources\AttributeMappingResource\Pages;
-use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\Imports\AttributeMapping;
-use App\Models\User;
+use App\Services\Categories\CategoryAccess;
 use App\Services\Imports\AttributeMappingService;
 use BackedEnum;
 use Filament\Actions\EditAction;
@@ -49,7 +50,7 @@ final class AttributeMappingResource extends Resource
                 ->searchable()
                 ->preload()
                 ->live()
-                ->afterStateUpdated(fn (Set $set): mixed => $set('attribute_definition_id', null))
+                ->afterStateUpdated(fn (Set $set): mixed => $set('category_attribute_assignment_id', null))
                 ->required(),
             TextInput::make('raw_key')
                 ->required()
@@ -68,16 +69,15 @@ final class AttributeMappingResource extends Resource
                         ->where('category_id', $get('category_id')),
                 ),
             TextInput::make('normalized_raw_key')->required()->maxLength(255),
-            Select::make('attribute_definition_id')
+            Select::make('category_attribute_assignment_id')
                 ->label('Canonical attribute')
-                ->options(fn (Get $get): array => AttributeDefinition::query()
+                ->options(fn (Get $get): array => CategoryAttributeAssignment::query()
                     ->where('central_category_id', $get('category_id'))
-                    ->orderBy('name')
-                    ->pluck('name', 'id')
+                    ->with('definition')->ordered()->get()->mapWithKeys(fn ($a) => [$a->id => $a->definition->name])
                     ->all())
                 ->searchable()
                 ->required(fn (Get $get): bool => $get('status') === 'reviewed')
-                ->rule(fn (Get $get) => Rule::exists('attribute_definitions', 'id')
+                ->rule(fn (Get $get) => Rule::exists('category_attribute_assignments', 'id')
                     ->where('central_category_id', $get('category_id'))),
             TextInput::make('confidence')
                 ->numeric()
@@ -110,7 +110,7 @@ final class AttributeMappingResource extends Resource
                 TextColumn::make('category.name')->label('Category')->searchable()->sortable(),
                 TextColumn::make('raw_key')->searchable(),
                 TextColumn::make('normalized_raw_key')->searchable(),
-                TextColumn::make('attributeDefinition.name')->label('Canonical attribute')->placeholder('Unmapped'),
+                TextColumn::make('assignment.definition.name')->label('Canonical attribute')->placeholder('Unmapped'),
                 TextColumn::make('confidence')->numeric(decimalPlaces: 4),
                 TextColumn::make('status')->badge()->sortable(),
                 TextColumn::make('usage_count')
@@ -139,10 +139,7 @@ final class AttributeMappingResource extends Resource
 
     public static function canAccess(): bool
     {
-        $user = auth()->user();
-
-        return $user instanceof User
-            && $user->can('central.view');
+        return app(CategoryAccess::class)->allows(Permission::CatalogSchemaManage);
     }
 
     public static function getPages(): array

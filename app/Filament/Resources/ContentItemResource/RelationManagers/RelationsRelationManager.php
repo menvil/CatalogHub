@@ -8,7 +8,6 @@ use App\Models\CentralCatalog\CentralBrand;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\ContentItem;
-use App\Services\AttributeGlobalization\LegacyAttributeCompatibility;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -102,13 +101,13 @@ final class RelationsRelationManager extends RelationManager
     /** @return array<int|string, string> */
     private function attributeOptions(): array
     {
-        return app(LegacyAttributeCompatibility::class)->contentReferenceDefinitions()
-            ->with('category')
+        return AttributeDefinition::query()
+
             ->orderBy('central_category_id')
             ->orderBy('position')
             ->get()
             ->mapWithKeys(fn (AttributeDefinition $attribute): array => [
-                $attribute->getKey() => app(LegacyAttributeCompatibility::class)->referenceLabel($attribute),
+                $attribute->getKey() => $attribute->name.' ('.$attribute->code.')',
             ])
             ->all();
     }

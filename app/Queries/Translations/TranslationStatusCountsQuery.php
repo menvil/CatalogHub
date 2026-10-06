@@ -3,6 +3,8 @@
 namespace App\Queries\Translations;
 
 use App\Contracts\Persistence\RawSqlPersistenceBoundary;
+use App\Models\Locale;
+use App\Models\Translations\BrandTranslation;
 use Illuminate\Database\Eloquent\Model;
 
 final class TranslationStatusCountsQuery implements RawSqlPersistenceBoundary
@@ -15,7 +17,9 @@ final class TranslationStatusCountsQuery implements RawSqlPersistenceBoundary
     {
         $counts = $translationModel::query()
             ->selectRaw('status, COUNT(*) as aggregate')
-            ->where('locale', $locale)
+            ->when($translationModel === BrandTranslation::class,
+                fn ($query) => $query->where('locale', $locale),
+                fn ($query) => $query->where('locale_id', Locale::query()->where('code', $locale)->select('id')))
             ->groupBy('status')
             ->pluck('aggregate', 'status');
         $result = [];

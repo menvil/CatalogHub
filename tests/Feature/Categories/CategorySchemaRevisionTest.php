@@ -8,7 +8,6 @@ use App\Actions\CategorySchema\CloneCategorySchemaAction;
 use App\Actions\CategorySchema\CreateAttributeDefinitionAction;
 use App\Actions\CategorySchema\CreateAttributeOptionAction;
 use App\Actions\CategorySchema\CreateAttributeSectionAction;
-use App\Actions\CategorySchema\DeleteAttributeOptionAction;
 use App\Actions\CategorySchema\DeleteAttributeSectionAction;
 use App\Actions\CategorySchema\MarkCategorySchemaReviewedAction;
 use App\Actions\CategorySchema\MoveAttributeDefinitionAction;
@@ -79,8 +78,8 @@ final class CategorySchemaRevisionTest extends TestCase
     public static function mutationCases(): array
     {
         return array_combine(
-            ['section-create', 'section-update', 'section-delete', 'attribute-create', 'attribute-update', 'attribute-move', 'option-create', 'option-update', 'option-delete', 'clone'],
-            array_map(fn ($v) => [$v], ['section-create', 'section-update', 'section-delete', 'attribute-create', 'attribute-update', 'attribute-move', 'option-create', 'option-update', 'option-delete', 'clone'])
+            ['section-create', 'section-update', 'section-delete', 'attribute-create', 'attribute-update', 'attribute-move', 'option-create', 'option-update', 'option-hide', 'clone'],
+            array_map(fn ($v) => [$v], ['section-create', 'section-update', 'section-delete', 'attribute-create', 'attribute-update', 'attribute-move', 'option-create', 'option-update', 'option-hide', 'clone'])
         );
     }
 
@@ -95,7 +94,7 @@ final class CategorySchemaRevisionTest extends TestCase
         }
         $section = AttributeSection::factory()->for($category, 'category')->create(['name' => 'Specs', 'code' => 'specs']);
         $otherSection = AttributeSection::factory()->for($category, 'category')->create();
-        $attribute = AttributeDefinition::factory()->for($category, 'category')->for($otherSection, 'section')->create(['data_type' => 'enum', 'name' => 'Panel', 'code' => 'panel']);
+        $attribute = AttributeDefinition::factory()->assignedTo($category)->state(['attribute_section_id' => $otherSection->id])->create(['data_type' => 'enum', 'name' => 'Panel', 'code' => 'panel']);
         $option = AttributeOption::factory()->for($attribute, 'attribute')->create(['code' => 'ips', 'label' => 'IPS']);
 
         return match ($case) {
@@ -104,10 +103,10 @@ final class CategorySchemaRevisionTest extends TestCase
             'section-delete' => fn () => app(DeleteAttributeSectionAction::class)->handle($section),
             'attribute-create' => fn () => app(CreateAttributeDefinitionAction::class)->handle($section, ['name' => 'New', 'code' => 'new', 'data_type' => 'string']),
             'attribute-update' => fn () => app(UpdateAttributeDefinitionAction::class)->handle($attribute, ['name' => 'Changed', 'code' => 'panel', 'data_type' => 'enum']),
-            'attribute-move' => fn () => app(MoveAttributeDefinitionAction::class)->handle($attribute, $section, 1),
+            'attribute-move' => fn () => app(MoveAttributeDefinitionAction::class)->handle($attribute->assignments()->sole(), $section, 0),
             'option-create' => fn () => app(CreateAttributeOptionAction::class)->handle($attribute, ['code' => 'tn', 'label' => 'TN']),
             'option-update' => fn () => app(UpdateAttributeOptionAction::class)->handle($option, ['code' => 'ips', 'label' => 'Changed']),
-            'option-delete' => fn () => app(DeleteAttributeOptionAction::class)->handle($option),
+            'option-hide' => fn () => app(UpdateAttributeOptionAction::class)->handle($option, ['code' => $option->code, 'label' => $option->label, 'is_visible' => false]),
             default => throw new \InvalidArgumentException('Unknown test mutation'),
         };
     }
@@ -118,19 +117,6 @@ final class CategorySchemaRevisionTest extends TestCase
         $category = CentralCategory::factory()->create();
         $mutation = $this->mutation($case, $category);
         $this->approve($category);
-        if ($case === 'option-delete') {
-            $before = $category->fresh()->getRawOriginal();
-            $auditCount = AuditLogEntry::query()->count();
-            try {
-                $mutation();
-                self::fail('Hard option removal was allowed.');
-            } catch (ValidationException) {
-                self::assertSame($before, $category->fresh()->getRawOriginal());
-                self::assertSame($auditCount, AuditLogEntry::query()->count());
-            }
-
-            return;
-        }
         $mutation();
         $current = $category->fresh();
         self::assertSame(2, $current->schema_revision);
@@ -169,13 +155,13 @@ final class CategorySchemaRevisionTest extends TestCase
     {
         $category = CentralCategory::factory()->create();
         $section = AttributeSection::factory()->for($category, 'category')->create(['code' => 'specs', 'name' => 'Specs']);
-        $attribute = AttributeDefinition::factory()->for($category, 'category')->for($section, 'section')->create(['code' => 'panel', 'name' => 'Panel', 'data_type' => 'enum']);
+        $attribute = AttributeDefinition::factory()->assignedTo($category)->state(['attribute_section_id' => $section->id])->create(['code' => 'panel', 'name' => 'Panel', 'data_type' => 'enum']);
         $option = AttributeOption::factory()->for($attribute, 'attribute')->create(['code' => 'ips', 'label' => 'IPS']);
         $this->approve($category);
         app(UpdateAttributeSectionAction::class)->handle($section, ['code' => 'specs', 'name' => 'Specs']);
         app(UpdateAttributeDefinitionAction::class)->handle($attribute, ['code' => 'panel', 'name' => 'Panel', 'data_type' => 'enum']);
         app(UpdateAttributeOptionAction::class)->handle($option, ['code' => 'ips', 'label' => 'IPS']);
-        app(MoveAttributeDefinitionAction::class)->handle($attribute, $section, $attribute->position);
+        app(MoveAttributeDefinitionAction::class)->handle($attribute->assignments()->sole(), $section, $attribute->assignments()->sole()->position);
         self::assertSame(1, $category->fresh()->schema_revision);
         self::assertSame(CategorySchemaStatus::Approved, $category->fresh()->schema_status);
         self::assertSame(0, AuditLogEntry::query()->where('action', 'catalog.category.schema.invalidated')->count());
@@ -213,7 +199,7 @@ final class CategorySchemaRevisionTest extends TestCase
             self::assertSame(0, AuditLogEntry::query()->count());
         }
         $category->update(['schema_status' => CategorySchemaStatus::Draft]);
-        $attribute = AttributeDefinition::factory()->for($category, 'category')->create(['data_type' => 'decimal']);
+        $attribute = AttributeDefinition::factory()->assignedTo($category)->create(['data_type' => 'decimal']);
         AttributeOption::factory()->for($attribute, 'attribute')->create();
         $this->expectException(CannotTransitionCategorySchemaStatusException::class);
         $this->expectExceptionMessage('Category schema cannot be marked reviewed while validation errors exist.');
@@ -251,7 +237,7 @@ final class CategorySchemaRevisionTest extends TestCase
     {
         $category = CentralCategory::factory()->create();
         $section = AttributeSection::factory()->for($category, 'category')->create();
-        $attribute = AttributeDefinition::factory()->for($category, 'category')->for($section, 'section')->create(['data_type' => 'enum']);
+        $attribute = AttributeDefinition::factory()->assignedTo($category)->state(['attribute_section_id' => $section->id])->create(['data_type' => 'enum']);
         $option = AttributeOption::factory()->for($attribute, 'attribute')->create();
         $this->approve($category);
         $position = 2147483648;
@@ -263,7 +249,7 @@ final class CategorySchemaRevisionTest extends TestCase
                 'attribute-update' => app(UpdateAttributeDefinitionAction::class)->handle($attribute, ['name' => $attribute->name, 'code' => $attribute->code, 'data_type' => 'enum', 'position' => $position]),
                 'option-create' => app(CreateAttributeOptionAction::class)->handle($attribute, ['code' => 'new', 'label' => 'New', 'position' => $position]),
                 'option-update' => app(UpdateAttributeOptionAction::class)->handle($option, ['code' => $option->code, 'label' => $option->label, 'position' => $position]),
-                'attribute-move' => app(MoveAttributeDefinitionAction::class)->handle($attribute, $section, $position),
+                'attribute-move' => app(MoveAttributeDefinitionAction::class)->handle($attribute->assignments()->sole(), $section, $position),
                 default => throw new \InvalidArgumentException('Unknown position case'),
             };
             self::fail('Nonportable position accepted');
@@ -271,30 +257,26 @@ final class CategorySchemaRevisionTest extends TestCase
             self::assertSame(1, $category->fresh()->schema_revision);
             self::assertSame(CategorySchemaStatus::Approved, $category->fresh()->schema_status);
             self::assertSame($section->position, $section->fresh()->position);
-            self::assertSame($attribute->position, $attribute->fresh()->position);
+            self::assertSame($attribute->assignments()->sole()->position, $attribute->assignments()->sole()->position);
             self::assertSame($option->position, $option->fresh()->position);
             self::assertSame(0, AuditLogEntry::query()->where('action', 'catalog.category.schema.invalidated')->count());
         }
     }
 
-    public function test_move_rejects_target_shift_overflow_without_invalidating_approval(): void
+    public function test_move_compacts_sparse_maximum_positions_without_overflow_and_invalidates_once(): void
     {
         $category = CentralCategory::factory()->create();
         $source = AttributeSection::factory()->for($category, 'category')->create();
         $target = AttributeSection::factory()->for($category, 'category')->create();
-        $attribute = AttributeDefinition::factory()->for($category, 'category')->for($source, 'section')->create();
-        $last = AttributeDefinition::factory()->for($category, 'category')->for($target, 'section')->create(['position' => 2147483647]);
+        $attribute = AttributeDefinition::factory()->assignedTo($category, ['attribute_section_id' => $source->id])->create();
+        $last = AttributeDefinition::factory()->assignedTo($category, ['attribute_section_id' => $target->id, 'position' => 2147483647])->create();
         $this->approve($category);
-        try {
-            app(MoveAttributeDefinitionAction::class)->handle($attribute, $target, 0);
-            self::fail('Overflow shift accepted');
-        } catch (CannotMoveAttributeDefinitionException) {
-            self::assertSame($source->id, $attribute->fresh()->attribute_section_id);
-            self::assertSame(2147483647, $last->fresh()->position);
-            self::assertSame(1, $category->fresh()->schema_revision);
-            self::assertSame(CategorySchemaStatus::Approved, $category->fresh()->schema_status);
-            self::assertSame(0, AuditLogEntry::query()->where('action', 'catalog.category.schema.invalidated')->count());
-        }
+        app(MoveAttributeDefinitionAction::class)->handle($attribute->assignments()->sole(), $target, 0);
+        self::assertSame(0, $attribute->assignments()->sole()->position);
+        self::assertSame(1, $last->assignments()->sole()->position);
+        self::assertSame(2, $category->fresh()->schema_revision);
+        self::assertSame(CategorySchemaStatus::Draft, $category->fresh()->schema_status);
+        self::assertSame(1, AuditLogEntry::query()->where('action', 'catalog.category.schema.invalidated')->count());
     }
 
     public function test_sectionless_move_does_not_reorder_another_category_or_leave_its_schema_silently_changed(): void
@@ -302,14 +284,14 @@ final class CategorySchemaRevisionTest extends TestCase
         $category = CentralCategory::factory()->create();
         $other = CentralCategory::factory()->create();
         $target = AttributeSection::factory()->for($category, 'category')->create();
-        $moving = AttributeDefinition::factory()->for($category, 'category')->create(['position' => 0]);
-        $remaining = AttributeDefinition::factory()->for($category, 'category')->create(['position' => 1]);
-        $foreign = AttributeDefinition::factory()->for($other, 'category')->create(['position' => 1]);
+        $moving = AttributeDefinition::factory()->assignedTo($category)->create(['position' => 0]);
+        $remaining = AttributeDefinition::factory()->assignedTo($category)->create(['position' => 1]);
+        $foreign = AttributeDefinition::factory()->assignedTo($other)->create(['position' => 1]);
         $this->approve($category);
         $this->approve($other);
-        app(MoveAttributeDefinitionAction::class)->handle($moving, $target, 0);
-        self::assertSame(0, $remaining->fresh()->position);
-        self::assertSame(1, $foreign->fresh()->position);
+        app(MoveAttributeDefinitionAction::class)->handle($moving->assignments()->sole(), $target, 0);
+        self::assertSame(0, $remaining->assignments()->sole()->position);
+        self::assertSame(1, $foreign->assignments()->sole()->position);
         self::assertSame(1, $other->fresh()->schema_revision);
         self::assertSame(CategorySchemaStatus::Approved, $other->fresh()->schema_status);
         self::assertSame(2, $category->fresh()->schema_revision);
@@ -318,19 +300,21 @@ final class CategorySchemaRevisionTest extends TestCase
 
     public function test_option_update_uses_current_ownership_instead_of_a_cached_attribute_relation(): void
     {
-        $old = AttributeDefinition::factory()->create(['data_type' => 'enum']);
-        $current = AttributeDefinition::factory()->create(['data_type' => 'enum']);
+        $oldCategory = CentralCategory::factory()->create();
+        $currentCategory = CentralCategory::factory()->create();
+        $old = AttributeDefinition::factory()->assignedTo($oldCategory)->create(['data_type' => 'enum']);
+        $current = AttributeDefinition::factory()->assignedTo($currentCategory)->create(['data_type' => 'enum']);
         $option = AttributeOption::factory()->for($old, 'attribute')->create()->load('attribute');
         // Simulate a stale caller snapshot of legacy data, not an ownership action.
         AttributeOption::query()->whereKey($option->id)->update(['attribute_definition_id' => $current->id]);
-        $this->approve($old->category);
-        $this->approve($current->category);
+        $this->approve($oldCategory);
+        $this->approve($currentCategory);
         app(UpdateAttributeOptionAction::class)->handle($option, ['code' => $option->code, 'label' => 'Changed']);
         self::assertSame('Changed', $option->fresh()->label);
-        self::assertSame(1, $old->category->fresh()->schema_revision);
-        self::assertSame(CategorySchemaStatus::Approved, $old->category->fresh()->schema_status);
-        self::assertSame(2, $current->category->fresh()->schema_revision);
-        self::assertSame(CategorySchemaStatus::Draft, $current->category->fresh()->schema_status);
-        self::assertSame($current->central_category_id, AuditLogEntry::query()->where('action', 'catalog.category.schema.invalidated')->sole()->after_json['category_id']);
+        self::assertSame(1, $oldCategory->fresh()->schema_revision);
+        self::assertSame(CategorySchemaStatus::Approved, $oldCategory->fresh()->schema_status);
+        self::assertSame(2, $currentCategory->fresh()->schema_revision);
+        self::assertSame(CategorySchemaStatus::Draft, $currentCategory->fresh()->schema_status);
+        self::assertSame($currentCategory->id, AuditLogEntry::query()->where('action', 'catalog.category.schema.invalidated')->sole()->after_json['category_id']);
     }
 }

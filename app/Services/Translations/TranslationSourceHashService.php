@@ -42,6 +42,8 @@ final class TranslationSourceHashService
             'code' => $attribute->code,
             'name' => $attribute->name,
             'data_type' => $attribute->data_type->value,
+            'measurement_dimension_id' => $attribute->measurement_dimension_id,
+            'canonical_measurement_unit_id' => $attribute->canonical_measurement_unit_id,
         ]);
     }
 

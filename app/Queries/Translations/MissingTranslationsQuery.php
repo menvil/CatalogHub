@@ -30,6 +30,7 @@ final class MissingTranslationsQuery implements RawSqlPersistenceBoundary
         $items = [];
 
         $localeCodes = $locales->pluck('code')->all();
+        $localeIds = $locales->pluck('id')->all();
 
         foreach ($this->entityConfigs() as $config) {
             if ($entityType !== null && $entityType !== $config['type']) {
@@ -37,7 +38,7 @@ final class MissingTranslationsQuery implements RawSqlPersistenceBoundary
             }
 
             $query = $config['model']::query()
-                ->with(['translations' => fn ($translationQuery) => $translationQuery->whereIn('locale', $localeCodes)])
+                ->with(['translations' => fn ($translationQuery) => $translationQuery->whereIn($config['type'] === 'brand' ? 'locale' : 'locale_id', $config['type'] === 'brand' ? $localeCodes : $localeIds)])
                 ->orderBy($config['model']::query()->getModel()->getKeyName());
 
             if ($search !== null && $search !== '') {
@@ -47,10 +48,10 @@ final class MissingTranslationsQuery implements RawSqlPersistenceBoundary
             }
 
             foreach ($query->lazy() as $entity) {
-                $existingLocales = $entity->translations->pluck('locale');
+                $existingLocales = $entity->translations->pluck($config['type'] === 'brand' ? 'locale' : 'locale_id');
 
                 foreach ($locales as $activeLocale) {
-                    if ($existingLocales->contains($activeLocale->code)) {
+                    if ($existingLocales->contains($config['type'] === 'brand' ? $activeLocale->code : $activeLocale->id)) {
                         continue;
                     }
 

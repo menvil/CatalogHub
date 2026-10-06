@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Actions;
 
+use App\Actions\CategorySchema\CreateAttributeSectionAction;
 use App\Actions\CategorySchema\DeleteAttributeSectionAction;
 use App\Exceptions\CategorySchema\CannotDeleteAttributeSectionException;
 use App\Models\CentralCatalog\AttributeDefinition;
@@ -9,6 +10,7 @@ use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class DeleteAttributeSectionActionTest extends TestCase
@@ -34,8 +36,8 @@ class DeleteAttributeSectionActionTest extends TestCase
     {
         $section = AttributeSection::factory()->create();
         AttributeDefinition::factory()
-            ->for($section->category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($section->category)
+            ->state(['attribute_section_id' => $section->id])
             ->create();
 
         $this->expectException(CannotDeleteAttributeSectionException::class);
@@ -43,17 +45,11 @@ class DeleteAttributeSectionActionTest extends TestCase
         app(DeleteAttributeSectionAction::class)->handle($section);
     }
 
-    public function test_does_not_delete_section_with_child_sections(): void
+    public function test_nested_section_creation_is_rejected_before_deletion_is_needed(): void
     {
         $category = CentralCategory::factory()->create();
         $section = AttributeSection::factory()->for($category, 'category')->create();
-        AttributeSection::factory()
-            ->for($category, 'category')
-            ->for($section, 'parent')
-            ->create();
-
-        $this->expectException(CannotDeleteAttributeSectionException::class);
-
-        app(DeleteAttributeSectionAction::class)->handle($section);
+        $this->expectException(ValidationException::class);
+        app(CreateAttributeSectionAction::class)->handle($category, ['name' => 'Nested', 'code' => 'nested', 'parent_id' => $section->id]);
     }
 }

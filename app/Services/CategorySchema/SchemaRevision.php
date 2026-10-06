@@ -2,19 +2,18 @@
 
 namespace App\Services\CategorySchema;
 
+use App\Domains\Projections\ProjectionStaleDetector;
 use App\Enums\AuditAction;
 use App\Enums\AuditContext;
 use App\Enums\CategorySchemaStatus;
 use App\Enums\Permission;
 use App\Enums\SchemaMutationOrigin;
-use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
+use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\User;
 use App\Queries\Categories\CategorySchemaFingerprintQuery;
 use App\Services\AttributeGlobalization\AttributeIdentityLock;
-use App\Services\AttributeGlobalization\GlobalAttributeWriter;
-use App\Services\AttributeGlobalization\LegacyAttributeCompatibility;
 use App\Services\Audit\AuditRecorder;
 use App\Services\Categories\CategoryAccess;
 use App\Services\Categories\CategoryLock;
@@ -37,43 +36,37 @@ final readonly class SchemaRevision
         $actor = $this->access->authorize(Permission::CatalogSchemaManage, $actor);
 
         return DB::transaction(function () use ($categoryId, $origin, $originId, $mutation, $actor, $readCategoryIds): mixed {
-            app(AttributeIdentityLock::class)->acquire();
+            app(AttributeIdentityLock::class)->acquireTarget();
             $definitionId = match ($origin) {
                 SchemaMutationOrigin::AttributeUpdated, SchemaMutationOrigin::AttributeMoved => $originId,
                 SchemaMutationOrigin::OptionCreated => $originId,
                 SchemaMutationOrigin::OptionUpdated, SchemaMutationOrigin::OptionDeleted => AttributeOption::query()->findOrFail($originId)->attribute_definition_id,
                 default => null,
             };
-            $bridge = app(LegacyAttributeCompatibility::class);
-            $ids = $bridge->affectedCategoryIds($categoryId, $definitionId);
+            $ids = [$categoryId];
+            if ($definitionId !== null) {
+                $ids = array_values(array_unique([...$ids, ...CategoryAttributeAssignment::query()
+                    ->where('attribute_definition_id', $definitionId)->pluck('central_category_id')->all()]));
+                sort($ids, SORT_NUMERIC);
+            }
             $locked = $this->locks->acquire([...$ids, ...$readCategoryIds]);
-            $this->assertMutable($locked[$categoryId]);
-            $bridge->synchronizeCategory($categoryId);
+            foreach ($ids as $id) {
+                $this->assertMutable($locked[$id]);
+            }
             $before = [];
             foreach ($ids as $id) {
                 $before[$id] = $this->fingerprints->forCategory($id);
             }
-            $legacyBefore = $bridge->snapshotCategory($categoryId);
-            $canonicalBefore = $origin === SchemaMutationOrigin::AttributeUpdated && $definitionId !== null
-                ? app(GlobalAttributeWriter::class)->snapshot(AttributeDefinition::query()->findOrFail($definitionId), 0) : null;
             $result = $mutation();
-            $bridge->synchronizeCategory($categoryId, $legacyBefore);
-            $invalidatedCount = 0;
+            $changed = false;
             foreach ($ids as $id) {
                 if ($before[$id] !== $this->fingerprints->forCategory($id)) {
                     $this->invalidate($locked[$id], $origin, $result instanceof Model ? (int) $result->getKey() : $originId, $actor);
-                    $invalidatedCount++;
+                    $changed = true;
                 }
             }
-            if ($canonicalBefore !== null) {
-                $definition = AttributeDefinition::query()->findOrFail($definitionId);
-                $canonicalAfter = app(GlobalAttributeWriter::class)->snapshot($definition, 0);
-                $changed = array_keys(array_filter($canonicalAfter, fn ($value, $field) => $value !== $canonicalBefore[$field], ARRAY_FILTER_USE_BOTH));
-                if ($changed !== []) {
-                    $this->audit->record(AuditAction::CatalogAttributeUpdated, AuditContext::Central, $actor, $definition, null,
-                        [...$canonicalBefore, 'affected_category_count' => $invalidatedCount, 'changed_fields' => $changed],
-                        [...$canonicalAfter, 'affected_category_count' => $invalidatedCount, 'changed_fields' => $changed]);
-                }
+            if ($changed) {
+                app(AttributeIdentityLock::class)->recordTargetWrite();
             }
 
             return $result;
@@ -96,6 +89,7 @@ final readonly class SchemaRevision
             'schema_status' => CategorySchemaStatus::Draft,
             ...$this->clearAttribution(),
         ])->saveOrFail();
+        app(ProjectionStaleDetector::class)->markStaleForCategory($category);
         $this->audit->record(AuditAction::CatalogCategorySchemaInvalidated, AuditContext::Central, $actor, $category, null, $before, [
             ...$this->snapshot($category), 'reason' => $origin->value,
             'origin_type' => explode('.', $origin->value)[0], 'origin_id' => $originId,

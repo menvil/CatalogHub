@@ -35,8 +35,6 @@ use App\Models\MeasurementDimension;
 use App\Models\MeasurementUnit;
 use App\Models\User;
 use App\Queries\Attributes\AttributeGlobalizationDiagnosticsQuery;
-use App\Services\AttributeGlobalization\LegacyAttributeBackfill;
-use App\Services\AttributeGlobalization\LegacyAttributeCompatibility;
 use App\Services\Audit\AuditRecorder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
@@ -45,10 +43,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
+use Tests\Support\LegacyAttributeEvidence;
 use Tests\TestCase;
 
 final class GlobalAttributeFoundationTest extends TestCase
 {
+    use LegacyAttributeEvidence;
     use RefreshDatabase;
 
     private function createDefinition(): AttributeDefinition
@@ -67,7 +67,7 @@ final class GlobalAttributeFoundationTest extends TestCase
         $one = app(AssignAttributeToCategoryAction::class)->handle($a, $definition, ['attribute_section_id' => $section->id, 'position' => 7, 'is_required' => true, 'is_visible' => false, 'is_searchable' => true, 'is_sortable' => true], 1, $actor);
         $two = app(AssignAttributeToCategoryAction::class)->handle($b, $definition, [], 1, $actor);
         self::assertNull($definition->central_category_id);
-        self::assertSame('display_type', $definition->canonical_code);
+        self::assertSame('display_type', $definition->code);
         self::assertSame($section->id, $one->attribute_section_id);
         self::assertNull($two->attribute_section_id);
         self::assertFalse($two->is_required);
@@ -238,7 +238,7 @@ final class GlobalAttributeFoundationTest extends TestCase
         $unit = MeasurementUnit::factory()->for($dimension, 'dimension')->create();
         $definition = app(CreateGlobalAttributeDefinitionAction::class)->handle(['code' => 'length', 'name' => 'Length', 'data_type' => 'decimal', 'measurement_dimension_id' => $dimension->id, 'canonical_measurement_unit_id' => $unit->id], $actor);
         self::assertSame($dimension->id, $definition->measurement_dimension_id);
-        self::assertSame($unit->code, $definition->canonical_unit);
+        self::assertSame($unit->code, $definition->canonicalMeasurementUnit?->code);
         $this->expectException(QueryException::class);
         DB::transaction(fn () => $definition->forceFill(['data_type' => 'string'])->saveOrFail());
     }
@@ -258,30 +258,27 @@ final class GlobalAttributeFoundationTest extends TestCase
         }
     }
 
-    public function test_unrelated_unreferenced_code_edit_preserves_unresolved_legacy_measurement(): void
+    public function test_unresolved_legacy_measurement_evidence_remains_a_cutover_blocker(): void
     {
         $actor = User::factory()->centralAdmin()->create();
-        $definition = AttributeDefinition::factory()->create(['code' => 'legacy_size', 'data_type' => 'decimal', 'dimension' => 'unknown_dimension', 'canonical_unit' => 'unknown_unit']);
-        app(LegacyAttributeBackfill::class)->run();
-        $updated = app(UpdateGlobalAttributeDefinitionAction::class)->handle($definition, ['code' => 'approved_size'], $actor);
-        self::assertSame('unknown_dimension', $updated->dimension);
-        self::assertSame('unknown_unit', $updated->canonical_unit);
-        self::assertNull($updated->measurement_dimension_id);
-        self::assertNull($updated->canonical_measurement_unit_id);
+        $definition = AttributeDefinition::factory()->create(['code' => 'legacy_size', 'data_type' => 'decimal']);
+        $this->recordLegacyEvidence();
+        AttributeDefinitionCrosswalk::query()->whereKey($definition->id)->update(['measurement_status' => 'unknown_catalog_code']);
         $report = app(AttributeGlobalizationDiagnosticsQuery::class)->report($actor);
-        self::assertSame([['definition_id' => $definition->id, 'status' => 'unknown_catalog_code']], $report['measurement_mapping_failures']);
+        self::assertSame([$definition->id], $report['blockers']['measurement_mapping_failures']);
         self::assertFalse($report['cutover_ready']);
     }
 
     public function test_durable_legacy_inventory_count_survives_safe_membership_removal(): void
     {
         $actor = User::factory()->centralAdmin()->create();
-        $definition = AttributeDefinition::factory()->create(['code' => 'legacy_label']);
-        app(LegacyAttributeBackfill::class)->run();
+        $category = CentralCategory::factory()->create();
+        $definition = AttributeDefinition::factory()->assignedTo($category)->create(['code' => 'legacy_label']);
+        $this->recordLegacyEvidence();
         app(UnassignAttributeFromCategoryAction::class)->handle($definition->assignments()->sole(), 1, $actor);
         self::assertNull($definition->fresh()->central_category_id);
         $report = app(AttributeGlobalizationDiagnosticsQuery::class)->report($actor);
-        self::assertSame(1, $report['total_legacy_definitions']);
+        self::assertSame(1, $report['legacy_definition_count']);
         self::assertTrue($report['cutover_ready']);
         self::assertSame($definition->id, AttributeDefinitionCrosswalk::query()->sole()->legacy_definition_id);
     }
@@ -304,7 +301,6 @@ final class GlobalAttributeFoundationTest extends TestCase
     {
         $actor = User::factory()->centralAdmin()->create();
         AttributeDefinition::factory()->create(['code' => 'shared']);
-        AttributeDefinition::factory()->create(['code' => 'shared']);
         $this->expectException(ValidationException::class);
         app(CreateGlobalAttributeDefinitionAction::class)->handle(['code' => 'shared', 'name' => 'Shared', 'data_type' => 'string'], $actor);
     }
@@ -312,9 +308,10 @@ final class GlobalAttributeFoundationTest extends TestCase
     public function test_legacy_option_identity_cannot_change_or_disappear_under_existing_product_facts(): void
     {
         $actor = User::factory()->centralAdmin()->create();
-        $definition = AttributeDefinition::factory()->create(['data_type' => 'enum']);
+        $category = CentralCategory::factory()->create();
+        $definition = AttributeDefinition::factory()->assignedTo($category)->create(['data_type' => 'enum']);
         $option = AttributeOption::factory()->for($definition, 'attribute')->create(['code' => 'oled']);
-        $product = CentralProduct::factory()->for($definition->category, 'category')->create();
+        $product = CentralProduct::factory()->for($definition->assignments()->firstOrFail()->category, 'category')->create();
         $fact = CentralProductAttributeValue::factory()->create(['central_product_id' => $product->id, 'attribute_definition_id' => $definition->id, 'value_type' => 'enum', 'value_enum_code' => 'oled']);
         $before = $fact->fresh()->getRawOriginal();
         foreach (['rename', 'delete'] as $operation) {
@@ -349,29 +346,25 @@ final class GlobalAttributeFoundationTest extends TestCase
         $this->artisan('catalog:diagnose-attribute-globalization', ['--actor' => $actor->id])->assertSuccessful();
     }
 
-    public function test_existing_content_identity_label_supports_global_definition_without_a_legacy_category(): void
+    public function test_content_references_use_global_identity_without_category_ownership(): void
     {
-        $global = AttributeDefinition::factory()->global()->create(['code' => 'global_size', 'name' => 'Size']);
-        $legacy = AttributeDefinition::factory()->create(['name' => 'Legacy size']);
-        $bridge = app(LegacyAttributeCompatibility::class);
-        self::assertSame('Size [global_size]', $bridge->referenceLabel($global));
-        self::assertSame($legacy->category->name.' — Legacy size', $bridge->referenceLabel($legacy));
-        $this->actingAs(User::factory()->create(['role' => 'catalog_editor']));
-        self::assertSame([$legacy->id], $bridge->contentReferenceDefinitions()->pluck('id')->all());
-        $this->actingAs(User::factory()->centralAdmin()->create());
-        self::assertSame([$global->id, $legacy->id], $bridge->contentReferenceDefinitions()->orderBy('id')->pluck('id')->all());
+        $definition = AttributeDefinition::factory()->create(['code' => 'global_size']);
+        $relation = ContentRelation::factory()->create(['related_type' => 'attribute', 'related_id' => $definition->id]);
+        self::assertSame($definition->id, $relation->related_id);
+        self::assertArrayNotHasKey('central_category_id', $definition->getAttributes());
     }
 
     public function test_temporary_definition_editor_audits_canonical_change_and_invalidates_all_assignments(): void
     {
         $actor = User::factory()->centralAdmin()->create();
-        $definition = AttributeDefinition::factory()->create(['code' => 'size', 'data_type' => 'decimal']);
-        app(LegacyAttributeBackfill::class)->run();
+        $category = CentralCategory::factory()->create();
+        $definition = AttributeDefinition::factory()->assignedTo($category)->create(['code' => 'size', 'data_type' => 'decimal']);
+        $this->recordLegacyEvidence();
         $other = CategoryAttributeAssignment::factory()->for($definition, 'definition')->create();
         $action = app(UpdateAttributeDefinitionAction::class);
         $data = ['code' => 'size', 'name' => 'Canonical size', 'data_type' => 'decimal'];
         $action->handle($definition, $data, $actor);
-        self::assertSame(2, $definition->category->fresh()->schema_revision);
+        self::assertSame(2, $definition->assignments()->firstOrFail()->category->fresh()->schema_revision);
         self::assertSame(2, $other->category->fresh()->schema_revision);
         $event = AuditLogEntry::query()->where('action', 'catalog.attribute.updated')->sole();
         self::assertSame(2, $event->after_json['affected_category_count']);
@@ -384,15 +377,16 @@ final class GlobalAttributeFoundationTest extends TestCase
     public function test_canonical_type_edit_is_blocked_by_each_existing_dependency_owner(string $owner): void
     {
         $actor = User::factory()->centralAdmin()->create();
-        $definition = AttributeDefinition::factory()->create(['code' => 'meaning', 'data_type' => 'decimal']);
-        app(LegacyAttributeBackfill::class)->run();
+        $category = CentralCategory::factory()->create();
+        $definition = AttributeDefinition::factory()->assignedTo($category)->create(['code' => 'meaning', 'data_type' => 'decimal']);
+        $this->recordLegacyEvidence();
         $assignment = $definition->assignments()->sole();
         match ($owner) {
             'options' => AttributeOption::factory()->for($definition, 'attribute')->create(),
-            'mapping' => AttributeMapping::query()->create(['import_source_id' => ImportSource::factory()->create()->id, 'category_id' => $assignment->central_category_id, 'raw_key' => 'Size', 'normalized_raw_key' => 'size', 'attribute_definition_id' => $definition->id, 'status' => 'reviewed']),
+            'mapping' => AttributeMapping::query()->create(['import_source_id' => ImportSource::factory()->create()->id, 'category_id' => $assignment->central_category_id, 'raw_key' => 'Size', 'normalized_raw_key' => 'size', 'category_attribute_assignment_id' => $assignment->id, 'status' => 'reviewed']),
             'draft_id' => NormalizedProductDraft::factory()->create(['category_id' => $assignment->central_category_id, 'attributes_json' => [['attribute_definition_id' => $definition->id]]]),
             'draft_code' => NormalizedProductDraft::factory()->create(['category_id' => $assignment->central_category_id, 'attributes_json' => [['code' => $definition->code]]]),
-            'facet' => FacetDefinition::factory()->create(['category_id' => $assignment->central_category_id, 'attribute_definition_id' => $definition->id]),
+            'facet' => FacetDefinition::factory()->create(['category_id' => $assignment->central_category_id, 'category_attribute_assignment_id' => $assignment->id, 'source_type' => 'attribute']),
             'content' => ContentRelation::factory()->create(['related_type' => 'attribute', 'related_id' => $definition->id]),
             'display' => AttributeDisplayRule::factory()->create(['attribute_definition_id' => $definition->id]),
             'multiple_assignments' => CategoryAttributeAssignment::factory()->for($definition, 'definition')->create(),
@@ -463,10 +457,12 @@ final class GlobalAttributeFoundationTest extends TestCase
 
     public function test_mapping_assignment_category_and_definition_membership_are_enforced(): void
     {
-        $definition = AttributeDefinition::factory()->create();
-        $other = AttributeDefinition::factory()->create();
-        app(LegacyAttributeBackfill::class)->run();
-        $mapping = AttributeMapping::query()->create(['import_source_id' => ImportSource::factory()->create()->id, 'category_id' => $definition->central_category_id, 'raw_key' => 'Size', 'normalized_raw_key' => 'size', 'attribute_definition_id' => $definition->id, 'category_attribute_assignment_id' => $definition->assignments()->sole()->id]);
+        $category = CentralCategory::factory()->create();
+        $otherCategory = CentralCategory::factory()->create();
+        $definition = AttributeDefinition::factory()->assignedTo($category)->create();
+        $other = AttributeDefinition::factory()->assignedTo($otherCategory)->create();
+        $this->recordLegacyEvidence();
+        $mapping = AttributeMapping::query()->create(['import_source_id' => ImportSource::factory()->create()->id, 'category_id' => $category->id, 'raw_key' => 'Size', 'normalized_raw_key' => 'size', 'category_attribute_assignment_id' => $definition->assignments()->sole()->id]);
         $this->expectException(QueryException::class);
         DB::transaction(fn () => $mapping->forceFill(['category_attribute_assignment_id' => $other->assignments()->sole()->id])->saveOrFail());
     }
@@ -474,16 +470,17 @@ final class GlobalAttributeFoundationTest extends TestCase
     public function test_selected_crosswalk_product_merge_conflict_is_reported_without_changing_values(): void
     {
         $actor = User::factory()->centralAdmin()->create();
-        $one = AttributeDefinition::factory()->create();
-        $two = AttributeDefinition::factory()->for($one->category, 'category')->create();
-        app(LegacyAttributeBackfill::class)->run();
-        $product = CentralProduct::factory()->for($one->category, 'category')->create();
+        $category = CentralCategory::factory()->create();
+        $one = AttributeDefinition::factory()->assignedTo($category)->create();
+        $two = AttributeDefinition::factory()->assignedTo($category)->create();
+        $this->recordLegacyEvidence();
+        $product = CentralProduct::factory()->for($category, 'category')->create();
         foreach ([$one, $two] as $definition) {
             CentralProductAttributeValue::factory()->create(['central_product_id' => $product->id, 'attribute_definition_id' => $definition->id]);
         }
         AttributeDefinitionCrosswalk::query()->whereKey($two->id)->update(['canonical_definition_id' => $one->id]);
         $report = app(AttributeGlobalizationDiagnosticsQuery::class)->report($actor);
-        self::assertCount(1, $report['product_value_merge_conflicts']);
+        self::assertCount(1, $report['blockers']['product_value_merge_conflicts']);
         self::assertSame(2, CentralProductAttributeValue::query()->count());
         self::assertFalse($report['cutover_ready']);
     }

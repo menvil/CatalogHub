@@ -26,7 +26,7 @@ final class SaveProductTranslationRequest extends SaveTranslationRequest
         $locale = $this->route('locale');
 
         return $product instanceof CentralProduct && $locale instanceof Locale
-            ? $product->translations()->where('locale', $locale->code)->first()
+            ? $product->translations()->where('locale_id', $locale->id)->first()
             : null;
     }
 }

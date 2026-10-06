@@ -25,6 +25,8 @@ final class CategoryFoundationMigrationTest extends TestCase
 
     public function test_additive_backfill_preserves_legacy_shapes_and_never_invents_attribution_then_reverses(): void
     {
+        // Restore the historical schema before testing its earlier migration.
+        (require database_path('migrations/2026_10_06_000002_cut_over_schema_consumers.php'))->down();
         $migration = require database_path('migrations/2026_10_04_200000_add_category_foundation_revisions.php');
         $migration->down();
         $ids = [];

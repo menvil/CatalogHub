@@ -2,10 +2,15 @@
 
 namespace App\Actions\ProductAttributes;
 
+use App\Domains\Projections\ProjectionStaleDetector;
 use App\Enums\AttributeDataType;
+use App\Enums\Permission;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
+use App\Models\User;
 use App\Services\AttributeGlobalization\AttributeIdentityLock;
+use App\Services\Categories\CategoryAccess;
+use App\Services\CategorySchema\SchemaRevision;
 use App\Services\ProductAttributes\ProductAttributeValueValidator;
 use App\Services\Units\UnitConverter;
 use Illuminate\Support\Facades\DB;
@@ -20,30 +25,42 @@ final class SaveProductSpecsAction
     /**
      * @param  array<int|string, array<string, mixed>>  $payload
      */
-    public function handle(CentralProduct $product, array $payload): void
+    public function handle(CentralProduct $product, array $payload, ?User $actor = null, ?int $expectedSchemaRevision = null): void
     {
-        DB::transaction(function () use ($product, $payload): void {
-            app(AttributeIdentityLock::class)->acquire();
+        app(CategoryAccess::class)->authorize(Permission::CatalogProductsManage, $actor);
+        DB::transaction(function () use ($product, $payload, $expectedSchemaRevision): void {
+            app(AttributeIdentityLock::class)->acquireTarget();
+            $product = CentralProduct::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+            if ($expectedSchemaRevision !== null && $product->category !== null) {
+                app(SchemaRevision::class)->expect($product->category, $expectedSchemaRevision);
+            }
             $validated = $this->validator->validate($product, $payload);
 
+            $changed = false;
             foreach ($validated as $attributeId => $valueData) {
+                $existing = CentralProductAttributeValue::query()->where('central_product_id', $product->id)->where('attribute_definition_id', $attributeId)->lockForUpdate()->first();
                 if ($this->isEmptyValue($valueData)) {
-                    CentralProductAttributeValue::query()
-                        ->where('central_product_id', $product->id)
-                        ->where('attribute_definition_id', $attributeId)
-                        ->delete();
+                    if ($existing !== null) {
+                        $existing->delete();
+                        $changed = true;
+                    }
 
                     continue;
                 }
 
-                CentralProductAttributeValue::updateOrCreate(
-                    [
-                        'central_product_id' => $product->id,
-                        'attribute_definition_id' => $attributeId,
-                    ],
-                    $this->normalizeForStorage($valueData),
-                );
+                $stored = $this->normalizeForStorage($valueData, $existing);
+                $value = $existing ?? new CentralProductAttributeValue(['central_product_id' => $product->id, 'attribute_definition_id' => $attributeId]);
+                $value->fill($stored);
+                if (! $value->exists || $value->isDirty()) {
+                    $value->saveOrFail();
+                    $changed = true;
+                }
             }
+            if (! $changed) {
+                return;
+            }
+            app(AttributeIdentityLock::class)->recordTargetWrite();
+            app(ProjectionStaleDetector::class)->markStaleForProduct($product);
         });
     }
 
@@ -68,7 +85,7 @@ final class SaveProductSpecsAction
      * @param  array<string, mixed>  $valueData
      * @return array<string, mixed>
      */
-    private function normalizeForStorage(array $valueData): array
+    private function normalizeForStorage(array $valueData, ?CentralProductAttributeValue $existing): array
     {
         $stored = [
             'raw_value' => $this->blankToNull($valueData['raw_value']),
@@ -90,7 +107,13 @@ final class SaveProductSpecsAction
         ];
 
         if (in_array($valueData['value_type'], [AttributeDataType::Integer->value, AttributeDataType::Decimal->value], true)) {
-            $stored = $this->withCanonicalNumericValue($stored);
+            $probe = $existing === null ? null : (clone $existing)->fill($stored);
+            if ($probe === null || $probe->isDirty(['value_number', 'source_unit', 'canonical_unit'])) {
+                $stored = $this->withCanonicalNumericValue($stored);
+            } else {
+                $stored['canonical_value'] = $existing->canonical_value;
+                $stored['canonical_unit'] = $existing->canonical_unit;
+            }
         }
 
         return $stored;

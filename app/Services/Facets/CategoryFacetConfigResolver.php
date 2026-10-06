@@ -16,7 +16,7 @@ final class CategoryFacetConfigResolver
             ->forCategory($category)
             ->active()
             ->where('is_visible', true)
-            ->with(['attributeDefinition', 'activeOptions'])
+            ->with(['assignment.definition.canonicalMeasurementUnit', 'activeOptions'])
             ->ordered()
             ->get()
             ->map(fn (FacetDefinition $facet): FacetDefinitionData => FacetDefinitionData::fromModel($facet));

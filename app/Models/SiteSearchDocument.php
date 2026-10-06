@@ -10,11 +10,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
+ * @property int $attribute_identity_version
+ * @property int $schema_revision
  * @property array<string, mixed>|null $filter_values_json
  * @property array<string, mixed>|null $sort_values_json
  * @property array<string, mixed>|null $payload_json
  */
 #[Fillable([
+    'attribute_identity_version', 'schema_revision',
     'site_id', 'locale', 'document_type', 'document_id', 'title', 'slug', 'status', 'search_text', 'min_price', 'max_price',
     'offers_count',
     'in_stock',
@@ -31,9 +34,13 @@ final class SiteSearchDocument extends Model
         return SiteSearchDocumentFactory::new();
     }
 
+    protected $attributes = ['attribute_identity_version' => 2, 'schema_revision' => 0];
+
     protected function casts(): array
     {
         return [
+            'attribute_identity_version' => 'integer',
+            'schema_revision' => 'integer',
             'document_id' => 'integer',
             'status' => ProjectionStatus::class,
             'min_price' => 'decimal:2',

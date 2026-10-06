@@ -8,8 +8,11 @@ use App\Domains\Projections\Support\ProjectionVisibility;
 use App\Domains\Seo\SeoProjectionBuilder;
 use App\Enums\CentralCategoryStatus;
 use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\CategoryComparisonAttribute;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Models\FacetDefinition;
 use App\Models\Site;
+use App\Services\CategorySchema\CategorySchemaPreviewBuilder;
 use App\Services\Sites\SiteOverrideResolver;
 use App\Services\Translations\TranslationResolver;
 use Carbon\CarbonImmutable;
@@ -53,22 +56,20 @@ final class CategoryProjectionBuilder
         $status = $category->status === CentralCategoryStatus::Active && ProjectionVisibility::isVisible($visibility)
             ? ProjectionStatus::Active
             : ProjectionStatus::Pending;
-        $definitions = AttributeDefinition::query()
-            ->where('central_category_id', $category->getKey())
-            ->visible()
-            ->with(['options' => fn ($query) => $query->where('is_visible', true)->ordered()])
-            ->ordered()
-            ->get();
-        $facets = $definitions
-            ->filter(fn (AttributeDefinition $definition): bool => (bool) $definition->getAttribute('is_filterable'))
-            ->map(fn (AttributeDefinition $definition): array => $this->attributeConfig($definition, $locale))
-            ->values()
-            ->all();
-        $comparison = $definitions
-            ->filter(fn (AttributeDefinition $definition): bool => (bool) $definition->getAttribute('is_comparable'))
-            ->map(fn (AttributeDefinition $definition): array => $this->attributeConfig($definition, $locale))
-            ->values()
-            ->all();
+        $facets = FacetDefinition::query()->where('category_id', $category->id)->active()->ordered()
+            ->with('assignment.definition.options')->get()->map(function ($facet) use ($locale): array {
+                $definition = $facet->assignment?->definition;
+
+                return ['facet_id' => $facet->id, 'code' => $facet->code, 'source_type' => $facet->source_type->value,
+                    'assignment_id' => $facet->category_attribute_assignment_id, 'facet_type' => $facet->facet_type->value,
+                    'label' => $facet->label_override ?: ($definition === null ? $facet->code : ($this->translationResolver->resolve($definition, 'label', $locale)->value ?: $definition->name)),
+                    'position' => $facet->position, 'is_visible' => $facet->is_visible, 'is_filterable' => $facet->is_filterable];
+            })->all();
+        $comparison = CategoryComparisonAttribute::query()->where('central_category_id', $category->id)
+            ->with('assignment.definition.options')->orderBy('position')->orderBy('id')->get()->map(fn ($row) => [
+                'comparison_id' => $row->id, 'assignment_id' => $row->category_attribute_assignment_id, 'position' => $row->position,
+                'is_visible' => $row->is_visible, ...$this->attributeConfig($row->assignment->definition, $locale),
+            ])->all();
         $children = CentralCategory::query()
             ->where('parent_id', $category->getKey())
             ->orderBy('position')
@@ -86,6 +87,8 @@ final class CategoryProjectionBuilder
             $status === ProjectionStatus::Active,
         );
         $payload = [
+            'attribute_identity_version' => 2, 'schema_revision' => $category->schema_revision,
+            'schema' => app(CategorySchemaPreviewBuilder::class)->build($category),
             'category' => [
                 'id' => (int) $category->getKey(),
                 'title' => $title,
@@ -184,7 +187,7 @@ final class CategoryProjectionBuilder
             'label' => $this->translationResolver->resolve($definition, 'label', $locale)->value
                 ?: $definition->getAttribute('name'),
             'data_type' => $definition->data_type->value,
-            'canonical_unit' => $definition->getAttribute('canonical_unit'),
+            'canonical_unit' => $definition->canonicalMeasurementUnit?->code,
             'options' => $definition->options
                 ->map(fn ($option): array => [
                     'code' => (string) $option->getAttribute('code'),

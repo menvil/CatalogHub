@@ -31,6 +31,7 @@ class NormalizedProductDraftFactory extends Factory
             'title' => $title,
             'slug' => Str::slug($title),
             'normalized_payload_json' => ['title' => $title],
+            'attribute_identity_version' => 2,
             'attributes_json' => [],
             'media_json' => [],
             'confidence' => '0.0000',

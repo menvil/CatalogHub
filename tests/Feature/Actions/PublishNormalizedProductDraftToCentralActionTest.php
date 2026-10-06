@@ -17,9 +17,12 @@ use App\Models\Imports\NormalizedProductDraft;
 use App\Models\MediaAsset;
 use App\Models\MediaAssignment;
 use App\Models\User;
+use Database\Seeders\MeasurementDimensionsSeeder;
+use Database\Seeders\MetricMeasurementUnitsSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use LogicException;
 use Tests\TestCase;
@@ -30,17 +33,16 @@ class PublishNormalizedProductDraftToCentralActionTest extends TestCase
 
     public function test_approved_draft_publishes_product_attributes_and_media_transactionally(): void
     {
+        $this->seed([MeasurementDimensionsSeeder::class, MetricMeasurementUnitsSeeder::class]);
         $this->assertTrue(Schema::hasColumn('normalized_product_drafts', 'published_central_product_id'));
         $editor = User::factory()->create(['role' => UserRole::CatalogEditor]);
         $brand = CentralBrand::factory()->create();
         $category = CentralCategory::factory()->create();
-        $power = AttributeDefinition::factory()->for($category, 'category')->create([
+        $power = AttributeDefinition::factory()->measured('power', 'watt')->assignedTo($category)->create([
             'code' => 'power',
             'data_type' => AttributeDataType::Decimal,
-            'dimension' => 'power',
-            'canonical_unit' => 'watt',
         ]);
-        $portable = AttributeDefinition::factory()->for($category, 'category')->create([
+        $portable = AttributeDefinition::factory()->assignedTo($category)->create([
             'code' => 'portable',
             'data_type' => AttributeDataType::Boolean,
         ]);
@@ -54,6 +56,10 @@ class PublishNormalizedProductDraftToCentralActionTest extends TestCase
             'attributes_json' => [
                 [
                     'attribute_definition_id' => $power->id,
+                    'category_attribute_assignment_id' => $power->assignments()->sole()->id,
+                    'code' => $power->code,
+                    'measurement_dimension_id' => $power->measurement_dimension_id,
+                    'canonical_measurement_unit_id' => $power->canonical_measurement_unit_id,
                     'raw_value' => '500 W',
                     'value_type' => 'decimal',
                     'value' => 500,
@@ -66,6 +72,10 @@ class PublishNormalizedProductDraftToCentralActionTest extends TestCase
                 ],
                 [
                     'attribute_definition_id' => $portable->id,
+                    'category_attribute_assignment_id' => $portable->assignments()->sole()->id,
+                    'code' => $portable->code,
+                    'measurement_dimension_id' => $portable->measurement_dimension_id,
+                    'canonical_measurement_unit_id' => $portable->canonical_measurement_unit_id,
                     'raw_value' => 'yes',
                     'value_type' => 'boolean',
                     'value' => true,
@@ -129,7 +139,7 @@ class PublishNormalizedProductDraftToCentralActionTest extends TestCase
     {
         $editor = User::factory()->create(['role' => UserRole::CatalogEditor]);
         $category = CentralCategory::factory()->create();
-        $definition = AttributeDefinition::factory()->for($category, 'category')->create([
+        $definition = AttributeDefinition::factory()->assignedTo($category)->create([
             'code' => 'material',
             'data_type' => AttributeDataType::String,
         ]);
@@ -142,6 +152,10 @@ class PublishNormalizedProductDraftToCentralActionTest extends TestCase
             'approved_at' => now(),
             'attributes_json' => [[
                 'code' => 'material',
+                'attribute_definition_id' => $definition->id,
+                'category_attribute_assignment_id' => $definition->assignments()->sole()->id,
+                'measurement_dimension_id' => null,
+                'canonical_measurement_unit_id' => null,
                 'value_type' => 'string',
                 'value' => 'Steel',
             ]],
@@ -191,7 +205,7 @@ class PublishNormalizedProductDraftToCentralActionTest extends TestCase
         try {
             app(PublishNormalizedProductDraftToCentralAction::class)->handle($draft, $editor);
             $this->fail('Invalid attribute did not abort publishing.');
-        } catch (LogicException) {
+        } catch (ValidationException) {
             $this->assertSame(0, CentralProduct::query()->count());
             $this->assertSame('approved', $draft->fresh()->status);
             $this->assertSame(0, MediaAssignment::query()->count());
@@ -211,8 +225,7 @@ class PublishNormalizedProductDraftToCentralActionTest extends TestCase
             ]],
         ]);
 
-        $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('references an unknown attribute definition');
+        $this->expectException(ValidationException::class);
 
         app(PublishNormalizedProductDraftToCentralAction::class)->handle($draft, $editor);
     }
@@ -221,11 +234,15 @@ class PublishNormalizedProductDraftToCentralActionTest extends TestCase
     {
         $editor = User::factory()->create(['role' => UserRole::CatalogEditor]);
         $category = CentralCategory::factory()->create();
-        $definition = AttributeDefinition::factory()->for($category, 'category')->create([
+        $definition = AttributeDefinition::factory()->assignedTo($category)->create([
             'data_type' => AttributeDataType::String,
         ]);
         $candidate = [
             'attribute_definition_id' => $definition->id,
+            'category_attribute_assignment_id' => $definition->assignments()->sole()->id,
+            'code' => $definition->code,
+            'measurement_dimension_id' => $definition->measurement_dimension_id,
+            'canonical_measurement_unit_id' => $definition->canonical_measurement_unit_id,
             'value_type' => 'string',
             'value' => 'Steel',
         ];
@@ -237,8 +254,7 @@ class PublishNormalizedProductDraftToCentralActionTest extends TestCase
             'attributes_json' => [$candidate, $candidate],
         ]);
 
-        $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('contains duplicate candidates');
+        $this->expectException(ValidationException::class);
 
         app(PublishNormalizedProductDraftToCentralAction::class)->handle($draft, $editor);
     }
@@ -247,7 +263,7 @@ class PublishNormalizedProductDraftToCentralActionTest extends TestCase
     {
         $editor = User::factory()->create(['role' => UserRole::CatalogEditor]);
         $category = CentralCategory::factory()->create();
-        $definition = AttributeDefinition::factory()->for($category, 'category')->create([
+        $definition = AttributeDefinition::factory()->assignedTo($category)->create([
             'data_type' => AttributeDataType::Boolean,
         ]);
         $draft = NormalizedProductDraft::factory()->create([
@@ -257,13 +273,16 @@ class PublishNormalizedProductDraftToCentralActionTest extends TestCase
             'approved_at' => now(),
             'attributes_json' => [[
                 'attribute_definition_id' => $definition->id,
+                'category_attribute_assignment_id' => $definition->assignments()->sole()->id,
+                'code' => $definition->code,
+                'measurement_dimension_id' => $definition->measurement_dimension_id,
+                'canonical_measurement_unit_id' => $definition->canonical_measurement_unit_id,
                 'value_type' => 'string',
                 'value' => 'yes',
             ]],
         ]);
 
-        $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('expects value type [boolean]');
+        $this->expectException(ValidationException::class);
 
         app(PublishNormalizedProductDraftToCentralAction::class)->handle($draft, $editor);
     }

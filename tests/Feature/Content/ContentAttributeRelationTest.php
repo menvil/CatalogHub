@@ -58,7 +58,7 @@ class ContentAttributeRelationTest extends TestCase
         $site = Site::factory()->create();
         $item = ContentItem::factory()->for($site)->create();
         $category = CentralCategory::factory()->create(['name' => 'Monitors']);
-        $attribute = AttributeDefinition::factory()->for($category, 'category')->create([
+        $attribute = AttributeDefinition::factory()->assignedTo($category)->create([
             'name' => 'Refresh rate',
         ]);
 

@@ -10,21 +10,19 @@ use App\Exceptions\Units\CannotParseUnitException;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Services\Units\UnitConverter;
 use App\Services\Units\UnitParser;
-use App\Services\Units\UnitResolver;
 
 final readonly class UnitNormalizer implements AttributeValueNormalizerInterface
 {
     public function __construct(
         private UnitParser $parser,
         private UnitConverter $converter,
-        private UnitResolver $resolver,
     ) {}
 
     public function supports(AttributeDefinition $definition): bool
     {
         return in_array($definition->data_type, [AttributeDataType::Integer, AttributeDataType::Decimal], true)
-            && filled($definition->dimension)
-            && filled($definition->canonical_unit);
+            && $definition->measurement_dimension_id !== null
+            && $definition->canonical_measurement_unit_id !== null;
     }
 
     public function normalize(
@@ -37,9 +35,9 @@ final readonly class UnitNormalizer implements AttributeValueNormalizerInterface
 
         try {
             $parsed = $this->parser->parse($rawValue);
-            $canonicalUnit = $this->resolver->resolve((string) $definition->canonical_unit);
+            $canonicalUnit = $definition->canonicalMeasurementUnit;
 
-            if ($canonicalUnit->dimension?->code !== $definition->dimension) {
+            if ($canonicalUnit === null || $canonicalUnit->dimension_id !== $definition->measurement_dimension_id) {
                 return $this->failure(
                     $rawValue,
                     'incompatible_unit_dimension',

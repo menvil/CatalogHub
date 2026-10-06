@@ -19,6 +19,8 @@ use App\Models\Translations\AttributeTranslation;
 use App\Models\Translations\CategoryTranslation;
 use App\Models\Translations\ProductTranslation;
 use App\Models\Translations\UnitTranslation;
+use Database\Seeders\MeasurementDimensionsSeeder;
+use Database\Seeders\MetricMeasurementUnitsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -28,6 +30,7 @@ class ProductProjectionBuilderTranslationTest extends TestCase
 
     public function test_it_uses_translated_labels_and_falls_back_to_source_values(): void
     {
+        $this->seed([MeasurementDimensionsSeeder::class, MetricMeasurementUnitsSeeder::class]);
         $locale = Locale::factory()->create(['code' => 'de-DE', 'is_default' => true]);
         $site = Site::factory()->create(['default_locale' => 'de-DE']);
         $category = CentralCategory::factory()->create(['name' => 'Monitors']);
@@ -36,8 +39,8 @@ class ProductProjectionBuilderTranslationTest extends TestCase
             'name' => 'Display',
         ]);
         $panelType = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => 'panel_type',
                 'name' => 'Panel type',
@@ -48,19 +51,18 @@ class ProductProjectionBuilderTranslationTest extends TestCase
             'code' => 'gaming',
             'label' => 'Gaming',
         ]);
-        $power = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+        $power = AttributeDefinition::factory()->withCanonicalUnit('watt')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => 'power',
                 'name' => 'Power',
                 'data_type' => 'integer',
-                'canonical_unit' => 'watt',
                 'position' => 2,
             ]);
         $brightness = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => 'brightness',
                 'name' => 'Brightness',
@@ -70,11 +72,7 @@ class ProductProjectionBuilderTranslationTest extends TestCase
         $product = CentralProduct::factory()->for($category, 'category')->create([
             'name' => 'Central Product Name',
         ]);
-        $unit = MeasurementUnit::factory()->create([
-            'code' => 'watt',
-            'name' => 'Watt',
-            'symbol' => 'W',
-        ]);
+        $unit = MeasurementUnit::query()->where('code', 'watt')->sole();
 
         ProductTranslation::factory()->create([
             'product_id' => $product->id,
@@ -140,7 +138,7 @@ class ProductProjectionBuilderTranslationTest extends TestCase
         $this->assertSame('Monitore', $projection->payload['category']['label']);
         $this->assertSame('Bildschirm', $projection->payload['spec_sections'][0]['label']);
         $this->assertSame('Paneltyp', $attributes[0]['label']);
-        $this->assertSame([['code' => 'gaming', 'label' => 'Spiele']], $attributes[0]['options']);
+        $this->assertSame([['code' => 'gaming', 'label' => 'Spiele', 'is_visible' => true]], $attributes[0]['options']);
         $this->assertSame('W-de', $attributes[1]['canonical_unit_label']);
         $this->assertSame('Brightness', $attributes[2]['label']);
     }

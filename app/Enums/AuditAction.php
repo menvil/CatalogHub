@@ -36,7 +36,15 @@ enum AuditAction: string
     case CatalogCategorySchemaArchived = 'catalog.category.schema.archived';
     case CatalogCategorySchemaRestored = 'catalog.category.schema.restored';
     case CatalogCategorySchemaInvalidated = 'catalog.category.schema.invalidated';
+    case CatalogAttributeOptionCreated = 'catalog.attribute.option.created';
+    case CatalogAttributeOptionUpdated = 'catalog.attribute.option.updated';
+    case CatalogCategoryFacetCreated = 'catalog.category.facet.created';
+    case CatalogCategoryFacetUpdated = 'catalog.category.facet.updated';
+    case CatalogCategoryFacetRemoved = 'catalog.category.facet.removed';
+    case CatalogCategoryComparisonUpdated = 'catalog.category.comparison.updated';
+    case CatalogAttributeIdentityReconciled = 'catalog.attribute.identity.reconciled';
     case CatalogAttributeCreated = 'catalog.attribute.created';
+    case CatalogAttributeDisplayRuleConfigured = 'catalog.attribute.display_rule.configured';
     case CatalogAttributeUpdated = 'catalog.attribute.updated';
     case CatalogCategoryAttributeAssigned = 'catalog.category.attribute.assigned';
     case CatalogCategoryAttributeConfigured = 'catalog.category.attribute.configured';

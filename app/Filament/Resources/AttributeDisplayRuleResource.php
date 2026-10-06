@@ -2,8 +2,10 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\Permission;
 use App\Filament\Resources\AttributeDisplayRuleResource\Pages;
 use App\Models\AttributeDisplayRule;
+use App\Services\Categories\CategoryAccess;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
@@ -14,6 +16,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rules\Unique;
 use UnitEnum;
 
@@ -100,15 +103,23 @@ final class AttributeDisplayRuleResource extends Resource
                     ->sortable(),
             ])
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()->url(fn ($record): string => self::getUrl('edit', ['record' => $record])),
             ]);
     }
 
     public static function canAccess(): bool
     {
-        $user = auth()->user();
+        return app(CategoryAccess::class)->allows(Permission::CatalogSchemaManage);
+    }
 
-        return $user !== null && $user->can('central.manage');
+    public static function canCreate(): bool
+    {
+        return app(CategoryAccess::class)->allows(Permission::CatalogSchemaManage, true);
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return self::canCreate();
     }
 
     public static function getPages(): array

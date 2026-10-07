@@ -1,3 +1,4 @@
+@import './category-list.css';
 @import 'tailwindcss' source(none);
 @import '../../public/css/filament/filament/app.css';
 @import './foundation.css';

@@ -68,7 +68,9 @@ export default defineConfig({
         trace: 'retain-on-failure',
         launchOptions: {
             ...(executablePath ? { executablePath } : {}),
-            args: [`--host-resolver-rules=${foundationHosts.map((host) => `MAP ${host} 127.0.0.1`).join(',')}`],
+            // QEMU cannot launch Chromium's zygote/GPU child processes. Keep
+            // the same pinned renderer and fonts while emulating on ARM hosts.
+            args: [...(emulatedVisualBrowser ? ['--single-process', '--in-process-gpu', '--no-zygote'] : []), `--host-resolver-rules=${foundationHosts.map((host) => `MAP ${host} 127.0.0.1`).join(',')}`],
         },
     },
     projects: [

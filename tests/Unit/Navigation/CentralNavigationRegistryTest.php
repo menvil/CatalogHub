@@ -24,6 +24,7 @@ final class CentralNavigationRegistryTest extends TestCase
         $this->assertSame([
             'dashboard',
             'catalog',
+            'categories',
             'brands',
             'imports',
             'media',
@@ -34,9 +35,9 @@ final class CentralNavigationRegistryTest extends TestCase
             'users',
             'system',
         ], array_column($items, 'id'));
-        $this->assertCount(11, array_unique(array_column($items, 'id')));
-        $this->assertCount(11, array_unique(array_column($items, 'route')));
-        $this->assertCount(11, array_unique(array_column($items, 'permission')));
+        $this->assertCount(12, array_unique(array_column($items, 'id')));
+        $this->assertCount(12, array_unique(array_column($items, 'route')));
+        $this->assertCount(12, array_unique(array_column($items, 'permission')));
     }
 
     public function test_unavailable_and_unauthorized_items_never_become_dead_links(): void
@@ -48,6 +49,7 @@ final class CentralNavigationRegistryTest extends TestCase
         $this->assertSame([
             'dashboard',
             'catalog',
+            'categories',
             'brands',
             'imports',
             'media',

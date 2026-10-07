@@ -104,7 +104,7 @@ final class ContinuousIntegrationWorkflowTest extends TestCase
         foreach ([$browser, $visual] as $job) {
             self::assertStringContainsString('npm ci', $job);
             self::assertStringContainsString('npx playwright install --with-deps chromium', $job);
-            self::assertStringContainsString('if: failure()', $job);
+            self::assertStringContainsString($job === $visual ? 'if: always()' : 'if: failure()', $job);
             self::assertStringNotContainsString('--update-snapshots', $job);
             self::assertStringNotContainsString('continue-on-error', $job);
         }

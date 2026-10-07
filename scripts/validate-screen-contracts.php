@@ -10,6 +10,7 @@ $contracts = [
 ];
 $errors = [];
 $ids = [];
+$pendingPrototypeReview = [];
 
 foreach ($contracts as $contract) {
     $contents = (string) file_get_contents($contract);
@@ -40,6 +41,9 @@ foreach ($contracts as $contract) {
         $errors[] = "{$contract}: duplicate screen ID [{$id}].";
     } else {
         $ids[$id] = true;
+        if (($fields['visual_acceptance'] ?? null) === 'pending-product-owner-review') {
+            $pendingPrototypeReview[$id] = $fields['reference_version'] ?? '';
+        }
     }
 
     if (isset($fields['route']) && ! str_starts_with($fields['route'], '/')) {
@@ -102,7 +106,18 @@ if (! is_file($manifestPath)) {
 
         foreach (array_keys($ids) as $id) {
             if (! array_filter($manifest['references'], static fn (array $reference): bool => ($reference['screen_id'] ?? null) === $id)) {
-                $errors[] = "Screen [{$id}] has no local visual reference.";
+                // An implemented screen awaiting its first manual baseline approval
+                // may name an already approved, immutable local prototype. This
+                // validates provenance; it does not approve an implementation PNG.
+                $prototypes = array_filter($manifest['prototype_references'] ?? [], static fn (array $reference): bool => ($reference['screen_id'] ?? null) === $id
+                    && ($reference['reference_version'] ?? null) === ($pendingPrototypeReview[$id] ?? null)
+                    && isset($pendingPrototypeReview[$id])
+                    && is_file($root.'/'.($reference['path'] ?? ''))
+                    && ($reference['sha256'] ?? null) === hash_file('sha256', $root.'/'.$reference['path'])
+                );
+                if ($prototypes === []) {
+                    $errors[] = "Screen [{$id}] has no local visual reference.";
+                }
             }
         }
     }

@@ -55,6 +55,14 @@ parameters:
                 behaviorTests: [tests/Feature/Queries/CategoryListReadModelQueryTest.php]
                 status: approved
             -
+                class: App\Queries\CentralCatalog\CategoryListReadModelQuery
+                ownerMethods: [paginate]
+                methods: [whereRaw, orWhereRaw]
+                reason: 'Literal Category name and slug search requires an explicit ESCAPE clause with separately bound patterns.'
+                bindings: required
+                behaviorTests: [tests/Feature/Queries/CategoryListReadModelQueryTest.php]
+                status: approved
+            -
                 class: App\Queries\CentralCatalog\OrganizationSearchQuery
                 ownerMethods: [search]
                 methods: [whereRaw]

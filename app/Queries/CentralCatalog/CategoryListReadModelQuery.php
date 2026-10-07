@@ -19,6 +19,7 @@ use App\Models\Locale;
 use App\Models\Site;
 use App\Models\SiteCategory;
 use App\Models\Translations\CategoryTranslation;
+use App\Support\Database\LiteralLikePattern;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -40,6 +41,7 @@ final class CategoryListReadModelQuery implements RawSqlPersistenceBoundary, Sta
             needsReview: $tree->where('schema_status', CategorySchemaStatus::Draft)->count(),
         );
 
+        $searchPattern = LiteralLikePattern::containing($filters->search ?? '');
         $query = CentralCategory::query()
             ->withCount(['products', 'attributeAssignments'])
             ->addSelect([
@@ -47,7 +49,7 @@ final class CategoryListReadModelQuery implements RawSqlPersistenceBoundary, Sta
                 'sites_count' => SiteCategory::query()->selectRaw('count(distinct site_id)')->whereColumn('central_category_id', 'central_categories.id')->whereIn('site_id', array_keys($sites)),
             ])
             ->when($filters->search !== null, fn ($query) => $query->where(fn ($query) => $query
-                ->where('name', 'like', '%'.$filters->search.'%')->orWhere('slug', 'like', '%'.$filters->search.'%')))
+                ->whereRaw("name LIKE ? ESCAPE '!'", [$searchPattern])->orWhereRaw("slug LIKE ? ESCAPE '!'", [$searchPattern])))
             ->when($filters->status !== null, fn ($query) => $query->where('status', $filters->status))
             ->when($filters->schemaStatus !== null, fn ($query) => $query->where('schema_status', $filters->schemaStatus))
             ->when($filters->level !== null, fn ($query) => $query->whereIn('id', array_keys(array_filter($depths, fn ($depth) => $depth === $filters->level))))

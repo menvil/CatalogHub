@@ -109,12 +109,25 @@ if (! is_file($manifestPath)) {
                 // An implemented screen awaiting its first manual baseline approval
                 // may name an already approved, immutable local prototype. This
                 // validates provenance; it does not approve an implementation PNG.
-                $prototypes = array_filter($manifest['prototype_references'] ?? [], static fn (array $reference): bool => ($reference['screen_id'] ?? null) === $id
-                    && ($reference['reference_version'] ?? null) === ($pendingPrototypeReview[$id] ?? null)
-                    && isset($pendingPrototypeReview[$id])
-                    && is_file($root.'/'.($reference['path'] ?? ''))
-                    && ($reference['sha256'] ?? null) === hash_file('sha256', $root.'/'.$reference['path'])
-                );
+                $prototypes = array_filter($manifest['prototype_references'] ?? [], static function (array $reference) use ($id, $pendingPrototypeReview, $root): bool {
+                    $path = $reference['path'] ?? null;
+                    if (($reference['screen_id'] ?? null) !== $id
+                        || ! isset($pendingPrototypeReview[$id])
+                        || ($reference['reference_version'] ?? null) !== $pendingPrototypeReview[$id]
+                        || ! is_string($path)
+                        || ! str_starts_with($path, 'pictures/')) {
+                        return false;
+                    }
+
+                    $repository = realpath($root);
+                    $source = realpath($root.'/'.$path);
+
+                    return $repository !== false && $source !== false
+                        && str_starts_with($source, $repository.'/pictures/')
+                        && is_file($source)
+                        && @getimagesize($source) !== false
+                        && ($reference['sha256'] ?? null) === hash_file('sha256', $source);
+                });
                 if ($prototypes === []) {
                     $errors[] = "Screen [{$id}] has no local visual reference.";
                 }

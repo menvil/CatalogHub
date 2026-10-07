@@ -76,6 +76,20 @@ final class CategoryListReadModelQueryTest extends TestCase
         self::assertSame([194002], $query->paginate(new CategoryListFiltersData(localeId: $other->id, translation: 'missing'))->categories->getCollection()->map(fn ($row) => $row->category->id)->all());
     }
 
+    public function test_search_treats_wildcards_backslashes_and_escape_characters_literally_in_names_and_slugs(): void
+    {
+        foreach (['%', '_', '\\', '!'] as $index => $literal) {
+            $needle = 'search'.$index.$literal.'term';
+            $nameMatch = CentralCategory::factory()->create(['name' => 'Name '.$needle]);
+            $slugMatch = CentralCategory::factory()->create(['name' => 'Plain name', 'slug' => 'slug-'.$needle]);
+            CentralCategory::factory()->create(['name' => 'search'.$index.'Xterm', 'slug' => 'search'.$index.'term']);
+
+            $rows = app(CategoryListReadModelQuery::class)->paginate(new CategoryListFiltersData(search: $needle))->categories;
+
+            self::assertSame([$nameMatch->id, $slugMatch->id], $rows->getCollection()->map(fn ($row) => $row->category->id)->sort()->values()->all(), $literal);
+        }
+    }
+
     public function test_zero_locale_denominator_is_neutral_and_inactive_locales_are_ignored(): void
     {
         $category = CentralCategory::factory()->create();

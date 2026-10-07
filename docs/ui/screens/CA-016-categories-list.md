@@ -132,7 +132,7 @@ Read-model query regression verifies the same **8 queries** for 1 and 25 Categor
 
 Isolated fixture summary: **25 total, 15 Active (60%), 6 With Schema, 2 Missing Translations, 10 Needs Review**. The shared browser harness also retains nine existing Category records, giving **34 total, 15 Active (44.1%), 6 With Schema, 11 Missing Translations, 19 Needs Review** over four active Locales. Assertions use these deterministic seeded records. Foundation/Brand fixtures retain their ownership and relationships.
 
-Database empty explains there are no canonical Categories and offers New only when authorized. Filtered empty explains no match and offers Clear. Counts remain zero without fake rows. Zero Sites displays 0; zero Locale denominator is neutral.
+Database empty explains there are no canonical Categories and offers New only when authorized. Filtered empty explains no match and offers Clear. An out-of-range page with matches offers First page, preserving filters, rather than claiming the registry is empty. Pagination link windows are clamped to the actual last page even for very large valid page numbers, so rendering remains bounded. Counts remain zero without fake rows. Zero Sites displays 0; zero Locale denominator is neutral.
 
 - 1440×1000: dense operational table and five summary cards; all major usage columns present.
 - 1024×900: three-column summary/filter grids; horizontal overflow stays inside the table surface.

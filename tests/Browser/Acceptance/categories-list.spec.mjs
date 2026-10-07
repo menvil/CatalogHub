@@ -75,6 +75,12 @@ test('CA-016 search, combined filters, clear, sorting, pagination and browser ba
     await page.locator('#category-search').fill('no-matching-category')
     await expect(page).toHaveURL(/q=no-matching-category/)
     await expect(page.getByRole('heading', { name: 'No matching categories' })).toBeVisible()
+    await page.goto('/admin/central/categories?status=active&page=99&sort=products&direction=desc')
+    await expect(page.getByRole('heading', { name: 'No categories on this page' })).toBeVisible()
+    await page.locator('#categories-page-empty').getByRole('link', { name: 'First page', exact: true }).click()
+    await expect(page).toHaveURL(/status=active/)
+    expect(new URL(page.url()).searchParams.get('page')).toBe('1')
+    await expect(page.locator('tbody tr[data-row-id]')).toHaveCount(15)
     noErrors()
 })
 

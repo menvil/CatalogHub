@@ -158,6 +158,9 @@ final class CentralCategoryListTest extends TestCase
         self::assertStringContainsString('status=active', $response->viewData('list')->categories->url(2));
         self::assertStringContainsString('sort=products', $response->viewData('list')->categories->url(2));
         $this->get('/admin/central/categories?page=2')->assertOk()->assertSee('Showing 21 to 25 of 25 categories');
+        $response = $this->get('/admin/central/categories?status=active&page=2147483647');
+        $response->assertOk()->assertSee('No categories on this page')->assertSee('First page')->assertDontSee('No categories yet');
+        self::assertStringContainsString('status=active', $response->viewData('list')->categories->url(1));
     }
 
     public function test_render_query_count_is_bounded_from_one_to_twenty_five_rows(): void

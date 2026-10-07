@@ -77,7 +77,9 @@
                         </tr>
                     @empty
                         <tr><td colspan="10" class="category-list-empty">
-                            @if ($filters->hasConstraints())
+                            @if ($list->categories->total() > 0)
+                                <x-ui.states.empty id="categories-page-empty" title="No categories on this page" message="Matching Categories are available on another page." action-label="First page" :action-url="$list->categories->url(1)" />
+                            @elseif ($filters->hasConstraints())
                                 <x-ui.states.filtered-empty id="categories-filtered-empty" title="No matching categories" message="No Categories match the current search and filters." :clear-url="$clearFiltersUrl" />
                             @else
                                 <x-ui.states.empty id="categories-empty" title="No categories yet" message="There are no canonical Categories in the catalog." :action-label="$createUrl ? 'New Category' : null" :action-url="$createUrl" />

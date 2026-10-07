@@ -146,3 +146,17 @@ Select/action overlays use existing viewport-aware positioning. No page-level ho
 Immutable source: `pictures/1. Central Admin/1.4. Categories : Schema/CA-016 — Categories List.png`, **1448×1086**, SHA-256 `c8e776138aa1356369fa2a48efb89f32540ac2d4234e4ee74a1406cba92094f2`, version `categories-schema-prototype-v1`.
 
 `npm run test:visual -- --grep CA-016` captures the four fixed implementation viewports and a scrolled 390px Category-card view with the pinned Linux renderer into `storage/logs/visual-artifacts/ca-016-candidates`, with PNG checksums and metadata stating `pending-product-owner-review`. CI uploads visual diagnostics on every run so review candidates remain accessible. Existing approved screenshots still run through normal comparison. When a reviewer approves CA-016, promote these captures into `tests/Visual/baselines`, add checksums/manifest entries and pass the normal review guard. No approved baseline or Product Owner sign-off is claimed by candidate capture. The visual spec compares approved CA-016 files when present and otherwise only captures review candidates.
+
+### Implementation candidate evidence
+
+The native amd64 visual run [37619808152](https://github.com/menvil/CatalogHub/actions/runs/37619808152) passed all 37 PHP visual contracts and 33 Playwright visual cases. Its `visual-diagnostics` artifact contains these CA-016 candidates; checksum sidecars and JSON metadata explicitly state `pending-product-owner-review`.
+
+| Candidate | SHA-256 |
+| --- | --- |
+| `ca-016__cards__390x844.png` | `7aa1d119339decc0876e1187cb71106efd053cf0575a20683c9d92de85f71905` |
+| `ca-016__default__1024x900.png` | `6fdd958b4b1f57866427dcfd6f42a449c7f781ba7c6e7e78fd01e1bb93700f1a` |
+| `ca-016__default__1440x1000.png` | `7a23da1296a528d47720d72cf8ce756c4ce145cc64691499271c784aa5e3a282` |
+| `ca-016__default__390x844.png` | `ff9d8c08cd1e283353456ff6ccd41052d001a2283d6be8392c5a063f1c2340cc` |
+| `ca-016__default__768x1024.png` | `8bdb26efc62f056ce15e0751b91a11f2ec4a3ce9f08ac6e7aca09f8ec7e1d2fc` |
+
+Semantic inspection retains the prototype's information hierarchy, summary/table balance, discovery prominence and action placement. Separate schema and translation columns, a second filter row and explicit hierarchy beside identity account for the denser information contract. Tablet scrolling stays within the surface; the additional mobile capture demonstrates readable Category cards. Rejected prototype elements remain absent. This is implementation evidence for manual review, not Product Owner visual approval.

@@ -1,0 +1,27 @@
+tests/Feature/Queries/CategoryListReadModelQueryTest.php
+  s_09819976511085::t_68d9753052400f 79-92
+tests/Feature/Documentation/ScreenContractTest.php
+  s_09819976511085::t_68d9753052400f 68-85,119-121,124,138-140
+app/Queries/CentralCatalog/CategoryListReadModelQuery.php
+  s_09819976511085::t_cdb21ee459b6a2 22,44,52
+tools/phpstan/architecture.neon
+  s_09819976511085::t_cdb21ee459b6a2 58-64
+scripts/validate-screen-contracts.php
+  s_09819976511085::t_cdb21ee459b6a2 112-130
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "11aa84424efae86149da6e13177a63950eea800b",
+  "prompts": {},
+  "sessions": {
+    "s_09819976511085": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11622-dcf4-7031-a439-cb234249c9d1",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

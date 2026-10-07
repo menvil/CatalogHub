@@ -32,7 +32,7 @@ final class CanonicalValuePreviewer
         }
 
         $sourceUnit = filled($valueState['source_unit'] ?? null) ? (string) $valueState['source_unit'] : null;
-        $canonicalUnit = filled($attribute->canonical_unit) ? (string) $attribute->canonical_unit : $sourceUnit;
+        $canonicalUnit = filled($attribute->canonicalMeasurementUnit?->code) ? (string) $attribute->canonicalMeasurementUnit->code : $sourceUnit;
 
         if ($sourceUnit !== null && $canonicalUnit !== null) {
             try {

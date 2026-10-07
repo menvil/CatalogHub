@@ -24,7 +24,7 @@ class AttributeMappingsMigrationTest extends TestCase
             'category_id',
             'raw_key',
             'normalized_raw_key',
-            'attribute_definition_id',
+            'category_attribute_assignment_id',
             'confidence',
             'status',
             'mapping_type',
@@ -50,10 +50,10 @@ class AttributeMappingsMigrationTest extends TestCase
         }
 
         $this->assertTrue($foreignKeys->contains(
-            fn (array $foreignKey): bool => $foreignKey['columns'] === ['attribute_definition_id', 'category_id']
-                && $foreignKey['foreign_table'] === 'attribute_definitions'
+            fn (array $foreignKey): bool => $foreignKey['columns'] === ['category_attribute_assignment_id', 'category_id']
+                && $foreignKey['foreign_table'] === 'category_attribute_assignments'
                 && $foreignKey['foreign_columns'] === ['id', 'central_category_id']
-                && $foreignKey['on_delete'] === 'cascade'
+                && $foreignKey['on_delete'] === 'restrict'
         ));
 
         $this->assertTrue($indexes->contains(
@@ -66,7 +66,8 @@ class AttributeMappingsMigrationTest extends TestCase
     {
         $source = ImportSource::factory()->create();
         $mappingCategory = CentralCategory::factory()->create();
-        $definition = AttributeDefinition::factory()->create();
+        $category = CentralCategory::factory()->create();
+        $definition = AttributeDefinition::factory()->assignedTo($category)->create();
 
         $this->expectException(QueryException::class);
 
@@ -75,7 +76,7 @@ class AttributeMappingsMigrationTest extends TestCase
             'category_id' => $mappingCategory->id,
             'raw_key' => 'Power',
             'normalized_raw_key' => 'power',
-            'attribute_definition_id' => $definition->id,
+            'category_attribute_assignment_id' => $definition->assignments()->sole()->id,
             'confidence' => 1,
             'status' => 'reviewed',
             'mapping_type' => 'attribute',
@@ -84,17 +85,17 @@ class AttributeMappingsMigrationTest extends TestCase
         ]);
     }
 
-    public function test_deleting_category_cascades_its_attribute_mappings(): void
+    public function test_category_deletion_is_restricted_while_schema_membership_exists(): void
     {
         $source = ImportSource::factory()->create();
         $category = CentralCategory::factory()->create();
-        $definition = AttributeDefinition::factory()->for($category, 'category')->create();
+        $definition = AttributeDefinition::factory()->assignedTo($category)->create();
         DB::table('attribute_mappings')->insert([
             'import_source_id' => $source->id,
             'category_id' => $category->id,
             'raw_key' => 'Power',
             'normalized_raw_key' => 'power',
-            'attribute_definition_id' => $definition->id,
+            'category_attribute_assignment_id' => $definition->assignments()->sole()->id,
             'confidence' => 1,
             'status' => 'reviewed',
             'mapping_type' => 'attribute',
@@ -102,21 +103,22 @@ class AttributeMappingsMigrationTest extends TestCase
             'updated_at' => now(),
         ]);
 
+        $this->expectException(QueryException::class);
         $category->delete();
 
-        $this->assertDatabaseEmpty('attribute_mappings');
     }
 
-    public function test_deleting_attribute_definition_cascades_its_mapping(): void
+    public function test_definition_deletion_is_restricted_while_mapping_membership_exists(): void
     {
         $source = ImportSource::factory()->create();
-        $definition = AttributeDefinition::factory()->create();
+        $category = CentralCategory::factory()->create();
+        $definition = AttributeDefinition::factory()->assignedTo($category)->create();
         DB::table('attribute_mappings')->insert([
             'import_source_id' => $source->id,
-            'category_id' => $definition->central_category_id,
+            'category_id' => $category->id,
             'raw_key' => 'Power',
             'normalized_raw_key' => 'power',
-            'attribute_definition_id' => $definition->id,
+            'category_attribute_assignment_id' => $definition->assignments()->sole()->id,
             'confidence' => 1,
             'status' => 'reviewed',
             'mapping_type' => 'attribute',
@@ -124,8 +126,8 @@ class AttributeMappingsMigrationTest extends TestCase
             'updated_at' => now(),
         ]);
 
+        $this->expectException(QueryException::class);
         $definition->delete();
 
-        $this->assertDatabaseEmpty('attribute_mappings');
     }
 }

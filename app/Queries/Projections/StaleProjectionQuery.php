@@ -23,10 +23,11 @@ final class StaleProjectionQuery implements RawSqlPersistenceBoundary
                 'site_product_projections.central_product_id',
             )
             ->where('site_product_projections.site_id', $site->getKey())
-            ->whereRaw($this->versionMismatchSql(
-                'site_product_projections.central_product_version',
-                'central_products.updated_at',
-            ))
+            ->leftJoin('central_categories', 'central_categories.id', '=', 'central_products.central_category_id')
+            ->where(fn ($query) => $query->whereColumn('site_product_projections.central_product_version', '!=', 'central_products.version')
+                ->orWhereNull('site_product_projections.central_product_version')
+                ->orWhere('site_product_projections.schema_version', '!=', 1)
+                ->orWhereColumn('site_product_projections.schema_revision', '!=', 'central_categories.schema_revision'))
             ->select([
                 'site_product_projections.id as projection_id',
                 'site_product_projections.central_product_id',
@@ -44,10 +45,9 @@ final class StaleProjectionQuery implements RawSqlPersistenceBoundary
                 'site_category_projections.central_category_id',
             )
             ->where('site_category_projections.site_id', $site->getKey())
-            ->whereRaw($this->versionMismatchSql(
-                'site_category_projections.central_category_version',
-                'central_categories.updated_at',
-            ))
+            ->where(fn ($query) => $query->whereRaw($this->versionMismatchSql('site_category_projections.central_category_version', 'central_categories.updated_at'))
+                ->orWhere('site_category_projections.schema_version', '!=', 1)
+                ->orWhereColumn('site_category_projections.schema_revision', '!=', 'central_categories.schema_revision'))
             ->select([
                 'site_category_projections.id as projection_id',
                 'site_category_projections.central_category_id',

@@ -22,14 +22,13 @@ use Illuminate\Validation\ValidationException;
 
 final readonly class CategoryAssignmentWriter
 {
-    public function __construct(private CategoryAccess $access, private CategoryLock $locks, private SchemaRevision $revisions, private AttributeIdentityLock $identityLock, private AttributeDependencies $dependencies, private AttributeIdentityReservation $identities, private AuditRecorder $audit) {}
+    public function __construct(private CategoryAccess $access, private CategoryLock $locks, private SchemaRevision $revisions, private AttributeDependencies $dependencies, private AuditRecorder $audit) {}
 
     /** @param array<string, mixed> $data */
     public function assign(CentralCategory $category, AttributeDefinition $definition, array $data, int $expectedRevision, ?User $actor = null): CategoryAttributeAssignment
     {
         return $this->mutate($category->id, $expectedRevision, $actor, function (CentralCategory $locked, User $actor) use ($definition, $data): CategoryAttributeAssignment {
             $definition = AttributeDefinition::query()->whereKey($definition->id)->lockForUpdate()->firstOrFail();
-            $this->identities->assertResolved($definition, 'attribute_definition_id');
             if (CategoryAttributeAssignment::query()->where('central_category_id', $locked->id)->where('attribute_definition_id', $definition->id)->exists()) {
                 throw ValidationException::withMessages(['attribute_definition_id' => 'The definition is already assigned.']);
             }
@@ -83,14 +82,12 @@ final readonly class CategoryAssignmentWriter
                 $row->fill(['attribute_section_id' => $sectionId, 'position' => $index]);
                 if ($row->isDirty()) {
                     $row->saveOrFail();
-                    $this->mirror($row);
                 }
             }
             if ($oldSectionId !== $sectionId) {
                 foreach (CategoryAttributeAssignment::query()->where('central_category_id', $category->id)->where('attribute_section_id', $oldSectionId)->orderBy('position')->orderBy('id')->lockForUpdate()->get() as $index => $row) {
                     if ($row->position !== $index) {
                         $row->forceFill(['position' => $index])->saveOrFail();
-                        $this->mirror($row);
                     }
                 }
             }
@@ -109,17 +106,10 @@ final readonly class CategoryAssignmentWriter
             if ($dependencies !== []) {
                 throw ValidationException::withMessages(['assignment' => 'Explicit migration required: '.implode(', ', $dependencies).'.']);
             }
-            if ($definition->central_category_id === $category->id && ! $this->identities->resolved($definition)) {
-                throw ValidationException::withMessages(['assignment' => 'Resolve canonical identity before removing legacy membership.']);
-            }
             $before = $this->snapshot($locked);
             $locked->delete();
-            if ($definition->central_category_id === $category->id) {
-                $definition->forceFill(['central_category_id' => null, 'attribute_section_id' => null])->saveOrFail();
-            }
             $this->revisions->invalidate($category, SchemaMutationOrigin::AttributeUnassigned, $locked->id, $actor);
             $this->audit->record(AuditAction::CatalogCategoryAttributeUnassigned, AuditContext::Central, $actor, $category, null, $before, null);
-            $this->identityLock->recordTargetWrite();
         });
     }
 
@@ -170,15 +160,8 @@ final readonly class CategoryAssignmentWriter
      */
     private function finish(CentralCategory $category, CategoryAttributeAssignment $assignment, User $actor, SchemaMutationOrigin $origin, AuditAction $action, ?array $before, array $changed = []): void
     {
-        $this->mirror($assignment);
         $this->revisions->invalidate($category, $origin, $assignment->id, $actor);
         $this->audit->record($action, AuditContext::Central, $actor, $category, null, $before, [...$this->snapshot($assignment), 'changed_fields' => $changed]);
-        $this->identityLock->recordTargetWrite();
-    }
-
-    private function mirror(CategoryAttributeAssignment $assignment): void
-    {
-        app(LegacyAttributeCompatibility::class)->mirrorAssignment($assignment);
     }
 
     /** @return array<string, mixed> */
@@ -186,6 +169,6 @@ final readonly class CategoryAssignmentWriter
     {
         return ['assignment_id' => $assignment->id, 'category_id' => $assignment->central_category_id, 'definition_id' => $assignment->attribute_definition_id,
             'code' => $assignment->definition->code, 'section_code' => $assignment->attribute_section_id === null ? null : AttributeSection::query()->findOrFail($assignment->attribute_section_id)->code,
-            ...array_intersect_key($assignment->getAttributes(), array_flip(LegacyAttributeBackfill::LOCAL_FIELDS))];
+            ...array_intersect_key($assignment->getAttributes(), array_flip(['attribute_section_id', 'position', 'is_required', 'is_visible', 'is_searchable', 'is_sortable']))];
     }
 }

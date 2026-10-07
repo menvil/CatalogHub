@@ -23,15 +23,12 @@ use App\Models\Locale;
 use App\Models\MeasurementUnit;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Support\AttributeIdentityRace;
 use Tests\TestCase;
-use Throwable;
 
 final class AttributeGlobalizationConcurrencyTest extends TestCase
 {
@@ -140,7 +137,7 @@ final class AttributeGlobalizationConcurrencyTest extends TestCase
     }
 
     #[DataProvider('translationOwners')]
-    public function test_translation_identity_check_and_creation_serialize_even_with_deferred_key(string $type, string $table, string $ownerColumn, string $field): void
+    public function test_translation_creation_serializes_with_owner_locale_id_key(string $type, string $table, string $ownerColumn, string $field): void
     {
         $owner = match ($type) {
             'category' => CentralCategory::factory()->create(),
@@ -151,10 +148,7 @@ final class AttributeGlobalizationConcurrencyTest extends TestCase
             default => throw new \LogicException('Unexpected translation owner.'),
         };
         $locale = Locale::factory()->create();
-        if ($type !== 'option') {
-            Schema::table($table, fn ($blueprint) => $blueprint->dropUnique($table.'_owner_locale_id_unique'));
-        }
-        $this->race($owner->getTable(),
+        $this->race('attribute_identity_scopes',
             fn () => $this->saveTranslation($owner, $locale, [$field => 'Parent']),
             fn () => $this->saveTranslation($owner, $locale, [$field => 'Child']),
             function (string $outcome) use ($owner, $locale, $table, $ownerColumn, $field): void {
@@ -189,120 +183,5 @@ final class AttributeGlobalizationConcurrencyTest extends TestCase
         };
     }
 
-    /** @param callable(): mixed $parentAction
-     * @param  callable(): mixed  $childAction
-     * @param  callable(string): void  $verify
-     */
-    private function race(string $lockedTable, callable $parentAction, callable $childAction, callable $verify): void
-    {
-        if (! function_exists('pcntl_fork')) {
-            $this->markTestSkipped('Two-process lock verification requires pcntl (available in the CI database matrix).');
-        }
-        $directory = sys_get_temp_dir().'/cataloghub-attribute-lock-'.bin2hex(random_bytes(8));
-        self::assertTrue(mkdir($directory));
-        $originalConnection = DB::getDefaultConnection();
-        $defaultConnection = $originalConnection;
-        $sqlitePath = null;
-        // Canonical SQLite runs on a real shared file for this test. In-memory
-        // connections cannot prove exclusion between independent processes.
-        if (DB::connection()->getDriverName() === 'sqlite') {
-            $sqlitePath = $directory.'/database.sqlite';
-            DB::statement("VACUUM INTO '".$sqlitePath."'");
-            $defaultConnection = 'attribute_parent_file';
-            config(['database.connections.'.$defaultConnection => [
-                'driver' => 'sqlite', 'database' => $sqlitePath, 'foreign_key_constraints' => true,
-                'busy_timeout' => 10000,
-            ]]);
-            DB::setDefaultConnection($defaultConnection);
-        }
-        $childConnection = 'attribute_child_connection';
-        config(['database.connections.'.$childConnection => config('database.connections.'.$defaultConnection)]);
-        $locked = $directory.'/locked';
-        $started = $directory.'/child-lock-query-started';
-        $lockTime = $directory.'/child-lock-query-time';
-        $outcomeFile = $directory.'/outcome';
-        $parentPid = getmypid();
-        $handled = false;
-        DB::listen(function (QueryExecuted $query) use ($lockedTable, $locked, $started, $lockTime, $parentPid, &$handled): void {
-            if ($handled || getmypid() !== $parentPid || ! str_starts_with(strtolower($query->sql), 'update') || ! str_contains($query->sql, $lockedTable)) {
-                return;
-            }
-            $handled = true;
-            touch($locked);
-            if (! $this->waitForFile($started)) {
-                throw new \RuntimeException('Child failed to start its concurrent action.');
-            }
-            // Hold the acquired lock while the child's actual UPDATE is in flight.
-            // Its first lock query must not complete until this transaction commits.
-            usleep(300000);
-            if (file_exists($lockTime)) {
-                throw new \RuntimeException('Child lock query completed while the parent still held the lock.');
-            }
-        });
-        $pid = pcntl_fork();
-        self::assertNotSame(-1, $pid);
-        if ($pid === 0) {
-            DB::setDefaultConnection($childConnection);
-            if (! $this->waitForFile($locked)) {
-                file_put_contents($outcomeFile, 'parent-timeout');
-                exit(1);
-            }
-            $attempted = false;
-            DB::connection($childConnection)->beforeExecuting(function (string $sql) use ($lockedTable, $started, &$attempted): void {
-                if (! $attempted && str_starts_with(strtolower($sql), 'update') && str_contains($sql, $lockedTable)) {
-                    $attempted = true;
-                    touch($started);
-                }
-            });
-            $timed = false;
-            DB::listen(function (QueryExecuted $query) use ($lockedTable, $lockTime, &$timed): void {
-                if (! $timed && str_starts_with(strtolower($query->sql), 'update') && str_contains($query->sql, $lockedTable)) {
-                    $timed = true;
-                    file_put_contents($lockTime, (string) $query->time);
-                }
-            });
-            try {
-                $childAction();
-                file_put_contents($outcomeFile, 'success');
-            } catch (ValidationException $e) {
-                file_put_contents($outcomeFile, isset($e->errors()['schema_revision']) ? 'stale' : 'validation-error');
-            } catch (Throwable $e) {
-                file_put_contents($outcomeFile, 'error:'.$e::class.':'.$e->getMessage());
-            }
-            exit(0);
-        }
-        try {
-            $parentAction();
-            pcntl_waitpid($pid, $status);
-            self::assertTrue($handled);
-            self::assertSame(0, pcntl_wexitstatus($status));
-            self::assertFileExists($lockTime);
-            self::assertGreaterThanOrEqual(100, (float) file_get_contents($lockTime), 'The child must actually wait on the held lock.');
-            // Verify committed facts on a third connection, independent of
-            // any PDO descriptor inherited by fork.
-            DB::purge($defaultConnection);
-            $verify((string) file_get_contents($outcomeFile));
-        } finally {
-            pcntl_waitpid($pid, $status);
-            DB::disconnect($childConnection);
-            if ($sqlitePath !== null) {
-                DB::disconnect($defaultConnection);
-            }
-            DB::setDefaultConnection($originalConnection);
-            foreach (glob($directory.'/*') ?: [] as $path) {
-                unlink($path);
-            }
-            rmdir($directory);
-        }
-    }
-
-    private function waitForFile(string $path): bool
-    {
-        $deadline = microtime(true) + 10;
-        while (! file_exists($path) && microtime(true) < $deadline) {
-            usleep(10000);
-        }
-
-        return file_exists($path);
-    }
+    use AttributeIdentityRace;
 }

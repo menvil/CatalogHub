@@ -141,7 +141,7 @@ final class CategoryFoundationConcurrencyTest extends TestCase
         $parentPid = getmypid();
         $handled = false;
         DB::listen(function (QueryExecuted $query) use ($lockedTable, $locked, $started, $lockTime, $parentPid, &$handled): void {
-            if ($handled || getmypid() !== $parentPid || ! str_starts_with(strtolower($query->sql), 'update') || ! str_contains($query->sql, $lockedTable)) {
+            if ($handled || getmypid() !== $parentPid || ! (str_starts_with(strtolower($query->sql), 'update') && str_contains($query->sql, $lockedTable))) {
                 return;
             }
             $handled = true;
@@ -166,14 +166,14 @@ final class CategoryFoundationConcurrencyTest extends TestCase
             }
             $attempted = false;
             DB::connection($childConnection)->beforeExecuting(function (string $sql) use ($lockedTable, $started, &$attempted): void {
-                if (! $attempted && str_starts_with(strtolower($sql), 'update') && str_contains($sql, $lockedTable)) {
+                if (! $attempted && (str_starts_with(strtolower($sql), 'update') && str_contains($sql, $lockedTable))) {
                     $attempted = true;
                     touch($started);
                 }
             });
             $timed = false;
             DB::listen(function (QueryExecuted $query) use ($lockedTable, $lockTime, &$timed): void {
-                if (! $timed && str_starts_with(strtolower($query->sql), 'update') && str_contains($query->sql, $lockedTable)) {
+                if (! $timed && (str_starts_with(strtolower($query->sql), 'update') && str_contains($query->sql, $lockedTable))) {
                     $timed = true;
                     file_put_contents($lockTime, (string) $query->time);
                 }

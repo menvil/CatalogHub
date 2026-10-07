@@ -23,44 +23,23 @@ final class GroupedSpecsPreviewBuilder
      */
     public function build(CentralProduct $product, array $state = []): array
     {
-        $product->loadMissing([
-            'category.attributeSections' => fn ($query) => $query->ordered(),
-            'category.attributeSections.attributes' => fn ($query) => $query->ordered(),
-            'category.attributeSections.attributes.options',
-            'attributeValues',
-        ]);
-
+        $product->load(['category.attributeAssignments' => fn ($query) => $query->ordered()->with(['section', 'definition.options', 'definition.canonicalMeasurementUnit']), 'attributeValues']);
         if (! $product->category) {
             return [];
         }
-
         $preview = [];
-
-        foreach ($product->category->attributeSections as $section) {
+        foreach ($product->category->attributeAssignments->sortBy(fn ($row) => [$row->section === null ? PHP_INT_MAX : $row->section->position, $row->position, $row->id])->groupBy('attribute_section_id') as $assignments) {
+            $section = $assignments->first()->section;
             $attributes = [];
-
-            foreach ($section->attributes as $attribute) {
-                $valueState = $state[$attribute->id] ?? $this->stateFromExistingValue(
-                    $product->attributeValues->firstWhere('attribute_definition_id', $attribute->id),
-                );
-                $formattedValue = $this->formatValue($attribute, $valueState);
-
-                if ($formattedValue === null) {
-                    continue;
+            foreach ($assignments as $assignment) {
+                $attribute = $assignment->definition;
+                $valueState = $state[$attribute->id] ?? $this->stateFromExistingValue($product->attributeValues->firstWhere('attribute_definition_id', $attribute->id));
+                $formatted = $this->formatValue($attribute, $valueState);
+                if ($formatted !== null) {
+                    $attributes[] = ['code' => $attribute->code, 'name' => $attribute->name, 'value' => $formatted];
                 }
-
-                $attributes[] = [
-                    'code' => $attribute->code,
-                    'name' => $attribute->name,
-                    'value' => $formattedValue,
-                ];
             }
-
-            $preview[] = [
-                'section' => $section->name,
-                'code' => $section->code,
-                'attributes' => $attributes,
-            ];
+            $preview[] = ['section' => $section === null ? 'Ungrouped' : $section->name, 'code' => $section === null ? 'ungrouped' : $section->code, 'attributes' => $attributes];
         }
 
         return $preview;
@@ -110,7 +89,7 @@ final class GroupedSpecsPreviewBuilder
         $value = $valueState['canonical_value'] ?? null;
         $unit = filled($valueState['canonical_unit'] ?? null)
             ? (string) $valueState['canonical_unit']
-            : ($attribute->canonical_unit ?: null);
+            : ($attribute->canonicalMeasurementUnit?->code ?: null);
 
         if (blank($value) && filled($valueState['value_number'] ?? null)) {
             $value = $valueState['value_number'];

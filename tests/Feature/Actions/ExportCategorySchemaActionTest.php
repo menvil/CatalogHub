@@ -9,6 +9,9 @@ use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Models\User;
+use Database\Seeders\MeasurementDimensionsSeeder;
+use Database\Seeders\MetricMeasurementUnitsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -18,6 +21,8 @@ class ExportCategorySchemaActionTest extends TestCase
 
     public function test_exports_category_schema_as_deterministic_array(): void
     {
+        $this->actingAs(User::factory()->centralAdmin()->create());
+        $this->seed([MeasurementDimensionsSeeder::class, MetricMeasurementUnitsSeeder::class]);
         $category = CentralCategory::factory()->create([
             'slug' => 'monitors',
             'name' => 'Monitors',
@@ -31,25 +36,20 @@ class ExportCategorySchemaActionTest extends TestCase
         ]);
         $childSection = AttributeSection::factory()
             ->for($category, 'category')
-            ->for($section, 'parent')
             ->create([
                 'code' => 'panel',
                 'name' => 'Panel',
                 'position' => 2,
             ]);
-        $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($childSection, 'section')
+        $attribute = AttributeDefinition::factory()->measured('frequency', 'hertz')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $childSection->id])
             ->create([
                 'code' => 'refresh_rate',
                 'name' => 'Refresh rate',
                 'data_type' => AttributeDataType::Integer,
-                'dimension' => 'frequency',
-                'canonical_unit' => 'hertz',
                 'position' => 1,
-                'is_filterable' => true,
                 'is_sortable' => true,
-                'is_comparable' => true,
                 'is_searchable' => true,
             ]);
         AttributeOption::factory()->for($attribute, 'attribute')->create([
@@ -63,14 +63,13 @@ class ExportCategorySchemaActionTest extends TestCase
         $this->assertSame('monitors', $export['category']['slug']);
         $this->assertSame('Monitors', $export['category']['name']);
         $this->assertSame('approved', $export['category']['schema_status']);
-        $this->assertSame('display', $export['sections'][0]['code']);
-        $this->assertNull($export['sections'][0]['parent_code']);
-        $this->assertSame('panel', $export['sections'][1]['code']);
-        $this->assertSame('display', $export['sections'][1]['parent_code']);
-        $this->assertSame('refresh_rate', $export['sections'][1]['attributes'][0]['code']);
-        $this->assertSame('integer', $export['sections'][1]['attributes'][0]['data_type']);
-        $this->assertSame('frequency', $export['sections'][1]['attributes'][0]['dimension']);
-        $this->assertTrue($export['sections'][1]['attributes'][0]['flags']['filterable']);
-        $this->assertSame('fast', $export['sections'][1]['attributes'][0]['options'][0]['code']);
+        self::assertSame(1, $export['schema_version']);
+        self::assertSame(['display', 'panel'], array_column($export['sections'], 'code'));
+        self::assertSame($attribute->id, $export['definitions'][0]['id']);
+        self::assertSame($attribute->measurement_dimension_id, $export['definitions'][0]['measurement_dimension_id']);
+        self::assertSame($childSection->id, $export['assignments'][0]['attribute_section_id']);
+        self::assertTrue($export['assignments'][0]['is_searchable']);
+        self::assertArrayNotHasKey('is_filterable', $export['definitions'][0]);
+        self::assertSame($export, app(ExportCategorySchemaAction::class)->handle($category));
     }
 }

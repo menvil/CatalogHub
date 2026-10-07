@@ -10,6 +10,8 @@ return new class extends Migration
     {
         Schema::create('site_search_documents', function (Blueprint $table): void {
             $table->id();
+            $table->unsignedInteger('schema_version')->default(1);
+            $table->unsignedBigInteger('schema_revision')->default(0);
             $table->foreignId('site_id')->constrained()->cascadeOnDelete();
             $table->string('locale', 20);
             $table->string('document_type');

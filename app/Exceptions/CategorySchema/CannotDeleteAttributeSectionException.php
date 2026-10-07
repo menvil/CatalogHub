@@ -10,9 +10,4 @@ final class CannotDeleteAttributeSectionException extends RuntimeException
     {
         return new self('Attribute section cannot be deleted while it has attributes.');
     }
-
-    public static function hasChildren(): self
-    {
-        return new self('Attribute section cannot be deleted while it has child sections.');
-    }
 }

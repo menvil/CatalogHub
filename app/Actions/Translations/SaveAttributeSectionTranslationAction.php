@@ -21,7 +21,6 @@ final readonly class SaveAttributeSectionTranslationAction
         $translation = DB::transaction(function () use ($section, $locale, $data): AttributeSectionTranslation {
             $section = app(TranslationLocaleIdentity::class)->lockOwner($section);
             $locale = Locale::query()->lockForUpdate()->findOrFail($locale->id);
-            app(TranslationLocaleIdentity::class)->assertUnambiguous('attribute_section_translations', 'attribute_section_id', $section->id, $locale->id);
 
             $translation = AttributeSectionTranslation::query()->updateOrCreate(
                 ['attribute_section_id' => $section->id, 'locale_id' => $locale->id],

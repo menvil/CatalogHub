@@ -3,18 +3,19 @@
 namespace App\Services\AttributeGlobalization;
 
 use App\Models\CentralCatalog\AttributeIdentityScope;
+use Illuminate\Support\Facades\DB;
+use LogicException;
 
-/** Shared membership/identity mutex, always before Category and definition locks. */
+/** Transaction mutex before Category/definition locks for normal membership mutations and rebuilds. */
 final class AttributeIdentityLock
 {
     public function acquire(): void
     {
-        AttributeIdentityScope::query()->toBase()->where('id', 1)->increment('write_epoch', 0);
-        AttributeIdentityScope::query()->toBase()->where('id', 1)->lockForUpdate()->firstOrFail();
-    }
-
-    public function recordTargetWrite(): void
-    {
-        AttributeIdentityScope::query()->toBase()->where('id', 1)->increment('write_epoch');
+        if (DB::transactionLevel() === 0) {
+            throw new LogicException('Attribute membership locking requires a transaction.');
+        }
+        // A write obtains SQLite's writer lock; PostgreSQL/MariaDB hold the same row until transaction end.
+        AttributeIdentityScope::query()->whereKey(1)->toBase()->update(['id' => 1]);
+        AttributeIdentityScope::query()->whereKey(1)->lockForUpdate()->firstOrFail();
     }
 }

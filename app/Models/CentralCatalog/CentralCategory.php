@@ -90,14 +90,6 @@ final class CentralCategory extends Model
     }
 
     /**
-     * @return HasMany<AttributeDefinition, $this>
-     */
-    public function attributeDefinitions(): HasMany
-    {
-        return $this->hasMany(AttributeDefinition::class, 'central_category_id');
-    }
-
-    /**
      * @return HasMany<CategoryTranslation, $this>
      */
     public function translations(): HasMany

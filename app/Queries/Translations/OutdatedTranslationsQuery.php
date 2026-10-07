@@ -3,6 +3,7 @@
 namespace App\Queries\Translations;
 
 use App\Enums\TranslationStatus;
+use App\Models\Locale;
 use App\Models\Translations\AttributeOptionTranslation;
 use App\Models\Translations\AttributeSectionTranslation;
 use App\Models\Translations\AttributeTranslation;
@@ -28,7 +29,8 @@ final class OutdatedTranslationsQuery
             $translations = $config['model']::query()
                 ->with([$config['relation'], 'localeModel'])
                 ->where('status', TranslationStatus::Outdated)
-                ->when($locale, fn ($query) => $query->where('locale', $locale))
+                ->when($locale, fn ($query) => $config['type'] === 'brand' ? $query->where('locale', $locale)
+                    : $query->where('locale_id', Locale::query()->where('code', $locale)->select('id')))
                 ->limit(100)
                 ->get();
 
@@ -39,7 +41,7 @@ final class OutdatedTranslationsQuery
                     'entity_type' => $config['type'],
                     'source_label' => (string) $entity?->getAttribute($config['source_label']),
                     'translated_label' => (string) $translation->getAttribute($config['translated_label']),
-                    'locale' => (string) $translation->getAttribute('locale'),
+                    'locale' => (string) ($config['type'] === 'brand' ? $translation->getAttribute('locale') : $translation->localeModel?->code),
                     'status' => $translation->getAttribute('status') instanceof TranslationStatus
                         ? $translation->getAttribute('status')->value
                         : (string) $translation->getAttribute('status'),

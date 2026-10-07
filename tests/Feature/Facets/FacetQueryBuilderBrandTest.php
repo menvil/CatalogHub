@@ -4,6 +4,7 @@ namespace Tests\Feature\Facets;
 
 use App\Data\Facets\FacetFilterSet;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Models\FacetDefinition;
 use App\Models\Site;
 use App\Models\SiteSearchDocument;
 use App\Services\Facets\FacetQueryBuilder;
@@ -18,6 +19,7 @@ class FacetQueryBuilderBrandTest extends TestCase
     {
         $site = Site::factory()->create();
         $category = CentralCategory::factory()->create();
+        FacetDefinition::factory()->for($category, 'category')->create(['code' => 'brand', 'source_type' => 'brand']);
         $lg = $this->document($site, $category, 'lg');
         $samsung = $this->document($site, $category, 'samsung');
         $this->document($site, $category, 'dell');
@@ -37,6 +39,7 @@ class FacetQueryBuilderBrandTest extends TestCase
     {
         $site = Site::factory()->create();
         $category = CentralCategory::factory()->create();
+        FacetDefinition::factory()->for($category, 'category')->create(['code' => 'brand', 'source_type' => 'brand']);
         $this->document($site, $category, 'lg');
 
         $results = app(FacetQueryBuilder::class)->apply(
@@ -55,7 +58,7 @@ class FacetQueryBuilderBrandTest extends TestCase
             'site_id' => $site->id,
             'filter_values_json' => [
                 'category_id' => $category->id,
-                'brand_slug' => $brand,
+                'brand' => $brand,
             ],
         ]);
     }

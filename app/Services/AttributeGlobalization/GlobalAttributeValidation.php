@@ -3,7 +3,6 @@
 namespace App\Services\AttributeGlobalization;
 
 use App\Enums\AttributeDataType;
-use App\Models\MeasurementDimension;
 use App\Models\MeasurementUnit;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -36,8 +35,6 @@ final class GlobalAttributeValidation
             throw ValidationException::withMessages(['measurement_dimension_id' => 'Numeric measurement requires a complete compatible dimension/unit pair.']);
         }
 
-        return [...$validated, 'data_type' => $type, 'measurement_dimension_id' => $dimensionId, 'canonical_measurement_unit_id' => $unitId,
-            'dimension' => $dimensionId === null ? null : MeasurementDimension::query()->findOrFail($dimensionId)->code,
-            'canonical_unit' => $unitId === null ? null : MeasurementUnit::query()->findOrFail($unitId)->code];
+        return [...$validated, 'data_type' => $type, 'measurement_dimension_id' => $dimensionId, 'canonical_measurement_unit_id' => $unitId];
     }
 }

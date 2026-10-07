@@ -6,6 +6,7 @@ use App\Enums\AttributeDataType;
 use App\Enums\FacetSourceType;
 use App\Enums\FacetType;
 use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\CentralCategory;
 use App\Rules\Facets\ValidFacetDefinitionRule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Validator;
@@ -17,13 +18,13 @@ class FacetDefinitionValidationTest extends TestCase
 
     public function test_checkbox_accepts_attribute_and_brand_sources(): void
     {
-        $attribute = AttributeDefinition::factory()->create([
+        $attribute = AttributeDefinition::factory()->assignedTo(CentralCategory::factory()->create())->create([
             'data_type' => AttributeDataType::Enum,
         ]);
 
         $this->assertTrue($this->validator([
-            'category_id' => $attribute->central_category_id,
-            'attribute_definition_id' => $attribute->id,
+            'category_id' => $attribute->assignments()->sole()->central_category_id,
+            'category_attribute_assignment_id' => $attribute->assignments()->sole()->id,
             'source_type' => FacetSourceType::Attribute->value,
             'facet_type' => FacetType::Checkbox->value,
         ])->passes());
@@ -51,12 +52,12 @@ class FacetDefinitionValidationTest extends TestCase
             'source_type' => FacetSourceType::Rating->value,
             'facet_type' => FacetType::Range->value,
         ]);
-        $attribute = AttributeDefinition::factory()->create([
+        $attribute = AttributeDefinition::factory()->assignedTo(CentralCategory::factory()->create())->create([
             'data_type' => AttributeDataType::Decimal,
         ]);
         $attributeValidator = $this->validator([
-            'category_id' => $attribute->central_category_id,
-            'attribute_definition_id' => $attribute->id,
+            'category_id' => $attribute->assignments()->sole()->central_category_id,
+            'category_attribute_assignment_id' => $attribute->assignments()->sole()->id,
             'source_type' => FacetSourceType::Attribute->value,
             'facet_type' => FacetType::Range->value,
         ]);
@@ -67,13 +68,13 @@ class FacetDefinitionValidationTest extends TestCase
 
     public function test_range_rejects_non_numeric_attribute(): void
     {
-        $attribute = AttributeDefinition::factory()->create([
+        $attribute = AttributeDefinition::factory()->assignedTo(CentralCategory::factory()->create())->create([
             'data_type' => AttributeDataType::String,
         ]);
 
         $validator = $this->validator([
-            'category_id' => $attribute->central_category_id,
-            'attribute_definition_id' => $attribute->id,
+            'category_id' => $attribute->assignments()->sole()->central_category_id,
+            'category_attribute_assignment_id' => $attribute->assignments()->sole()->id,
             'source_type' => FacetSourceType::Attribute->value,
             'facet_type' => FacetType::Range->value,
         ]);
@@ -83,13 +84,13 @@ class FacetDefinitionValidationTest extends TestCase
 
     public function test_boolean_accepts_boolean_attribute_from_selected_category(): void
     {
-        $attribute = AttributeDefinition::factory()->create([
+        $attribute = AttributeDefinition::factory()->assignedTo(CentralCategory::factory()->create())->create([
             'data_type' => AttributeDataType::Boolean,
         ]);
 
         $validator = $this->validator([
-            'category_id' => $attribute->central_category_id,
-            'attribute_definition_id' => $attribute->id,
+            'category_id' => $attribute->assignments()->sole()->central_category_id,
+            'category_attribute_assignment_id' => $attribute->assignments()->sole()->id,
             'source_type' => FacetSourceType::Attribute->value,
             'facet_type' => FacetType::Boolean->value,
         ]);
@@ -99,13 +100,13 @@ class FacetDefinitionValidationTest extends TestCase
 
     public function test_boolean_rejects_non_boolean_attribute(): void
     {
-        $attribute = AttributeDefinition::factory()->create([
+        $attribute = AttributeDefinition::factory()->assignedTo(CentralCategory::factory()->create())->create([
             'data_type' => AttributeDataType::String,
         ]);
 
         $validator = $this->validator([
-            'category_id' => $attribute->central_category_id,
-            'attribute_definition_id' => $attribute->id,
+            'category_id' => $attribute->assignments()->sole()->central_category_id,
+            'category_attribute_assignment_id' => $attribute->assignments()->sole()->id,
             'source_type' => FacetSourceType::Attribute->value,
             'facet_type' => FacetType::Boolean->value,
         ]);
@@ -115,7 +116,7 @@ class FacetDefinitionValidationTest extends TestCase
 
     public function test_select_accepts_brand_or_attribute_source(): void
     {
-        $attribute = AttributeDefinition::factory()->create([
+        $attribute = AttributeDefinition::factory()->assignedTo(CentralCategory::factory()->create())->create([
             'data_type' => AttributeDataType::MultiEnum,
         ]);
 
@@ -124,8 +125,8 @@ class FacetDefinitionValidationTest extends TestCase
             'facet_type' => FacetType::Select->value,
         ])->passes());
         $this->assertTrue($this->validator([
-            'category_id' => $attribute->central_category_id,
-            'attribute_definition_id' => $attribute->id,
+            'category_id' => $attribute->assignments()->sole()->central_category_id,
+            'category_attribute_assignment_id' => $attribute->assignments()->sole()->id,
             'source_type' => FacetSourceType::Attribute->value,
             'facet_type' => FacetType::Select->value,
         ])->passes());
@@ -133,10 +134,10 @@ class FacetDefinitionValidationTest extends TestCase
 
     public function test_option_facets_reject_missing_incompatible_or_cross_category_attributes(): void
     {
-        $attribute = AttributeDefinition::factory()->create([
+        $attribute = AttributeDefinition::factory()->assignedTo(CentralCategory::factory()->create())->create([
             'data_type' => AttributeDataType::String,
         ]);
-        $otherAttribute = AttributeDefinition::factory()->create([
+        $otherAttribute = AttributeDefinition::factory()->assignedTo(CentralCategory::factory()->create())->create([
             'data_type' => AttributeDataType::Enum,
         ]);
 
@@ -146,14 +147,14 @@ class FacetDefinitionValidationTest extends TestCase
                 'facet_type' => $facetType->value,
             ])->fails());
             $this->assertTrue($this->validator([
-                'category_id' => $attribute->central_category_id,
-                'attribute_definition_id' => $attribute->id,
+                'category_id' => $attribute->assignments()->sole()->central_category_id,
+                'category_attribute_assignment_id' => $attribute->assignments()->sole()->id,
                 'source_type' => FacetSourceType::Attribute->value,
                 'facet_type' => $facetType->value,
             ])->fails());
             $this->assertTrue($this->validator([
-                'category_id' => $attribute->central_category_id,
-                'attribute_definition_id' => $otherAttribute->id,
+                'category_id' => $attribute->assignments()->sole()->central_category_id,
+                'category_attribute_assignment_id' => $otherAttribute->assignments()->sole()->id,
                 'source_type' => FacetSourceType::Attribute->value,
                 'facet_type' => $facetType->value,
             ])->fails());

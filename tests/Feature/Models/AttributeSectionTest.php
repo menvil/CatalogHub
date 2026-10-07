@@ -19,17 +19,12 @@ class AttributeSectionTest extends TestCase
         $this->assertTrue($section->category->is($category));
     }
 
-    public function test_attribute_section_can_have_parent_and_children(): void
+    public function test_section_model_has_no_nested_relationships(): void
     {
-        $category = CentralCategory::factory()->create();
-        $parent = AttributeSection::factory()->for($category, 'category')->create();
-        $child = AttributeSection::factory()
-            ->for($category, 'category')
-            ->for($parent, 'parent')
-            ->create();
-
-        $this->assertTrue($child->parent->is($parent));
-        $this->assertTrue($parent->children->first()->is($child));
+        $methods = get_class_methods(new AttributeSection);
+        self::assertNotContains('parent', $methods);
+        self::assertNotContains('children', $methods);
+        self::assertNotContains('parent_id', (new AttributeSection)->getFillable());
     }
 
     public function test_attribute_section_flags_are_cast_to_booleans(): void

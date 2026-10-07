@@ -122,7 +122,7 @@ final class CentralProductResource extends Resource
             ])
             ->recordActions([
                 ViewAction::make(),
-                EditAction::make(),
+                EditAction::make()->url(fn ($record): string => self::getUrl('edit', ['record' => $record])),
                 Action::make('specs')
                     ->label('Specs')
                     ->icon(Heroicon::OutlinedListBullet)

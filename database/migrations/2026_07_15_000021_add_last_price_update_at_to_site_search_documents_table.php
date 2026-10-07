@@ -16,6 +16,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('site_search_documents', function (Blueprint $table): void {
+            $table->dropIndex(['last_price_update_at']);
             $table->dropColumn('last_price_update_at');
         });
     }

@@ -24,7 +24,7 @@ final class SaveCategoryTranslationRequest extends SaveTranslationRequest
         $locale = $this->route('locale');
 
         return $category instanceof CentralCategory && $locale instanceof Locale
-            ? $category->translations()->where('locale', $locale->code)->first()
+            ? $category->translations()->where('locale_id', $locale->id)->first()
             : null;
     }
 }

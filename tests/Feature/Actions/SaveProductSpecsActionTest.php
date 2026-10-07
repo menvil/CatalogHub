@@ -11,12 +11,19 @@ use App\Models\CentralCatalog\CentralProduct;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
 use App\Models\MeasurementDimension;
 use App\Models\MeasurementUnit;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class SaveProductSpecsActionTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->actingAs(User::factory()->centralAdmin()->create());
+    }
 
     public function test_saves_product_specs_through_action(): void
     {
@@ -30,14 +37,12 @@ class SaveProductSpecsActionTest extends TestCase
             'factor_to_canonical' => '1',
             'is_canonical' => true,
         ]);
-        $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+        $attribute = AttributeDefinition::factory()->measured('frequency', 'hertz')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => 'refresh_rate',
                 'data_type' => 'decimal',
-                'dimension' => 'frequency',
-                'canonical_unit' => 'hertz',
             ]);
 
         app(SaveProductSpecsAction::class)->handle($product, [
@@ -127,8 +132,8 @@ class SaveProductSpecsActionTest extends TestCase
         $section = AttributeSection::factory()->for($category, 'category')->create();
         $product = CentralProduct::factory()->for($category, 'category')->create();
         $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => 'screen_size_range',
                 'data_type' => 'decimal',
@@ -158,8 +163,8 @@ class SaveProductSpecsActionTest extends TestCase
         $section = AttributeSection::factory()->for($category, 'category')->create();
         $product = CentralProduct::factory()->for($category, 'category')->create();
         $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => 'model_name',
                 'data_type' => 'string',
@@ -177,15 +182,15 @@ class SaveProductSpecsActionTest extends TestCase
         $section = AttributeSection::factory()->for($category, 'category')->create();
         $product = CentralProduct::factory()->for($category, 'category')->create();
         $validAttribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => 'model_name',
                 'data_type' => 'string',
             ]);
         $invalidAttribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => 'refresh_rate',
                 'data_type' => 'decimal',

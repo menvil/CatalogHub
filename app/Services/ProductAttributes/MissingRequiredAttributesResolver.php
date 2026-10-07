@@ -5,6 +5,7 @@ namespace App\Services\ProductAttributes;
 use App\Enums\AttributeDataType;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeSection;
+use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
 
@@ -17,7 +18,7 @@ final class MissingRequiredAttributesResolver
     public function resolve(CentralProduct $product, array $state = []): array
     {
         $product->loadMissing([
-            'category.attributeDefinitions.section',
+            'category.attributeAssignments.section', 'category.attributeAssignments.definition',
             'attributeValues',
         ]);
 
@@ -25,9 +26,9 @@ final class MissingRequiredAttributesResolver
             return [];
         }
 
-        return $product->category->attributeDefinitions
+        return $product->category->attributeAssignments
             ->where('is_required', true)
-            ->sort(function (AttributeDefinition $first, AttributeDefinition $second): int {
+            ->sort(function (CategoryAttributeAssignment $first, CategoryAttributeAssignment $second): int {
                 $firstSection = $first->section;
                 $secondSection = $second->section;
 
@@ -41,6 +42,7 @@ final class MissingRequiredAttributesResolver
                     $second->id,
                 ];
             })
+            ->map(fn ($assignment) => $assignment->definition)
             ->reject(function (AttributeDefinition $attribute) use ($product, $state): bool {
                 if (array_key_exists($attribute->id, $state)) {
                     return $this->stateHasTypedValue($attribute, $state[$attribute->id]);

@@ -30,19 +30,20 @@ final class TranslationResolver
     {
         $config = $this->configFor($entity);
         $candidateLocales = $this->candidateLocales($locale);
+        $localeIds = Locale::query()->whereIn('code', $candidateLocales)->pluck('id', 'code');
         $translations = $config['translation']::query()
             ->where($config['foreign_key'], $entity->getKey())
-            ->whereIn('locale', $candidateLocales)
+            ->whereIn('locale_id', $localeIds->values())
             ->get()
-            ->keyBy(fn (Model $translation): string => (string) $translation->getAttribute('locale'));
+            ->keyBy('locale_id');
 
         foreach ($candidateLocales as $candidate) {
-            $translation = $translations->get($candidate);
+            $translation = $translations->get($localeIds->get($candidate));
 
             if ($translation instanceof Model && filled($translation->getAttribute($field))) {
                 return new ResolvedTranslation(
                     value: $translation->getAttribute($field),
-                    locale: (string) $translation->getAttribute('locale'),
+                    locale: $candidate,
                     status: $this->statusOf($translation),
                     source: $candidate === $locale ? 'exact' : 'fallback_locale',
                     translationModel: $translation,

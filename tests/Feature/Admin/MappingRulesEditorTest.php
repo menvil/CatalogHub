@@ -23,7 +23,7 @@ class MappingRulesEditorTest extends TestCase
         $admin = User::factory()->centralAdmin()->create();
         $source = ImportSource::factory()->create();
         $category = CentralCategory::factory()->create();
-        $definition = AttributeDefinition::factory()->for($category, 'category')->create();
+        $definition = AttributeDefinition::factory()->assignedTo($category)->create();
 
         Livewire::actingAs($admin)
             ->test(CreateAttributeMapping::class)
@@ -32,7 +32,7 @@ class MappingRulesEditorTest extends TestCase
                 'category_id' => $category->id,
                 'raw_key' => 'Power (W)',
                 'normalized_raw_key' => 'power_w',
-                'attribute_definition_id' => $definition->id,
+                'category_attribute_assignment_id' => $definition->assignments()->sole()->id,
                 'confidence' => '1.0000',
                 'status' => 'reviewed',
                 'mapping_type' => 'attribute',
@@ -45,7 +45,7 @@ class MappingRulesEditorTest extends TestCase
             'category_id' => $category->id,
             'raw_key' => 'Power (W)',
             'normalized_raw_key' => 'power_w',
-            'attribute_definition_id' => $definition->id,
+            'category_attribute_assignment_id' => $definition->assignments()->sole()->id,
             'status' => 'reviewed',
         ]);
     }
@@ -90,23 +90,23 @@ class MappingRulesEditorTest extends TestCase
 
         Livewire::actingAs($admin)
             ->test(EditAttributeMapping::class, ['record' => $mapping->getRouteKey()])
-            ->assertSet('data.attribute_definition_id', $mapping->attribute_definition_id)
+            ->assertSet('data.category_attribute_assignment_id', $mapping->category_attribute_assignment_id)
             ->set('data.category_id', $newCategory->id)
-            ->assertSet('data.attribute_definition_id', null);
+            ->assertSet('data.category_attribute_assignment_id', null);
     }
 
     private function mapping(): AttributeMapping
     {
         $source = ImportSource::factory()->create();
         $category = CentralCategory::factory()->create();
-        $definition = AttributeDefinition::factory()->for($category, 'category')->create();
+        $definition = AttributeDefinition::factory()->assignedTo($category)->create();
 
         return AttributeMapping::query()->create([
             'import_source_id' => $source->id,
             'category_id' => $category->id,
             'raw_key' => fake()->unique()->word(),
             'normalized_raw_key' => fake()->unique()->word(),
-            'attribute_definition_id' => $definition->id,
+            'category_attribute_assignment_id' => $definition->assignments()->sole()->id,
             'confidence' => '1.0000',
             'status' => 'reviewed',
             'mapping_type' => 'attribute',

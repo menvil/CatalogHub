@@ -21,7 +21,6 @@ final readonly class SaveCategoryTranslationAction
         $translation = DB::transaction(function () use ($category, $locale, $data): CategoryTranslation {
             $category = app(TranslationLocaleIdentity::class)->lockOwner($category);
             $locale = Locale::query()->lockForUpdate()->findOrFail($locale->id);
-            app(TranslationLocaleIdentity::class)->assertUnambiguous('category_translations', 'category_id', $category->id, $locale->id);
 
             $translation = CategoryTranslation::query()->firstOrNew([
                 'category_id' => $category->id,

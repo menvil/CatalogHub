@@ -21,13 +21,13 @@ class AttributeMappingServiceTest extends TestCase
     {
         $source = ImportSource::factory()->create();
         $category = CentralCategory::factory()->create();
-        $definition = AttributeDefinition::factory()->for($category, 'category')->create();
+        $definition = AttributeDefinition::factory()->assignedTo($category)->create();
         AttributeMapping::query()->create([
             'import_source_id' => $source->id,
             'category_id' => $category->id,
             'raw_key' => 'Power (W)',
             'normalized_raw_key' => 'power_w',
-            'attribute_definition_id' => $definition->id,
+            'category_attribute_assignment_id' => $definition->assignments()->sole()->id,
             'confidence' => '1.0000',
             'status' => 'reviewed',
             'mapping_type' => 'attribute',
@@ -53,7 +53,7 @@ class AttributeMappingServiceTest extends TestCase
 
         $mapping = $service->recordUnmapped($source->id, $category->id, ' Unknown   Field ');
 
-        $this->assertNull($mapping->attribute_definition_id);
+        $this->assertNull($mapping->category_attribute_assignment_id);
         $this->assertSame('unknown_field', $mapping->normalized_raw_key);
         $this->assertSame('auto', $mapping->status);
         $this->assertSame($definitionsBefore, AttributeDefinition::query()->count());
@@ -70,7 +70,7 @@ class AttributeMappingServiceTest extends TestCase
                 'category_id' => $category->id,
                 'raw_key' => $rawKey,
                 'normalized_raw_key' => 'power_w',
-                'attribute_definition_id' => AttributeDefinition::factory()->for($category, 'category')->create()->id,
+                'category_attribute_assignment_id' => AttributeDefinition::factory()->assignedTo($category)->create()->assignments()->sole()->id,
                 'confidence' => '1.0000',
                 'status' => 'reviewed',
                 'mapping_type' => 'attribute',

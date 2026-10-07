@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Models;
 
-use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -12,7 +12,7 @@ class AttributeFlagsTest extends TestCase
 
     public function test_casts_attribute_visibility_and_searchable_flags_to_booleans(): void
     {
-        $attribute = AttributeDefinition::factory()->create([
+        $attribute = CategoryAttributeAssignment::factory()->create([
             'is_visible' => 1,
             'is_searchable' => 1,
         ]);
@@ -23,20 +23,20 @@ class AttributeFlagsTest extends TestCase
 
     public function test_visible_scope_returns_visible_attributes(): void
     {
-        $visible = AttributeDefinition::factory()->create(['is_visible' => true]);
-        AttributeDefinition::factory()->create(['is_visible' => false]);
+        $visible = CategoryAttributeAssignment::factory()->create(['is_visible' => true]);
+        CategoryAttributeAssignment::factory()->create(['is_visible' => false]);
 
-        $ids = AttributeDefinition::query()->visible()->pluck('id')->all();
+        $ids = CategoryAttributeAssignment::query()->visible()->pluck('id')->all();
 
         $this->assertSame([$visible->id], $ids);
     }
 
     public function test_searchable_scope_returns_searchable_attributes(): void
     {
-        $searchable = AttributeDefinition::factory()->create(['is_searchable' => true]);
-        AttributeDefinition::factory()->create(['is_searchable' => false]);
+        $searchable = CategoryAttributeAssignment::factory()->create(['is_searchable' => true]);
+        CategoryAttributeAssignment::factory()->create(['is_searchable' => false]);
 
-        $ids = AttributeDefinition::query()->searchable()->pluck('id')->all();
+        $ids = CategoryAttributeAssignment::query()->searchable()->pluck('id')->all();
 
         $this->assertSame([$searchable->id], $ids);
     }

@@ -11,12 +11,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * @property int|null $parent_id
- */
 #[Fillable([
     'central_category_id',
-    'parent_id',
     'code',
     'name',
     'position',
@@ -65,30 +61,6 @@ final class AttributeSection extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(CentralCategory::class, 'central_category_id');
-    }
-
-    /**
-     * @return BelongsTo<AttributeSection, $this>
-     */
-    public function parent(): BelongsTo
-    {
-        return $this->belongsTo(self::class, 'parent_id');
-    }
-
-    /**
-     * @return HasMany<AttributeSection, $this>
-     */
-    public function children(): HasMany
-    {
-        return $this->hasMany(self::class, 'parent_id');
-    }
-
-    /**
-     * @return HasMany<AttributeDefinition, $this>
-     */
-    public function attributes(): HasMany
-    {
-        return $this->hasMany(AttributeDefinition::class, 'attribute_section_id');
     }
 
     /** @return HasMany<CategoryAttributeAssignment, $this> */

@@ -17,44 +17,17 @@ class AttributeDefinitionsMigrationTest extends TestCase
     public function test_has_attribute_definitions_table_with_required_columns(): void
     {
         $this->assertTrue(Schema::hasTable('attribute_definitions'));
-        $this->assertTrue(Schema::hasColumns('attribute_definitions', [
-            'id',
-            'central_category_id',
-            'attribute_section_id',
-            'code',
-            'name',
-            'data_type',
-            'dimension',
-            'canonical_unit',
-            'position',
-            'is_required',
-            'is_filterable',
-            'is_sortable',
-            'is_comparable',
-            'is_visible',
-            'is_searchable',
-            'created_at',
-            'updated_at',
-        ]));
+        $this->assertTrue(Schema::hasColumns('attribute_definitions', ['id', 'code', 'name', 'data_type', 'measurement_dimension_id', 'canonical_measurement_unit_id', 'created_at', 'updated_at']));
+        foreach (['central_category_id', 'attribute_section_id', 'position', 'is_required', 'is_visible', 'is_searchable', 'is_sortable', 'is_filterable', 'is_comparable', 'dimension', 'canonical_unit', 'canonical_code'] as $column) {
+            $this->assertFalse(Schema::hasColumn('attribute_definitions', $column), $column);
+        }
     }
 
     public function test_attribute_definitions_have_expected_indexes(): void
     {
         $indexes = collect(Schema::getIndexes('attribute_definitions'));
-
-        $this->assertTrue($indexes->contains(
-            fn (array $index): bool => $index['unique'] === true
-                && $index['columns'] === ['central_category_id', 'code']
-        ));
-        $this->assertTrue($indexes->contains(
-            fn (array $index): bool => $index['columns'] === ['central_category_id', 'attribute_section_id', 'position']
-        ));
-        $this->assertTrue($indexes->contains(
-            fn (array $index): bool => $index['columns'] === ['central_category_id', 'is_filterable']
-        ));
-        $this->assertTrue($indexes->contains(
-            fn (array $index): bool => $index['columns'] === ['central_category_id', 'is_comparable']
-        ));
+        $this->assertTrue($indexes->contains(fn (array $index): bool => $index['unique'] && $index['columns'] === ['code']));
+        $this->assertFalse($indexes->contains(fn (array $index): bool => in_array('central_category_id', $index['columns'], true)));
     }
 
     public function test_attribute_definition_section_must_belong_to_same_category(): void
@@ -66,7 +39,7 @@ class AttributeDefinitionsMigrationTest extends TestCase
         $this->expectException(QueryException::class);
 
         AttributeDefinition::factory()
-            ->for($attributeCategory, 'category')
+            ->assignedTo($attributeCategory)
             ->create(['attribute_section_id' => $section->id]);
     }
 }

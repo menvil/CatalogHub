@@ -30,7 +30,7 @@
                 <h3 class="text-base font-semibold text-gray-950 dark:text-white">Choose a category first</h3>
                 <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Product specs are driven by the category schema.</p>
             </section>
-        @elseif ($product->category->attributeSections->isEmpty())
+        @elseif ($this->getAssignmentGroups() === [])
             <section class="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-900">
                 <h3 class="text-base font-semibold text-gray-950 dark:text-white">No attributes configured</h3>
                 <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Add sections and attributes to the category schema before editing product specs.</p>
@@ -53,20 +53,21 @@
             @endif
 
             <section class="space-y-4">
-                @foreach ($product->category->attributeSections as $section)
+                @foreach ($this->getAssignmentGroups() as $group)
+                    @php $section = $group['section']; @endphp
                     <article class="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
                         <header class="flex flex-col gap-2 border-b border-gray-200 p-5 dark:border-gray-800 sm:flex-row sm:items-start sm:justify-between">
                             <div>
-                                <h3 class="text-lg font-semibold tracking-normal text-gray-950 dark:text-white">{{ $section->name }}</h3>
-                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $section->code }}</p>
+                                <h3 class="text-lg font-semibold tracking-normal text-gray-950 dark:text-white">{{ ($section?->name ?? 'Ungrouped') }}</h3>
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ ($section?->code ?? 'ungrouped') }}</p>
                             </div>
 
                             <span class="w-fit rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-200">
-                                {{ $section->attributes->count() }} attributes
+                                {{ $group['assignments']->count() }} attributes
                             </span>
                         </header>
 
-                        @if ($section->attributes->isEmpty())
+                        @if ($group['assignments']->isEmpty())
                             <div class="p-5 text-sm text-gray-500 dark:text-gray-400">No attributes in this section yet.</div>
                         @else
                             <div class="overflow-x-auto">
@@ -80,7 +81,8 @@
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
-                                        @foreach ($section->attributes as $attribute)
+                                        @foreach ($group['assignments'] as $assignment)
+                                            @php $attribute = $assignment->definition; @endphp
                                             @php
                                                 $existingValue = $product->attributeValues->firstWhere('attribute_definition_id', $attribute->id);
                                             @endphp
@@ -162,7 +164,7 @@
                                                                     class="w-56 rounded-md border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                                                                 >
                                                                     <option value="">No option</option>
-                                                                    @foreach ($attribute->options as $option)
+                                                                    @foreach ($this->selectableOptions($attribute) as $option)
                                                                         <option value="{{ $option->code }}">{{ $option->label ?: $option->code }}</option>
                                                                     @endforeach
                                                                 </select>
@@ -172,7 +174,7 @@
                                                                 <span class="text-sm text-warning-700 dark:text-warning-300">No options configured for this multi-enum attribute.</span>
                                                             @else
                                                                 <div class="flex flex-wrap gap-3">
-                                                                    @foreach ($attribute->options as $option)
+                                                                    @foreach ($this->selectableOptions($attribute) as $option)
                                                                         <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
                                                                             <input
                                                                                 type="checkbox"

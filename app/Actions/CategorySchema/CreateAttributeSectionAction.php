@@ -29,6 +29,7 @@ final class CreateAttributeSectionAction
         $category = CentralCategory::query()->findOrFail($category->id);
 
         $validated = Validator::make($data, [
+            'parent_id' => ['prohibited'],
             'name' => ['required', 'string', 'max:255'],
             'code' => [
                 'required',
@@ -58,7 +59,6 @@ final class CreateAttributeSectionAction
 
             return AttributeSection::query()->create([
                 'central_category_id' => $category->getKey(),
-                'parent_id' => null,
                 'code' => $validated['code'],
                 'name' => $validated['name'],
                 'position' => $position,

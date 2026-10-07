@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Enums\FacetSourceType;
 use App\Enums\FacetType;
-use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\CentralCatalog\CentralCategory;
 use Database\Factories\FacetDefinitionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -27,7 +27,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 #[Fillable([
     'category_id',
-    'attribute_definition_id',
+    'category_attribute_assignment_id',
     'code',
     'label_override',
     'facet_type',
@@ -98,10 +98,10 @@ final class FacetDefinition extends Model
         return $this->belongsTo(CentralCategory::class, 'category_id');
     }
 
-    /** @return BelongsTo<AttributeDefinition, $this> */
-    public function attributeDefinition(): BelongsTo
+    /** @return BelongsTo<CategoryAttributeAssignment, $this> */
+    public function assignment(): BelongsTo
     {
-        return $this->belongsTo(AttributeDefinition::class);
+        return $this->belongsTo(CategoryAttributeAssignment::class, 'category_attribute_assignment_id');
     }
 
     /** @return HasMany<FacetOption, $this> */

@@ -215,7 +215,7 @@ class AttributeOptionActionsTest extends TestCase
         $option = AttributeOption::factory()->for($attribute, 'attribute')->create();
         $attribute->update(['data_type' => AttributeDataType::Decimal]);
 
-        $this->expectException(CannotManageAttributeOptionException::class);
+        $this->expectException(ValidationException::class);
 
         app(DeleteAttributeOptionAction::class)->handle($option);
     }

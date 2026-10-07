@@ -80,7 +80,7 @@ parameters:
                 status: approved
             -
                 class: App\Queries\Projections\StaleProjectionQuery
-                ownerMethods: [productsForSite, categoriesForSite]
+                ownerMethods: [categoriesForSite]
                 methods: [whereRaw]
                 reason: 'Projection version comparison requires driver-aware timestamp conversion over fixed internal columns.'
                 bindings: internal_only

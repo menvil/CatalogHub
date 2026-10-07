@@ -4,6 +4,9 @@ namespace App\Enums;
 
 enum SchemaMutationOrigin: string
 {
+    case DisplayRuleConfigured = 'display_rule.configure';
+    case FacetConfigured = 'facet.configure';
+    case ComparisonConfigured = 'comparison.configure';
     case AttributeAssigned = 'assignment.assign';
     case AssignmentConfigured = 'assignment.configure';
     case AssignmentMoved = 'assignment.move';

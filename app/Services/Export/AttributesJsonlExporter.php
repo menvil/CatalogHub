@@ -6,6 +6,7 @@ use App\Models\CatalogSnapshot;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\CentralCatalog\AttributeSection;
+use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use Generator;
 
 final class AttributesJsonlExporter implements JsonlExporter
@@ -22,10 +23,9 @@ final class AttributesJsonlExporter implements JsonlExporter
     {
         foreach (AttributeSection::query()->orderBy('id')->cursor() as $section) {
             yield [
-                'entity_type' => 'attribute_section',
+                'schema_version' => 1, 'entity_type' => 'attribute_section',
                 'id' => $section->getKey(),
                 'category_id' => $section->central_category_id,
-                'parent_id' => $section->parent_id,
                 'code' => $section->code,
                 'name' => $section->name,
                 'position' => $section->position,
@@ -40,33 +40,17 @@ final class AttributesJsonlExporter implements JsonlExporter
         }
 
         foreach (AttributeDefinition::query()->orderBy('id')->cursor() as $definition) {
-            yield [
-                'entity_type' => 'attribute_definition',
-                'id' => $definition->getKey(),
-                'category_id' => $definition->central_category_id,
-                'section_id' => $definition->attribute_section_id,
-                'code' => $definition->code,
-                'name' => $definition->name,
-                'data_type' => $definition->data_type->value,
-                'dimension' => $definition->dimension,
-                'canonical_unit' => $definition->canonical_unit,
-                'position' => $definition->position,
-                'flags' => [
-                    'is_required' => $definition->is_required,
-                    'is_filterable' => $definition->is_filterable,
-                    'is_sortable' => $definition->is_sortable,
-                    'is_comparable' => $definition->is_comparable,
-                    'is_visible' => $definition->is_visible,
-                    'is_searchable' => $definition->is_searchable,
-                ],
-                'created_at' => $definition->created_at?->toISOString(),
-                'updated_at' => $definition->updated_at?->toISOString(),
-            ];
+            yield ['schema_version' => 1, 'entity_type' => 'attribute_definition',
+                ...$definition->only(['id', 'code', 'name', 'data_type', 'measurement_dimension_id', 'canonical_measurement_unit_id', 'created_at', 'updated_at'])];
+        }
+        foreach (CategoryAttributeAssignment::query()->orderBy('id')->cursor() as $assignment) {
+            yield ['schema_version' => 1, 'entity_type' => 'category_attribute_assignment',
+                ...$assignment->only(['id', 'central_category_id', 'attribute_definition_id', 'attribute_section_id', 'position', 'is_required', 'is_visible', 'is_searchable', 'is_sortable', 'created_at', 'updated_at'])];
         }
 
         foreach (AttributeOption::query()->orderBy('id')->cursor() as $option) {
             yield [
-                'entity_type' => 'attribute_option',
+                'schema_version' => 1, 'entity_type' => 'attribute_option',
                 'id' => $option->getKey(),
                 'attribute_definition_id' => $option->attribute_definition_id,
                 'code' => $option->code,

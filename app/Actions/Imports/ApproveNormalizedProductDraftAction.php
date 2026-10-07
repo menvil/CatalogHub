@@ -2,9 +2,12 @@
 
 namespace App\Actions\Imports;
 
+use App\Enums\Permission;
 use App\Models\Imports\NormalizedProductDraft;
 use App\Models\User;
-use Illuminate\Auth\Access\AuthorizationException;
+use App\Services\AttributeGlobalization\AttributeIdentityLock;
+use App\Services\Categories\CategoryAccess;
+use App\Services\Imports\DraftAttributeIdentity;
 use Illuminate\Support\Facades\DB;
 use LogicException;
 
@@ -12,11 +15,10 @@ final class ApproveNormalizedProductDraftAction
 {
     public function handle(NormalizedProductDraft $draft, ?User $user): NormalizedProductDraft
     {
-        if (! $user instanceof User || ! ($user->isSuperAdmin() || $user->isCentralAdmin() || $user->isCatalogEditor())) {
-            throw new AuthorizationException('You are not allowed to approve normalized drafts.');
-        }
+        $user = app(CategoryAccess::class)->authorize(Permission::CatalogProductsManage, $user);
 
         return DB::transaction(function () use ($draft, $user): NormalizedProductDraft {
+            app(AttributeIdentityLock::class)->acquire();
             $lockedDraft = NormalizedProductDraft::query()->lockForUpdate()->findOrFail($draft->id);
 
             if ($lockedDraft->status !== 'pending_review') {
@@ -27,6 +29,10 @@ final class ApproveNormalizedProductDraftAction
                 throw new LogicException("Draft [{$lockedDraft->id}] has unresolved critical normalization errors.");
             }
 
+            if ($lockedDraft->schema_version !== 1) {
+                throw new LogicException('Unsupported draft schema version.');
+            }
+            app(DraftAttributeIdentity::class)->candidates($lockedDraft);
             $lockedDraft->forceFill([
                 'status' => 'approved',
                 'approved_by_user_id' => $user->id,

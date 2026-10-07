@@ -14,6 +14,8 @@ use App\Models\CentralCatalog\CentralProductAttributeValue;
 use App\Models\MeasurementDimension;
 use App\Models\MeasurementUnit;
 use App\Models\User;
+use Database\Seeders\MeasurementDimensionsSeeder;
+use Database\Seeders\MetricMeasurementUnitsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -82,8 +84,8 @@ class ProductSpecsEditorTest extends TestCase
         ]);
 
         $refreshRate = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($display, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $display->id])
             ->create([
                 'name' => 'Refresh rate',
                 'code' => 'refresh_rate',
@@ -92,8 +94,8 @@ class ProductSpecsEditorTest extends TestCase
             ]);
 
         AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($ports, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $ports->id])
             ->create([
                 'name' => 'USB-C',
                 'code' => 'usb_c',
@@ -127,8 +129,8 @@ class ProductSpecsEditorTest extends TestCase
         $product = CentralProduct::factory()->for($category, 'category')->create();
 
         AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'name' => 'Refresh rate',
                 'code' => 'refresh_rate',
@@ -151,8 +153,8 @@ class ProductSpecsEditorTest extends TestCase
         $product = CentralProduct::factory()->for($category, 'category')->create();
 
         AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'name' => 'Model name',
                 'code' => 'model_name',
@@ -175,8 +177,8 @@ class ProductSpecsEditorTest extends TestCase
         $product = CentralProduct::factory()->for($category, 'category')->create();
 
         AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'name' => 'Has USB-C',
                 'code' => 'has_usb_c',
@@ -200,8 +202,8 @@ class ProductSpecsEditorTest extends TestCase
         $section = AttributeSection::factory()->for($category, 'category')->create();
         $product = CentralProduct::factory()->for($category, 'category')->create();
         $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'name' => 'Panel type',
                 'code' => 'panel_type',
@@ -233,8 +235,8 @@ class ProductSpecsEditorTest extends TestCase
         $section = AttributeSection::factory()->for($category, 'category')->create();
         $product = CentralProduct::factory()->for($category, 'category')->create();
         $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'name' => 'Ports',
                 'code' => 'ports',
@@ -268,8 +270,8 @@ class ProductSpecsEditorTest extends TestCase
         $product = CentralProduct::factory()->for($category, 'category')->create();
 
         AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'name' => 'Technical blob',
                 'code' => 'technical_blob',
@@ -291,8 +293,8 @@ class ProductSpecsEditorTest extends TestCase
         $product = CentralProduct::factory()->for($category, 'category')->create();
 
         AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'name' => 'Refresh rate',
                 'code' => 'refresh_rate',
@@ -308,19 +310,18 @@ class ProductSpecsEditorTest extends TestCase
 
     public function test_product_specs_editor_shows_canonical_value_preview_for_numeric_attribute(): void
     {
+        $this->seed([MeasurementDimensionsSeeder::class, MetricMeasurementUnitsSeeder::class]);
         $admin = User::factory()->create(['role' => UserRole::CentralAdmin]);
         $category = CentralCategory::factory()->create();
         $section = AttributeSection::factory()->for($category, 'category')->create();
         $product = CentralProduct::factory()->for($category, 'category')->create();
-        $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+        $attribute = AttributeDefinition::factory()->measured('frequency', 'hertz')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'name' => 'Refresh rate',
                 'code' => 'refresh_rate',
                 'data_type' => 'decimal',
-                'dimension' => 'frequency',
-                'canonical_unit' => 'hertz',
             ]);
 
         CentralProductAttributeValue::factory()
@@ -369,15 +370,13 @@ class ProductSpecsEditorTest extends TestCase
         $category = CentralCategory::factory()->create();
         $section = AttributeSection::factory()->for($category, 'category')->create();
         $product = CentralProduct::factory()->for($category, 'category')->create();
-        $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+        $attribute = AttributeDefinition::factory()->measured('mass', 'kilogram')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'name' => 'Weight',
                 'code' => 'weight',
                 'data_type' => 'decimal',
-                'dimension' => 'mass',
-                'canonical_unit' => 'kilogram',
             ]);
 
         CentralProductAttributeValue::factory()
@@ -407,8 +406,8 @@ class ProductSpecsEditorTest extends TestCase
         $product = CentralProduct::factory()->for($category, 'category')->create();
 
         AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => 'refresh_rate',
                 'data_type' => 'decimal',
@@ -430,8 +429,8 @@ class ProductSpecsEditorTest extends TestCase
         $product = CentralProduct::factory()->for($category, 'category')->create();
 
         AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => 'refresh_rate',
                 'data_type' => 'decimal',
@@ -452,8 +451,8 @@ class ProductSpecsEditorTest extends TestCase
         $product = CentralProduct::factory()->for($category, 'category')->create();
 
         AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => 'refresh_rate',
                 'data_type' => 'decimal',
@@ -470,6 +469,7 @@ class ProductSpecsEditorTest extends TestCase
 
     public function test_product_specs_editor_shows_grouped_specs_preview_with_existing_values(): void
     {
+        $this->seed([MeasurementDimensionsSeeder::class, MetricMeasurementUnitsSeeder::class]);
         $admin = User::factory()->create(['role' => UserRole::CentralAdmin]);
         $category = CentralCategory::factory()->create();
         $section = AttributeSection::factory()->for($category, 'category')->create([
@@ -477,14 +477,13 @@ class ProductSpecsEditorTest extends TestCase
             'code' => 'display',
         ]);
         $product = CentralProduct::factory()->for($category, 'category')->create();
-        $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+        $attribute = AttributeDefinition::factory()->withCanonicalUnit('hertz')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'name' => 'Refresh rate',
                 'code' => 'refresh_rate',
                 'data_type' => 'decimal',
-                'canonical_unit' => 'hertz',
             ]);
 
         CentralProductAttributeValue::factory()->create([
@@ -510,8 +509,8 @@ class ProductSpecsEditorTest extends TestCase
         $section = AttributeSection::factory()->for($category, 'category')->create();
         $product = CentralProduct::factory()->for($category, 'category')->create();
         $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => 'model_name',
                 'data_type' => 'string',
@@ -538,8 +537,8 @@ class ProductSpecsEditorTest extends TestCase
         $section = AttributeSection::factory()->for($category, 'category')->create();
         $product = CentralProduct::factory()->for($category, 'category')->create();
         $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => 'technical_blob',
                 'data_type' => 'json',

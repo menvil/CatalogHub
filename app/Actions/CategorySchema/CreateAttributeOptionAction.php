@@ -2,13 +2,11 @@
 
 namespace App\Actions\CategorySchema;
 
-use App\Enums\SchemaMutationOrigin;
 use App\Exceptions\CategorySchema\CannotManageAttributeOptionException;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeOption;
 use App\Models\User;
-use App\Services\AttributeGlobalization\AttributeIdentityReservation;
-use App\Services\CategorySchema\SchemaRevision;
+use App\Services\AttributeGlobalization\GlobalOptionMutation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -21,9 +19,7 @@ final class CreateAttributeOptionAction
      */
     public function handle(AttributeDefinition $attribute, array $data, ?User $actor = null): AttributeOption
     {
-        $categoryId = $attribute->central_category_id;
-
-        return app(SchemaRevision::class)->mutate($categoryId, SchemaMutationOrigin::OptionCreated, $attribute->id, fn () => $this->perform($attribute, $data), $actor);
+        return app(GlobalOptionMutation::class)->run($attribute, null, fn () => $this->perform($attribute, $data), $actor);
     }
 
     private function perform(AttributeDefinition $attribute, array $data): AttributeOption
@@ -50,8 +46,6 @@ final class CreateAttributeOptionAction
 
         return DB::transaction(function () use ($attribute, $validated): AttributeOption {
             $attribute->newQuery()->whereKey($attribute->getKey())->lockForUpdate()->firstOrFail();
-
-            app(AttributeIdentityReservation::class)->optionCode($attribute->id, $validated['code']);
 
             $position = $validated['position']
                 ?? ((int) $attribute->options()->max('position') + 1);

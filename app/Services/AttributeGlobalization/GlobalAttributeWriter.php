@@ -7,7 +7,6 @@ use App\Enums\AuditContext;
 use App\Enums\Permission;
 use App\Enums\SchemaMutationOrigin;
 use App\Models\CentralCatalog\AttributeDefinition;
-use App\Models\CentralCatalog\AttributeDefinitionCrosswalk;
 use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\User;
 use App\Services\Audit\AuditRecorder;
@@ -19,7 +18,7 @@ use Illuminate\Validation\ValidationException;
 
 final readonly class GlobalAttributeWriter
 {
-    public function __construct(private CategoryAccess $access, private AttributeIdentityLock $identityLock, private CategoryLock $categories, private GlobalAttributeValidation $validation, private AttributeIdentityReservation $identities, private AttributeDependencies $dependencies, private SchemaRevision $revisions, private AuditRecorder $audit) {}
+    public function __construct(private CategoryAccess $access, private AttributeIdentityLock $identityLock, private CategoryLock $categories, private GlobalAttributeValidation $validation, private AttributeDependencies $dependencies, private SchemaRevision $revisions, private AuditRecorder $audit) {}
 
     /** @param array<string, mixed> $data */
     public function create(array $data, ?User $actor = null): AttributeDefinition
@@ -32,10 +31,11 @@ final readonly class GlobalAttributeWriter
             if ($validated['data_type'] === 'json') {
                 throw ValidationException::withMessages(['data_type' => 'New JSON authoring requires an explicit structured contract.']);
             }
-            $this->identities->uniqueCode($validated['code']);
-            $definition = AttributeDefinition::query()->create([...$validated, 'canonical_code' => $validated['code']]);
+            if (AttributeDefinition::query()->where('code', $validated['code'])->exists()) {
+                throw ValidationException::withMessages(['code' => 'Code already belongs to a global attribute.']);
+            }
+            $definition = AttributeDefinition::query()->create($validated);
             $this->audit->record(AuditAction::CatalogAttributeCreated, AuditContext::Central, $actor, $definition, null, null, $this->snapshot($definition, 0));
-            $this->identityLock->recordTargetWrite();
 
             return $definition;
         }, 3);
@@ -53,12 +53,6 @@ final readonly class GlobalAttributeWriter
             $locked = AttributeDefinition::query()->whereKey($definition->id)->lockForUpdate()->firstOrFail();
             $input = array_intersect_key($locked->getAttributes(), array_flip(['code', 'name', 'data_type', 'measurement_dimension_id', 'canonical_measurement_unit_id']));
             $validated = $this->validation->validate([...$input, ...$data]);
-            // Missing legacy relational mappings cannot be silently cleared by ordinary edits.
-            if (($locked->dimension !== null || $locked->canonical_unit !== null) && $locked->measurement_dimension_id === null
-                && ! array_key_exists('measurement_dimension_id', $data) && ! array_key_exists('canonical_measurement_unit_id', $data)) {
-                $validated['dimension'] = $locked->dimension;
-                $validated['canonical_unit'] = $locked->canonical_unit;
-            }
             $before = $this->snapshot($locked, count($categories));
             $locked->fill($validated);
             $changed = array_keys($locked->getDirty());
@@ -68,10 +62,7 @@ final readonly class GlobalAttributeWriter
             foreach ($categories as $category) {
                 $this->revisions->assertMutable($category);
             }
-            $dangerous = array_intersect($changed, ['code', 'data_type', 'measurement_dimension_id', 'canonical_measurement_unit_id', 'dimension', 'canonical_unit']);
-            if ($dangerous !== []) {
-                $this->identities->assertResolved($locked);
-            }
+            $dangerous = array_intersect($changed, ['code', 'data_type', 'measurement_dimension_id', 'canonical_measurement_unit_id']);
             if (in_array('data_type', $changed, true) && $locked->data_type->value === 'json') {
                 throw ValidationException::withMessages(['data_type' => 'New JSON authoring requires an explicit structured contract.']);
             }
@@ -79,18 +70,13 @@ final readonly class GlobalAttributeWriter
                 throw ValidationException::withMessages(['attribute' => 'Explicit migration required: dependent data prevents canonical identity/type/measurement changes.']);
             }
             if (in_array('code', $changed, true)) {
-                $this->identities->uniqueCode($locked->code, $locked->id);
-                $locked->canonical_code = $locked->code;
+                throw ValidationException::withMessages(['code' => 'Explicit migration required: canonical code identity is immutable.']);
             }
             $locked->saveOrFail();
-            if (in_array('code', $changed, true)) {
-                AttributeDefinitionCrosswalk::query()->where('canonical_definition_id', $locked->id)->update(['canonical_code' => $locked->code]);
-            }
             foreach ($categories as $category) {
                 $this->revisions->invalidate($category, SchemaMutationOrigin::GlobalAttributeUpdated, $locked->id, $actor);
             }
             $this->audit->record(AuditAction::CatalogAttributeUpdated, AuditContext::Central, $actor, $locked, null, [...$before, 'changed_fields' => $changed], [...$this->snapshot($locked, count($categories)), 'changed_fields' => $changed]);
-            $this->identityLock->recordTargetWrite();
 
             return $locked;
         }, 3);
@@ -99,6 +85,6 @@ final readonly class GlobalAttributeWriter
     /** @return array<string, mixed> */
     public function snapshot(AttributeDefinition $definition, int $count): array
     {
-        return ['definition_id' => $definition->id, ...array_intersect_key($definition->getAttributes(), array_flip(['code', 'name', 'data_type', 'measurement_dimension_id', 'dimension', 'canonical_measurement_unit_id', 'canonical_unit'])), 'affected_category_count' => $count];
+        return ['definition_id' => $definition->id, ...array_intersect_key($definition->getAttributes(), array_flip(['code', 'name', 'data_type', 'measurement_dimension_id', 'canonical_measurement_unit_id'])), 'affected_category_count' => $count];
     }
 }

@@ -19,6 +19,7 @@ use App\Models\SiteCategoryProjection;
 use App\Models\SiteProductProjection;
 use App\Models\SiteSearchDocument;
 use App\Models\SiteSitemapUrl;
+use App\Services\AttributeGlobalization\AttributeIdentityLock;
 use App\Services\Pricing\ProductPriceSummaryBuilder;
 use Closure;
 use DateTimeInterface;
@@ -38,74 +39,96 @@ final class SiteSyncService
         private readonly ProductPriceSummaryBuilder $productPriceSummaryBuilder,
     ) {}
 
-    public function syncProduct(
-        Site $site,
-        CentralProduct $product,
-        ?string $locale = null,
-    ): SiteProductProjection {
+    public function syncProduct(Site $site, CentralProduct $product, ?string $locale = null): SiteProductProjection
+    {
         $locale = $this->locale($site, $locale);
         $job = $this->startJob($site, 'product', 'product', (int) $product->getKey(), $locale);
-
         try {
-            $projection = $this->productProjectionBuilder->build($site, $product, $locale);
-            $priceSummary = $this->productPriceSummaryBuilder->build(
-                (int) $site->getKey(),
-                (int) $product->getKey(),
-            );
-            $searchDocument = $this->searchDocumentBuilder->fromProductProjection($projection, $priceSummary);
-            $sitemapUrl = $this->sitemapBuilder->fromProductProjection($site, $projection);
-            $record = $this->persistAtomically(
-                $projection->siteId,
-                fn (): SiteProductProjection => $this->persistProductBundle(
-                    $product,
-                    $projection,
-                    $searchDocument,
-                    $sitemapUrl,
-                ),
-            );
+            return DB::transaction(function () use ($site, $product, $locale, $job): SiteProductProjection {
+                app(AttributeIdentityLock::class)->acquire();
+                $product = CentralProduct::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
 
-            $this->completeJob($job, 'product', (int) $product->getKey());
-
-            return $record;
+                return $this->syncProductLocked($site, $product, $locale, $job);
+            }, 3);
         } catch (Throwable $exception) {
             $this->failJob($job, 'product', (int) $product->getKey(), $exception);
             $this->markExistingProjectionFailed('product', $site, (int) $product->getKey(), $locale, $exception);
-
             throw $exception;
         }
     }
 
-    public function syncCategory(
+    private function syncProductLocked(
         Site $site,
-        CentralCategory $category,
-        ?string $locale = null,
-    ): SiteCategoryProjection {
+        CentralProduct $product,
+        string $locale,
+        ProjectionJob $job,
+    ): SiteProductProjection {
+        $locale = $this->locale($site, $locale);
+
+        $projection = $this->productProjectionBuilder->build($site, $product, $locale);
+        $priceSummary = $this->productPriceSummaryBuilder->build(
+            (int) $site->getKey(),
+            (int) $product->getKey(),
+        );
+        $searchDocument = $this->searchDocumentBuilder->fromProductProjection($projection, $priceSummary);
+        $sitemapUrl = $this->sitemapBuilder->fromProductProjection($site, $projection);
+        $record = $this->persistAtomically(
+            $projection->siteId,
+            fn (): SiteProductProjection => $this->persistProductBundle(
+                $product,
+                $projection,
+                $searchDocument,
+                $sitemapUrl,
+            ),
+        );
+
+        $this->completeJob($job, 'product', (int) $product->getKey());
+
+        return $record;
+    }
+
+    public function syncCategory(Site $site, CentralCategory $category, ?string $locale = null): SiteCategoryProjection
+    {
         $locale = $this->locale($site, $locale);
         $job = $this->startJob($site, 'category', 'category', (int) $category->getKey(), $locale);
-
         try {
-            $projection = $this->categoryProjectionBuilder->build($site, $category, $locale);
-            $searchDocument = $this->searchDocumentBuilder->fromCategoryProjection($projection);
-            $sitemapUrl = $this->sitemapBuilder->fromCategoryProjection($site, $projection);
-            $record = $this->persistAtomically(
-                $projection->siteId,
-                fn (): SiteCategoryProjection => $this->persistCategoryBundle(
-                    $category,
-                    $projection,
-                    $searchDocument,
-                    $sitemapUrl,
-                ),
-            );
+            return DB::transaction(function () use ($site, $category, $locale, $job): SiteCategoryProjection {
+                app(AttributeIdentityLock::class)->acquire();
+                $category = CentralCategory::query()->whereKey($category->id)->lockForUpdate()->firstOrFail();
 
-            $this->completeJob($job, 'category', (int) $category->getKey());
-
-            return $record;
+                return $this->syncCategoryLocked($site, $category, $locale, $job);
+            }, 3);
         } catch (Throwable $exception) {
             $this->failJob($job, 'category', (int) $category->getKey(), $exception);
             $this->markExistingProjectionFailed('category', $site, (int) $category->getKey(), $locale, $exception);
-
             throw $exception;
         }
+    }
+
+    private function syncCategoryLocked(
+        Site $site,
+        CentralCategory $category,
+        string $locale,
+        ProjectionJob $job,
+    ): SiteCategoryProjection {
+        $locale = $this->locale($site, $locale);
+
+        $projection = $this->categoryProjectionBuilder->build($site, $category, $locale);
+        $searchDocument = $this->searchDocumentBuilder->fromCategoryProjection($projection);
+        $sitemapUrl = $this->sitemapBuilder->fromCategoryProjection($site, $projection);
+        $record = $this->persistAtomically(
+            $projection->siteId,
+            fn (): SiteCategoryProjection => $this->persistCategoryBundle(
+                $category,
+                $projection,
+                $searchDocument,
+                $sitemapUrl,
+            ),
+        );
+
+        $this->completeJob($job, 'category', (int) $category->getKey());
+
+        return $record;
     }
 
     /**
@@ -237,6 +260,7 @@ final class SiteSyncService
             'title' => $projection->title,
             'status' => $projection->status,
             'payload_json' => $projection->payload,
+            'schema_version' => 1, 'schema_revision' => $projection->payload['schema_revision'] ?? 0,
             'seo_json' => $projection->seo,
             'media_json' => $projection->media,
             'search_summary_json' => [
@@ -275,6 +299,7 @@ final class SiteSyncService
             'title' => $projection->title,
             'status' => $projection->status,
             'payload_json' => $projection->payload,
+            'schema_version' => 1, 'schema_revision' => $projection->payload['schema_revision'] ?? 0,
             'seo_json' => $projection->seo,
             'facets_json' => $projection->facets,
             'comparison_json' => $projection->comparison,
@@ -311,6 +336,7 @@ final class SiteSyncService
             'filter_values_json' => $document->filterValues,
             'sort_values_json' => $document->sortValues,
             'payload_json' => $document->payload,
+            'schema_version' => 1, 'schema_revision' => $document->payload['schema_revision'] ?? 0,
             'checksum' => $document->checksum,
             'built_at' => $builtAt,
             'stale_at' => null,

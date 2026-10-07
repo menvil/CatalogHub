@@ -4,17 +4,22 @@ namespace App\Filament\Resources;
 
 use App\Enums\FacetSourceType;
 use App\Enums\FacetType;
+use App\Enums\Permission;
 use App\Filament\Resources\FacetDefinitionResource\Pages;
+use App\Models\CentralCatalog\CategoryAttributeAssignment;
+use App\Models\CentralCatalog\CentralCategory;
 use App\Models\FacetDefinition;
-use App\Models\User;
 use App\Rules\Facets\ValidFacetDefinitionRule;
+use App\Services\Categories\CategoryAccess;
 use BackedEnum;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -43,12 +48,12 @@ final class FacetDefinitionResource extends Resource
 
     public static function canCreate(): bool
     {
-        return self::canManageFacets();
+        return self::canManageFacets(true);
     }
 
     public static function canEdit(Model $record): bool
     {
-        return self::canManageFacets();
+        return self::canManageFacets(true);
     }
 
     public static function form(Schema $schema): Schema
@@ -57,15 +62,18 @@ final class FacetDefinitionResource extends Resource
             Select::make('category_id')
                 ->label('Category')
                 ->relationship('category', 'name')
+                ->live()
+                ->afterStateUpdated(fn (Set $set, $state) => $set('expected_schema_revision', CentralCategory::query()->whereKey($state)->value('schema_revision')))
                 ->required()
                 ->searchable()
                 ->preload(),
+            Hidden::make('expected_schema_revision')->required()->rules(['integer']),
             Select::make('source_type')
                 ->options(FacetSourceType::options())
                 ->required(),
-            Select::make('attribute_definition_id')
+            Select::make('category_attribute_assignment_id')
                 ->label('Attribute')
-                ->relationship('attributeDefinition', 'name')
+                ->options(fn (Get $get): array => CategoryAttributeAssignment::query()->where('central_category_id', $get('category_id'))->with('definition')->ordered()->get()->mapWithKeys(fn ($a) => [$a->id => $a->definition->name])->all())
                 ->searchable()
                 ->preload(),
             TextInput::make('code')
@@ -148,7 +156,7 @@ final class FacetDefinitionResource extends Resource
             ->defaultGroup('category.name')
             ->defaultSort('position')
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()->url(fn ($record): string => self::getUrl('edit', ['record' => $record])),
             ]);
     }
 
@@ -161,11 +169,8 @@ final class FacetDefinitionResource extends Resource
         ];
     }
 
-    private static function canManageFacets(): bool
+    private static function canManageFacets(bool $mutation = false): bool
     {
-        $user = auth()->user();
-
-        return $user instanceof User
-            && $user->can('catalog.categories.manage');
+        return app(CategoryAccess::class)->allows(Permission::CatalogSchemaManage, $mutation);
     }
 }

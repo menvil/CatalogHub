@@ -4,6 +4,7 @@ namespace Tests\Feature\Public;
 
 use App\Domains\Projections\Enums\ProjectionStatus;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Models\FacetDefinition;
 use App\Models\Site;
 use App\Models\SiteCategoryProjection;
 use Database\Seeders\Demo\MultiCategorySiteSeeder;
@@ -19,6 +20,7 @@ class ListingNoResultsTest extends TestCase
         $this->seed(MultiCategorySiteSeeder::class);
         $site = Site::query()->where('code', 'tech-compare-global')->firstOrFail();
         $category = CentralCategory::query()->where('slug', 'monitors')->firstOrFail();
+        FacetDefinition::factory()->for($category, 'category')->create(['code' => 'brand', 'source_type' => 'brand', 'label_override' => 'Brand']);
         SiteCategoryProjection::query()->create([
             'site_id' => $site->id,
             'locale' => 'en-US',

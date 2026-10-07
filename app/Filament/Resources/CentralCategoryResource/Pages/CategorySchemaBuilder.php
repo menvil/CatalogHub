@@ -14,6 +14,7 @@ use App\Actions\CategorySchema\ExportCategorySchemaAction;
 use App\Actions\CategorySchema\MarkCategorySchemaReviewedAction;
 use App\Actions\CategorySchema\MoveAttributeDefinitionAction;
 use App\Actions\CategorySchema\RestoreCategorySchemaAction;
+use App\Actions\CategorySchema\UpdateAssignedAttributeAction;
 use App\Actions\CategorySchema\UpdateAttributeDefinitionAction;
 use App\Actions\CategorySchema\UpdateAttributeOptionAction;
 use App\Actions\CategorySchema\UpdateAttributeSectionAction;
@@ -34,6 +35,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
 
@@ -74,6 +76,19 @@ final class CategorySchemaBuilder extends Page
         $this->schemaRevision = $this->getCategory()->schema_revision;
     }
 
+    /** @return list<array{section: AttributeSection|null, assignments: Collection}> */
+    public function getAssignmentGroups(): array
+    {
+        $category = $this->getCategory();
+        $groups = $category->attributeSections->map(fn ($section) => ['section' => $section, 'assignments' => $category->attributeAssignments->where('attribute_section_id', $section->id)->sortBy(fn ($row) => [$row->position, $row->id])])->all();
+        $ungrouped = $category->attributeAssignments->whereNull('attribute_section_id')->sortBy(fn ($row) => [$row->position, $row->id]);
+        if ($ungrouped->isNotEmpty()) {
+            $groups[] = ['section' => null, 'assignments' => $ungrouped];
+        }
+
+        return $groups;
+    }
+
     public function getTitle(): string
     {
         return 'Category Schema Builder';
@@ -90,7 +105,8 @@ final class CategorySchemaBuilder extends Page
 
         return $this->cachedCategory = $category->loadMissing([
             'attributeSections' => fn ($query) => $query->ordered(),
-            'attributeSections.attributes' => fn ($query) => $query->ordered(),
+            'attributeSections.assignments' => fn ($query) => $query->ordered()->with('definition'),
+            'attributeAssignments.definition',
         ]);
     }
 
@@ -145,16 +161,15 @@ final class CategorySchemaBuilder extends Page
      */
     public function updateAttribute(int $attributeId, array $data, UpdateAttributeDefinitionAction $action): void
     {
-        $attribute = $this->getCategory()->attributeDefinitions()->findOrFail($attributeId);
-
-        $action->handle($attribute, $data);
+        $assignment = $this->getCategory()->attributeAssignments()->where('attribute_definition_id', $attributeId)->firstOrFail();
+        app(UpdateAssignedAttributeAction::class)->handle($assignment, $data, $this->schemaRevision);
         $this->reloadSchema();
     }
 
     public function moveAttribute(int $attributeId, int $targetSectionId, int $position, MoveAttributeDefinitionAction $action): void
     {
         $category = $this->getCategory();
-        $attribute = $category->attributeDefinitions()->findOrFail($attributeId);
+        $attribute = $category->attributeAssignments()->where('attribute_definition_id', $attributeId)->firstOrFail();
         $targetSection = $category->attributeSections()->findOrFail($targetSectionId);
 
         $action->handle($attribute, $targetSection, $position);
@@ -166,8 +181,7 @@ final class CategorySchemaBuilder extends Page
      */
     public function createOption(int $attributeId, array $data, CreateAttributeOptionAction $action): void
     {
-        $attribute = $this->getCategory()->attributeDefinitions()->findOrFail($attributeId);
-
+        $attribute = $this->getCategory()->attributeAssignments()->where('attribute_definition_id', $attributeId)->firstOrFail()->definition;
         $action->handle($attribute, $data);
         $this->reloadSchema();
     }
@@ -177,7 +191,7 @@ final class CategorySchemaBuilder extends Page
      */
     public function updateOption(int $attributeId, int $optionId, array $data, UpdateAttributeOptionAction $action): void
     {
-        $attribute = $this->getCategory()->attributeDefinitions()->findOrFail($attributeId);
+        $attribute = $this->getCategory()->attributeAssignments()->where('attribute_definition_id', $attributeId)->firstOrFail()->definition;
         $option = $attribute->options()->findOrFail($optionId);
 
         $action->handle($option, $data);
@@ -186,7 +200,7 @@ final class CategorySchemaBuilder extends Page
 
     public function deleteOption(int $attributeId, int $optionId, DeleteAttributeOptionAction $action): void
     {
-        $attribute = $this->getCategory()->attributeDefinitions()->findOrFail($attributeId);
+        $attribute = $this->getCategory()->attributeAssignments()->where('attribute_definition_id', $attributeId)->firstOrFail()->definition;
         $option = $attribute->options()->findOrFail($optionId);
 
         $action->handle($option);

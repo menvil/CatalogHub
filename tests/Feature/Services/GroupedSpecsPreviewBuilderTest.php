@@ -11,6 +11,8 @@ use App\Models\CentralCatalog\CentralProductAttributeValue;
 use App\Models\MeasurementDimension;
 use App\Models\MeasurementUnit;
 use App\Services\ProductAttributes\GroupedSpecsPreviewBuilder;
+use Database\Seeders\MeasurementDimensionsSeeder;
+use Database\Seeders\MetricMeasurementUnitsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -20,20 +22,20 @@ class GroupedSpecsPreviewBuilderTest extends TestCase
 
     public function test_builds_grouped_preview_with_existing_values(): void
     {
+        $this->seed([MeasurementDimensionsSeeder::class, MetricMeasurementUnitsSeeder::class]);
         $category = CentralCategory::factory()->create();
         $section = AttributeSection::factory()->for($category, 'category')->create([
             'name' => 'Display',
             'code' => 'display',
         ]);
         $product = CentralProduct::factory()->for($category, 'category')->create();
-        $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+        $attribute = AttributeDefinition::factory()->withCanonicalUnit('hertz')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'name' => 'Refresh rate',
                 'code' => 'refresh_rate',
                 'data_type' => 'decimal',
-                'canonical_unit' => 'hertz',
             ]);
 
         CentralProductAttributeValue::factory()
@@ -49,7 +51,7 @@ class GroupedSpecsPreviewBuilderTest extends TestCase
 
         $this->assertSame('Display', $preview[0]['section']);
         $this->assertSame('Refresh rate', $preview[0]['attributes'][0]['name']);
-        $this->assertSame('165.000000 hertz', $preview[0]['attributes'][0]['value']);
+        $this->assertSame('165 Hz', $preview[0]['attributes'][0]['value']);
     }
 
     public function test_returns_empty_preview_for_product_without_category(): void
@@ -75,8 +77,8 @@ class GroupedSpecsPreviewBuilderTest extends TestCase
             'precision_default' => 3,
         ]);
         [$product, $attribute] = $this->productWithAttribute('Weight', 'weight', 'decimal', [
-            'dimension' => 'mass',
-            'canonical_unit' => 'kilogram',
+            'measurement_dimension_id' => $mass->id,
+            'canonical_measurement_unit_id' => MeasurementUnit::query()->where('code', 'kilogram')->sole()->id,
         ]);
 
         $preview = app(GroupedSpecsPreviewBuilder::class)->build($product, [
@@ -150,8 +152,8 @@ class GroupedSpecsPreviewBuilderTest extends TestCase
         $section = AttributeSection::factory()->for($category, 'category')->create();
         $product = CentralProduct::factory()->for($category, 'category')->create();
         $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 ...$attributeOverrides,
                 'name' => $name,
@@ -165,8 +167,8 @@ class GroupedSpecsPreviewBuilderTest extends TestCase
     private function createAttribute(CentralCategory $category, AttributeSection $section, string $name, string $code, string $dataType): AttributeDefinition
     {
         return AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'name' => $name,
                 'code' => $code,

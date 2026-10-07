@@ -9,7 +9,7 @@ final class DiagnoseCategoryHierarchyCommand extends Command
 {
     protected $signature = 'catalog:diagnose-category-hierarchy';
 
-    protected $description = 'Report legacy Category hierarchy invariants without modifying data';
+    protected $description = 'Report current Category hierarchy invariants without modifying data';
 
     public function handle(CategoryHierarchyDiagnosticsQuery $diagnostics): int
     {

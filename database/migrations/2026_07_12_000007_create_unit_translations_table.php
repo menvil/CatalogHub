@@ -24,7 +24,7 @@ return new class extends Migration
             $table->foreignId('approved_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
-            $table->unique(['measurement_unit_id', 'locale']);
+            $table->unique(['measurement_unit_id', 'locale_id'], 'measurement_unit_id_locale_identity_unique');
             $table->index(['locale', 'status']);
         });
     }

@@ -37,14 +37,12 @@ class ProductProjectionBuilderUnitFormattingTest extends TestCase
         $site = Site::factory()->for($market)->create();
         $category = CentralCategory::factory()->create();
         $section = AttributeSection::factory()->for($category, 'category')->create();
-        $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+        $attribute = AttributeDefinition::factory()->measured('length', 'centimeter')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => 'diagonal',
                 'data_type' => 'decimal',
-                'dimension' => 'length',
-                'canonical_unit' => 'centimeter',
             ]);
         $product = CentralProduct::factory()->for($category, 'category')->create();
         $inch = MeasurementUnit::query()->where('code', 'inch')->firstOrFail();
@@ -68,7 +66,7 @@ class ProductProjectionBuilderUnitFormattingTest extends TestCase
         $projection = app(ProductProjectionBuilder::class)->build($site, $product, 'de-DE');
         $attributePayload = $projection->payload['spec_sections'][0]['attributes'][0];
 
-        $this->assertSame(3.81, $attributePayload['canonical_value']);
+        $this->assertSame('3.810000', $attributePayload['canonical_value']);
         $this->assertSame('centimeter', $attributePayload['canonical_unit']);
         $this->assertSame('1,50 "', $attributePayload['display_value']);
         $this->assertSame('inch', $attributePayload['display_unit']);
@@ -80,11 +78,10 @@ class ProductProjectionBuilderUnitFormattingTest extends TestCase
         $category = CentralCategory::factory()->create();
         $section = AttributeSection::factory()->for($category, 'category')->create();
         $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'data_type' => 'decimal',
-                'canonical_unit' => 'parsec',
             ]);
         $product = CentralProduct::factory()->for($category, 'category')->create();
 
@@ -98,7 +95,7 @@ class ProductProjectionBuilderUnitFormattingTest extends TestCase
         $projection = app(ProductProjectionBuilder::class)->build($site, $product, 'en');
         $attributePayload = $projection->payload['spec_sections'][0]['attributes'][0];
 
-        $this->assertSame('3 parsec', $attributePayload['display_value']);
+        $this->assertSame('3.000000 parsec', $attributePayload['display_value']);
         $this->assertSame('parsec', $attributePayload['display_unit']);
     }
 
@@ -114,10 +111,10 @@ class ProductProjectionBuilderUnitFormattingTest extends TestCase
         $site = Site::factory()->for($market)->create();
         $category = CentralCategory::factory()->create();
         $section = AttributeSection::factory()->for($category, 'category')->create();
-        $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
-            ->create(['data_type' => 'decimal', 'canonical_unit' => 'centimeter']);
+        $attribute = AttributeDefinition::factory()->measured('length', 'centimeter')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
+            ->create(['data_type' => 'decimal']);
         $product = CentralProduct::factory()->for($category, 'category')->create();
         $centimeter = MeasurementUnit::query()->where('code', 'centimeter')->firstOrFail();
         $inch = MeasurementUnit::query()->where('code', 'inch')->firstOrFail();
@@ -136,8 +133,12 @@ class ProductProjectionBuilderUnitFormattingTest extends TestCase
         $builder = app(ProductProjectionBuilder::class);
         $builder->build($site, $product, 'en');
         $lookupQueries = [];
-        DB::listen(function (QueryExecuted $query) use (&$lookupQueries): void {
-            if (preg_match('/(measurement_units|attribute_display_rules|market_unit_preferences)/', $query->sql) === 1) {
+        $canonicalUnitQueries = [];
+        DB::listen(function (QueryExecuted $query) use (&$lookupQueries, &$canonicalUnitQueries): void {
+            if (str_contains($query->sql, 'measurement_units')) {
+                $canonicalUnitQueries[] = $query->sql;
+            }
+            if (preg_match('/(attribute_display_rules|market_unit_preferences)/', $query->sql) === 1) {
                 $lookupQueries[] = $query->sql;
             }
         });
@@ -145,6 +146,7 @@ class ProductProjectionBuilderUnitFormattingTest extends TestCase
         $builder->build($site, $product, 'en');
 
         $this->assertSame([], $lookupQueries);
+        $this->assertCount(1, $canonicalUnitQueries, 'Canonical relational units are loaded once for the assignment batch.');
     }
 
     public function test_raw_display_values_use_comma_decimals_for_all_supported_locales(): void
@@ -153,9 +155,9 @@ class ProductProjectionBuilderUnitFormattingTest extends TestCase
         $category = CentralCategory::factory()->create();
         $section = AttributeSection::factory()->for($category, 'category')->create();
         $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
-            ->create(['data_type' => 'decimal', 'canonical_unit' => 'parsec']);
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
+            ->create(['data_type' => 'decimal']);
         $product = CentralProduct::factory()->for($category, 'category')->create();
         CentralProductAttributeValue::factory()->for($product, 'product')->for($attribute, 'attributeDefinition')->create([
             'value_type' => 'decimal',
@@ -169,7 +171,7 @@ class ProductProjectionBuilderUnitFormattingTest extends TestCase
             $projection = $builder->build($site, $product, $locale);
 
             $this->assertSame(
-                '1,5 parsec',
+                '1,500000 parsec',
                 $projection->payload['spec_sections'][0]['attributes'][0]['display_value'],
                 "Failed locale {$locale}",
             );

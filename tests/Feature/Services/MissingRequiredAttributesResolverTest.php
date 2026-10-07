@@ -139,8 +139,8 @@ class MissingRequiredAttributesResolverTest extends TestCase
         $section = AttributeSection::factory()->for($category, 'category')->create();
         $product = CentralProduct::factory()->for($category, 'category')->create();
         AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => 'optional_refresh_rate',
                 'data_type' => 'decimal',
@@ -159,8 +159,8 @@ class MissingRequiredAttributesResolverTest extends TestCase
         $section = AttributeSection::factory()->for($category, 'category')->create();
         $product = CentralProduct::factory()->for($category, 'category')->create();
         $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => $code,
                 'data_type' => $dataType,
@@ -178,8 +178,8 @@ class MissingRequiredAttributesResolverTest extends TestCase
         $section = $category->attributeSections()->first()
             ?? AttributeSection::factory()->for($category, 'category')->create();
         $attribute = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($section, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $section->id])
             ->create([
                 'code' => $code,
                 'data_type' => $dataType,

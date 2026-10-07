@@ -3,6 +3,8 @@
 namespace Tests\Feature\Demo;
 
 use App\Domains\Projections\Enums\ProjectionStatus;
+use App\Models\CentralCatalog\AttributeOption;
+use App\Models\Imports\AttributeMapping;
 use App\Models\Site;
 use App\Models\SiteCategoryProjection;
 use App\Models\SiteProductProjection;
@@ -37,6 +39,11 @@ class PublicDemoSeederTest extends TestCase
             ->assertSee('165 Hz')
             ->assertSee('144 Hz');
 
+        $this->assertGreaterThan(0, AttributeOption::query()->count());
+        $this->assertGreaterThan(0, AttributeMapping::query()->count());
+        foreach (AttributeMapping::query()->with('assignment')->get() as $mapping) {
+            $this->assertSame($mapping->category_id, $mapping->assignment->central_category_id);
+        }
         $productCount = SiteProductProjection::query()->count();
         $categoryCount = SiteCategoryProjection::query()->count();
         $this->seed(PublicDemoSeeder::class);

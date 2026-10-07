@@ -42,7 +42,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'slug',
     'normalized_payload_json',
     'attributes_json',
-    'attribute_identity_version',
+    'schema_version',
     'media_json',
     'confidence',
     'status',
@@ -65,7 +65,7 @@ final class NormalizedProductDraft extends Model
         return [
             'normalized_payload_json' => 'array',
             'attributes_json' => 'array',
-            'attribute_identity_version' => 'integer',
+            'schema_version' => 'integer',
             'media_json' => 'array',
             'confidence' => 'decimal:4',
             'approved_at' => 'datetime',

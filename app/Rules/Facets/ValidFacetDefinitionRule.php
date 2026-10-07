@@ -6,6 +6,7 @@ use App\Enums\AttributeDataType;
 use App\Enums\FacetSourceType;
 use App\Enums\FacetType;
 use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use Closure;
 use Illuminate\Contracts\Validation\DataAwareRule;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -105,12 +106,12 @@ final class ValidFacetDefinitionRule implements DataAwareRule, ValidationRule
 
     private function attribute(): ?AttributeDefinition
     {
-        $attributeId = $this->value('attribute_definition_id');
+        $attributeId = $this->value('category_attribute_assignment_id');
         $categoryId = $this->value('category_id');
 
-        return AttributeDefinition::query()
+        return CategoryAttributeAssignment::query()->with('definition')
             ->when(filled($categoryId), fn ($query) => $query->where('central_category_id', $categoryId))
-            ->find($attributeId);
+            ->find($attributeId)?->definition;
     }
 
     private function value(string $key): mixed

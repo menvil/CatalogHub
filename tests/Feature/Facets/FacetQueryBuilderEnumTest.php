@@ -23,11 +23,12 @@ class FacetQueryBuilderEnumTest extends TestCase
     {
         $site = Site::factory()->create();
         $category = CentralCategory::factory()->create();
+        FacetDefinition::factory()->for($category, 'category')->create(['code' => 'brand', 'source_type' => 'brand']);
         $this->configureEnumFacet($category, 'panel_type');
-        $ips = $this->document($site, $category, ['brand_slug' => 'lg', 'panel_type' => 'ips']);
-        $oled = $this->document($site, $category, ['brand_slug' => 'lg', 'panel_type' => 'oled']);
-        $this->document($site, $category, ['brand_slug' => 'samsung', 'panel_type' => 'ips']);
-        $this->document($site, $category, ['brand_slug' => 'lg', 'panel_type' => 'va']);
+        $ips = $this->document($site, $category, ['brand' => 'lg', 'panel_type' => 'ips']);
+        $oled = $this->document($site, $category, ['brand' => 'lg', 'panel_type' => 'oled']);
+        $this->document($site, $category, ['brand' => 'samsung', 'panel_type' => 'ips']);
+        $this->document($site, $category, ['brand' => 'lg', 'panel_type' => 'va']);
 
         $filters = FacetFilterSet::fromArray([
             'brand' => ['lg'],
@@ -44,6 +45,7 @@ class FacetQueryBuilderEnumTest extends TestCase
     {
         $site = Site::factory()->create();
         $category = CentralCategory::factory()->create();
+        FacetDefinition::factory()->for($category, 'category')->create(['code' => 'brand', 'source_type' => 'brand']);
         $this->configureEnumFacet($category, 'ports', AttributeDataType::MultiEnum);
         $matching = $this->document($site, $category, ['ports' => ['hdmi', 'usb_c']]);
         $this->document($site, $category, ['ports' => ['displayport']]);
@@ -63,6 +65,7 @@ class FacetQueryBuilderEnumTest extends TestCase
     {
         $site = Site::factory()->create();
         $category = CentralCategory::factory()->create();
+        FacetDefinition::factory()->for($category, 'category')->create(['code' => 'brand', 'source_type' => 'brand']);
         $document = $this->document($site, $category, ['panel_type' => 'ips']);
 
         $results = app(FacetQueryBuilder::class)->apply(
@@ -80,12 +83,13 @@ class FacetQueryBuilderEnumTest extends TestCase
     {
         $site = Site::factory()->create();
         $category = CentralCategory::factory()->create();
-        $attribute = AttributeDefinition::factory()->for($category, 'category')->create([
+        FacetDefinition::factory()->for($category, 'category')->create(['code' => 'brand', 'source_type' => 'brand']);
+        $attribute = AttributeDefinition::factory()->assignedTo($category)->create([
             'code' => 'panel_type',
             'data_type' => AttributeDataType::Enum,
         ]);
         $facet = FacetDefinition::factory()->for($category, 'category')->checkbox()->create([
-            'attribute_definition_id' => $attribute->id,
+            'category_attribute_assignment_id' => $attribute->assignments()->sole()->id,
             'source_type' => FacetSourceType::Attribute,
             'code' => 'panel_type',
         ]);
@@ -109,12 +113,13 @@ class FacetQueryBuilderEnumTest extends TestCase
     {
         $site = Site::factory()->create();
         $category = CentralCategory::factory()->create();
-        $attribute = AttributeDefinition::factory()->for($category, 'category')->create([
+        FacetDefinition::factory()->for($category, 'category')->create(['code' => 'brand', 'source_type' => 'brand']);
+        $attribute = AttributeDefinition::factory()->assignedTo($category)->create([
             'code' => 'description',
             'data_type' => AttributeDataType::String,
         ]);
         FacetDefinition::factory()->for($category, 'category')->checkbox()->create([
-            'attribute_definition_id' => $attribute->id,
+            'category_attribute_assignment_id' => $attribute->assignments()->sole()->id,
             'source_type' => FacetSourceType::Attribute,
             'code' => 'description',
         ]);
@@ -135,12 +140,12 @@ class FacetQueryBuilderEnumTest extends TestCase
         string $code,
         AttributeDataType $dataType = AttributeDataType::Enum,
     ): void {
-        $attribute = AttributeDefinition::factory()->for($category, 'category')->create([
+        $attribute = AttributeDefinition::factory()->assignedTo($category)->create([
             'code' => $code,
             'data_type' => $dataType,
         ]);
         FacetDefinition::factory()->for($category, 'category')->checkbox()->create([
-            'attribute_definition_id' => $attribute->id,
+            'category_attribute_assignment_id' => $attribute->assignments()->sole()->id,
             'source_type' => FacetSourceType::Attribute,
             'code' => $code,
         ]);

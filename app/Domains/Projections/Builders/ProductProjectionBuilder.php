@@ -11,12 +11,15 @@ use App\Enums\CentralProductStatus;
 use App\Exceptions\Units\CannotConvertUnitException;
 use App\Models\AttributeDisplayRule;
 use App\Models\CentralCatalog\AttributeDefinition;
-use App\Models\CentralCatalog\AttributeSection;
+use App\Models\CentralCatalog\CategoryAttributeAssignment;
+use App\Models\CentralCatalog\CategoryComparisonAttribute;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
+use App\Models\FacetDefinition;
 use App\Models\MarketUnitPreference;
 use App\Models\MeasurementUnit;
 use App\Models\MediaAsset;
+use App\Models\Review;
 use App\Models\Site;
 use App\Services\Media\MediaResolver;
 use App\Services\Media\MediaUrlGenerator;
@@ -84,7 +87,11 @@ final class ProductProjectionBuilder
             ? ProjectionStatus::Active
             : ProjectionStatus::Pending;
         $media = $this->buildMediaPayload($site, $product, $locale, $title);
+        $attributes = $this->buildAttributes($product, $site, $locale);
+        $rating = Review::query()->visiblePublicly()->forSite($site)->forProduct($product)->avg('rating');
         $payload = [
+            'schema_version' => 1, 'rating' => ['value' => $rating === null ? null : (float) $rating],
+            'schema_revision' => $product->category === null ? 0 : $product->category->schema_revision,
             'product' => [
                 'id' => (int) $product->getKey(),
                 'title' => $title,
@@ -121,7 +128,10 @@ final class ProductProjectionBuilder
                 'code' => (string) $site->getAttribute('code'),
                 'locale' => $locale,
             ],
-            'spec_sections' => $this->buildSpecSections($product, $site, $locale),
+            'attributes' => $attributes,
+            'spec_sections' => $this->specSections($attributes),
+            'facet_values' => $this->facetValues($product, $attributes, $rating === null ? null : (float) $rating),
+            'comparison' => $this->comparisonRows($product),
             'media' => $media,
         ];
         $seo = $this->seoProjectionBuilder->forProduct(
@@ -176,108 +186,103 @@ final class ProductProjectionBuilder
     /**
      * @return list<array<string, mixed>>
      */
-    private function buildSpecSections(CentralProduct $product, Site $site, string $locale): array
+    private function buildAttributes(CentralProduct $product, Site $site, string $locale): array
     {
         if ($product->category === null) {
             return [];
         }
-
-        $sections = AttributeSection::query()
-            ->where('central_category_id', $product->category->getKey())
-            ->where('is_visible', true)
-            ->with([
-                'attributes' => fn ($query) => $query->visible()->ordered(),
-                'attributes.options' => fn ($query) => $query->where('is_visible', true)->ordered(),
-            ])
-            ->ordered()
-            ->get();
-        $values = CentralProductAttributeValue::query()
-            ->where('central_product_id', $product->getKey())
-            ->get()
-            ->keyBy('attribute_definition_id');
+        $assignments = CategoryAttributeAssignment::query()
+            ->where('central_category_id', $product->central_category_id)
+            ->with(['section', 'definition.canonicalMeasurementUnit', 'definition.options' => fn ($query) => $query->ordered()])
+            ->ordered()->get()->sortBy(fn ($row) => [$row->section === null ? PHP_INT_MAX : $row->section->position, $row->position, $row->id]);
+        $values = CentralProductAttributeValue::query()->where('central_product_id', $product->id)->get()->keyBy('attribute_definition_id');
         $payload = [];
-
-        foreach ($sections as $section) {
-            $attributes = [];
-
-            foreach ($section->attributes as $attribute) {
-                $value = $values->get($attribute->getKey());
-
-                if (! $value instanceof CentralProductAttributeValue) {
-                    continue;
-                }
-
-                $canonicalUnit = $value->getAttribute('canonical_unit')
-                    ?: $attribute->getAttribute('canonical_unit');
-                $canonicalValue = $this->canonicalValue($attribute, $value);
-                $sourceUnit = is_string($canonicalUnit) && $canonicalUnit !== ''
-                    ? $this->measurementUnit($canonicalUnit)
-                    : null;
-                $display = $this->displayValue(
-                    $attribute,
-                    $canonicalValue,
-                    $canonicalUnit,
-                    $site,
-                    $locale,
-                    $sourceUnit,
-                );
-                $attributes[] = [
-                    'code' => (string) $attribute->getAttribute('code'),
-                    'label' => $this->translatedString(
-                        $attribute,
-                        'label',
-                        $locale,
-                        (string) $attribute->getAttribute('name'),
-                    ),
-                    'data_type' => $attribute->data_type->value,
-                    'canonical_value' => $canonicalValue,
-                    'canonical_unit' => $canonicalUnit,
-                    'canonical_unit_label' => $this->unitLabel($canonicalUnit, $locale, $sourceUnit),
-                    'display_value' => $display['value'],
-                    'display_unit' => $display['unit'],
-                    'display_unit_label' => $this->unitLabel(
-                        $display['unit'],
-                        $locale,
-                        $display['unit_model'],
-                    ),
-                    'options' => $attribute->options
-                        ->map(fn ($option): array => [
-                            'code' => (string) $option->getAttribute('code'),
-                            'label' => $this->translatedString(
-                                $option,
-                                'label',
-                                $locale,
-                                (string) $option->getAttribute('label'),
-                            ),
-                        ])
-                        ->values()
-                        ->all(),
-                    'position' => (int) $attribute->getAttribute('position'),
-                    'is_filterable' => (bool) $attribute->getAttribute('is_filterable'),
-                    'is_sortable' => (bool) $attribute->getAttribute('is_sortable'),
-                    'is_comparable' => (bool) $attribute->getAttribute('is_comparable'),
-                    'is_searchable' => (bool) $attribute->getAttribute('is_searchable'),
-                ];
+        foreach ($assignments as $assignment) {
+            $attribute = $assignment->definition;
+            $value = $values->get($attribute->id);
+            $canonicalValue = $value === null ? null : $this->canonicalValue($attribute, $value);
+            $canonicalUnit = $value?->canonical_unit ?: $attribute->canonicalMeasurementUnit?->code;
+            $sourceUnit = filled($canonicalUnit) ? $this->measurementUnit($canonicalUnit) : null;
+            $display = $this->displayValue($attribute, $canonicalValue, $canonicalUnit, $site, $locale, $sourceUnit);
+            $referencedCodes = match ($attribute->data_type) {
+                AttributeDataType::Enum => [$canonicalValue],
+                AttributeDataType::MultiEnum => is_array($canonicalValue) ? $canonicalValue : [],
+                default => [],
+            };
+            $options = $attribute->options->filter(fn ($option) => $option->is_visible || in_array($option->code, $referencedCodes, true))->values()->map(fn ($option) => ['code' => $option->code,
+                'label' => $this->translatedString($option, 'label', $locale, $option->label), 'is_visible' => $option->is_visible])->all();
+            if (! in_array($attribute->data_type, [AttributeDataType::Integer, AttributeDataType::Decimal], true)) {
+                $labels = array_column($options, 'label', 'code');
+                $display['value'] = match ($attribute->data_type) {
+                    AttributeDataType::Boolean => $canonicalValue === null ? null : ($canonicalValue ? 'Yes' : 'No'),
+                    AttributeDataType::Enum => $canonicalValue === null ? null : ($labels[$canonicalValue] ?? $canonicalValue),
+                    AttributeDataType::MultiEnum => is_array($canonicalValue) ? implode(', ', array_map(fn ($code) => $labels[$code] ?? $code, $canonicalValue)) : null,
+                    AttributeDataType::Json => $canonicalValue === null ? null : json_encode($canonicalValue, JSON_THROW_ON_ERROR),
+                    default => $canonicalValue,
+                };
             }
-
-            if ($attributes === []) {
-                continue;
-            }
-
+            $section = $assignment->section;
             $payload[] = [
-                'code' => (string) $section->getAttribute('code'),
-                'label' => $this->translatedString(
-                    $section,
-                    'name',
-                    $locale,
-                    (string) $section->getAttribute('name'),
-                ),
-                'position' => (int) $section->getAttribute('position'),
-                'attributes' => $attributes,
+                'assignment_id' => $assignment->id, 'definition_id' => $attribute->id, 'code' => $attribute->code,
+                'label' => $this->translatedString($attribute, 'label', $locale, $attribute->name), 'data_type' => $attribute->data_type->value,
+                'measurement_dimension_id' => $attribute->measurement_dimension_id,
+                'canonical_measurement_unit_id' => $attribute->canonical_measurement_unit_id,
+                'has_value' => $value !== null, 'canonical_value' => $canonicalValue, 'canonical_unit' => $canonicalUnit,
+                'canonical_unit_label' => $this->unitLabel($canonicalUnit, $locale, $sourceUnit),
+                'display_value' => $display['value'], 'display_unit' => $display['unit'],
+                'display_unit_label' => $this->unitLabel($display['unit'], $locale, $display['unit_model']),
+                'options' => $options, 'position' => $assignment->position, 'is_required' => $assignment->is_required,
+                'is_visible' => $assignment->is_visible, 'is_searchable' => $assignment->is_searchable, 'is_sortable' => $assignment->is_sortable,
+                'section' => ['id' => $section?->id, 'code' => $section === null ? 'ungrouped' : $section->code,
+                    'label' => $section === null ? 'Ungrouped' : $this->translatedString($section, 'name', $locale, $section->name),
+                    'position' => $section === null ? PHP_INT_MAX : $section->position, 'is_visible' => $section === null ? true : $section->is_visible],
             ];
         }
 
         return $payload;
+    }
+
+    /** @param list<array<string, mixed>> $attributes
+     * @return list<array<string, mixed>>
+     */
+    private function specSections(array $attributes): array
+    {
+        $sections = [];
+        foreach ($attributes as $attribute) {
+            if (! $attribute['is_visible'] || ! $attribute['section']['is_visible'] || ! $attribute['has_value']) {
+                continue;
+            }
+            $key = $attribute['section']['id'] ?? 'ungrouped';
+            $sections[$key] ??= [...$attribute['section'], 'attributes' => []];
+            $sections[$key]['attributes'][] = $attribute;
+        }
+
+        return array_values($sections);
+    }
+
+    /** @param list<array<string, mixed>> $attributes
+     * @return array<string, mixed>
+     */
+    private function facetValues(CentralProduct $product, array $attributes, ?float $rating): array
+    {
+        $facts = array_column($attributes, null, 'assignment_id');
+        $values = [];
+        foreach (FacetDefinition::query()->where('category_id', $product->central_category_id)->active()->where('is_filterable', true)->ordered()->get() as $facet) {
+            $values[$facet->code] = match ($facet->source_type->value) {
+                'attribute' => $facts[$facet->category_attribute_assignment_id]['canonical_value'] ?? null,
+                'brand' => $product->brand?->slug,
+                'rating' => $rating,
+            };
+        }
+
+        return $values;
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function comparisonRows(CentralProduct $product): array
+    {
+        return CategoryComparisonAttribute::query()->where('central_category_id', $product->central_category_id)
+            ->where('is_visible', true)->orderBy('position')->orderBy('id')->get(['id', 'category_attribute_assignment_id', 'position'])->toArray();
     }
 
     private function canonicalValue(
@@ -285,25 +290,12 @@ final class ProductProjectionBuilder
         CentralProductAttributeValue $value,
     ): mixed {
         return match ($attribute->data_type) {
-            AttributeDataType::Integer, AttributeDataType::Decimal => $this->normalizeNumeric(
-                $value->getAttribute('canonical_value') ?? $value->getAttribute('value_number'),
-            ),
+            AttributeDataType::Integer, AttributeDataType::Decimal => $value->getAttribute('canonical_value') ?? $value->getAttribute('value_number'),
             AttributeDataType::String, AttributeDataType::Text => $value->getAttribute('value_text'),
             AttributeDataType::Boolean => $value->getAttribute('value_bool'),
             AttributeDataType::Enum => $value->getAttribute('value_enum_code'),
             AttributeDataType::MultiEnum, AttributeDataType::Json => $value->getAttribute('value_json'),
         };
-    }
-
-    private function normalizeNumeric(mixed $value): int|float|null
-    {
-        if (! is_numeric($value)) {
-            return null;
-        }
-
-        $numeric = (float) $value;
-
-        return fmod($numeric, 1.0) === 0.0 ? (int) $numeric : $numeric;
     }
 
     private function translatedString(

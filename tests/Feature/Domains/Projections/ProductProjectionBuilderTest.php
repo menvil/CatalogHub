@@ -11,6 +11,8 @@ use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
 use App\Models\Site;
+use Database\Seeders\MeasurementDimensionsSeeder;
+use Database\Seeders\MetricMeasurementUnitsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -61,6 +63,7 @@ class ProductProjectionBuilderTest extends TestCase
 
     public function test_it_adds_visible_product_specs_grouped_and_ordered_by_attribute_sections(): void
     {
+        $this->seed([MeasurementDimensionsSeeder::class, MetricMeasurementUnitsSeeder::class]);
         $site = Site::factory()->create();
         $category = CentralCategory::factory()->create();
         $display = AttributeSection::factory()->for($category, 'category')->create([
@@ -73,20 +76,18 @@ class ProductProjectionBuilderTest extends TestCase
             'name' => 'Connectivity',
             'position' => 1,
         ]);
-        $refreshRate = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($display, 'section')
+        $refreshRate = AttributeDefinition::factory()->withCanonicalUnit('hertz')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $display->id])
             ->create([
                 'code' => 'refresh_rate',
                 'name' => 'Refresh rate',
                 'data_type' => 'integer',
-                'canonical_unit' => 'hertz',
                 'position' => 1,
-                'is_filterable' => true,
             ]);
         $brightness = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($display, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $display->id])
             ->create([
                 'code' => 'brightness',
                 'name' => 'Brightness',
@@ -94,16 +95,16 @@ class ProductProjectionBuilderTest extends TestCase
                 'position' => 2,
             ]);
         $ports = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($connectivity, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $connectivity->id])
             ->create([
                 'code' => 'ports',
                 'name' => 'Ports',
                 'data_type' => 'string',
             ]);
         $hidden = AttributeDefinition::factory()
-            ->for($category, 'category')
-            ->for($display, 'section')
+            ->assignedTo($category)
+            ->state(['attribute_section_id' => $display->id])
             ->create(['code' => 'internal_code', 'is_visible' => false]);
         $product = CentralProduct::factory()->for($category, 'category')->create();
 
@@ -130,10 +131,10 @@ class ProductProjectionBuilderTest extends TestCase
         $this->assertSame(['connectivity', 'display'], array_column($sections, 'code'));
         $this->assertSame('ports', $sections[0]['attributes'][0]['code']);
         $this->assertSame(['refresh_rate', 'brightness'], array_column($sections[1]['attributes'], 'code'));
-        $this->assertSame(165, $sections[1]['attributes'][0]['canonical_value']);
+        $this->assertSame('165.000000', $sections[1]['attributes'][0]['canonical_value']);
         $this->assertSame('hertz', $sections[1]['attributes'][0]['canonical_unit']);
-        $this->assertSame('165 hertz', $sections[1]['attributes'][0]['display_value']);
-        $this->assertTrue($sections[1]['attributes'][0]['is_filterable']);
+        $this->assertSame('165 Hz', $sections[1]['attributes'][0]['display_value']);
+        $this->assertArrayNotHasKey('is_filterable', $sections[1]['attributes'][0]);
         $this->assertNotContains('internal_code', array_column($sections[1]['attributes'], 'code'));
     }
 }

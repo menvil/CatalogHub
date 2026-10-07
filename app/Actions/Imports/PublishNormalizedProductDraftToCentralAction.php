@@ -2,9 +2,12 @@
 
 namespace App\Actions\Imports;
 
+use App\Domains\Projections\ProjectionStaleDetector;
 use App\Enums\AttributeDataType;
 use App\Enums\CentralProductStatus;
+use App\Enums\Permission;
 use App\Models\CentralCatalog\AttributeDefinition;
+use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\CentralCatalog\CentralProductAttributeValue;
 use App\Models\Imports\NormalizedProductDraft;
@@ -12,7 +15,9 @@ use App\Models\MediaAsset;
 use App\Models\MediaAssignment;
 use App\Models\User;
 use App\Services\AttributeGlobalization\AttributeIdentityLock;
-use Illuminate\Auth\Access\AuthorizationException;
+use App\Services\Categories\CategoryAccess;
+use App\Services\Imports\DraftAttributeIdentity;
+use App\Services\ProductAttributes\ProductAttributeValueValidator;
 use Illuminate\Support\Facades\DB;
 use LogicException;
 
@@ -26,16 +31,14 @@ final class PublishNormalizedProductDraftToCentralAction
 
     public function handle(NormalizedProductDraft $draft, ?User $user): CentralProduct
     {
-        if (! $user instanceof User || ! ($user->isSuperAdmin() || $user->isCentralAdmin() || $user->isCatalogEditor())) {
-            throw new AuthorizationException('You are not allowed to publish normalized drafts.');
-        }
+        $user = app(CategoryAccess::class)->authorize(Permission::CatalogProductsManage, $user);
 
         return DB::transaction(function () use ($draft): CentralProduct {
             app(AttributeIdentityLock::class)->acquire();
             $lockedDraft = NormalizedProductDraft::query()->lockForUpdate()->findOrFail($draft->id);
 
-            if ($lockedDraft->attribute_identity_version !== 1) {
-                throw new LogicException('Explicit attribute identity migration required before publishing this draft version.');
+            if ($lockedDraft->schema_version !== 1) {
+                throw new LogicException('Unsupported draft schema version.');
             }
 
             if ($lockedDraft->status !== 'approved') {
@@ -47,6 +50,10 @@ final class PublishNormalizedProductDraftToCentralAction
             }
 
             $product = $this->persistProduct($lockedDraft);
+            if (CentralProductAttributeValue::query()->where('central_product_id', $product->id)->whereNotIn('attribute_definition_id',
+                CategoryAttributeAssignment::query()->where('central_category_id', $product->central_category_id)->select('attribute_definition_id'))->exists()) {
+                throw new LogicException('Resulting Product Category does not contain every existing fact; explicit Category migration required.');
+            }
             $this->persistAttributes($lockedDraft, $product);
             $this->persistMedia($lockedDraft, $product);
 
@@ -54,6 +61,8 @@ final class PublishNormalizedProductDraftToCentralAction
                 'status' => 'published',
                 'published_central_product_id' => $product->id,
             ])->save();
+
+            app(ProjectionStaleDetector::class)->markStaleForProduct($product);
 
             return $product->refresh();
         });
@@ -95,8 +104,17 @@ final class PublishNormalizedProductDraftToCentralAction
     private function persistAttributes(NormalizedProductDraft $draft, CentralProduct $product): void
     {
         $definitionIds = [];
+        $candidates = app(DraftAttributeIdentity::class)->candidates($draft, (int) $product->central_category_id);
+        $storage = [];
+        foreach ($candidates as $candidate) {
+            $definition = $this->resolveAttributeDefinition($draft, $candidate, (int) $product->central_category_id);
+            $storage[$definition->id] = $this->attributeStorageData($draft, $definition, $candidate);
+        }
+        if ($storage !== [] || $product->central_category_id !== null) {
+            app(ProductAttributeValueValidator::class)->validate($product, $storage);
+        }
 
-        foreach ($draft->attributes_json ?? [] as $candidate) {
+        foreach ($candidates as $candidate) {
             if (($candidate['is_valid'] ?? true) === false) {
                 throw new LogicException("Draft [{$draft->id}] contains an invalid normalized attribute candidate.");
             }
@@ -112,10 +130,6 @@ final class PublishNormalizedProductDraftToCentralAction
             }
 
             $definitionIds[$definition->id] = true;
-
-            if ((int) $product->central_category_id !== (int) $definition->central_category_id) {
-                throw new LogicException("Attribute [{$definition->id}] does not belong to the published product category.");
-            }
 
             CentralProductAttributeValue::query()->updateOrCreate(
                 [
@@ -137,11 +151,6 @@ final class PublishNormalizedProductDraftToCentralAction
 
         if (isset($candidate['attribute_definition_id'])) {
             $definition = AttributeDefinition::query()->find((int) $candidate['attribute_definition_id']);
-        } elseif (filled($candidate['code'] ?? null)) {
-            $definition = AttributeDefinition::query()
-                ->where('central_category_id', $categoryId)
-                ->where('code', $candidate['code'])
-                ->first();
         }
 
         if (! $definition instanceof AttributeDefinition) {
@@ -210,7 +219,7 @@ final class PublishNormalizedProductDraftToCentralAction
 
         if (in_array($type, [AttributeDataType::Integer->value, AttributeDataType::Decimal->value], true)) {
             $stored['canonical_value'] ??= $stored['value_number'];
-            $stored['canonical_unit'] ??= $definition->canonical_unit;
+            $stored['canonical_unit'] ??= $definition->canonicalMeasurementUnit?->code;
         }
 
         return $stored;

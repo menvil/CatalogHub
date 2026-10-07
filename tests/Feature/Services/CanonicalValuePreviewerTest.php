@@ -29,10 +29,8 @@ class CanonicalValuePreviewerTest extends TestCase
             'factor_to_canonical' => '3.785411784',
             'precision_default' => 3,
         ]);
-        $attribute = AttributeDefinition::factory()->create([
+        $attribute = AttributeDefinition::factory()->measured('volume', 'liter')->create([
             'data_type' => 'decimal',
-            'dimension' => 'volume',
-            'canonical_unit' => 'liter',
         ]);
 
         $preview = app(CanonicalValuePreviewer::class)->preview($attribute, [
@@ -77,10 +75,8 @@ class CanonicalValuePreviewerTest extends TestCase
             'symbol' => 'lb',
             'factor_to_canonical' => '0.45359237',
         ]);
-        $attribute = AttributeDefinition::factory()->create([
+        $attribute = AttributeDefinition::factory()->measured('volume', 'liter')->create([
             'data_type' => 'decimal',
-            'dimension' => 'volume',
-            'canonical_unit' => 'liter',
         ]);
 
         $preview = app(CanonicalValuePreviewer::class)->preview($attribute, [
@@ -118,10 +114,8 @@ class CanonicalValuePreviewerTest extends TestCase
             'factor_to_canonical' => '1',
             'precision_default' => 0,
         ]);
-        $attribute = AttributeDefinition::factory()->create([
+        $attribute = AttributeDefinition::factory()->measured('frequency', 'hertz')->create([
             'data_type' => 'decimal',
-            'dimension' => 'frequency',
-            'canonical_unit' => 'hertz',
         ]);
 
         $preview = app(CanonicalValuePreviewer::class)->preview($attribute, [

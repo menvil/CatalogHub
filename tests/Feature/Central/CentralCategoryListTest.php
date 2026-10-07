@@ -76,11 +76,13 @@ final class CentralCategoryListTest extends TestCase
 
     public function test_get_filters_sort_and_paging_never_change_any_database_table(): void
     {
+        Locale::factory()->create(['code' => 'zz-ZZ', 'language_code' => 'zz', 'region_code' => 'ZZ', 'is_active' => false]);
         CategoryListFixture::create();
         $this->actingAs(User::factory()->centralAdmin()->create());
+        $localeId = Locale::query()->active()->value('id');
         $before = $this->databaseSnapshot();
         $this->get('/admin/central/categories')->assertOk();
-        $this->get('/admin/central/categories?q=Monitors&schema=draft&status=active&level=2&sort=products&direction=desc&locale=1&site=194010')->assertOk();
+        $this->get('/admin/central/categories?q=Monitors&schema=draft&status=active&level=2&sort=products&direction=desc&locale='.$localeId.'&site=194010')->assertOk();
         $this->get('/admin/central/categories?page=2&per_page=20')->assertOk();
         self::assertSame($before, $this->databaseSnapshot());
     }

@@ -22,25 +22,33 @@ for (const [width, height] of [[1440, 1000], [1024, 900], [768, 1024], [390, 844
             ::-webkit-scrollbar { display: none !important; }
         ` })
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
-        const name = `ca-016__default__${width}x${height}.png`
-        const baseline = resolve('tests/Visual/baselines', name)
-        if (existsSync(baseline)) {
-            await expect(page).toHaveScreenshot([name], { animations: 'disabled', scale: 'css', maxDiffPixelRatio: 0.02 })
-        } else {
-            const directory = resolve('storage/logs/visual-artifacts/ca-016-candidates')
-            mkdirSync(directory, { recursive: true })
-            const path = resolve(directory, name)
-            const bytes = await page.screenshot({ path, animations: 'disabled', scale: 'css' })
-            const checksum = createHash('sha256').update(bytes).digest('hex')
-            writeFileSync(`${path}.sha256`, `${checksum}\n`)
-            writeFileSync(`${path}.json`, JSON.stringify({
-                screen_id: 'CA-016', fixture: 'categories-list-v1', viewport: `${width}x${height}`,
-                sha256: checksum, approval: 'pending-product-owner-review',
-                source: 'categories-schema-prototype-v1',
-                source_sha256: 'c8e776138aa1356369fa2a48efb89f32540ac2d4234e4ee74a1406cba92094f2',
-            }, null, 2) + '\n')
-            await testInfo.attach(`CA-016 candidate ${width}px (pending review)`, { path, contentType: 'image/png' })
+        await captureEvidence(page, testInfo, width, height)
+        if (width === 390) {
+            await page.locator('tr[data-row-id="194005"]').scrollIntoViewIfNeeded()
+            await captureEvidence(page, testInfo, width, height, 'cards')
         }
         noErrors()
     })
+}
+
+async function captureEvidence(page, testInfo, width, height, state = 'default') {
+    const name = `ca-016__${state}__${width}x${height}.png`
+    const baseline = resolve('tests/Visual/baselines', name)
+    if (existsSync(baseline)) {
+        await expect(page).toHaveScreenshot([name], { animations: 'disabled', scale: 'css', maxDiffPixelRatio: 0.02 })
+    } else {
+        const directory = resolve('storage/logs/visual-artifacts/ca-016-candidates')
+        mkdirSync(directory, { recursive: true })
+        const path = resolve(directory, name)
+        const bytes = await page.screenshot({ path, animations: 'disabled', scale: 'css' })
+        const checksum = createHash('sha256').update(bytes).digest('hex')
+        writeFileSync(`${path}.sha256`, `${checksum}\n`)
+        writeFileSync(`${path}.json`, JSON.stringify({
+            screen_id: 'CA-016', state, fixture: 'categories-list-v1', viewport: `${width}x${height}`,
+            sha256: checksum, approval: 'pending-product-owner-review',
+            source: 'categories-schema-prototype-v1',
+            source_sha256: 'c8e776138aa1356369fa2a48efb89f32540ac2d4234e4ee74a1406cba92094f2',
+        }, null, 2) + '\n')
+        await testInfo.attach(`CA-016 candidate ${width}px (pending review)`, { path, contentType: 'image/png' })
+    }
 }

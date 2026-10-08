@@ -9,6 +9,7 @@ use App\Data\CentralCatalog\CategoryActivitySummary;
 use App\Enums\AuditAction;
 use App\Enums\CentralCategoryStatus;
 use App\Models\AuditLogEntry;
+use App\Models\CentralCatalog\CategoryHierarchyScope;
 use App\Models\CentralCatalog\CentralCategory;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -16,11 +17,12 @@ final class CategoryActivityQuery
 {
     public const LIMIT = 12;
 
-    /** Category-subject events only. Scope/global subjects never prove ownership. */
+    /** Category subjects, plus recorded sibling IDs on genuine reorder scope events. */
     private const LABELS = [
         'catalog.category.created' => 'Category created',
         'catalog.category.updated' => 'Category identity updated',
         'catalog.category.reparented' => 'Category reparented',
+        'catalog.category.reordered' => 'Category reordered',
         'catalog.category.activated' => 'Category activated',
         'catalog.category.archived' => 'Category archived',
         'catalog.category.restored' => 'Category restored',
@@ -61,8 +63,12 @@ final class CategoryActivityQuery
     {
         return AuditLogEntry::query()->select(['id', 'actor_id', 'action', 'after_json', 'created_at'])
             ->where('context', 'central')->whereNull('site_id')
-            ->where('subject_type', $category->getMorphClass())->where('subject_id', (string) $category->id)
-            ->whereIn('action', array_keys(self::LABELS));
+            ->whereIn('action', array_keys(self::LABELS))
+            ->where(fn (Builder $subjects) => $subjects
+                ->where(fn (Builder $direct) => $direct->where('subject_type', $category->getMorphClass())->where('subject_id', (string) $category->id))
+                ->orWhere(fn (Builder $reorder) => $reorder->where('subject_type', (new CategoryHierarchyScope)->getMorphClass())
+                    ->where('action', AuditAction::CatalogCategoryReordered->value)
+                    ->whereJsonContains('after_json->ordered_ids', $category->id)));
     }
 
     private function actor(AuditLogEntry $entry): string
@@ -87,6 +93,7 @@ final class CategoryActivityQuery
             AuditAction::CatalogCategoryCreated->value => 'Canonical Category registered.',
             AuditAction::CatalogCategoryUpdated->value => 'Source name or slug changed.',
             AuditAction::CatalogCategoryReparented->value => 'Category parent changed.',
+            AuditAction::CatalogCategoryReordered->value => 'Category sibling order changed.',
             default => 'Category-local schema configuration changed.',
         };
     }

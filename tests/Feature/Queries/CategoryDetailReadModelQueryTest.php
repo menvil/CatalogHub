@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Queries;
 
+use App\Actions\CentralCatalog\ReorderCentralCategoriesAction;
+use App\Actions\CentralCatalog\ReparentCentralCategoryAction;
 use App\Enums\AuditAction;
 use App\Enums\TranslationStatus;
 use App\Models\AuditLogEntry;
 use App\Models\CentralCatalog\AttributeDefinition;
 use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CategoryAttributeAssignment;
+use App\Models\CentralCatalog\CategoryHierarchyScope;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
 use App\Models\FacetDefinition;
@@ -129,6 +132,31 @@ final class CategoryDetailReadModelQueryTest extends TestCase
         foreach ($activity->events as $event) {
             self::assertSame('Source name or slug changed.', $event->summary);
         }
+    }
+
+    public function test_reorder_scope_requires_recorded_category_membership_and_survives_later_reparent(): void
+    {
+        $actor = User::factory()->centralAdmin()->create();
+        $parent = CentralCategory::factory()->create(['parent_id' => null, 'position' => 0]);
+        $newParent = CentralCategory::factory()->create(['parent_id' => null, 'position' => 1]);
+        $category = CentralCategory::factory()->create(['parent_id' => $parent->id, 'position' => 0]);
+        $sibling = CentralCategory::factory()->create(['parent_id' => $parent->id, 'position' => 1]);
+        $scope = app(ReorderCentralCategoriesAction::class)->handle($actor, $parent->id, [$sibling->id, $category->id], 0);
+        app(ReparentCentralCategoryAction::class)->handle($actor, $category, $newParent->id, $scope->revision, 0);
+        foreach ([
+            [$scope->getMorphClass(), AuditAction::CatalogCategoryUpdated->value, [$category->id]],
+            [(new AttributeDefinition)->getMorphClass(), AuditAction::CatalogCategoryReordered->value, [$category->id]],
+            [$scope->getMorphClass(), AuditAction::CatalogCategoryReordered->value, [(string) $category->id]],
+        ] as [$type, $action, $ids]) {
+            AuditLogEntry::factory()->create(['context' => 'central', 'site_id' => null, 'subject_type' => $type, 'subject_id' => CategoryHierarchyScope::keyFor($parent->id), 'action' => $action, 'after_json' => ['ordered_ids' => $ids]]);
+        }
+        $activity = app(CategoryActivityQuery::class)->forCategory($category->refresh());
+        self::assertSame(['Category reparented', 'Category reordered'], array_column($activity->events, 'label'));
+        self::assertSame('Category sibling order changed.', $activity->events[1]->summary);
+        self::assertSame($actor->name, $activity->events[1]->actor);
+        self::assertSame([], app(CategoryActivityQuery::class)->forCategory($newParent)->events);
+        self::assertSame([], app(CategoryActivityQuery::class)->forCategory($parent)->events);
+        self::assertSame('Not recorded', $activity->lastIdentityUpdateBy);
     }
 
     public function test_missing_audit_actor_is_safe_and_schema_changes_do_not_claim_identity_update(): void

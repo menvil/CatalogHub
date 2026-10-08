@@ -13,11 +13,12 @@
     @foreach ($actions as $action)
         @php
             $destructive = (bool) ($action['destructive'] ?? false);
+            $requiresConfirmation = trim((string) ($action['confirmationId'] ?? '')) !== '';
             throw_unless(\App\Support\Presentation\SafePresentationUrl::allows($action['url'] ?? null), \InvalidArgumentException::class, 'Row actions require safe URLs.');
             throw_if($destructive && trim((string) ($action['confirmationId'] ?? '')) === '', \InvalidArgumentException::class, 'Destructive row actions require a confirmation ID.');
         @endphp
-        @if ($destructive)
-            <button type="button" @if ($display === 'menu') role="menuitem" @endif class="text-sm font-semibold text-admin-danger" aria-haspopup="dialog" aria-controls="{{ $action['confirmationId'] }}" data-destructive-action data-admin-modal-open-target="{{ $action['confirmationId'] }}">{{ $action['label'] }}</button>
+        @if ($requiresConfirmation)
+            <button type="button" @if ($display === 'menu') role="menuitem" @endif class="text-sm font-semibold {{ $destructive ? 'text-admin-danger' : 'text-admin-primary' }}" aria-haspopup="dialog" aria-controls="{{ $action['confirmationId'] }}" @if ($destructive) data-destructive-action @endif data-admin-modal-open-target="{{ $action['confirmationId'] }}">{{ $action['label'] }}</button>
         @else
             <a href="{{ $action['url'] }}" @if ($display === 'menu') role="menuitem" @endif class="text-sm font-semibold text-admin-primary">{{ $action['label'] }}</a>
         @endif

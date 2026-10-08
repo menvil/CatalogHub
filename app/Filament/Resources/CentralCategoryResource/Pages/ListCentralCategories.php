@@ -3,17 +3,18 @@
 namespace App\Filament\Resources\CentralCategoryResource\Pages;
 
 use App\Filament\Resources\CentralCategoryResource;
-use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ListRecords;
+use Filament\Resources\Pages\Page;
 
-final class ListCentralCategories extends ListRecords
+/** Temporary route compatibility only; CA-016 owns the sole list. */
+final class ListCentralCategories extends Page
 {
     protected static string $resource = CentralCategoryResource::class;
 
-    protected function getHeaderActions(): array
+    protected string $view = 'filament.pages.category-list-redirect';
+
+    public function mount(): void
     {
-        return [
-            CreateAction::make(),
-        ];
+        abort_unless(CentralCategoryResource::canViewAny(), 403);
+        $this->redirectRoute('central.categories.index', request()->query());
     }
 }

@@ -12,7 +12,6 @@ use App\Filament\Resources\CentralCategoryResource;
 use App\Filament\Resources\CentralCategoryResource\Pages\CategorySchemaBuilder;
 use App\Filament\Resources\CentralCategoryResource\Pages\CreateCentralCategory;
 use App\Filament\Resources\CentralCategoryResource\Pages\EditCentralCategory;
-use App\Filament\Resources\CentralCategoryResource\Pages\ListCentralCategories;
 use App\Models\AuditLogEntry;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\User;
@@ -138,7 +137,7 @@ final class CategoryPermissionsTest extends TestCase
         $this->actingAs($actor);
         $a = CentralCategory::factory()->create(['position' => 0]);
         $b = CentralCategory::factory()->create(['position' => 1]);
-        Livewire::test(ListCentralCategories::class)->call('reorderTable', [$b->id, $a->id]);
+        $this->get('/admin/central/central-categories')->assertRedirect(route('central.categories.index'));
         self::assertSame([0, 1], [$a->fresh()->position, $b->fresh()->position]);
         Livewire::test(EditCentralCategory::class, ['record' => $a->id])
             ->fillForm(['status' => 'active', 'schema_status' => 'approved'])

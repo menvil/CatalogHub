@@ -10,6 +10,7 @@ use Tests\Support\BrandFormFixture;
 use Tests\Support\BrandListFixture;
 use Tests\Support\BrandMediaFixture;
 use Tests\Support\BrandTranslationFixture;
+use Tests\Support\CategoryListFixture;
 
 require dirname(__DIR__, 3).'/vendor/autoload.php';
 
@@ -36,3 +37,4 @@ BrandDetailFixture::create();
 BrandTranslationFixture::create();
 BrandMediaFixture::create();
 BrandListFixture::enrich();
+CategoryListFixture::create();

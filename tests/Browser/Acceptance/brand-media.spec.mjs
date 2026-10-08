@@ -139,11 +139,17 @@ test('CA-014 keeps a bounded 24-card Shared Media picker responsive and current 
     for (const [width, columns] of expectedColumns) {
         await page.setViewportSize({ width, height: width >= 1024 ? 1000 : 1024 })
         const cards = picker.locator('[data-media-asset-card]')
-        const first = await cards.nth(0).boundingBox()
-        const lastInRow = await cards.nth(columns - 1).boundingBox()
+        // Sample one layout frame: resize/scroll anchoring may move the modal
+        // between separate remote boundingBox calls on the CI renderer.
+        const boxes = await cards.evaluateAll((elements) => elements.map((element) => {
+            const { y } = element.getBoundingClientRect()
+            return { y }
+        }))
+        const first = boxes[0]
+        const lastInRow = boxes[columns - 1]
         expect(Math.abs((lastInRow?.y ?? 0) - (first?.y ?? 0))).toBeLessThan(4)
         if (columns < 24) {
-            const firstNextRow = await cards.nth(columns).boundingBox()
+            const firstNextRow = boxes[columns]
             expect(firstNextRow?.y ?? 0).toBeGreaterThan((first?.y ?? 0) + 4)
         }
     }

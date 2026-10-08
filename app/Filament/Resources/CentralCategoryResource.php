@@ -2,16 +2,12 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\CategorySchemaStatus;
-use App\Enums\CentralCategoryStatus;
 use App\Enums\Permission;
 use App\Filament\Resources\CentralCategoryResource\Pages;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Services\Categories\CategoryAccess;
 use App\Services\Categories\CategoryHierarchy;
 use BackedEnum;
-use Filament\Actions\Action;
-use Filament\Actions\EditAction;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -19,8 +15,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
@@ -34,6 +28,8 @@ final class CentralCategoryResource extends Resource
     protected static ?string $navigationLabel = 'Categories';
 
     protected static string|UnitEnum|null $navigationGroup = 'Central Catalog';
+
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -107,42 +103,14 @@ final class CentralCategoryResource extends Resource
             ]);
     }
 
-    public static function table(Table $table): Table
+    /** @param array<mixed> $parameters */
+    public static function getUrl(?string $name = null, array $parameters = [], bool $isAbsolute = true, ?string $panel = null, ?Model $tenant = null, bool $shouldGuessMissingParameters = false, ?string $configuration = null): string
     {
-        return $table
-            ->columns([
-                TextColumn::make('name')
-                    ->searchable()
-                    ->sortable(),
-                TextColumn::make('parent.name')
-                    ->label('Parent')
-                    ->sortable(),
-                TextColumn::make('slug')
-                    ->searchable()
-                    ->sortable(),
-                TextColumn::make('status')
-                    ->badge()
-                    ->color(fn (CentralCategoryStatus|string|null $state): string => CentralCategoryStatus::colorFor($state))
-                    ->sortable(),
-                TextColumn::make('schema_status')
-                    ->label('Schema')
-                    ->badge()
-                    ->color(fn (CategorySchemaStatus|string|null $state): string => CategorySchemaStatus::colorFor($state))
-                    ->sortable(),
-                TextColumn::make('position')
-                    ->sortable(),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable(),
-            ])
-            ->recordActions([
-                Action::make('schema')
-                    ->label('Schema')
-                    ->icon(Heroicon::OutlinedAdjustmentsHorizontal)
-                    ->visible(fn (): bool => app(CategoryAccess::class)->allows(Permission::CatalogSchemaManage))
-                    ->url(fn (CentralCategory $record): string => self::getUrl('schema', ['record' => $record])),
-                EditAction::make(),
-            ]);
+        if ($name === null || $name === 'index') {
+            return route('central.categories.index', $parameters, $isAbsolute);
+        }
+
+        return parent::getUrl($name, $parameters, $isAbsolute, $panel, $tenant, $shouldGuessMissingParameters, $configuration);
     }
 
     public static function getPages(): array

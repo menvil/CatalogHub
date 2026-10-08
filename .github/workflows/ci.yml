@@ -386,8 +386,8 @@ jobs:
         env:
           VISUAL_ARTIFACT_DIR: storage/logs/visual-artifacts/php
 
-      - name: Upload visual diagnostics
-        if: failure()
+      - name: Upload visual diagnostics and review candidates
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: visual-diagnostics

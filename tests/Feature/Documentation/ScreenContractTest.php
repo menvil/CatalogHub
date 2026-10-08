@@ -44,13 +44,59 @@ final class ScreenContractTest extends TestCase
         }
     }
 
+    public function test_pending_first_baseline_requires_explicit_review_state_and_matching_local_prototype(): void
+    {
+        $valid = $this->validateFixture(static function (): void {}, pendingPrototype: true);
+        self::assertSame(0, $valid['exitCode'], $valid['output']);
+
+        foreach ([
+            'no pending review state' => static function (array &$contracts): void {
+                unset($contracts[10]['visual_acceptance']);
+            },
+            'wrong reference version' => static function (array &$contracts): void {
+                $contracts[10]['reference_version'] = 'unapproved-version';
+            },
+            'no prototype' => static function (array &$contracts, array &$references, array &$prototypes): void {
+                $prototypes = [];
+            },
+            'no local source' => static function (array &$contracts, array &$references, array &$prototypes): void {
+                $prototypes[0]['path'] = 'absent.png';
+            },
+            'changed source' => static function (array &$contracts, array &$references, array &$prototypes): void {
+                $prototypes[0]['sha256'] = str_repeat('0', 64);
+            },
+            'unrelated file with matching checksum' => static function (array &$contracts, array &$references, array &$prototypes, string $root): void {
+                file_put_contents($root.'/README.md', 'unrelated documentation');
+                $prototypes[0]['path'] = 'README.md';
+                $prototypes[0]['sha256'] = hash_file('sha256', $root.'/README.md');
+            },
+            'non-image in prototype directory with matching checksum' => static function (array &$contracts, array &$references, array &$prototypes, string $root): void {
+                file_put_contents($root.'/'.$prototypes[0]['path'], 'not an image');
+                $prototypes[0]['sha256'] = hash_file('sha256', $root.'/'.$prototypes[0]['path']);
+            },
+            'image outside prototype directory' => static function (array &$contracts, array &$references, array &$prototypes, string $root): void {
+                copy($root.'/'.$prototypes[0]['path'], $root.'/unrelated.png');
+                $prototypes[0]['path'] = 'unrelated.png';
+            },
+            'prototype symlink outside repository' => static function (array &$contracts, array &$references, array &$prototypes, string $root): void {
+                copy($root.'/'.$prototypes[0]['path'], $root.'-outside.png');
+                unlink($root.'/'.$prototypes[0]['path']);
+                symlink($root.'-outside.png', $root.'/'.$prototypes[0]['path']);
+            },
+        ] as $boundary => $mutate) {
+            $result = $this->validateFixture($mutate, pendingPrototype: true);
+            self::assertNotSame(0, $result['exitCode'], $boundary.' was accepted.');
+        }
+    }
+
     /** @return array{exitCode: int, output: string} */
-    private function validateFixture(callable $mutate): array
+    private function validateFixture(callable $mutate, bool $pendingPrototype = false): array
     {
         $root = sys_get_temp_dir().'/cataloghub-screen-contract-'.bin2hex(random_bytes(8));
         $files = new Filesystem;
         $contracts = [];
         $references = [];
+        $prototypes = [];
 
         try {
             $files->ensureDirectoryExists($root.'/docs/ui/screens');
@@ -68,12 +114,19 @@ final class ScreenContractTest extends TestCase
                 $references[] = ['screen_id' => $id, 'state' => 'default', 'viewport' => '1x1', 'fixture' => 'test-v1', 'path' => $path, 'sha256' => hash_file('sha256', $root.'/'.$path)];
             }
 
-            $mutate($contracts, $references);
+            if ($pendingPrototype) {
+                $contracts[] = [...$contracts[0], 'screen_id' => 'CA-016', 'visual_acceptance' => 'pending-product-owner-review'];
+                $path = 'pictures/CA-016 — Categories List.png';
+                $files->ensureDirectoryExists($root.'/pictures');
+                file_put_contents($root.'/'.$path, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aL1sAAAAASUVORK5CYII=', true));
+                $prototypes[] = ['screen_id' => 'CA-016', 'reference_version' => 'v1', 'path' => $path, 'sha256' => hash_file('sha256', $root.'/'.$path)];
+            }
+            $mutate($contracts, $references, $prototypes, $root);
             foreach ($contracts as $contract) {
                 $frontMatter = implode("\n", array_map(static fn (string $key, string $value): string => "{$key}: {$value}", array_keys($contract), $contract));
                 file_put_contents($root.'/docs/ui/screens/'.$contract['screen_id'].'.md', "---\n{$frontMatter}\n---\n");
             }
-            file_put_contents($root.'/docs/ui/visual-references.json', json_encode(['references' => $references], JSON_THROW_ON_ERROR));
+            file_put_contents($root.'/docs/ui/visual-references.json', json_encode(['references' => $references, 'prototype_references' => $prototypes], JSON_THROW_ON_ERROR));
 
             $output = [];
             $exitCode = 0;
@@ -82,6 +135,9 @@ final class ScreenContractTest extends TestCase
             return ['exitCode' => $exitCode, 'output' => implode(PHP_EOL, $output)];
         } finally {
             $files->deleteDirectory($root);
+            if (is_file($root.'-outside.png')) {
+                unlink($root.'-outside.png');
+            }
         }
     }
 }

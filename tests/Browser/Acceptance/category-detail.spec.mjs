@@ -111,6 +111,7 @@ test('CA-017 rejects a forbidden actor and nonexistent IDs', async ({ page }) =>
     await signIn(page, 'central', foundationDemo.translator)
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
     expect((await page.goto(primary)).status()).toBe(403)
+    await page.context().clearCookies()
     await signIn(page, 'central', foundationDemo.centralAdmin)
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()
     expect((await page.goto('/admin/central/categories/99999999')).status()).toBe(404)

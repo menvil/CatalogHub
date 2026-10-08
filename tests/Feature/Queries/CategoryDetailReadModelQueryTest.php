@@ -12,6 +12,7 @@ use App\Models\CentralCatalog\AttributeSection;
 use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\CentralCatalog\CentralProduct;
+use App\Models\FacetDefinition;
 use App\Models\Locale;
 use App\Models\Site;
 use App\Models\SiteCategory;
@@ -111,6 +112,7 @@ final class CategoryDetailReadModelQueryTest extends TestCase
         $category = CentralCategory::factory()->create();
         $other = CentralCategory::factory()->create();
         $definition = AttributeDefinition::factory()->create();
+        CategoryAttributeAssignment::factory()->create(['central_category_id' => $category->id, 'attribute_definition_id' => $definition->id]);
         $actor = User::factory()->centralAdmin()->create();
         $rows = [];
         for ($i = 0; $i < 50; $i++) {
@@ -168,6 +170,7 @@ final class CategoryDetailReadModelQueryTest extends TestCase
             SiteCategory::query()->create(['site_id' => $site->id, 'central_category_id' => $category->id]);
         }
         AuditLogEntry::factory()->count(55)->create(['context' => 'central', 'site_id' => null, 'subject_type' => $category->getMorphClass(), 'subject_id' => (string) $category->id, 'action' => AuditAction::CatalogCategoryUpdated->value]);
+        FacetDefinition::factory()->count(10)->create(['category_id' => $category->id]);
         $large = $this->queryCount($category);
         self::assertLessThanOrEqual($small + 8, $large);
         self::assertLessThanOrEqual(30, $large);

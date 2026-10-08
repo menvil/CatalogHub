@@ -22,6 +22,7 @@ use App\Models\Translations\CategoryTranslation;
 use App\Support\Database\LiteralLikePattern;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 
 final class CategoryListReadModelQuery implements RawSqlPersistenceBoundary, StablePaginationBoundary
 {
@@ -32,6 +33,12 @@ final class CategoryListReadModelQuery implements RawSqlPersistenceBoundary, Sta
         $depths = $this->depths($tree);
         $locales = Locale::query()->active()->orderBy('position')->orderBy('code')->pluck('code', 'id')->all();
         $sites = Site::query()->administrable()->orderBy('name')->orderBy('id')->pluck('name', 'id')->all();
+        if ($filters->localeId !== null && ! array_key_exists($filters->localeId, $locales)) {
+            throw ValidationException::withMessages(['locale' => __('validation.exists', ['attribute' => 'locale'])]);
+        }
+        if ($filters->siteId !== null && ! array_key_exists($filters->siteId, $sites)) {
+            throw ValidationException::withMessages(['site' => __('validation.exists', ['attribute' => 'site'])]);
+        }
         $localeIds = array_keys($locales);
         $summary = new CategoryListSummary(
             total: $tree->count(),

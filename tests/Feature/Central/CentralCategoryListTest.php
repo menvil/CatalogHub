@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Central;
 
+use App\Enums\SiteStatus;
 use App\Enums\UserRole;
 use App\Filament\Resources\CentralCategoryResource;
+use App\Http\Requests\CentralAdmin\CentralCategoryListRequest;
 use App\Models\AuditLogEntry;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Locale;
@@ -72,6 +74,39 @@ final class CentralCategoryListTest extends TestCase
                 $this->actingAs(User::factory()->create(['role' => UserRole::CatalogEditor]))->get('/admin/central/categories')->assertForbidden();
             }
         }
+    }
+
+    #[DataProvider('staleFilterTransitions')]
+    public function test_filters_that_change_between_validation_and_snapshot_reject_safely(string $field, string $state): void
+    {
+        CentralCategory::factory()->create();
+        $record = $field === 'locale'
+            ? Locale::factory()->create(['is_active' => true])
+            : Site::factory()->create(['status' => SiteStatus::Active]);
+        $validatedBeforeChange = false;
+        $this->app->afterResolving(CentralCategoryListRequest::class, function (CentralCategoryListRequest $request) use ($record, $field, $state, &$validatedBeforeChange): void {
+            self::assertSame($record->id, (int) $request->validated($field));
+            $validatedBeforeChange = true;
+            if ($state === 'deleted') {
+                $record->delete();
+            } else {
+                $record->update($field === 'locale' ? ['is_active' => false] : ['status' => SiteStatus::Archived]);
+            }
+        });
+
+        $this->actingAs(User::factory()->centralAdmin()->create())
+            ->from(route('central.categories.index'))
+            ->get(route('central.categories.index', [$field => $record->id]))
+            ->assertRedirect(route('central.categories.index'))
+            ->assertSessionHasErrors([$field => __('validation.exists', ['attribute' => $field])])
+            ->assertDontSee('data-screen-id="CA-016"', false);
+        self::assertTrue($validatedBeforeChange);
+    }
+
+    /** @return array<string, array{string, string}> */
+    public static function staleFilterTransitions(): array
+    {
+        return ['inactive Locale' => ['locale', 'inactive'], 'Archived Site' => ['site', 'archived'], 'deleted Site' => ['site', 'deleted']];
     }
 
     public function test_get_filters_sort_and_paging_never_change_any_database_table(): void

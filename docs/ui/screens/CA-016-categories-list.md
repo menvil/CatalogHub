@@ -13,12 +13,11 @@ permissions: catalog.categories.manage;central.panel.access;central.page.access;
 responsive: Dense desktop table; contained horizontal table scrolling at medium/tablet; intentional labeled cards and sort controls below 640px; viewport-aware menus and shared navigation drawer.
 out_of_scope: CA-017;CA-018-redesign;CA-019-redesign;CA-020-plus;imports;bulk-actions;publication;translation-editing;schema-editing;analytics;shared-shell-redesign
 reference_version: categories-schema-prototype-v1
-visual_acceptance: pending-product-owner-review
 ---
 
 # CA-016 — Categories List
 
-Phase 19.4 owns the operational canonical Category registry. Its source is the approved Categories / Schema prototype, adapted under ADR-0003 and the visual gap audit. Implementation captures are candidates for Product Owner review, not approved regression baselines.
+Phase 19.4 owns the operational canonical Category registry. Its source is the approved Categories / Schema prototype, adapted under ADR-0003 and the visual gap audit. The deterministic implementation baselines have Product Owner acceptance and are compared by the normal visual regression suite.
 
 ## Product contract and route ownership
 
@@ -124,6 +123,8 @@ No hard delete, bulk edit, import, duplication, schema approval shortcut, transl
 
 `CategoryListFiltersData`, `CategoryListRow`, `CategoryListSummary` and `CategoryListReadModelData` define prepared view data. `CategoryListReadModelQuery` owns the minimal tree, global summaries, eligible Site/Locale options, scalar aggregates, DB filtering/order/pagination and one page translation batch. The controller prepares authorized actions and presentation URLs; Blade only formats prepared data. Queries never load Product or projection records to count them. No second validator or materialized list state exists.
 
+Immediately after loading the authoritative active-Locale and administrable-Site snapshots, the read model rejects selected IDs absent from those snapshots with the normal `locale` or `site` validation error. A filter that becomes ineligible after request validation never reaches row rendering. HTTP race regressions cover an inactive Locale and archived/deleted Sites.
+
 Read-model query regression verifies the same **8 queries** for 1 and 25 Categories with translations and a populated page. HTTP rendering likewise records **8 queries for 1 and 25 Categories** (a regression ceiling of 12 includes admission/shell overhead). Stable pagination and literal aggregate SQL have explicit architecture registry entries and behavior tests.
 
 ## Fixture and empty/responsive states
@@ -141,22 +142,20 @@ Database empty explains there are no canonical Categories and offers New only wh
 
 Select/action overlays use existing viewport-aware positioning. No page-level horizontal overflow. Labels, table headers, textual badges, keyboard confirmations, visible focus and accessible paginator names apply at every viewport.
 
-## Visual evidence and review gate
+## Visual evidence and acceptance
 
 Immutable source: `pictures/1. Central Admin/1.4. Categories : Schema/CA-016 — Categories List.png`, **1448×1086**, SHA-256 `c8e776138aa1356369fa2a48efb89f32540ac2d4234e4ee74a1406cba92094f2`, version `categories-schema-prototype-v1`.
 
-`npm run test:visual -- --grep CA-016` captures the four fixed implementation viewports and a scrolled 390px Category-card view with the pinned Linux renderer into `storage/logs/visual-artifacts/ca-016-candidates`, with PNG checksums and metadata stating `pending-product-owner-review`. CI uploads visual diagnostics on every run so review candidates remain accessible. Existing approved screenshots still run through normal comparison. When a reviewer approves CA-016, promote these captures into `tests/Visual/baselines`, add checksums/manifest entries and pass the normal review guard. No approved baseline or Product Owner sign-off is claimed by candidate capture. The visual spec compares approved CA-016 files when present and otherwise only captures review candidates.
+The Product Owner accepted the deterministic implementation captures from reviewed head `11aa84424efae86149da6e13177a63950eea800b` on **2026-10-08**. They are promoted unchanged from [CI run 37650271919](https://github.com/menvil/CatalogHub/actions/runs/37650271919), [visual-diagnostics artifact 11496492586](https://github.com/menvil/CatalogHub/actions/runs/37650271919/artifacts/11496492586), using `categories-list-v1` and the pinned Linux renderer. Four default viewport baselines and the existing additional mobile cards capture are stored under `tests/Visual/baselines`, with SHA-256 sidecars and approved implementation entries in `docs/ui/visual-references.json`.
 
-### Implementation candidate evidence
+`npm run test:visual -- --grep CA-016` now compares these approved baselines unconditionally. A missing baseline or a visual mismatch fails the test; no candidate-only fallback remains. The existing 0.02 maximum differing-pixel ratio is unchanged. Baseline updates still follow the global visual diff review policy; the explicit Product Owner acceptance authorizes this promotion and the normal review guard. CA-016 visual acceptance is complete, consistent with Phase 19.4 remaining COMPLETE. No later screen is implemented.
 
-The native amd64 visual run [37619808152](https://github.com/menvil/CatalogHub/actions/runs/37619808152) passed all 37 PHP visual contracts and 33 Playwright visual cases. Its `visual-diagnostics` artifact contains these CA-016 candidates; checksum sidecars and JSON metadata explicitly state `pending-product-owner-review`.
-
-| Candidate | SHA-256 |
+| Approved baseline | SHA-256 |
 | --- | --- |
-| `ca-016__cards__390x844.png` | `7aa1d119339decc0876e1187cb71106efd053cf0575a20683c9d92de85f71905` |
-| `ca-016__default__1024x900.png` | `6fdd958b4b1f57866427dcfd6f42a449c7f781ba7c6e7e78fd01e1bb93700f1a` |
 | `ca-016__default__1440x1000.png` | `7a23da1296a528d47720d72cf8ce756c4ce145cc64691499271c784aa5e3a282` |
-| `ca-016__default__390x844.png` | `ff9d8c08cd1e283353456ff6ccd41052d001a2283d6be8392c5a063f1c2340cc` |
+| `ca-016__default__1024x900.png` | `6fdd958b4b1f57866427dcfd6f42a449c7f781ba7c6e7e78fd01e1bb93700f1a` |
 | `ca-016__default__768x1024.png` | `8bdb26efc62f056ce15e0751b91a11f2ec4a3ce9f08ac6e7aca09f8ec7e1d2fc` |
+| `ca-016__default__390x844.png` | `ff9d8c08cd1e283353456ff6ccd41052d001a2283d6be8392c5a063f1c2340cc` |
+| `ca-016__cards__390x844.png` | `7aa1d119339decc0876e1187cb71106efd053cf0575a20683c9d92de85f71905` |
 
-Semantic inspection retains the prototype's information hierarchy, summary/table balance, discovery prominence and action placement. Separate schema and translation columns, a second filter row and explicit hierarchy beside identity account for the denser information contract. Tablet scrolling stays within the surface; the additional mobile capture demonstrates readable Category cards. Rejected prototype elements remain absent. This is implementation evidence for manual review, not Product Owner visual approval.
+The accepted composition retains the prototype’s information hierarchy, summary/table balance, discovery prominence, hierarchy context and action placement. Tablet scrolling stays inside the table surface, and the extra mobile reference covers readable Category cards. Rejected prototype concepts remain absent. The immutable source prototype is unchanged.

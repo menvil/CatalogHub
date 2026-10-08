@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Queries;
 
 use App\Data\CentralCatalog\CategoryListFiltersData;
+use App\Enums\SiteStatus;
 use App\Enums\TranslationStatus;
 use App\Models\CentralCatalog\CategoryAttributeAssignment;
 use App\Models\CentralCatalog\CentralCategory;
@@ -15,6 +16,8 @@ use App\Models\Translations\CategoryTranslation;
 use App\Queries\CentralCatalog\CategoryListReadModelQuery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\CategoryListFixture;
 use Tests\TestCase;
 
@@ -99,6 +102,36 @@ final class CategoryListReadModelQueryTest extends TestCase
         self::assertSame(0, $list->summary->missingTranslations);
         self::assertSame(0, $list->categories->first()->localeTotal);
         self::assertNull($list->categories->first()->coveragePercentage());
+    }
+
+    #[DataProvider('staleFilterStates')]
+    public function test_selected_filters_must_still_exist_in_the_authoritative_snapshots(string $field, string $state): void
+    {
+        $record = $field === 'locale'
+            ? Locale::factory()->create(['is_active' => true])
+            : Site::factory()->create(['status' => SiteStatus::Active]);
+        $filters = new CategoryListFiltersData(localeId: $field === 'locale' ? $record->id : null, siteId: $field === 'site' ? $record->id : null);
+        $query = app(CategoryListReadModelQuery::class);
+        $query->paginate($filters);
+
+        if ($state === 'deleted') {
+            $record->delete();
+        } else {
+            $record->update($field === 'locale' ? ['is_active' => false] : ['status' => SiteStatus::Archived]);
+        }
+
+        try {
+            $query->paginate($filters);
+            self::fail('A stale '.$field.' filter was accepted.');
+        } catch (ValidationException $exception) {
+            self::assertSame([$field => [__('validation.exists', ['attribute' => $field])]], $exception->errors());
+        }
+    }
+
+    /** @return array<string, array{string, string}> */
+    public static function staleFilterStates(): array
+    {
+        return ['inactive Locale' => ['locale', 'inactive'], 'Archived Site' => ['site', 'archived'], 'deleted Site' => ['site', 'deleted']];
     }
 
     public function test_site_selection_counts_exclude_archived_and_deleted_but_retain_disabled_selections(): void

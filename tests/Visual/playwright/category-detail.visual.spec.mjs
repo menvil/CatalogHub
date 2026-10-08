@@ -25,7 +25,7 @@ for (const [state, id, width, height] of [
         await page.evaluate(() => window.scrollTo(0, 0))
         await captureCandidate(page, testInfo, state, width, height)
         if (width === 390) {
-            await page.locator('[data-screen-region="recent-activity"]').scrollIntoViewIfNeeded()
+            await page.locator('[data-screen-region="recent-activity"]').evaluate((element) => element.scrollIntoView({ block: 'start' }))
             await captureCandidate(page, testInfo, 'activity', width, height)
         }
         noErrors()

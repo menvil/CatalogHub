@@ -22,8 +22,8 @@ test('CA-017 opens from CA-016 with real identity, schema, direct usage and acti
     await expect(page.locator('[data-category-id]')).toHaveText('195003')
     await expect(page.locator('[data-category-slug]')).toHaveText('detail-gaming-monitors')
     await expect(page.locator('[data-category-parent]')).toHaveText('Displays')
-    await expect(page.locator('[data-category-lifecycle]')).toHaveText(/Category:.*Active/)
-    await expect(page.locator('[data-category-schema-state]')).toHaveText(/Schema:.*Approved/)
+    await expect(page.locator('[data-category-lifecycle]')).toHaveText(/^Category:\s*Active\s*$/)
+    await expect(page.locator('[data-category-schema-state]')).toHaveText(/^Schema:\s*Approved\s*$/)
     for (const [key, count] of Object.entries({ sections: 2, attributes: 4, required: 2, facets: 1, comparison: 2, products: 4, sites: 3 })) {
         await expect(page.locator(`[data-detail-count="${key}"]`)).toHaveText(String(count))
     }

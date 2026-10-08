@@ -23,7 +23,7 @@ Phase 19.4 owns the operational canonical Category registry. Its source is the a
 
 One controller/view at `/admin/central/categories` serves all visible Categories navigation. `CentralNavigationRegistry` has exactly one Categories entry with `catalog.categories.manage`. The Filament resource registers no independent navigation or table. Its old `/admin/central/central-categories` index only authorizes and redirects, preserving query parameters. Framework index URL generation, breadcrumbs and editor return destinations target CA-016.
 
-Existing `/admin/central/central-categories/create`, `/{record}/edit`, and `/{record}/schema` continue to serve working temporary infrastructure. Their owning visual phases are not implemented here. Category source identity is readable text, without a fake View link. Final identity-to-detail navigation attaches in **19.5 CA-017**, after that screen exists. The existing Locale translation route remains independently bound and authorized; CA-016 introduces no translation destination.
+Existing `/admin/central/central-categories/create`, `/{record}/edit`, and `/{record}/schema` continue to serve working temporary infrastructure. Their owning visual phases are not implemented here. Category source identity links by stable ID to **CA-017 Category Detail**, preserving selected Locale context. Detail uses the same Category capability and independently owns its overview. The existing Locale translation route remains independently bound and authorized; CA-016 introduces no translation destination.
 
 ## Summary metrics
 

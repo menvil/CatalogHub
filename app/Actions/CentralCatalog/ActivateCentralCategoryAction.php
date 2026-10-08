@@ -18,12 +18,15 @@ final readonly class ActivateCentralCategoryAction
 {
     public function __construct(private CategoryAccess $access, private CategoryLock $locks, private AuditRecorder $audit) {}
 
-    public function handle(User $actor, CentralCategory $category): CentralCategory
+    public function handle(User $actor, CentralCategory $category, ?CentralCategoryStatus $expectedStatus = null): CentralCategory
     {
         $this->access->authorize(Permission::CatalogCategoriesManage, $actor);
 
-        return DB::transaction(function () use ($actor, $category): CentralCategory {
+        return DB::transaction(function () use ($actor, $category, $expectedStatus): CentralCategory {
             $locked = $this->locks->acquire([$category->id])[$category->id];
+            if ($expectedStatus !== null && $locked->status !== $expectedStatus) {
+                throw ValidationException::withMessages(['status' => 'The Category changed. Reload before trying again.']);
+            }
             if ($locked->status === CentralCategoryStatus::Active) {
                 return $locked;
             }

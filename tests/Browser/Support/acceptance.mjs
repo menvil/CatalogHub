@@ -44,7 +44,8 @@ export async function captureAcceptanceScreenshot(page, testInfo, name) {
     await testInfo.attach(name, { path, contentType: 'image/png' })
 }
 
-export function resetBrowserFixture() {
+export function resetBrowserFixture(fixture = 'default') {
+    if (!['default', 'category-detail-v1'].includes(fixture)) throw new Error('Unknown browser fixture.');
     const port = Number.parseInt(process.env.CATALOGHUB_BROWSER_PORT ?? '', 10)
 
     if (![8014, 8015].includes(port)) {
@@ -59,6 +60,7 @@ export function resetBrowserFixture() {
         env: {
             ...process.env,
             APP_ENV: 'testing',
+            CATALOGHUB_BROWSER_FIXTURE: fixture,
             APP_KEY: 'base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
             APP_URL: `http://127.0.0.1:${port}`,
             DB_CONNECTION: 'sqlite',

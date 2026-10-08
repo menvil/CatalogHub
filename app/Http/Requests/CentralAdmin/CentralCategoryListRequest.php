@@ -24,6 +24,8 @@ final class CentralCategoryListRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'context' => $this->isMethod('POST') ? ['nullable', Rule::in(['detail'])] : ['prohibited'],
+            'expected_status' => $this->isMethod('POST') ? ['nullable', Rule::enum(CentralCategoryStatus::class)] : ['prohibited'],
             'confirmed' => $this->routeIs('central.categories.archive') ? ['required', 'accepted'] : ['prohibited'],
             'q' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', Rule::enum(CentralCategoryStatus::class)],
@@ -42,7 +44,7 @@ final class CentralCategoryListRequest extends FormRequest
     /** @return array<string, mixed> */
     public function queryParameters(): array
     {
-        return array_diff_key($this->validated(), ['confirmed' => true]);
+        return array_diff_key($this->validated(), array_flip(['confirmed', 'context', 'expected_status']));
     }
 
     public function filters(): CategoryListFiltersData

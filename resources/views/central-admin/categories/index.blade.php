@@ -55,7 +55,7 @@
                 <tbody>
                     @forelse ($list->categories as $row)
                         <tr data-row-id="{{ $row->category->id }}">
-                            <td class="category-list-identity-cell"><div class="category-list-identity"><span class="category-list-icon"><x-ui.icon name="squares-2x2" /></span><div><strong>{{ $row->category->name }}</strong><span class="category-list-slug">{{ $row->category->slug }}</span><span class="category-list-parent">{{ $row->hierarchyLabel() }}</span></div></div></td>
+                            <td class="category-list-identity-cell"><div class="category-list-identity"><span class="category-list-icon"><x-ui.icon name="squares-2x2" /></span><div><strong><a href="{{ route('central.categories.show', ['category' => $row->category, 'locale' => $filters->localeId]) }}" class="category-list-detail-link">{{ $row->category->name }}</a></strong><span class="category-list-slug">{{ $row->category->slug }}</span><span class="category-list-parent">{{ $row->hierarchyLabel() }}</span></div></div></td>
                             <td data-mobile-label="Direct Products" data-category-count="products">{{ number_format($row->products) }}</td>
                             <td data-mobile-label="Attributes" data-category-count="attributes">{{ number_format($row->attributes) }}</td>
                             <td data-mobile-label="Facets" data-category-count="facets">{{ number_format($row->facets) }}</td>
@@ -95,6 +95,7 @@
         @foreach ($actions[$row->category->id]['commands'] as $command)
             <form id="{{ $command }}-category-{{ $row->category->id }}-form" method="POST" action="{{ route('central.categories.'.$command, [...$queryParameters, 'category' => $row->category]) }}" class="hidden">
                 @csrf
+                <input type="hidden" name="expected_status" value="{{ $row->category->status->value }}">
                 @if ($command === 'archive')<input type="hidden" name="confirmed" value="1">
                 @endif
             </form>

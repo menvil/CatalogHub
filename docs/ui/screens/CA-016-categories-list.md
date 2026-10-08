@@ -23,7 +23,7 @@ Phase 19.4 owns the operational canonical Category registry. Its source is the a
 
 One controller/view at `/admin/central/categories` serves all visible Categories navigation. `CentralNavigationRegistry` has exactly one Categories entry with `catalog.categories.manage`. The Filament resource registers no independent navigation or table. Its old `/admin/central/central-categories` index only authorizes and redirects, preserving query parameters. Framework index URL generation, breadcrumbs and editor return destinations target CA-016.
 
-Existing `/admin/central/central-categories/create`, `/{record}/edit`, and `/{record}/schema` continue to serve working temporary infrastructure. Their owning visual phases are not implemented here. Category source identity is readable text, without a fake View link. Final identity-to-detail navigation attaches in **19.5 CA-017**, after that screen exists. The existing Locale translation route remains independently bound and authorized; CA-016 introduces no translation destination.
+Existing `/admin/central/central-categories/create`, `/{record}/edit`, and `/{record}/schema` continue to serve working temporary infrastructure. Their owning visual phases are not implemented here. Category source identity links by stable ID to **CA-017 Category Detail**, preserving selected Locale context. Detail uses the same Category capability and independently owns its overview. The existing Locale translation route remains independently bound and authorized; CA-016 introduces no translation destination.
 
 ## Summary metrics
 
@@ -148,7 +148,7 @@ Immutable source: `pictures/1. Central Admin/1.4. Categories : Schema/CA-016 —
 
 The Product Owner accepted the deterministic implementation captures from reviewed head `11aa84424efae86149da6e13177a63950eea800b` on **2026-10-08**. They are promoted unchanged from [CI run 37650271919](https://github.com/menvil/CatalogHub/actions/runs/37650271919), [visual-diagnostics artifact 11496492586](https://github.com/menvil/CatalogHub/actions/runs/37650271919/artifacts/11496492586), using `categories-list-v1` and the pinned Linux renderer. Four default viewport baselines and the existing additional mobile cards capture are stored under `tests/Visual/baselines`, with SHA-256 sidecars and approved implementation entries in `docs/ui/visual-references.json`.
 
-`npm run test:visual -- --grep CA-016` now compares these approved baselines unconditionally. A missing baseline or a visual mismatch fails the test; no candidate-only fallback remains. The existing 0.02 maximum differing-pixel ratio is unchanged. Baseline updates still follow the global visual diff review policy; the explicit Product Owner acceptance authorizes this promotion and the normal review guard. CA-016 visual acceptance is complete, consistent with Phase 19.4 remaining COMPLETE. No later screen is implemented.
+`npm run test:visual -- --grep CA-016` now compares these approved baselines unconditionally. A missing baseline or a visual mismatch fails the test; no candidate-only fallback remains. The existing 0.02 maximum differing-pixel ratio is unchanged. Baseline updates still follow the global visual diff review policy; the explicit Product Owner acceptance authorizes this promotion and the normal review guard. CA-016 visual acceptance is complete, consistent with Phase 19.4 remaining COMPLETE. Phase 19.4 itself implements no later screen. CA-017 is documented separately.
 
 | Approved baseline | SHA-256 |
 | --- | --- |

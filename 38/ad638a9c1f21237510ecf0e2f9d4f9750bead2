@@ -1,0 +1,19 @@
+app/Models/ContentRelation.php
+  s_09819976511085::t_0a645e1c8b7711 48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "38ad638a9c1f21237510ecf0e2f9d4f9750bead2",
+  "prompts": {},
+  "sessions": {
+    "s_09819976511085": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11622-dcf4-7031-a439-cb234249c9d1",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

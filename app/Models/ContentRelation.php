@@ -45,7 +45,7 @@ final class ContentRelation extends Model
 
             if (! $targetExists) {
                 throw ValidationException::withMessages([
-                    'related_id' => 'The selected '.($type?->label() ?? 'target').' does not exist.',
+                    'related_id' => 'The selected '.$type->label().' does not exist.',
                 ]);
             }
         });

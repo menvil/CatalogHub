@@ -1,0 +1,19 @@
+package.json
+  s_09819976511085::t_0a645e1c8b7711 19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "5315ed5e8493cc724eb891583899ae25f8b9f9e2",
+  "prompts": {},
+  "sessions": {
+    "s_09819976511085": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11622-dcf4-7031-a439-cb234249c9d1",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

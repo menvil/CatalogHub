@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Contracts\Auth\CentralAdminAccess;
 use App\Contracts\Auth\SiteAdminAccess;
 use App\Contracts\Themes\PublicThemeResolver as PublicThemeResolverContract;
+use App\Enums\Permission;
 use App\Events\MarketOfferUpdated;
 use App\Importers\SerializedPhpProductImporter;
 use App\Listeners\AuditAuthenticationEvent;
@@ -24,6 +25,7 @@ use App\Observers\SchemaTranslationProjectionObserver;
 use App\Policies\CentralPanelPolicy;
 use App\Policies\SitePanelPolicy;
 use App\Services\AttributeGlobalization\AttributeIdentityLock;
+use App\Services\Categories\CategoryAccess;
 use App\Services\Imports\AttributeMappingService;
 use App\Services\Imports\AttributeNormalizer;
 use App\Services\Imports\DuplicateDetector;
@@ -131,6 +133,8 @@ class AppServiceProvider extends ServiceProvider
         foreach (app(PermissionMatrix::class)->permissions() as $permission) {
             Gate::define($permission, fn (User $user): bool => $user->hasCatalogHubPermission($permission));
         }
+
+        Gate::define(Permission::CatalogCategoriesManage->value, fn (User $user, bool $mutation = false): bool => app(CategoryAccess::class)->allows(Permission::CatalogCategoriesManage, $mutation, $user));
 
         Gate::define('system.super-admin', fn (User $user): bool => $user->isSuperAdmin());
 

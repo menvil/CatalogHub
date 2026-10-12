@@ -13,13 +13,14 @@ use App\Models\CentralCatalog\CentralCategory;
 use App\Queries\CentralCatalog\CategoryDetailReadModelQuery;
 use App\Services\Categories\CategoryAccess;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Gate;
 
 final class CentralCategoryDetailController extends Controller
 {
     public function __invoke(CentralCategoryDetailRequest $request, CentralCategory $category, CategoryDetailReadModelQuery $query, CategoryAccess $access): View
     {
         $detail = $query->forCategory($category, $request->localeId());
-        $canMutate = $access->allows(Permission::CatalogCategoriesManage, true);
+        $canMutate = Gate::allows(Permission::CatalogCategoriesManage->value, [true]);
         $commands = ! $canMutate ? [] : match ($category->status) {
             CentralCategoryStatus::Draft => ['activate', 'archive'],
             CentralCategoryStatus::Active => ['archive'],

@@ -7,7 +7,6 @@ namespace App\Http\Controllers\CentralAdmin;
 use App\Actions\CentralCatalog\ActivateCentralCategoryAction;
 use App\Actions\CentralCatalog\ArchiveCentralCategoryAction;
 use App\Actions\CentralCatalog\RestoreCentralCategoryAction;
-use App\Enums\CentralCategoryStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CentralAdmin\CentralCategoryListRequest;
 use App\Models\CentralCatalog\CentralCategory;
@@ -20,7 +19,7 @@ final class CentralCategoryLifecycleController extends Controller
     {
         $actor = $request->user();
         assert($actor instanceof User);
-        $action->handle($actor, $category, $request->validated('expected_status') === null ? null : CentralCategoryStatus::from($request->validated('expected_status')));
+        $action->handle($actor, $category, $request->expectedStatus());
 
         return $this->redirectAfterMutation($request, $category, 'Category activated.');
     }
@@ -29,7 +28,7 @@ final class CentralCategoryLifecycleController extends Controller
     {
         $actor = $request->user();
         assert($actor instanceof User);
-        $action->handle($actor, $category, $request->validated('expected_status') === null ? null : CentralCategoryStatus::from($request->validated('expected_status')));
+        $action->handle($actor, $category, $request->expectedStatus());
 
         return $this->redirectAfterMutation($request, $category, 'Category archived.');
     }
@@ -38,15 +37,15 @@ final class CentralCategoryLifecycleController extends Controller
     {
         $actor = $request->user();
         assert($actor instanceof User);
-        $action->handle($actor, $category, $request->validated('expected_status') === null ? null : CentralCategoryStatus::from($request->validated('expected_status')));
+        $action->handle($actor, $category, $request->expectedStatus());
 
         return $this->redirectAfterMutation($request, $category, 'Category restored to Draft.');
     }
 
     private function redirectAfterMutation(CentralCategoryListRequest $request, CentralCategory $category, string $message): RedirectResponse
     {
-        if ($request->validated('context') === 'detail') {
-            return redirect()->route('central.categories.show', ['category' => $category, 'locale' => $request->validated('locale')])->with('success', $message);
+        if ($request->returnsToDetail()) {
+            return redirect()->route('central.categories.show', ['category' => $category, 'locale' => $request->localeId()])->with('success', $message);
         }
 
         return redirect()->route('central.categories.index', $request->queryParameters())->with('success', $message);

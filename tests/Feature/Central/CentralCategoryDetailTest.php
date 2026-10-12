@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Central;
 
+use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Filament\Resources\CentralCategoryResource;
 use App\Http\Requests\CentralAdmin\CentralCategoryDetailRequest;
@@ -14,6 +15,7 @@ use App\Models\User;
 use App\Navigation\CentralNavigationRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Tests\Support\CategoryDetailFixture;
 use Tests\TestCase;
@@ -83,6 +85,27 @@ final class CentralCategoryDetailTest extends TestCase
         $this->get(route('central.categories.translations.edit', [$category, Locale::query()->where('code', 'en-US')->value('id')]))->assertForbidden();
     }
 
+    public function test_category_gate_checks_explicit_actor_admission_and_mutation_permission(): void
+    {
+        $this->actingAs(User::factory()->centralAdmin()->create());
+        $actor = User::factory()->create(['role' => UserRole::CatalogEditor]);
+        $admission = ['central.panel.access', 'central.page.access', 'catalog.categories.manage'];
+        foreach ([
+            [$admission, true, false],
+            [[...$admission, 'central.mutation.execute'], true, true],
+            [['central.panel.access', 'catalog.categories.manage', 'central.mutation.execute'], false, false],
+            [['central.page.access', 'catalog.categories.manage', 'central.mutation.execute'], false, false],
+            [['central.panel.access', 'central.page.access', 'catalog.schema.manage', 'central.mutation.execute'], false, false],
+        ] as [$permissions, $canRead, $canMutate]) {
+            config(['cataloghub_permissions.roles.catalog_editor' => $permissions]);
+            self::assertSame($canRead, Gate::forUser($actor)->allows(Permission::CatalogCategoriesManage->value));
+            self::assertSame($canMutate, Gate::forUser($actor)->allows(Permission::CatalogCategoriesManage->value, [true]));
+        }
+        $disabled = User::factory()->centralAdmin()->disabled()->create();
+        self::assertFalse(Gate::forUser($disabled)->allows(Permission::CatalogCategoriesManage->value));
+        self::assertFalse(Gate::forUser($disabled)->allows(Permission::CatalogCategoriesManage->value, [true]));
+    }
+
     public function test_locale_context_fallback_and_owning_translation_route(): void
     {
         $category = CategoryDetailFixture::create();
@@ -136,7 +159,7 @@ final class CentralCategoryDetailTest extends TestCase
         $locale = Locale::factory()->create(['is_active' => true]);
         $this->actingAs(User::factory()->centralAdmin()->create());
         foreach ([['activate', 'draft', 'active'], ['archive', 'active', 'archived'], ['restore', 'archived', 'draft']] as [$command, $before, $after]) {
-            $this->post(route('central.categories.'.$command, $category), ['context' => 'detail', 'expected_status' => $before, 'confirmed' => $command === 'archive' ? 1 : null, 'locale' => $locale->id, 'return_url' => 'https://untrusted.test'])
+            $this->post(route('central.categories.'.$command, $category), ['context' => 'detail', 'expected_status' => $before, 'confirmed' => $command === 'archive' ? 1 : null, 'locale' => (string) $locale->id, 'return_url' => 'https://untrusted.test'])
                 ->assertRedirect(route('central.categories.show', ['category' => $category, 'locale' => $locale->id]));
             self::assertSame($after, $category->fresh()->status->value);
             $this->get(route('central.categories.show', $category))->assertOk()->assertSee(ucfirst($after));
@@ -157,6 +180,24 @@ final class CentralCategoryDetailTest extends TestCase
         $this->post(route('central.categories.restore', $category), ['context' => 'detail'])->assertSessionHasErrors('status');
         $this->post(route('central.categories.archive', $category), ['context' => 'detail', 'confirmed' => 1, 'expected_status' => 'draft'])->assertSessionHasErrors('status');
         self::assertSame($before, $this->snapshot());
+    }
+
+    public function test_invalid_lifecycle_status_and_return_context_are_rejected_without_side_effects(): void
+    {
+        $category = CentralCategory::factory()->create(['status' => 'draft']);
+        $this->actingAs(User::factory()->centralAdmin()->create());
+        $before = $this->snapshot();
+        foreach ([
+            [['expected_status' => 'published'], 'expected_status'],
+            [['expected_status' => ['draft']], 'expected_status'],
+            [['context' => 'https://untrusted.test'], 'context'],
+            [['context' => ['detail']], 'context'],
+            [['context' => 'detail', 'locale' => -1], 'locale'],
+        ] as [$payload, $field]) {
+            $this->from(route('central.categories.show', $category))->post(route('central.categories.activate', $category), $payload)
+                ->assertRedirect(route('central.categories.show', $category))->assertSessionHasErrors($field);
+            self::assertSame($before, $this->snapshot());
+        }
     }
 
     /** @return array<string, list<string>> */

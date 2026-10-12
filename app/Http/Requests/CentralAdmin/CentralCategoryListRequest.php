@@ -47,6 +47,24 @@ final class CentralCategoryListRequest extends FormRequest
         return array_diff_key($this->validated(), array_flip(['confirmed', 'context', 'expected_status']));
     }
 
+    public function expectedStatus(): ?CentralCategoryStatus
+    {
+        $status = $this->validated('expected_status');
+        assert(is_string($status) || $status === null);
+
+        return $status === null ? null : CentralCategoryStatus::from($status);
+    }
+
+    public function returnsToDetail(): bool
+    {
+        return $this->validated('context') === 'detail';
+    }
+
+    public function localeId(): ?int
+    {
+        return $this->validated('locale') === null ? null : (int) $this->validated('locale');
+    }
+
     public function filters(): CategoryListFiltersData
     {
         $data = $this->validated();

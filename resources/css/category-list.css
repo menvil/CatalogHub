@@ -147,3 +147,6 @@
  .category-list-pagination { display: grid; grid-template-columns: minmax(0, 1fr); }
  .category-list-pages { justify-content: center; }
 }
+
+.category-list-detail-link { color: inherit; text-decoration: none; }
+.category-list-detail-link:hover { text-decoration: underline; }

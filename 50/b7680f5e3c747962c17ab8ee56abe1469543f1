@@ -1,0 +1,30 @@
+app/Providers/AppServiceProvider.php
+  s_09819976511085::t_d8e7769cd8ce39 8,28,137
+app/Http/Controllers/CentralAdmin/CentralCategoryDetailController.php
+  s_09819976511085::t_d8e7769cd8ce39 16,23
+app/Http/Requests/CentralAdmin/CentralCategoryDetailRequest.php
+  s_09819976511085::t_d8e7769cd8ce39 14
+app/Http/Requests/CentralAdmin/CentralCategoryListRequest.php
+  s_09819976511085::t_d8e7769cd8ce39 50-67
+app/Http/Controllers/CentralAdmin/CentralCategoryLifecycleController.php
+  s_09819976511085::t_d8e7769cd8ce39 22,31,40,47-48
+tests/Feature/Central/CentralCategoryDetailTest.php
+  s_09819976511085::t_d8e7769cd8ce39 7,18,88-108,162,185-190,199-200
+  s_09819976511085::t_e9a118a48cff98 191-198
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "50b7680f5e3c747962c17ab8ee56abe1469543f1",
+  "prompts": {},
+  "sessions": {
+    "s_09819976511085": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11622-dcf4-7031-a439-cb234249c9d1",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

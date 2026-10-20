@@ -6,16 +6,9 @@ use App\Enums\Permission;
 use App\Filament\Resources\CentralCategoryResource\Pages;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Services\Categories\CategoryAccess;
-use App\Services\Categories\CategoryHierarchy;
 use BackedEnum;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
-use Filament\Schemas\Components\Utilities\Set;
-use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
@@ -68,46 +61,20 @@ final class CentralCategoryResource extends Resource
         return app(CategoryAccess::class)->allows(Permission::CatalogCategoriesManage, $mutation);
     }
 
-    public static function form(Schema $schema): Schema
-    {
-        return $schema
-            ->components([
-                Select::make('parent_id')
-                    ->label('Parent category')
-                    ->live()
-                    ->afterStateUpdated(function ($state, Set $set): void {
-                        $set('new_hierarchy_revision', app(CategoryHierarchy::class)->revision($state === null || $state === '' ? null : (int) $state));
-                    })
-                    ->relationship(
-                        'parent',
-                        'name',
-                        modifyQueryUsing: fn (Builder $query, ?CentralCategory $record): Builder => $record?->exists
-                            ? $query->whereNotIn('id', $record->descendantIds())
-                            : $query,
-                        ignoreRecord: true,
-                    )
-                    ->saveRelationshipsUsing(null)
-                    ->searchable()
-                    ->preload(),
-                TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-                TextInput::make('slug')
-                    ->required()
-                    ->maxLength(255)
-                    ->unique(ignoreRecord: true),
-                Hidden::make('old_hierarchy_revision')->default(fn (): int => app(CategoryHierarchy::class)->revision(null)),
-                Hidden::make('new_hierarchy_revision')->default(fn (): int => app(CategoryHierarchy::class)->revision(null)),
-                TextInput::make('status')->disabled()->dehydrated(false)->default('draft'),
-                TextInput::make('schema_status')->label('Schema status')->disabled()->dehydrated(false)->default('draft'),
-            ]);
-    }
-
     /** @param array<mixed> $parameters */
     public static function getUrl(?string $name = null, array $parameters = [], bool $isAbsolute = true, ?string $panel = null, ?Model $tenant = null, bool $shouldGuessMissingParameters = false, ?string $configuration = null): string
     {
         if ($name === null || $name === 'index') {
             return route('central.categories.index', $parameters, $isAbsolute);
+        }
+        // CA-018 owns Create/Edit; generated legacy URLs target the canonical routes directly (no redirect loop).
+        if ($name === 'create') {
+            return route('central.categories.create', [], $isAbsolute);
+        }
+        if ($name === 'edit') {
+            $record = $parameters['record'] ?? null;
+
+            return route('central.categories.edit', ['category' => $record instanceof Model ? $record->getKey() : $record], $isAbsolute);
         }
 
         return parent::getUrl($name, $parameters, $isAbsolute, $panel, $tenant, $shouldGuessMissingParameters, $configuration);

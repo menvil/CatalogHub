@@ -11,8 +11,10 @@ use App\Http\Controllers\CentralAdmin\CentralBrandOwnershipController;
 use App\Http\Controllers\CentralAdmin\CentralBrandTagsController;
 use App\Http\Controllers\CentralAdmin\CentralBrandTranslationController;
 use App\Http\Controllers\CentralAdmin\CentralCategoryDetailController;
+use App\Http\Controllers\CentralAdmin\CentralCategoryFormController;
 use App\Http\Controllers\CentralAdmin\CentralCategoryLifecycleController;
 use App\Http\Controllers\CentralAdmin\CentralCategoryListController;
+use App\Http\Controllers\CentralAdmin\CentralCategorySlugImpactController;
 use App\Http\Controllers\CentralAdmin\DesignSystem\ComponentGalleryController;
 use App\Http\Controllers\CentralAdmin\Media\MediaAssetDetailController;
 use App\Http\Controllers\CentralAdmin\Media\MediaLibraryController;
@@ -32,6 +34,12 @@ Route::middleware(['auth', EnsureCentralAdminAccess::class])
             Route::get('/categories', CentralCategoryListController::class)->name('central.categories.index');
             Route::get('/categories/{category}', CentralCategoryDetailController::class)->whereNumber('category')->name('central.categories.show');
             Route::middleware('can:central.mutation.execute')->group(function (): void {
+                // CA-018: even reading the form requires Central mutation; numeric binding keeps `create` from ever being an ID.
+                Route::get('/categories/create', [CentralCategoryFormController::class, 'create'])->name('central.categories.create');
+                Route::post('/categories', [CentralCategoryFormController::class, 'store'])->name('central.categories.store');
+                Route::get('/categories/{category}/edit', [CentralCategoryFormController::class, 'edit'])->whereNumber('category')->name('central.categories.edit');
+                Route::patch('/categories/{category}', [CentralCategoryFormController::class, 'update'])->whereNumber('category')->name('central.categories.update');
+                Route::get('/categories/{category}/slug-impact', CentralCategorySlugImpactController::class)->whereNumber('category')->name('central.categories.slug-impact');
                 Route::post('/categories/{category}/activate', [CentralCategoryLifecycleController::class, 'activate'])->name('central.categories.activate');
                 Route::post('/categories/{category}/archive', [CentralCategoryLifecycleController::class, 'archive'])->name('central.categories.archive');
                 Route::post('/categories/{category}/restore', [CentralCategoryLifecycleController::class, 'restore'])->name('central.categories.restore');

@@ -102,7 +102,7 @@ Header controls require active Central admission, Category capability and centra
 | Schema-only, Product-only, Brand-only | Deny | Deny | Schema-only may use the separate existing builder | Owning policy elsewhere |
 | Missing Central panel/page admission | Deny | Deny | Deny | Deny |
 
-Edit Category uses the actual temporary `/admin/central/central-categories/{record}/edit`. No final CA-018 editor or CA-019 builder redesign is added. Mutations fail closed server-side even for tampered requests. Hard delete, duplicate, export-category, imports, bulk, direct Site mutation and inline translations/schema are absent.
+Edit Category opens the canonical CA-018 form at `/admin/central/categories/{category}/edit` (Phase 19.6); no CA-019 builder redesign is added. Mutations fail closed server-side even for tampered requests. Hard delete, duplicate, export-category, imports, bulk, direct Site mutation and inline translations/schema are absent.
 
 ## Read architecture, bounds and GET purity
 

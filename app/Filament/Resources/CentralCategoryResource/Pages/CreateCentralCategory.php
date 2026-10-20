@@ -2,26 +2,24 @@
 
 namespace App\Filament\Resources\CentralCategoryResource\Pages;
 
-use App\Actions\CentralCatalog\CreateCentralCategoryAction;
-use App\Enums\Permission;
 use App\Filament\Resources\CentralCategoryResource;
-use App\Services\Categories\CategoryAccess;
-use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Database\Eloquent\Model;
+use Filament\Resources\Pages\Page;
 
-final class CreateCentralCategory extends CreateRecord
+/**
+ * Retired temporary route; CA-018 owns the only Category Create form.
+ *
+ * The page has no form, state or Livewire mutation method: it authorizes the
+ * same capability as the canonical route and redirects there.
+ */
+final class CreateCentralCategory extends Page
 {
     protected static string $resource = CentralCategoryResource::class;
 
-    protected ?bool $hasDatabaseTransactions = false;
+    protected string $view = 'filament.pages.category-route-redirect';
 
-    /** @param array<string, mixed> $data */
-    protected function handleRecordCreation(array $data): Model
+    public function mount(): void
     {
-        $actor = app(CategoryAccess::class)->authorize(Permission::CatalogCategoriesManage);
-
-        return app(CreateCentralCategoryAction::class)->handle($actor,
-            array_intersect_key($data, array_flip(['name', 'slug', 'parent_id'])),
-            (int) $data['new_hierarchy_revision']);
+        abort_unless(CentralCategoryResource::canCreate(), 403);
+        $this->redirectRoute('central.categories.create');
     }
 }

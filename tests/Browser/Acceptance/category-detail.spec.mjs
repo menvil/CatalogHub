@@ -34,7 +34,7 @@ test('CA-017 opens from CA-016 with real identity, schema, direct usage and acti
     await expect(page.locator('[data-translation-coverage]')).toHaveText('3/5 covered · 60%')
     await expect(page.locator('[data-screen-region="recent-activity"]')).toContainText('Schema approved')
     await expect(page.locator('[data-screen-region="recent-activity"]')).toContainText('Ada Catalog')
-    await expect(page.getByRole('link', { name: 'Edit Category', exact: true })).toHaveAttribute('href', /central-categories\/195003\/edit$/)
+    await expect(page.getByRole('link', { name: 'Edit Category', exact: true })).toHaveAttribute('href', /\/admin\/central\/categories\/195003\/edit$/)
     await expect(page.getByRole('link', { name: 'View Schema', exact: true })).toHaveAttribute('href', /central-categories\/195003\/schema$/)
     for (const label of ['Duplicate Category', 'Export Category', 'Comparison Sets', 'Facet Sets', 'Channels', 'View Full Activity']) await expect(page.getByText(label, { exact: true })).toHaveCount(0)
     noErrors()

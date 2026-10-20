@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
+ * @property ProjectionStatus $status
  * @property int $schema_version
  * @property int $schema_revision
  * @property array<string, mixed>|null $seo_json

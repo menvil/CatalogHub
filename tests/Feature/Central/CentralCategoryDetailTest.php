@@ -34,7 +34,7 @@ final class CentralCategoryDetailTest extends TestCase
             ->assertSee('Ada Catalog')->assertSee('Sam Schema')->assertSee('Selected by Sites')
             ->assertSee('Archive Category')->assertDontSee('Restore Category')->assertDontSee('Activate Category');
         $response->assertSee(route('central.categories.show', 195002), false)
-            ->assertSee(CentralCategoryResource::getUrl('edit', ['record' => $category]), false)
+            ->assertSee(route('central.categories.edit', $category), false)
             ->assertSee(CentralCategoryResource::getUrl('schema', ['record' => $category]), false);
         foreach (['Duplicate Category', 'Export Category', 'Comparison Sets', 'Facet Sets', 'Channels', 'View Full Activity', 'Published on Sites', 'Add Attribute', 'Add Facet', 'Approve Schema'] as $unsupported) {
             $response->assertDontSee($unsupported);
@@ -42,7 +42,7 @@ final class CentralCategoryDetailTest extends TestCase
         $this->get('/admin/central/categories/'.$category->slug)->assertNotFound();
         $this->get('/admin/central/categories/99999999')->assertNotFound();
         $this->delete(route('central.categories.show', $category))->assertStatus(405);
-        $this->get(CentralCategoryResource::getUrl('edit', ['record' => $category]))->assertOk();
+        $this->get(route('central.categories.edit', $category))->assertOk()->assertSee('data-screen-id="CA-018"', false);
         $this->get(CentralCategoryResource::getUrl('schema', ['record' => $category]))->assertOk();
     }
 

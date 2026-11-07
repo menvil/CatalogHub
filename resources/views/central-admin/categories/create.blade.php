@@ -2,7 +2,8 @@
 
 @section('breadcrumbs')
     <a href="{{ route('central.categories.index') }}">Categories</a>
-    <span aria-hidden="true">/</span><span aria-current="page">New Category</span>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">New Category</span>
 @endsection
 
 @section('content')

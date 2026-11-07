@@ -3,10 +3,13 @@
 @section('breadcrumbs')
     <a href="{{ route('central.categories.index') }}">Categories</a>
     @foreach ($form->ancestors as $ancestor)
-        <span aria-hidden="true">/</span><a href="{{ route('central.categories.show', $ancestor['id']) }}">{{ $ancestor['name'] }}</a>
+        <span aria-hidden="true">/</span>
+        <a href="{{ route('central.categories.show', $ancestor['id']) }}">{{ $ancestor['name'] }}</a>
     @endforeach
-    <span aria-hidden="true">/</span><a href="{{ route('central.categories.show', $form->category) }}">{{ $form->category->name }}</a>
-    <span aria-hidden="true">/</span><span aria-current="page">Edit</span>
+    <span aria-hidden="true">/</span>
+    <a href="{{ route('central.categories.show', $form->category) }}">{{ $form->category->name }}</a>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">Edit</span>
 @endsection
 
 @section('content')

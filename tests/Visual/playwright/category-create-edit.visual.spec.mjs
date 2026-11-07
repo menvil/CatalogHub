@@ -8,7 +8,7 @@ import { foundationDemo, observePageErrors, resetBrowserFixture, signIn } from '
 // written to tests/Visual/baselines and are not compared against approved files.
 const monitors = 196009
 const legacy = 196003
-const televisions = 196008
+const displays = 196006
 const freeze = `*, *::before, *::after { animation-duration: 0s !important; transition-duration: 0s !important; caret-color: transparent !important; } html { scrollbar-width: none !important; } ::-webkit-scrollbar { display: none !important; }`
 
 test.beforeAll(() => resetBrowserFixture('category-create-edit-v1'))
@@ -44,7 +44,9 @@ for (const [width, height] of [[1440, 1000], [1024, 900], [768, 1024], [390, 844
         await open(page, `/admin/central/categories/${monitors}/edit`, width, height)
         await captureCandidate(page, testInfo, 'edit', width, height)
         if (width === 390) {
-            await page.locator('[data-category-form-actions]').scrollIntoViewIfNeeded()
+            // The sticky footer is already visible on load; scroll to the end so the
+            // candidate shows it does not cover the last context card.
+            await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
             await expect(page.getByRole('button', { name: 'Save Category', exact: true })).toBeInViewport()
             await captureCandidate(page, testInfo, 'mobile-actions', width, height)
         }
@@ -81,16 +83,19 @@ test('CA-018 parent selector, slug impact, validation and archived candidates aw
     noErrors()
 })
 
-// Runs last: it commits a real concurrent reorder to produce the stale-revision state.
+// Runs last: it commits a real concurrent sibling create to produce the stale-revision
+// state. An append leaves the Monitors row (and its Last updated time) untouched, so the
+// candidate stays deterministic; a concurrent reorder would stamp the wall-clock time.
 test('CA-018 stale revision candidate awaiting Product Owner review', async ({ page, context }, testInfo) => {
     const noErrors = observePageErrors(page)
     await open(page, `/admin/central/categories/${monitors}/edit`, 1440, 1000)
     const other = await context.newPage()
-    await other.goto(`/admin/central/categories/${televisions}/edit`)
-    await other.locator('#category-display-position-trigger').click()
-    await other.locator('#category-display-position-menu').getByRole('option', { name: '3 of 3 — after Projectors', exact: true }).click()
+    await other.goto('/admin/central/categories/create')
+    await other.getByRole('combobox', { name: 'Parent Category' }).fill('Displays')
+    await other.locator(`#category-parent-listbox [data-value="${displays}"]`).click()
+    await other.getByLabel('Category Name').fill('Curved Displays')
     await other.getByRole('button', { name: 'Save Category', exact: true }).click()
-    await expect(other.getByText('Category updated.').first()).toBeVisible()
+    await expect(other.getByText(/Category #\d+ created as Draft\./).first()).toBeVisible()
     await other.close()
     await page.locator('#category-display-position-trigger').click()
     await page.locator('#category-display-position-menu').getByRole('option', { name: '1 of 3 — before Televisions', exact: true }).click()

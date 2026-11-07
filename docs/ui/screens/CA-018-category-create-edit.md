@@ -221,7 +221,9 @@ The searchable parent selector and sibling select keep viewport-aware listboxes.
 
 - Create at 1440×1000 and 390×844;
 - Edit at all four viewports;
-- the parent selector, slug impact, validation error, archived context, stale-revision error and scrolled mobile actions.
+- the parent selector, slug impact, validation error, archived context, stale-revision error and mobile actions scrolled to the end of the page.
+
+The stale-revision state is produced by a real concurrent sibling create under Displays. An append leaves the Monitors row and its Last updated time untouched, so the candidate contains no wall-clock time.
 
 Each PNG has a SHA-256 sidecar and JSON provenance stating `pending-product-owner-review`.
 

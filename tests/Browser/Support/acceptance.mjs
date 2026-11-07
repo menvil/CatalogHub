@@ -45,7 +45,7 @@ export async function captureAcceptanceScreenshot(page, testInfo, name) {
 }
 
 export function resetBrowserFixture(fixture = 'default') {
-    if (!['default', 'category-detail-v1'].includes(fixture)) throw new Error('Unknown browser fixture.');
+    if (!['default', 'category-detail-v1', 'category-create-edit-v1'].includes(fixture)) throw new Error('Unknown browser fixture.');
     const port = Number.parseInt(process.env.CATALOGHUB_BROWSER_PORT ?? '', 10)
 
     if (![8014, 8015].includes(port)) {

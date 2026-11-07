@@ -183,6 +183,20 @@ final class Site extends Model
         ));
     }
 
+    /**
+     * Non-deleted administrable Sites retaining any SiteCategory selection of the
+     * Category, regardless of is_enabled/local_status. Shared CA-016/017/018
+     * "selected by Sites" semantics; a selection is not publication.
+     *
+     * @param  Builder<Site>  $query
+     */
+    public function scopeSelectingCategory(Builder $query, int $categoryId): void
+    {
+        $query->administrable()->whereHas('categories', static function (Builder $selection) use ($categoryId): void {
+            $selection->where('central_category_id', $categoryId);
+        });
+    }
+
     /** @param Builder<Site> $query */
     public function scopeByCode(Builder $query, string $code): void
     {

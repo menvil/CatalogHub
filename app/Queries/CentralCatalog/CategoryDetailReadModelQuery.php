@@ -49,7 +49,7 @@ final readonly class CategoryDetailReadModelQuery
             approver: $category->schema_approved_by_user_id === null ? null : $actors->get($category->schema_approved_by_user_id, 'Actor unavailable'),
             issueCount: count($issues), issues: array_slice($issues, 0, 5),
         );
-        $siteQuery = Site::query()->administrable()->whereHas('categories', fn ($query) => $query->where('central_category_id', $category->id));
+        $siteQuery = Site::query()->selectingCategory($category->id);
 
         return new CategoryDetailReadModelData(
             category: $category, ancestors: array_reverse($ancestors), hierarchyAvailable: $hierarchyAvailable,

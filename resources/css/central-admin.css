@@ -1364,3 +1364,5 @@ textarea.brand-translation-control {
 }
 
 @import './category-detail.css';
+
+@import './category-form.css';

@@ -10,6 +10,7 @@ use Tests\Support\BrandFormFixture;
 use Tests\Support\BrandListFixture;
 use Tests\Support\BrandMediaFixture;
 use Tests\Support\BrandTranslationFixture;
+use Tests\Support\CategoryCreateEditFixture;
 use Tests\Support\CategoryDetailFixture;
 use Tests\Support\CategoryListFixture;
 
@@ -42,4 +43,8 @@ CategoryListFixture::create();
 
 if (getenv('CATALOGHUB_BROWSER_FIXTURE') === CategoryDetailFixture::VERSION) {
     CategoryDetailFixture::create();
+}
+
+if (getenv('CATALOGHUB_BROWSER_FIXTURE') === CategoryCreateEditFixture::VERSION) {
+    CategoryCreateEditFixture::create();
 }

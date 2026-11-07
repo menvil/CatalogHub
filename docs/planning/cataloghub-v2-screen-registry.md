@@ -13,6 +13,8 @@
 
 Phase 19.0 discovers/freezes Categories / Schema CA-016…CA-026 after Brands closure PR #611. The [Phase 19 roadmap](roadmap-v2-screen-driven.md#phase-19--categories--schema-current-section) and [ADR-0003](../architecture/adr/0003-categories-schema-ownership.md) govern ownership and permissions. This registers future screen ownership only; no runtime routes or finished-screen baselines are added. CA-027…CA-032 remains the later dedicated Units / Measurements section.
 
+Phase 19.6 splits the CA-018 route `/admin/central/categories/{category?}/edit` into `/admin/central/categories/create` and the numeric `/admin/central/categories/{category}/edit`, as Brands 18.6 did for CA-013. Like the rest of this registry version, the amendment awaits product approval.
+
 ## Registry rules
 
 This is the authoritative inventory for CatalogHub v2. It contains exactly
@@ -71,7 +73,7 @@ updates this registry and the visual manifest.
 | CA-015 | Brand Translations | Central Admin | page | `/admin/central/brands/{brand}/translations` | Central | no | `pictures/1. Central Admin/1.3. Brands/CA-015 — Brand Translations.png` | Phase 02 |
 | CA-016 | Categories List | Central Admin | page | `/admin/central/categories` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-016 — Categories List.png` | Phase 19.4 |
 | CA-017 | Category Detail | Central Admin | page | `/admin/central/categories/{category}` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-017 — Category Detail.png` | Phase 19.5 |
-| CA-018 | Category Create / Edit | Central Admin | page | `/admin/central/categories/{category?}/edit` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-018 — Category Create:Edit.png` | Phase 19.6 |
+| CA-018 | Category Create / Edit | Central Admin | page | `/admin/central/categories/create`; `/admin/central/categories/{category}/edit` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-018 — Category Create:Edit.png` | Phase 19.6 |
 | CA-019 | Category Schema Builder | Central Admin | page | `/admin/central/categories/{category}/schema` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-019 — Category Schema Builder.png` | Phase 19.7 / 19.11 |
 | CA-020 | Attribute Sections Editor | Central Admin | page | `/admin/central/categories/{category}/schema/sections` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-020 — Attribute Sections Editor.png` | Phase 19.8 |
 | CA-021 | Attribute Definitions Editor | Central Admin | page | `/admin/central/categories/{category}/schema/attributes` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-021 — Attribute Definitions Editor.png` | Phase 19.9 |

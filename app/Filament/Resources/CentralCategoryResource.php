@@ -69,12 +69,13 @@ final class CentralCategoryResource extends Resource
         }
         // CA-018 owns Create/Edit; generated legacy URLs target the canonical routes directly (no redirect loop).
         if ($name === 'create') {
-            return route('central.categories.create', [], $isAbsolute);
+            return route('central.categories.create', $parameters, $isAbsolute);
         }
         if ($name === 'edit') {
             $record = $parameters['record'] ?? null;
+            unset($parameters['record']);
 
-            return route('central.categories.edit', ['category' => $record instanceof Model ? $record->getKey() : $record], $isAbsolute);
+            return route('central.categories.edit', ['category' => $record instanceof Model ? $record->getKey() : $record, ...$parameters], $isAbsolute);
         }
 
         return parent::getUrl($name, $parameters, $isAbsolute, $panel, $tenant, $shouldGuessMissingParameters, $configuration);

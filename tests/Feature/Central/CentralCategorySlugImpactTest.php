@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Central;
 
+use App\Domains\Projections\SiteSyncService;
 use App\Models\AuditLogEntry;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\Site;
@@ -69,18 +70,52 @@ final class CentralCategorySlugImpactTest extends TestCase
             ->assertSessionHasErrors(['slug_impact_acknowledged']);
         self::assertSame($before, $this->facts());
 
+        $snapshot = $this->snapshot();
+        $categories = $this->categoryRows();
         $this->patch(route('central.categories.update', $this->monitors), $this->categoryUpdatePayload($this->monitors, ['slug' => 'displays-monitors', 'acknowledged' => true]))
             ->assertSessionHasNoErrors()->assertRedirect(route('central.categories.show', Fixture::MONITORS));
         self::assertSame(['displays-monitors', Fixture::MONITORS], [$this->monitors->fresh()->slug, $this->monitors->fresh()->id]);
-        $after = $this->facts();
         // Routes, selections, overrides and jobs are owned elsewhere: nothing but the canonical row and its audit changed.
-        foreach (['projections', 'selections', 'overrides', 'jobs', 'sitemaps', 'search'] as $owned) {
-            self::assertSame($before[$owned], $after[$owned], $owned);
+        $after = $this->snapshot();
+        self::assertSame(['audit_log_entries', 'central_categories'], array_keys(array_filter($after, fn (array $rows, string $table): bool => $rows !== $snapshot[$table], ARRAY_FILTER_USE_BOTH)));
+        self::assertCount(count($snapshot['audit_log_entries']) + 1, $after['audit_log_entries']);
+        $changed = [];
+        foreach ($this->categoryRows() as $id => $row) {
+            $columns = array_keys(array_diff_assoc($row, $categories[$id]));
+            if ($columns !== []) {
+                $changed[$id] = $columns;
+            }
         }
-        self::assertSame([], array_values(array_filter(Schema::getTableListing(), fn (string $table): bool => str_contains($table, 'redirect'))));
+        self::assertSame([Fixture::MONITORS], array_keys($changed));
+        self::assertContains('slug', $changed[Fixture::MONITORS]);
+        self::assertSame([], array_diff($changed[Fixture::MONITORS], ['slug', 'updated_at']));
         $audit = AuditLogEntry::query()->where('action', 'catalog.category.updated')->sole();
         self::assertSame(['slug' => 'desktop-monitors'], $audit->before_json);
         self::assertSame(['slug' => 'displays-monitors', 'changed_fields' => ['slug']], $audit->after_json);
+    }
+
+    public function test_old_public_route_serves_until_the_owning_sync_and_then_ends_without_a_redirect(): void
+    {
+        $old = 'http://display-world.test/en-US/categories/desktop-monitors';
+        $new = 'http://display-world.test/en-US/categories/displays-monitors';
+        $kept = 'http://display-world.test/de-DE/categories/bildschirme';
+        $this->get($old)->assertOk();
+        $this->get($new)->assertNotFound();
+
+        $this->patch(route('central.categories.update', $this->monitors), $this->categoryUpdatePayload($this->monitors, ['slug' => 'displays-monitors', 'acknowledged' => true]))
+            ->assertSessionHasNoErrors();
+        // Saving changes no live route by itself.
+        $this->get($old)->assertOk();
+        $this->get($new)->assertNotFound();
+
+        $site = Site::query()->findOrFail(Fixture::DISPLAY_WORLD);
+        foreach (['en-US', 'de-DE'] as $locale) {
+            app(SiteSyncService::class)->syncCategory($site, $this->monitors->refresh(), $locale);
+        }
+        // After the owning rebuild the previous path ends with 404, never a redirect; the override keeps its path.
+        $this->get($old)->assertNotFound();
+        $this->get($new)->assertOk();
+        $this->get($kept)->assertOk();
     }
 
     public function test_slug_change_without_selections_or_projections_needs_the_preview_but_no_acknowledgement(): void
@@ -123,6 +158,37 @@ final class CentralCategorySlugImpactTest extends TestCase
         self::assertSame($before, $this->facts());
         self::assertSame(Fixture::DISPLAYS, $this->monitors->fresh()->parent_id);
         self::assertSame(0, AuditLogEntry::query()->where('action', 'catalog.category.reparented')->where('subject_id', (string) Fixture::MONITORS)->count());
+    }
+
+    /**
+     * @return array<string, list<string>>
+     *
+     * @phpstan-impure
+     */
+    private function snapshot(): array
+    {
+        $snapshot = [];
+        foreach (Schema::getTableListing(schemaQualified: false) as $table) {
+            if (in_array($table, ['migrations', 'sessions', 'cache', 'cache_locks'], true)) {
+                continue;
+            }
+            $rows = DB::table($table)->get()->map(fn ($row): string => json_encode($row, JSON_THROW_ON_ERROR))->all();
+            sort($rows);
+            $snapshot[$table] = $rows;
+        }
+
+        return $snapshot;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     *
+     * @phpstan-impure
+     */
+    private function categoryRows(): array
+    {
+        return DB::table('central_categories')->orderBy('id')->get()
+            ->mapWithKeys(fn (object $row): array => [(int) $row->id => (array) $row])->all();
     }
 
     /**

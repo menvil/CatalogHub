@@ -19,6 +19,11 @@
     // Never present an untrusted, ineligible ID as an apparently valid selection.
     $selectedParent = $requestedParent === null || $requestedParent === '' || in_array((string) $requestedParent, $validParents, true)
         ? ($requestedParent === '' ? null : $requestedParent) : $form->parentId;
+    // A rejected, ineligible parent was replaced by the displayed one; its destination token must
+    // describe the displayed parent as loaded now, or every retry of this form is rejected again.
+    $parentReplaced = $submitted && $selectedParent !== ($requestedParent === '' ? null : $requestedParent);
+    $displayedParentRevision = $form->scopeRevisionFor($selectedParent === null ? null : (int) $selectedParent);
+    $destinationToken = static fn (string $key): mixed => $parentReplaced ? $displayedParentRevision : $scalar($key, $displayedParentRevision);
     $siblingIds = array_column($form->siblings, 'id');
     $oldSiblings = $submitted ? old('sibling_ids') : null;
     $submittedSiblings = is_array($oldSiblings) && $oldSiblings !== [] && array_filter($oldSiblings, static fn (mixed $id): bool => ! is_scalar($id) || ! ctype_digit((string) $id)) === []
@@ -119,7 +124,7 @@
 
                     <section class="category-form-order" aria-labelledby="category-order-heading" data-screen-region="display-order">
                         <h3 id="category-order-heading">Display Order</h3>
-                        @if ($editing && $position !== null)
+                        @if ($editing && $position !== null && $form->hierarchyAvailable)
                             <x-ui.form.select
                                 id="category-display-position"
                                 name="display_position"
@@ -143,7 +148,15 @@
                                 <input type="hidden" name="sibling_ids[]" value="{{ $siblingId }}">
                             @endforeach
                         @elseif ($editing)
-                            <p class="category-form-note">Sibling order is unavailable because this Category's hierarchy cannot be resolved.</p>
+                            {{-- Reorder validates the parent's ancestry, so it cannot succeed here. The current order is
+                                 submitted unchanged, which keeps identity and parent saves possible. --}}
+                            <p class="category-form-note" data-category-order-unavailable>Sibling order is unavailable because this Category's hierarchy cannot be resolved. Saving keeps the current order.</p>
+                            @if ($position !== null)
+                                <input type="hidden" name="display_position" value="{{ $position }}">
+                                @foreach ($siblingIds as $siblingId)
+                                    <input type="hidden" name="sibling_ids[]" value="{{ $siblingId }}">
+                                @endforeach
+                            @endif
                         @else
                             <p class="category-form-note" data-category-create-order>New Categories are appended to the end of the selected parent's list. Their position can be changed after creation.</p>
                         @endif
@@ -195,9 +208,9 @@
         <input type="hidden" name="expected_name" value="{{ $scalar('expected_name', $category->name) }}">
         <input type="hidden" name="expected_slug" value="{{ $scalar('expected_slug', $category->slug) }}">
         <input type="hidden" name="current_scope_revision" value="{{ $scalar('current_scope_revision', $form->scopeRevisionFor($form->parentId)) }}">
-        <input type="hidden" name="destination_scope_revision" value="{{ $scalar('destination_scope_revision', $form->scopeRevisionFor($form->parentId)) }}" data-category-destination-revision>
+        <input type="hidden" name="destination_scope_revision" value="{{ $destinationToken('destination_scope_revision') }}" data-category-destination-revision>
     @else
-        <input type="hidden" name="scope_revision" value="{{ $scalar('scope_revision', $form->scopeRevisionFor($selectedParent === null ? null : (int) $selectedParent)) }}" data-category-destination-revision>
+        <input type="hidden" name="scope_revision" value="{{ $destinationToken('scope_revision') }}" data-category-destination-revision>
     @endif
     <script type="application/json" data-category-scope-revisions>@json((object) $form->scopeRevisions)</script>
 

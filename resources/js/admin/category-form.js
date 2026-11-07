@@ -2,6 +2,7 @@
 // revisions, sibling order and the reviewed slug impact are all revalidated on Save.
 
 const PREVIEW_DELAY = 350;
+const UNAVAILABLE = '<p class="category-form-note" data-slug-impact-unavailable>The routing impact could not be loaded. It will be shown for review when you save.</p>';
 
 export function slugify(value) {
     return value
@@ -69,30 +70,31 @@ function bindSlugImpact(form) {
     let sequence = 0;
 
     const render = async () => {
+        // The server trims the slug before both the preview and the save, so the
+        // trimmed value is the one whose impact is reviewed.
         const proposed = slug.value.trim();
         const request = ++sequence;
-        if (proposed === current) {
+        if (proposed === current || proposed === '' || proposed.length > 255) {
+            // Never leave another slug's fragment (and its reviewed fingerprint) behind.
             container.innerHTML = '';
+            container.removeAttribute('aria-busy');
             return;
         }
-        if (proposed === '' || proposed.length > 255) return;
         container.setAttribute('aria-busy', 'true');
+        let html = UNAVAILABLE;
         try {
             const response = await fetch(`${url}?${new URLSearchParams({ slug: proposed })}`, {
                 credentials: 'same-origin',
                 headers: { Accept: 'text/html', 'X-Requested-With': 'XMLHttpRequest' },
             });
-            if (request !== sequence) return;
-            container.innerHTML = response.ok && !response.redirected
-                ? await response.text()
-                : '<p class="category-form-note" data-slug-impact-unavailable>The routing impact could not be loaded. It will be shown for review when you save.</p>';
+            if (response.ok && !response.redirected) html = await response.text();
         } catch {
-            if (request === sequence) {
-                container.innerHTML = '<p class="category-form-note" data-slug-impact-unavailable>The routing impact could not be loaded. It will be shown for review when you save.</p>';
-            }
-        } finally {
-            if (request === sequence) container.removeAttribute('aria-busy');
+            // Keep the unavailable note; the server shows the impact again on Save.
         }
+        // Checked after the body is read, so a slower response cannot replace a newer preview.
+        if (request !== sequence) return;
+        container.innerHTML = html;
+        container.removeAttribute('aria-busy');
     };
 
     slug.addEventListener('input', () => {

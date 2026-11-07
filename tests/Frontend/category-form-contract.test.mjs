@@ -35,3 +35,83 @@ test('CA-018 slug suggestion produces canonical URL keys client-side only', asyn
     assert.equal(slugify('---'), '')
     assert.equal(slugify('x'.repeat(300)).length, 255)
 })
+
+function fakeSlugImpactForm(currentSlug) {
+    const listeners = {}
+    const slug = { value: currentSlug, addEventListener: (type, listener) => { listeners[type] = listener } }
+    const attributes = {}
+    const container = {
+        innerHTML: '',
+        setAttribute: (name, value) => { attributes[name] = value },
+        removeAttribute: (name) => { delete attributes[name] },
+        attributes,
+    }
+    const hooks = { '[data-category-slug]': slug, '[data-category-slug-impact-container]': container }
+    const form = { dataset: { categoryForm: 'edit', slugImpactUrl: '/impact', currentSlug }, querySelector: (selector) => hooks[selector] ?? null }
+    let timer = null
+    globalThis.window = { setTimeout: (callback) => { timer = callback; return 1 }, clearTimeout: () => {} }
+    globalThis.document = { querySelectorAll: () => [form] }
+
+    return {
+        container,
+        // Types a value and lets the debounce fire immediately.
+        type(value) {
+            slug.value = value
+            listeners.input()
+            const pending = timer
+            timer = null
+            return pending()
+        },
+    }
+}
+
+function deferred() {
+    let resolve
+    const promise = new Promise((done) => { resolve = done })
+    return { promise, resolve }
+}
+
+test('CA-018 slug preview never lets a slower response replace a newer slug preview', async () => {
+    const { bootCategoryForm } = await import('../../resources/js/admin/category-form.js')
+    const form = fakeSlugImpactForm('desktop-monitors')
+    const requests = []
+    globalThis.fetch = (url) => {
+        const response = deferred()
+        requests.push({ url, response })
+        return response.promise
+    }
+    bootCategoryForm()
+
+    const first = form.type('older-slug')
+    const slowBody = deferred()
+    requests[0].response.resolve({ ok: true, redirected: false, text: () => slowBody.promise })
+    await new Promise((done) => setImmediate(done))
+    const second = form.type('newer-slug')
+    requests[1].response.resolve({ ok: true, redirected: false, text: async () => '<p>newer-slug impact</p>' })
+    await second
+    slowBody.resolve('<p>older-slug impact</p>')
+    await first
+
+    assert.deepEqual(requests.map(({ url }) => url), ['/impact?slug=older-slug', '/impact?slug=newer-slug'])
+    assert.equal(form.container.innerHTML, '<p>newer-slug impact</p>')
+    assert.equal(form.container.attributes['aria-busy'], undefined)
+})
+
+test('CA-018 slug preview clears a stale fragment and busy state when the slug is current, empty or too long', async () => {
+    const { bootCategoryForm } = await import('../../resources/js/admin/category-form.js')
+    const form = fakeSlugImpactForm('desktop-monitors')
+    const pending = []
+    globalThis.fetch = () => new Promise((resolve) => pending.push(resolve))
+    bootCategoryForm()
+
+    for (const value of [' desktop-monitors ', '', 'x'.repeat(256)]) {
+        const inFlight = form.type('reviewed-slug')
+        form.container.innerHTML = '<p>reviewed-slug impact</p>'
+        await form.type(value)
+        assert.equal(form.container.innerHTML, '', `A fragment survived the value ${JSON.stringify(value.slice(0, 20))}`)
+        assert.equal(form.container.attributes['aria-busy'], undefined)
+        pending.shift()({ ok: true, redirected: false, text: async () => '<p>late reviewed-slug impact</p>' })
+        await inFlight
+        assert.equal(form.container.innerHTML, '', 'A superseded response restored a stale fragment')
+    }
+})

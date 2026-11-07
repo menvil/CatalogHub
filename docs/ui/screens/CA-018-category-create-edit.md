@@ -99,6 +99,8 @@ any failure                    rolls back positions, scope revisions, identity a
 - **Order only:** the submitted intent becomes the complete sibling order for `ReorderCentralCategoriesAction`, which verifies the exact set and the expected revision and records `catalog.category.reordered`. A no-op reorder changes nothing.
 - **Parent and order in one save:** rejected. Moving appends to the new parent, and the order can be adjusted in a later save. This avoids reusing a revision consumed by the reparent.
 - **Unchanged save:** a full no-op. There is no audit, revision churn or timestamp change, and the user sees "No changes to save."
+- **Unresolvable hierarchy (cycle or missing parent):** reorder validates the parent's ancestry and cannot succeed, so the order controls are replaced by a note. The current order is submitted unchanged, so identity and parent saves stay possible.
+- **Rejected ineligible parent:** the form falls back to the displayed parent, and its destination token is the displayed parent's revision as loaded now. Without that, a retry would be rejected again.
 
 Lost-update protection was added to `UpdateCentralCategoryAction` as an optional `CentralCategoryExpectedState`, compared under its existing row lock. A changed name or slug rejects with `category`, and a moved Category rejects with `parent_id`. No version column was added. The action now fills only `name`/`slug`; previously a `null` `parent_id` passed the `prohibited` rule and could have moved a Category.
 
@@ -110,7 +112,7 @@ Facts:
 
 - **Canonical slug is not served directly.** Public Category routes (`/{locale}/categories/{slug}`) resolve persisted `SiteCategoryProjection` slugs, never `central_categories.slug`.
 - **No automatic refresh.** A canonical change reaches a Site only when its owning sync (`cataloghub:sync-category` / `cataloghub:sync-site`) rebuilds the projection. Nothing marks projections stale on a slug edit.
-- **After a rebuild:** the previous path stops resolving, with no redirect.
+- **After a rebuild:** where the effective slug changes, the previous path stops resolving (404) with no redirect. Routes kept by a Site or market override keep their path. `CentralCategorySlugImpactTest` exercises this against the real public route.
 
 Preview contents:
 
@@ -126,7 +128,8 @@ Explanations state that the Category ID stays stable and that saving changes no 
 Safety:
 
 - **Read-only.** GET Edit with `slug_preview` and the fragment endpoint write nothing.
-- **Fingerprint.** A SHA-256 over every reviewed fact: selections, all persisted Category projections, active slug overrides and the involved Site states.
+- **Client preview.** The live preview ignores a superseded response even when its body arrives late, and clears any earlier fragment (and its fingerprint) when the slug becomes current, empty or too long. The server trims the slug before both preview and save.
+- **Fingerprint.** A SHA-256 over every reviewed or route-deciding fact: selections, all persisted Category projections, active slug overrides, and for every involved Site its name, status, `sites.domain`, market, public domains and Locale enablement.
 - **Review required.** A slug change without a reviewed fingerprint is rejected and redirected to Edit with `slug_preview`, so the impact also renders without JavaScript.
 - **Staleness check.** Save recomputes the impact inside the transaction after the identity update. A different fingerprint is rejected and rolls everything back.
 - **Acknowledgement.** Required only when the impact is meaningful (any selecting Site or persisted projection). An unchanged slug needs no preview or confirmation.

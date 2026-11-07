@@ -37,7 +37,7 @@
 
     <ul class="category-slug-impact-notes">
         <li>Public Category pages resolve persisted Site projections, not the canonical slug. Saving does not change a live route by itself.</li>
-        <li>Existing routes keep serving their current slug until the owning Site sync rebuilds the Category projection; after that rebuild the previous path no longer resolves.</li>
+        <li>Existing routes keep serving their current slug until the owning Site sync rebuilds the Category projection; after that rebuild the previous path no longer resolves wherever the slug changes. Routes kept by a Site or market override are unaffected.</li>
         <li>No automatic HTTP redirect is created. Category links in Product and neighbouring Category pages update only when those projections are rebuilt.</li>
         <li>Site and market slug overrides take precedence and are not changed. Site selection and publication follow their own workflows.</li>
     </ul>

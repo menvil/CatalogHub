@@ -6,6 +6,7 @@ namespace Tests\Feature\Central;
 
 use App\Enums\AuditAction;
 use App\Enums\UserRole;
+use App\Filament\Resources\CentralCategoryResource;
 use App\Models\AuditLogEntry;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\SiteCategory;
@@ -325,9 +326,34 @@ final class CentralCategoryFormTest extends TestCase
             ->patch(route('central.categories.update', $monitors), [...$this->categoryUpdatePayload($monitors), 'name' => 'Kept Name', 'parent_id' => Fixture::GAMING_MONITORS, 'destination_scope_revision' => 0])
             ->assertOk()->assertSee('value="Kept Name"', false)->assertSee('Category ancestry must be acyclic.')
             ->assertSee('<option value="'.Fixture::DISPLAYS.'" selected>', false)->assertDontSee('<option value="'.Fixture::GAMING_MONITORS.'"', false);
-        $this->from(route('central.categories.create'))->followingRedirects()
-            ->post(route('central.categories.store'), ['name' => 'Typed', 'slug' => 'desktop-monitors', 'parent_id' => 99999999, 'scope_revision' => 0])
+        $rejected = $this->from(route('central.categories.create'))->followingRedirects()
+            ->post(route('central.categories.store'), ['name' => 'Typed', 'slug' => 'typed', 'parent_id' => 99999999, 'scope_revision' => 0])
             ->assertOk()->assertSee('value="Typed"', false)->assertDontSee('selected>', false);
+        // The ineligible parent was replaced by Root, so the retry carries Root's token and succeeds.
+        $rootRevision = app(CategoryHierarchy::class)->revision(null);
+        self::assertGreaterThan(0, $rootRevision);
+        self::assertMatchesRegularExpression('/name="scope_revision" value="'.$rootRevision.'"/', (string) $rejected->getContent());
+        $this->post(route('central.categories.store'), ['name' => 'Typed', 'slug' => 'typed', 'parent_id' => null, 'scope_revision' => $rootRevision])->assertSessionHasNoErrors();
+        self::assertNull(CentralCategory::query()->where('slug', 'typed')->sole()->parent_id);
+    }
+
+    public function test_unresolvable_hierarchy_hides_order_controls_but_keeps_identity_saves_possible(): void
+    {
+        $this->actingAs($this->admin);
+        $a = CentralCategory::factory()->create(['name' => 'Cycle A', 'slug' => 'cycle-a']);
+        $b = CentralCategory::factory()->create(['name' => 'Cycle B', 'slug' => 'cycle-b', 'parent_id' => $a->id]);
+        DB::table('central_categories')->where('id', $a->id)->update(['parent_id' => $b->id]);
+        $form = $this->formHtml((string) $this->get(route('central.categories.edit', $a))->assertOk()->getContent());
+        self::assertStringContainsString('data-category-order-unavailable', $form);
+        self::assertStringNotContainsString('id="category-display-position"', $form);
+        self::assertStringNotContainsString('aria-label="Current sibling order"', $form);
+        self::assertMatchesRegularExpression('/<input type="hidden" name="display_position" value="0">/', $form);
+        self::assertMatchesRegularExpression('/<input type="hidden" name="sibling_ids\[\]" value="'.$a->id.'">/', $form);
+
+        $before = DB::table('category_hierarchy_scopes')->orderBy('scope_key')->get()->toJson();
+        $this->patch(route('central.categories.update', $a), $this->categoryUpdatePayload($a->refresh(), ['name' => 'Cycle A renamed']))->assertSessionHasNoErrors();
+        self::assertSame(['Cycle A renamed', $b->id], [$a->fresh()->name, $a->fresh()->parent_id]);
+        self::assertSame($before, DB::table('category_hierarchy_scopes')->orderBy('scope_key')->get()->toJson());
     }
 
     /** @return iterable<string, array{\Closure(): User, bool}> */
@@ -400,6 +426,10 @@ final class CentralCategoryFormTest extends TestCase
         }
         self::assertSame('/admin/central/categories/create', route('central.categories.create', absolute: false));
         self::assertSame('/admin/central/categories/'.Fixture::MONITORS.'/edit', route('central.categories.edit', Fixture::MONITORS, false));
+        // Generated legacy URLs target the canonical routes and keep their query parameters.
+        self::assertSame('/admin/central/categories/create?q=x', CentralCategoryResource::getUrl('create', ['q' => 'x'], false));
+        self::assertSame('/admin/central/categories/'.Fixture::MONITORS.'/edit?slug_preview=computer-monitors', CentralCategoryResource::getUrl('edit', ['record' => Fixture::MONITORS, 'slug_preview' => 'computer-monitors'], false));
+        self::assertSame('/admin/central/categories/'.Fixture::MONITORS.'/edit', CentralCategoryResource::getUrl('edit', ['record' => CentralCategory::query()->findOrFail(Fixture::MONITORS)], false));
         $this->actingAs($this->admin);
         $this->get('/admin/central/categories/create')->assertOk()->assertSee('data-category-form-mode="create"', false);
         $this->get('/admin/central/categories/desktop-monitors/edit')->assertNotFound();

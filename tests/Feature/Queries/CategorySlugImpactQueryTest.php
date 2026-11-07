@@ -8,6 +8,7 @@ use App\Data\CentralCatalog\CategorySlugImpactData;
 use App\Data\CentralCatalog\CategorySlugImpactRoute;
 use App\Domains\Projections\SiteSyncService;
 use App\Models\CentralCatalog\CentralCategory;
+use App\Models\Market;
 use App\Models\Site;
 use App\Models\SiteCategory;
 use App\Models\SiteLocale;
@@ -88,11 +89,17 @@ final class CategorySlugImpactQueryTest extends TestCase
             fn () => DB::table('site_category_projections')->where('locale', 'en-US')->update(['slug' => 'monitor-screens']),
             fn () => DB::table('site_overrides')->update(['value_json' => json_encode(['value' => 'monitore'])]),
             fn () => Site::query()->whereKey(Fixture::DISPLAY_WORLD)->update(['status' => 'suspended']),
+            // Routing facts the preview displays or resolves served routes and URLs from.
+            fn () => DB::table('site_domains')->where('site_id', Fixture::DISPLAY_WORLD)->update(['is_active' => false]),
+            fn () => DB::table('site_locales')->where('site_id', Fixture::DISPLAY_WORLD)->where('locale_code', 'de-DE')->update(['is_enabled' => false]),
+            fn () => Site::query()->whereKey(Fixture::DISPLAY_WORLD)->update(['domain' => 'display-world.example']),
+            fn () => Site::query()->whereKey(Fixture::DISPLAY_WORLD)->update(['market_id' => Market::factory()->create()->id]),
+            fn () => Site::query()->whereKey(Fixture::DISPLAY_WORLD)->update(['name' => 'Display Planet']),
         ];
-        foreach ($changes as $change) {
+        foreach ($changes as $index => $change) {
             $change();
             $next = $this->assess()->fingerprint;
-            self::assertNotSame($fingerprint, $next);
+            self::assertNotSame($fingerprint, $next, 'Reviewed fact #'.$index.' did not change the fingerprint.');
             $fingerprint = $next;
         }
     }

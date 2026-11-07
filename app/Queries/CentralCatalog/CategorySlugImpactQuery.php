@@ -136,6 +136,19 @@ final readonly class CategorySlugImpactQuery
             && in_array($domain->type, [SiteDomainType::Primary, SiteDomainType::Alias], true));
     }
 
+    /** @return list<mixed> Site identity, status, URL host, market and the public domains and locales that decide served routes. */
+    private function siteFacts(Site $site): array
+    {
+        return [
+            $site->name,
+            $site->status->value,
+            $site->domain,
+            $site->market_id,
+            $site->domains->map(fn (SiteDomain $domain): string => implode('|', [$domain->host, $domain->type->value, $domain->is_active ? '1' : '0']))->sort()->values()->all(),
+            $site->locales->map(fn (SiteLocale $locale): string => implode('|', [$locale->locale_code, $locale->is_enabled ? '1' : '0', $locale->locale?->is_active ? '1' : '0']))->sort()->values()->all(),
+        ];
+    }
+
     private function site(SiteCategoryProjection $projection): Site
     {
         $site = $projection->site;
@@ -147,14 +160,18 @@ final readonly class CategorySlugImpactQuery
     }
 
     /**
+     * Covers every input the preview displays or resolves routes from, so any change
+     * between review and save makes the reviewed impact stale.
+     *
      * @param  Collection<int, Site>  $selected
      * @param  Collection<int, SiteCategoryProjection>  $projections
      * @param  Collection<int, SiteOverride>  $overrides
      */
     private function fingerprint(CentralCategory $category, string $currentSlug, string $proposedSlug, Collection $selected, Collection $projections, Collection $overrides): string
     {
-        $sites = $selected->mapWithKeys(fn (Site $site): array => [$site->id => $site->status->value])
-            ->union($projections->mapWithKeys(fn (SiteCategoryProjection $projection): array => [$projection->site_id => $this->site($projection)->status->value]))
+        // Projection Sites carry their routing facts; selection-only Sites are shown by name and status.
+        $sites = $projections->mapWithKeys(fn (SiteCategoryProjection $projection): array => [$projection->site_id => $this->siteFacts($this->site($projection))])
+            ->union($selected->mapWithKeys(fn (Site $site): array => [$site->id => [$site->name, $site->status->value]]))
             ->sortKeys()->all();
 
         return hash('sha256', json_encode([

@@ -1,0 +1,21 @@
+tests/Feature/Central/CentralCategoryFormTest.php
+  s_f879ac6c3f0f5c::t_d0a7d1598277de 352-354
+tests/Feature/Queries/CategoryFormReadModelQueryTest.php
+  s_f879ac6c3f0f5c::t_bfdba49b715bbe 82-85
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "d519867d06aeccd13402db1eef720864c3c42a2f",
+  "prompts": {},
+  "sessions": {
+    "s_f879ac6c3f0f5c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "60a8ea10-4520-4087-86ea-c324b7cb484b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

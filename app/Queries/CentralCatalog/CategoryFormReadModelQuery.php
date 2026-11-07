@@ -47,9 +47,18 @@ final readonly class CategoryFormReadModelQuery
         $siblings = $tree->where('parent_id', $category->parent_id)->sortBy([['position', 'asc'], ['id', 'asc']])->values();
         $positions = $siblings->pluck('position')->map(fn ($position): int => (int) $position)->all();
 
+        $parentOptions = $this->parentOptions($tree, [$category->id, ...$this->descendantIds($tree, (int) $category->id)]);
+        if ($category->parent_id !== null && ! in_array((string) $category->parent_id, array_column($parentOptions, 'value'), true)) {
+            // A cycle or missing parent drops the current parent from the eligible options. Keep it
+            // selectable so an unchanged save submits it instead of silently requesting Root.
+            $parent = $tree->get($category->parent_id);
+            $name = $parent instanceof CentralCategory ? $parent->name : 'Category #'.$category->parent_id;
+            $parentOptions[] = ['value' => (string) $category->parent_id, 'label' => $name.' (current parent, hierarchy unavailable)', 'search' => $name.' #'.$category->parent_id];
+        }
+
         return new CategoryFormReadModelData(
             category: $category,
-            parentOptions: $this->parentOptions($tree, [$category->id, ...$this->descendantIds($tree, (int) $category->id)]),
+            parentOptions: $parentOptions,
             scopeRevisions: $this->scopeRevisions($tree),
             parentId: $category->parent_id,
             ancestors: $ancestors,

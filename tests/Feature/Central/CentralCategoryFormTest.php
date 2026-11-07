@@ -349,6 +349,9 @@ final class CentralCategoryFormTest extends TestCase
         self::assertStringNotContainsString('aria-label="Current sibling order"', $form);
         self::assertMatchesRegularExpression('/<input type="hidden" name="display_position" value="0">/', $form);
         self::assertMatchesRegularExpression('/<input type="hidden" name="sibling_ids\[\]" value="'.$a->id.'">/', $form);
+        // The current parent is a descendant in the cycle, yet stays the submitted selection instead of Root.
+        self::assertStringContainsString('<option value="'.$b->id.'" selected>', $form);
+        self::assertStringContainsString('Cycle B (current parent, hierarchy unavailable)', $form);
 
         $before = DB::table('category_hierarchy_scopes')->orderBy('scope_key')->get()->toJson();
         $this->patch(route('central.categories.update', $a), $this->categoryUpdatePayload($a->refresh(), ['name' => 'Cycle A renamed']))->assertSessionHasNoErrors();

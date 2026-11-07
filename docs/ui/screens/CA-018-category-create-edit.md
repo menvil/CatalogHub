@@ -99,7 +99,7 @@ any failure                    rolls back positions, scope revisions, identity a
 - **Order only:** the submitted intent becomes the complete sibling order for `ReorderCentralCategoriesAction`, which verifies the exact set and the expected revision and records `catalog.category.reordered`. A no-op reorder changes nothing.
 - **Parent and order in one save:** rejected. Moving appends to the new parent, and the order can be adjusted in a later save. This avoids reusing a revision consumed by the reparent.
 - **Unchanged save:** a full no-op. There is no audit, revision churn or timestamp change, and the user sees "No changes to save."
-- **Unresolvable hierarchy (cycle or missing parent):** reorder validates the parent's ancestry and cannot succeed, so the order controls are replaced by a note. The current order is submitted unchanged, so identity and parent saves stay possible.
+- **Unresolvable hierarchy (cycle or missing parent):** reorder validates the parent's ancestry and cannot succeed, so the order controls are replaced by a note. The current order is submitted unchanged, so identity and parent saves stay possible. The current parent stays a selectable option labelled "(current parent, hierarchy unavailable)", so an unchanged save submits it instead of Root.
 - **Rejected ineligible parent:** the form falls back to the displayed parent, and its destination token is the displayed parent's revision as loaded now. Without that, a retry would be rejected again.
 
 Lost-update protection was added to `UpdateCentralCategoryAction` as an optional `CentralCategoryExpectedState`, compared under its existing row lock. A changed name or slug rejects with `category`, and a moved Category rejects with `parent_id`. No version column was added. The action now fills only `name`/`slug`; previously a `null` `parent_id` passed the `prohibited` rule and could have moved a Category.
@@ -129,7 +129,10 @@ Safety:
 
 - **Read-only.** GET Edit with `slug_preview` and the fragment endpoint write nothing.
 - **Client preview.** The live preview ignores a superseded response even when its body arrives late, and clears any earlier fragment (and its fingerprint) when the slug becomes current, empty or too long. The server trims the slug before both preview and save.
-- **Fingerprint.** A SHA-256 over every reviewed or route-deciding fact: selections, all persisted Category projections, active slug overrides, and for every involved Site its name, status, `sites.domain`, market, public domains and Locale enablement.
+- **Fingerprint.** A SHA-256 over every reviewed or route-deciding fact:
+  - selections, all persisted Category projections and active slug overrides;
+  - for every Site with a projection, its name, status, `sites.domain`, market, public domains and Locale enablement;
+  - for selection-only Sites, which have no route to resolve, only the displayed name and status.
 - **Review required.** A slug change without a reviewed fingerprint is rejected and redirected to Edit with `slug_preview`, so the impact also renders without JavaScript.
 - **Staleness check.** Save recomputes the impact inside the transaction after the identity update. A different fingerprint is rejected and rolls everything back.
 - **Acknowledgement.** Required only when the impact is meaningful (any selecting Site or persisted projection). An unchanged slug needs no preview or confirmation.

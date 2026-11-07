@@ -79,7 +79,10 @@ final class CategoryFormReadModelQueryTest extends TestCase
         $other = CentralCategory::factory()->create(['name' => 'Unrelated']);
         $form = app(CategoryFormReadModelQuery::class)->forEdit($other);
         self::assertContains('Cycle A (hierarchy unavailable)', array_column($form->parentOptions, 'label'));
-        self::assertFalse(app(CategoryFormReadModelQuery::class)->forEdit($a->refresh())->hierarchyAvailable);
+        $cycle = app(CategoryFormReadModelQuery::class)->forEdit($a->refresh());
+        self::assertFalse($cycle->hierarchyAvailable);
+        // Its current parent is a descendant in the cycle but stays selectable, so an unchanged save keeps it.
+        self::assertContains(['value' => (string) $b->id, 'label' => 'Cycle B (current parent, hierarchy unavailable)', 'search' => 'Cycle B #'.$b->id], $cycle->parentOptions);
     }
 
     public function test_identical_parent_paths_are_disambiguated_by_stable_id(): void

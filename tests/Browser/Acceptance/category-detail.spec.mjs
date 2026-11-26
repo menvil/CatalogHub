@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { foundationDemo, observePageErrors, resetBrowserFixture, signIn } from '../Support/acceptance.mjs'
+import { foundationDemo, observePageErrors, resetBrowserFixture, selectAdminOption, signIn } from '../Support/acceptance.mjs'
 
 const primary = '/admin/central/categories/195003'
 test.beforeEach(() => resetBrowserFixture('category-detail-v1'))
@@ -44,7 +44,7 @@ test('CA-017 Locale switching preserves exact status and labels fallback, with a
     const noErrors = observePageErrors(page)
     await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (value) => { window.__categoryCopied = value } } }))
     await openDetail(page)
-    await page.locator('#category-detail-locale').selectOption({ label: 'de-DE' })
+    await selectAdminOption(page, 'category-detail-locale', { label: 'de-DE' })
     await page.getByRole('button', { name: 'Apply Locale', exact: true }).click()
     await expect(page).toHaveURL(/locale=\d+/)
     await expect(page.locator('[data-selected-translation-status]')).toHaveText('Missing')

@@ -37,6 +37,15 @@ export async function signIn(page, panel, email) {
     await page.getByRole('button', { name: /sign in/i }).click()
 }
 
+export async function selectAdminOption(page, id, option) {
+    await page.locator(`#${id}-trigger`).click()
+    const menu = page.locator(`#${id}-menu`)
+    const target = typeof option === 'string'
+        ? menu.locator(`[data-ui-select-option][data-value="${option}"]`)
+        : menu.getByRole('option', { name: option.label, exact: true })
+    await target.click()
+}
+
 export async function captureAcceptanceScreenshot(page, testInfo, name) {
     await page.evaluate(() => document.fonts.ready)
     const path = testInfo.outputPath(`${name}.png`)

@@ -3,6 +3,7 @@ import {
     foundationDemo,
     observePageErrors,
     resetBrowserFixture,
+    selectAdminOption,
     signIn,
 } from '../Support/acceptance.mjs'
 
@@ -83,10 +84,10 @@ test('CA-011 searches, combines filters, sorts, paginates, and preserves navigat
     await country.fill('Taiwan')
     await page.getByRole('option', { name: 'Taiwan (TW)', exact: true }).click()
     await expect(page).toHaveURL(/country=\d+/)
-    await page.locator('#brand-status').selectOption('active')
-    await page.locator('#brand-coverage').selectOption('has')
-    await page.locator('#brand-translation').selectOption('complete')
-    await page.locator('#brand-quality').selectOption('complete')
+    await selectAdminOption(page, 'brand-status', 'active')
+    await selectAdminOption(page, 'brand-coverage', 'has')
+    await selectAdminOption(page, 'brand-translation', 'complete')
+    await selectAdminOption(page, 'brand-quality', 'complete')
     await expect(page).toHaveURL(/status=active/)
     await expect(page).toHaveURL(/coverage=has/)
     await expect(page).toHaveURL(/translation=complete/)
@@ -113,7 +114,7 @@ test('CA-011 searches, combines filters, sorts, paginates, and preserves navigat
     await expect(page).toHaveURL(/sort=products&direction=desc/)
     await expect(page.locator('tbody tr[data-row-id]').first()).toContainText('Acer')
 
-    await page.locator('#brands-per-page').selectOption('20')
+    await selectAdminOption(page, 'brands-per-page', '20')
     await page.getByRole('link', { name: 'Next page' }).click()
     await expect(page).toHaveURL(/page=2/)
     await page.getByRole('link', { name: 'First page' }).click()

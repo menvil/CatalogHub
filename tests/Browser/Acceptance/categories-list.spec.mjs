@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { foundationDemo, observePageErrors, resetBrowserFixture, signIn } from '../Support/acceptance.mjs'
+import { foundationDemo, observePageErrors, resetBrowserFixture, selectAdminOption, signIn } from '../Support/acceptance.mjs'
 
 test.beforeAll(() => resetBrowserFixture())
 
@@ -43,15 +43,15 @@ test('CA-016 search, combined filters, clear, sorting, pagination and browser ba
     await page.locator('#category-search').fill('registry-gaming')
     await expect(page).toHaveURL(/q=registry-gaming/)
     await expect(page.locator('tbody tr[data-row-id]')).toHaveCount(1)
-    await page.locator('#category-level').selectOption('2')
+    await selectAdminOption(page, 'category-level', '2')
     await expect(page).toHaveURL(/level=2/)
-    await page.locator('#category-status').selectOption('active')
+    await selectAdminOption(page, 'category-status', 'active')
     await expect(page).toHaveURL(/status=active/)
-    await page.locator('#category-schema').selectOption('draft')
+    await selectAdminOption(page, 'category-schema', 'draft')
     await expect(page).toHaveURL(/schema=draft/)
-    await page.locator('#category-site').selectOption('194010')
+    await selectAdminOption(page, 'category-site', '194010')
     await expect(page).toHaveURL(/site=194010/)
-    await page.locator('#category-locale').selectOption('3')
+    await selectAdminOption(page, 'category-locale', '3')
     await expect(page).toHaveURL(/locale=3/)
     await expect(row(page, 194005).locator('.category-list-translations')).toHaveText(/Missing.*en-US/)
     await expect(page.locator('[data-category-active-filter-count]')).toContainText('6 active filters')
@@ -69,7 +69,7 @@ test('CA-016 search, combined filters, clear, sorting, pagination and browser ba
     await page.goBack()
     await expect(page).toHaveURL(/direction=desc/)
     expect(new URL(page.url()).searchParams.has('page')).toBe(false)
-    await page.locator('#categories-per-page').selectOption('50')
+    await selectAdminOption(page, 'categories-per-page', '50')
     await expect(page).toHaveURL(/per_page=50/)
     await expect(page.locator('tbody tr[data-row-id]')).toHaveCount(34)
     await page.locator('#category-search').fill('no-matching-category')
@@ -143,7 +143,7 @@ for (const [width, height] of [[1440, 1000], [1024, 900], [768, 1024], [390, 844
             await expect(category).toHaveCSS('display', 'grid')
             for (const key of ['products', 'attributes', 'facets', 'sites']) await expect(category.locator(`[data-category-count="${key}"]`)).toBeVisible()
             await expect(category.locator('.category-list-updated')).toBeVisible()
-            await page.locator('#category-sort').selectOption('products')
+            await selectAdminOption(page, 'category-sort', 'products')
             await expect(page).toHaveURL(/sort=products/)
             await page.getByRole('button', { name: /open.*navigation|toggle.*navigation/i }).click()
             await expect(page.getByRole('navigation', { name: 'Central Admin sections' })).toBeVisible()

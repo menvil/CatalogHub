@@ -1,0 +1,25 @@
+tests/Browser/Acceptance/category-detail.spec.mjs
+  s_09819976511085::t_2654cf7bda8c2f 2,47
+tests/Browser/Acceptance/categories-list.spec.mjs
+  s_09819976511085::t_ea7317146a187c 2,46,48,50,52,54,72,146
+tests/Browser/Support/acceptance.mjs
+  s_09819976511085::t_2654cf7bda8c2f 40-48
+tests/Browser/Acceptance/brands-list.spec.mjs
+  s_09819976511085::t_2654cf7bda8c2f 6,87-90,117
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "2050362205a4cd815fb2bae3162a7bda61735557",
+  "prompts": {},
+  "sessions": {
+    "s_09819976511085": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11622-dcf4-7031-a439-cb234249c9d1",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

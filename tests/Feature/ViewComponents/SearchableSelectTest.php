@@ -30,7 +30,9 @@ final class SearchableSelectTest extends TestCase
         $this->assertStringContainsString('value="South Korea (KR)"', $html);
         $this->assertStringContainsString('data-search="Germany Deutschland DE DEU"', $html);
         $this->assertStringContainsString('aria-label="Clear Country"', $html);
-        $this->assertStringContainsString('for="country-combobox"', $html);
+        $this->assertStringContainsString('for="country"', $html);
+        $this->assertMatchesRegularExpression('/data-ui-searchable-select-enhanced hidden/', $html);
+        $this->assertDoesNotMatchRegularExpression('/<select[^>]*(?:aria-hidden|tabindex|sr-only)/', $html);
     }
 
     public function test_component_supports_disabled_and_empty_initial_selection(): void

@@ -4,11 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\CentralAdmin;
 
+use App\Http\Requests\CentralAdmin\Concerns\ResolvesCategoryParentScopeRevision;
 use Illuminate\Foundation\Http\FormRequest;
 
 /** CA-018 Create: canonical identity, optional parent and the destination scope revision token. */
 final class CentralCategoryStoreRequest extends FormRequest
 {
+    use ResolvesCategoryParentScopeRevision;
+
+    protected function prepareForValidation(): void
+    {
+        $this->resolveParentScopeRevision('scope_revision');
+    }
+
     public function authorize(): bool
     {
         return true;

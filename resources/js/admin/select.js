@@ -159,4 +159,15 @@ export function bootAdminSelects() {
         if (! dropdown || ! count) return;
         count.textContent = String(dropdown.querySelectorAll('input[type="checkbox"]:checked').length);
     });
+
+    document.querySelectorAll('[data-ui-select]').forEach((select) => {
+        const native = select.querySelector('[data-ui-select-native]');
+        const trigger = select.querySelector('[data-ui-select-trigger]');
+        const menu = select.querySelector('[data-ui-select-menu]');
+        if (!native || !trigger || !menu) return;
+        native.hidden = true;
+        native.setAttribute('aria-hidden', 'true');
+        trigger.hidden = false;
+        native.labels?.forEach((label) => { label.htmlFor = trigger.id; });
+    });
 }

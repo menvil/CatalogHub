@@ -53,7 +53,7 @@ function bindSlugSuggestion(form) {
     if (!name || !slug) return;
     let touched = slug.value.trim() !== '';
     slug.addEventListener('input', () => {
-        touched = slug.value.trim() !== '';
+        touched = true;
     });
     name.addEventListener('input', () => {
         if (!touched) slug.value = slugify(name.value);

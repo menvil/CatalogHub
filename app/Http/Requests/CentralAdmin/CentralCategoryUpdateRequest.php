@@ -6,6 +6,7 @@ namespace App\Http\Requests\CentralAdmin;
 
 use App\Data\CentralCatalog\CentralCategoryExpectedState;
 use App\Data\CentralCatalog\CentralCategorySaveData;
+use App\Http\Requests\CentralAdmin\Concerns\ResolvesCategoryParentScopeRevision;
 use App\Models\CentralCatalog\CentralCategory;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -15,6 +16,13 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 final class CentralCategoryUpdateRequest extends FormRequest
 {
+    use ResolvesCategoryParentScopeRevision;
+
+    protected function prepareForValidation(): void
+    {
+        $this->resolveParentScopeRevision('destination_scope_revision');
+    }
+
     public function authorize(): bool
     {
         return true;

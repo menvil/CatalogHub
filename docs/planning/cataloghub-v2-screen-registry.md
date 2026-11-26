@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Registry version | 1.1.0 |
+| Registry version | 1.2.0 |
 | Status | Proposed; product approval required |
 | Owner | CatalogHub Product Owner |
 | Approver | `TBD — approver must be named` |
@@ -13,7 +13,7 @@
 
 Phase 19.0 discovers/freezes Categories / Schema CA-016…CA-026 after Brands closure PR #611. The [Phase 19 roadmap](roadmap-v2-screen-driven.md#phase-19--categories--schema-current-section) and [ADR-0003](../architecture/adr/0003-categories-schema-ownership.md) govern ownership and permissions. This registers future screen ownership only; no runtime routes or finished-screen baselines are added. CA-027…CA-032 remains the later dedicated Units / Measurements section.
 
-Phase 19.6 splits the CA-018 route `/admin/central/categories/{category?}/edit` into `/admin/central/categories/create` and the numeric `/admin/central/categories/{category}/edit`, as Brands 18.6 did for CA-013. Like the rest of this registry version, the amendment awaits product approval.
+Proposed amendment **1.2.0**, implemented in [PR #626](https://github.com/menvil/CatalogHub/pull/626), splits the CA-018 route `/admin/central/categories/{category?}/edit` into `/admin/central/categories/create` and the numeric `/admin/central/categories/{category}/edit`, as Brands 18.6 did for CA-013. Product Owner route-contract approval remains outstanding; implementation and passing CI do not constitute that approval. This amendment does not approve other proposed or blocked registry entries.
 
 ## Registry rules
 
@@ -299,6 +299,10 @@ into an earlier MR after a product decision explicitly permits partial Phase 16
 acceptance.
 
 ## Changelog
+
+### 1.2.0 — 2026-11-27 — proposed; Product Owner approval pending
+
+CA-018 has separate canonical Create (`/admin/central/categories/create`) and Edit (`/admin/central/categories/{category}/edit`) routes. Numeric Category ID binding reserves `create`; the temporary Filament forms redirect to these destinations. No screen ID, name, surface, context, reference or phase changes. Approval owner: CatalogHub Product Owner; approver and approval date remain unrecorded. This records the proposed contract change without claiming retrospective approval or closing the CA-018 acceptance gate.
 
 ### 1.1.0 — 2026-10-04
 

@@ -16,7 +16,7 @@
         filled($error) ? "{$id}-error" : null,
     ])->filter(fn (mixed $value): bool => is_string($value) && trim($value) !== '')->implode(' ');
 @endphp
-<x-ui.form.field :id="$id" :control-id="$id.'-combobox'" :label="$label" :required="$required" :help="$help" :error="$error">
+<x-ui.form.field :id="$id" :label="$label" :required="$required" :help="$help" :error="$error">
     <div
         class="relative min-w-0"
         data-ui-searchable-select
@@ -27,9 +27,9 @@
         <select
             id="{{ $id }}"
             name="{{ $name }}"
-            class="sr-only"
-            tabindex="-1"
-            aria-hidden="true"
+            class="block min-h-10 w-full rounded-admin-input border border-admin-border bg-admin-surface px-3 py-2 text-sm text-admin-text focus:border-admin-primary focus:outline-none focus:ring-2 focus:ring-admin-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+            @if (filled($error)) aria-invalid="true" @endif
+            @if ($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
             data-ui-searchable-select-native
             @required($required)
             @disabled($disabled)
@@ -40,7 +40,7 @@
             @endforeach
         </select>
 
-        <div class="relative min-w-0">
+        <div class="relative min-w-0" data-ui-searchable-select-enhanced hidden>
             <div class="relative min-w-0">
                 <input
                     id="{{ $id }}-combobox"

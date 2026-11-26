@@ -36,6 +36,34 @@ test('CA-018 slug suggestion produces canonical URL keys client-side only', asyn
     assert.equal(slugify('x'.repeat(300)).length, 255)
 })
 
+test('CA-018 slug suggestions stop after any manual input, including clearing the field', async () => {
+    const { bootCategoryForm } = await import('../../resources/js/admin/category-form.js')
+    const controls = Object.fromEntries(['name', 'slug'].map((key) => {
+        const control = { value: '', listeners: {}, addEventListener(type, callback) { this.listeners[type] = callback } }
+        return [key, control]
+    }))
+    const form = {
+        dataset: { categoryForm: 'create' },
+        querySelector: (selector) => controls[selector === '[data-category-name]' ? 'name' : selector === '[data-category-slug]' ? 'slug' : 'absent'] ?? null,
+    }
+    globalThis.window = {}
+    globalThis.document = { querySelectorAll: () => [form] }
+    bootCategoryForm()
+    controls.name.value = 'Gaming Monitors'
+    controls.name.listeners.input()
+    assert.equal(controls.slug.value, 'gaming-monitors')
+    controls.slug.value = 'custom-key'
+    controls.slug.listeners.input()
+    controls.name.value = 'Updated Monitors'
+    controls.name.listeners.input()
+    assert.equal(controls.slug.value, 'custom-key')
+    controls.slug.value = ''
+    controls.slug.listeners.input()
+    controls.name.value = 'Renamed Monitors'
+    controls.name.listeners.input()
+    assert.equal(controls.slug.value, '')
+})
+
 function fakeSlugImpactForm(currentSlug) {
     const listeners = {}
     const slug = { value: currentSlug, addEventListener: (type, listener) => { listeners[type] = listener } }

@@ -25,7 +25,9 @@ final class SelectTest extends TestCase
         $this->assertStringContainsString('data-ui-select-trigger', $html);
         $this->assertStringContainsString('data-ui-select-menu', $html);
         $this->assertStringContainsString('data-foundation-icon="chevron-down"', $html);
-        $this->assertStringContainsString('for="market-trigger"', $html);
+        $this->assertStringContainsString('for="market"', $html);
+        $this->assertDoesNotMatchRegularExpression('/<select[^>]*(?:aria-hidden|tabindex|sr-only)/', $html);
+        $this->assertMatchesRegularExpression('/<button[^>]*data-ui-select-trigger[^>]*hidden/s', $html);
         $this->assertStringContainsString('id="market-trigger"', $html);
         $this->assertStringContainsString('data-ui-select-value', $html);
         $this->assertMatchesRegularExpression('/<button(?=[^>]*class="[^"]*aria-selected:bg-admin-primary[^"]*aria-selected:text-white[^"]*")(?=[^>]*data-ui-select-option)(?=[^>]*data-value="")[^>]*>Choose<\/button>/', $html);
@@ -51,7 +53,8 @@ final class SelectTest extends TestCase
             '<x-ui.form.select id="market" name="market" label="Market" :options="[]" help="Choose one" error="Invalid" aria-describedby="market-guidance" />'
         );
 
-        $this->assertSame(1, substr_count($html, 'aria-describedby='));
+        // Each alternative control has one description; only one is visible at a time.
+        $this->assertSame(2, substr_count($html, 'aria-describedby='));
         $this->assertStringContainsString('aria-describedby="market-guidance market-help market-error"', $html);
     }
 

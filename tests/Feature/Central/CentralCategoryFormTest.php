@@ -79,6 +79,44 @@ final class CentralCategoryFormTest extends TestCase
         $this->get(route('central.categories.index', ['q' => 'Curved']))->assertOk()->assertSee('Curved Monitors');
     }
 
+    public function test_without_javascript_parent_selection_uses_the_submitted_page_load_revision(): void
+    {
+        $this->actingAs($this->admin);
+        $snapshot = json_encode(['' => app(CategoryHierarchy::class)->revision(null), Fixture::DISPLAYS => 1, Fixture::SMART_HOME => 0], JSON_THROW_ON_ERROR);
+        $this->post(route('central.categories.store'), [
+            'name' => 'Curved Screens', 'slug' => 'curved-screens', 'parent_id' => Fixture::DISPLAYS,
+            'scope_revision' => 0, 'parent_scope_revisions' => $snapshot,
+        ])->assertSessionHasNoErrors();
+        self::assertSame(Fixture::DISPLAYS, CentralCategory::query()->where('slug', 'curved-screens')->sole()->parent_id);
+
+        $monitors = CentralCategory::query()->findOrFail(Fixture::MONITORS);
+        $payload = $this->categoryUpdatePayload($monitors, ['parent_id' => Fixture::SMART_HOME]);
+        $this->patch(route('central.categories.update', $monitors), [
+            ...$payload, 'destination_scope_revision' => 999, 'parent_scope_revisions' => $snapshot,
+        ])->assertSessionHasNoErrors()->assertRedirect(route('central.categories.show', $monitors));
+        self::assertSame(Fixture::SMART_HOME, $monitors->refresh()->parent_id);
+
+        $before = $this->snapshot();
+        $this->post(route('central.categories.store'), [
+            'name' => 'Stale Screens', 'slug' => 'stale-screens', 'parent_id' => Fixture::DISPLAYS,
+            'scope_revision' => 2, 'parent_scope_revisions' => $snapshot,
+        ])->assertSessionHasErrors('hierarchy_revision');
+        self::assertSame($before, $this->snapshot());
+    }
+
+    public function test_invalid_no_javascript_scope_snapshots_are_rejected_without_writes(): void
+    {
+        $this->actingAs($this->admin);
+        $before = $this->snapshot();
+        foreach (['not-json', 'null', '[]', '{"196006": "1"}', '{"196006": -1}', ['196006' => 1]] as $snapshot) {
+            $this->post(route('central.categories.store'), [
+                'name' => 'Invalid Screens', 'slug' => 'invalid-screens', 'parent_id' => Fixture::DISPLAYS,
+                'scope_revision' => 1, 'parent_scope_revisions' => $snapshot,
+            ])->assertSessionHasErrors('parent_id');
+            self::assertSame($before, $this->snapshot());
+        }
+    }
+
     /** @return iterable<string, array{array<string, mixed>, list<string>}> */
     public static function invalidCreates(): iterable
     {

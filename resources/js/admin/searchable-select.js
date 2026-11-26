@@ -280,4 +280,15 @@ export function bootSearchableSelects() {
             choose(root, options[current])
         }
     })
+
+    // Keep the native control usable if the enhancement cannot be loaded.
+    document.querySelectorAll('[data-ui-searchable-select]').forEach((root) => {
+        const { native, input, listbox } = elements(root)
+        const enhanced = root.querySelector('[data-ui-searchable-select-enhanced]')
+        if (!native || !input || !listbox || !enhanced) return
+        native.hidden = true
+        native.setAttribute('aria-hidden', 'true')
+        enhanced.hidden = false
+        native.labels?.forEach((label) => { label.htmlFor = input.id })
+    })
 }

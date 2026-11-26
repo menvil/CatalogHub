@@ -6,6 +6,52 @@ const ids = { electronics: 196001, smartHome: 196004, displays: 196006, televisi
 
 test.afterAll(() => resetBrowserFixture())
 
+test.describe('CA-018 progressive enhancement', () => {
+    test.beforeEach(() => resetBrowserFixture('category-create-edit-v1'))
+
+    test('native parent and sibling controls can create, reparent and reorder without JavaScript', async ({ page, browser }) => {
+        test.slow()
+        await signInAdmin(page)
+        const context = await browser.newContext({ javaScriptEnabled: false, storageState: await page.context().storageState() })
+        const native = await context.newPage()
+        try {
+            await native.goto('/admin/central/categories/create')
+            await expect(native.getByLabel('Parent Category', { exact: true })).toBeVisible()
+            await expect(native.locator('[data-ui-searchable-select-enhanced]')).toBeHidden()
+            await native.getByLabel('Parent Category', { exact: true }).selectOption(String(ids.displays))
+            await native.getByLabel('Category Name').fill('Native Screens')
+            await native.getByLabel('Slug').fill('native-screens')
+            await save(native)
+            await expect(native).toHaveURL(/\/categories\/\d+$/)
+            await expect(native.locator('[data-central-header-breadcrumbs]')).toContainText('Displays')
+
+            await openEdit(native, ids.monitors)
+            await native.getByLabel('Parent Category', { exact: true }).selectOption(String(ids.smartHome))
+            await save(native)
+            await expect(native).toHaveURL(new RegExp(`/categories/${ids.monitors}$`))
+            await expect(native.locator('[data-central-header-breadcrumbs]')).toContainText('Smart Home')
+
+            await openEdit(native, ids.televisions)
+            await native.getByLabel('Position among siblings').selectOption('1')
+            await save(native)
+            await openEdit(native, ids.televisions)
+            await expect(native.getByRole('list', { name: 'Current sibling order' })).toHaveText(/1\s*Projectors\s*2\s*Televisions\s*3\s*Native Screens/)
+        } finally {
+            await context.close()
+        }
+    })
+
+    test('clearing the suggested slug keeps it empty after later name edits', async ({ page }) => {
+        await signInAdmin(page)
+        await page.goto('/admin/central/categories/create')
+        await page.getByLabel('Category Name').fill('Gaming Monitors')
+        await expect(page.getByLabel('Slug')).toHaveValue('gaming-monitors')
+        await page.getByLabel('Slug').fill('')
+        await page.getByLabel('Category Name').fill('Professional Monitors')
+        await expect(page.getByLabel('Slug')).toHaveValue('')
+    })
+})
+
 async function signInAdmin(page) {
     await signIn(page, 'central', foundationDemo.centralAdmin)
     await expect(page.locator('[data-screen-id="CA-001"]')).toBeVisible()

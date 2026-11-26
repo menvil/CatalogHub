@@ -4,8 +4,8 @@ namespace App\Filament\Resources\CentralCategoryResource\Pages;
 
 use App\Enums\Permission;
 use App\Filament\Resources\CentralCategoryResource;
-use App\Services\Categories\CategoryAccess;
 use Filament\Resources\Pages\Page;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * Retired temporary route; CA-018 owns the only Category Edit form.
@@ -22,7 +22,7 @@ final class EditCentralCategory extends Page
 
     public function mount(int|string $record): void
     {
-        abort_unless(app(CategoryAccess::class)->allows(Permission::CatalogCategoriesManage, true), 403);
+        abort_unless(Gate::allows(Permission::CatalogCategoriesManage->value, [true]), 403);
         abort_unless(is_int($record) || ctype_digit($record), 404);
         $this->redirectRoute('central.categories.edit', ['category' => (int) $record]);
     }

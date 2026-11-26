@@ -213,6 +213,10 @@
         <input type="hidden" name="scope_revision" value="{{ $destinationToken('scope_revision') }}" data-category-destination-revision>
     @endif
     <script type="application/json" data-category-scope-revisions>@json((object) $form->scopeRevisions)</script>
+    <noscript>
+        {{-- Submit the page-load snapshot, not current database revisions, without JavaScript. --}}
+        <input type="hidden" name="parent_scope_revisions" value="{{ $parentReplaced ? json_encode((object) $form->scopeRevisions) : $scalar('parent_scope_revisions', json_encode((object) $form->scopeRevisions)) }}">
+    </noscript>
 
     <div class="category-form-actions" data-category-form-actions>
         <x-ui.button variant="secondary" :href="$cancelUrl" data-category-form-cancel>Cancel</x-ui.button>

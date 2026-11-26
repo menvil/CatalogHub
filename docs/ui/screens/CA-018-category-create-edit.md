@@ -221,6 +221,8 @@ Smart Home 196004 (Draft; no dependent data)
 
 The searchable parent selector and sibling select keep viewport-aware listboxes. The shared navigation drawer is unchanged.
 
+The ordinary labeled Parent and Position selects remain available until their JavaScript enhancements initialize. Without JavaScript, Create and reparent submissions include the page-load parent-scope revision snapshot; the server selects the destination token from that snapshot and the existing actions still reject stale state under lock. No fresh revision is substituted during Save. Slug suggestions stop after any manual slug input, including clearing it. The slug-impact review continues through the existing server-rendered validation flow when JavaScript is unavailable.
+
 ## Visual evidence and review gate
 
 `tests/Visual/playwright/category-create-edit.visual.spec.mjs` captures implementation candidates with the pinned Linux renderer into `storage/logs/visual-artifacts/ca-018-candidates`:

@@ -86,7 +86,8 @@ final class FoundationDemoUsersSeederTest extends TestCase
         $this->app['env'] = 'production';
 
         try {
-            $this->seed(FoundationDemoUsersSeeder::class);
+            // Exercise the seeder guard itself; Artisan can decline production seeding first.
+            $this->app->make(FoundationDemoUsersSeeder::class)->run();
             self::fail('Expected the production guard to reject seeding.');
         } catch (LogicException) {
             self::assertSame($usersBefore, User::query()->count());

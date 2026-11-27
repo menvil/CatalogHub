@@ -1,0 +1,37 @@
+.category-detail-page { display: grid; gap: 1.25rem; min-width: 0; }
+.category-detail-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.category-detail-title { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+.category-detail-title h1 { overflow-wrap: anywhere; }
+.category-detail-heading p, .category-detail-note { color: var(--color-admin-muted); font-size: .8125rem; line-height: 1.65; margin-top: .75rem; }
+.category-detail-states, .category-detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
+.category-detail-states { margin-top: .75rem; font-size: .8125rem; }
+.category-detail-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; align-items: start; }
+.category-detail-grid > section { min-width: 0; }
+.category-detail-facts, .category-detail-counts { display: grid; gap: .875rem; font-size: .8125rem; line-height: 1.5; }
+.category-detail-facts > div { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.3fr); gap: .75rem; }
+.category-detail-facts dt, .category-detail-counts dt { color: var(--color-admin-muted); }
+.category-detail-facts dd { min-width: 0; overflow-wrap: anywhere; }
+.category-detail-facts dd:has(.category-detail-copy) { display: flex; align-items: flex-start; flex-wrap: wrap; gap: .5rem; }
+.category-detail-facts code { min-width: 0; overflow-wrap: anywhere; }
+.category-detail-copy { color: var(--color-admin-primary); font-size: .75rem; padding: .125rem .375rem; border: 1px solid var(--color-admin-border); border-radius: .25rem; }
+.category-detail-copy:focus-visible { outline: 2px solid var(--color-admin-primary); outline-offset: 3px; }
+.category-detail-counts > div { display: flex; justify-content: space-between; align-items: baseline; gap: .75rem; padding-bottom: .75rem; border-bottom: 1px solid var(--color-admin-border); }
+.category-detail-counts dd { font-size: 1rem; font-weight: 600; }
+.category-detail-description, .category-detail-validation, .category-detail-revisions { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--color-admin-border); }
+.category-detail-description h3, .category-detail-validation h3, .category-detail-activity h3 { font-size: .8125rem; font-weight: 600; }
+.category-detail-locale-form { display: flex; align-items: flex-end; gap: .5rem; margin-top: .75rem; }
+.category-detail-locale-form > :first-child { min-width: 0; flex: 1; }
+.category-detail-description-text { margin-top: .75rem; font-size: .8125rem; line-height: 1.7; overflow-wrap: anywhere; white-space: pre-line; }
+.category-detail-link, .category-detail-facts a { color: var(--color-admin-primary); font-size: .8125rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.category-detail-validation ul { padding-left: 1rem; margin-top: .5rem; list-style: disc; font-size: .8125rem; line-height: 1.6; overflow-wrap: anywhere; }
+.category-detail-sites { display: flex; flex-wrap: wrap; gap: .5rem; }
+.category-detail-sites li { display: grid; gap: .125rem; min-width: 0; max-width: 100%; padding: .5rem .75rem; border: 1px solid var(--color-admin-border); border-radius: .5rem; font-size: .75rem; overflow-wrap: anywhere; }
+.category-detail-sites span { color: var(--color-admin-muted); }
+.category-detail-coverage { font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; }
+.category-detail-activity { display: grid; gap: 1rem; }
+.category-detail-activity li { padding-left: .875rem; border-left: 2px solid var(--color-admin-border); overflow-wrap: anywhere; }
+.category-detail-activity p, .category-detail-activity span, .category-detail-activity time { display: block; font-size: .75rem; line-height: 1.6; color: var(--color-admin-muted); }
+@media (max-width: 1279px) { .category-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .category-detail-heading { flex-wrap: wrap; } }
+@media (max-width: 1023px) { .category-detail-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 767px) { .category-detail-actions { width: 100%; } .category-detail-actions > * { flex: 1; } }
+@media (max-width: 420px) { .category-detail-locale-form { flex-wrap: wrap; } .category-detail-locale-form > :first-child { flex-basis: 100%; } }

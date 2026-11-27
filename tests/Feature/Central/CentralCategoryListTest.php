@@ -44,8 +44,8 @@ final class CentralCategoryListTest extends TestCase
         $this->get(CentralCategoryResource::getUrl('schema', ['record' => 194001]))->assertOk();
         $locale = Locale::query()->first();
         $this->get(route('central.categories.translations.edit', [194001, $locale]))->assertOk();
-        $this->get('/admin/central/categories/194001')->assertNotFound();
-        $this->delete('/admin/central/categories/194001')->assertNotFound();
+        $this->get('/admin/central/categories/194001')->assertOk()->assertSee('data-screen-id="CA-017"', false);
+        $this->delete('/admin/central/categories/194001')->assertStatus(405);
     }
 
     public function test_central_admin_and_category_editor_are_allowed_but_all_other_roles_are_denied(): void

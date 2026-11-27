@@ -54,6 +54,10 @@
     :data-original-position="$snapshotPosition === false ? null : $snapshotPosition"
     :data-original-parent="$editing ? (string) $form->parentId : null"
 >
+    @if ($editing && $submitted && $snapshotPosition !== false && $snapshotPosition >= count($siblingIds))
+        <p class="category-form-alert" role="alert">The sibling order changed. <a href="{{ route('central.categories.edit', $category) }}">Reload the current Category</a> before saving.</p>
+    @endif
+
     @if ($generalErrors->isNotEmpty())
         <div class="category-form-alert" role="alert" data-category-form-errors>
             <h2>The Category was not saved</h2>

@@ -317,6 +317,7 @@ final class CentralCategoryFormTest extends TestCase
         $audit = Mockery::mock(AuditRecorder::class);
         $audit->shouldReceive('record')->andReturnUsing(function (mixed ...$arguments) use ($real): mixed {
             if ($arguments[0] === AuditAction::CatalogCategoryUpdated) {
+                self::assertSame(Fixture::ELECTRONICS, CentralCategory::query()->findOrFail(Fixture::MONITORS)->parent_id);
                 throw new RuntimeException('audit unavailable');
             }
 

@@ -29,6 +29,8 @@ function bindParent(form) {
     const destination = form.querySelector('[data-category-destination-revision]');
     if (!parent || !destination) return;
     const revisions = scopeRevisions(form);
+    const initialParent = parent.value;
+    const initialRevision = destination.value;
     const position = form.querySelector('select[name="display_position"]');
     const note = form.querySelector('[data-category-order-parent-note]');
     const original = form.dataset.originalParent ?? null;
@@ -36,7 +38,7 @@ function bindParent(form) {
 
     parent.addEventListener('change', () => {
         // Token = the selected parent's scope revision as loaded with this page.
-        destination.value = String(revisions[parent.value] ?? 0);
+        destination.value = parent.value === initialParent ? initialRevision : String(revisions[parent.value] ?? 0);
         if (!position || original === null) return;
         const moved = parent.value !== original;
         if (note) note.hidden = !moved;

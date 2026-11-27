@@ -55,7 +55,7 @@ final class SelectTest extends TestCase
 
         // Each alternative control has one description; only one is visible at a time.
         $this->assertSame(2, substr_count($html, 'aria-describedby='));
-        $this->assertStringContainsString('aria-describedby="market-guidance market-help market-error"', $html);
+        $this->assertSame(2, substr_count($html, 'aria-describedby="market-guidance market-help market-error"'));
     }
 
     public function test_multi_select_merges_caller_and_field_descriptions_without_duplicate_attributes(): void

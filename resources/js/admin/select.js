@@ -178,6 +178,7 @@ export function bootAdminSelects() {
             const firstInvalid = Array.from(native.form?.elements ?? []).find((control) => control.willValidate && !control.validity.valid);
             feedback.textContent = native.validationMessage;
             feedback.hidden = false;
+            feedback.classList.remove("hidden");
             trigger.setAttribute('aria-describedby', [describedBy, feedback.id].filter(Boolean).join(' '));
             trigger.setAttribute('aria-invalid', 'true');
             if (firstInvalid === native) openSelect(select);

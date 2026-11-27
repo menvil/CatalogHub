@@ -166,14 +166,29 @@ export function bootAdminSelects() {
         const menu = select.querySelector('[data-ui-select-menu]');
         if (!native || !trigger || !menu) return;
         syncNativeSelect(native);
+        const describedBy = trigger.getAttribute('aria-describedby');
+        const feedback = document.createElement('p');
+        feedback.id = `${native.id}-native-validation`;
+        feedback.className = 'mt-1 text-xs font-medium text-admin-danger';
+        feedback.setAttribute('role', 'alert');
+        feedback.hidden = true;
+        select.after(feedback);
         native.addEventListener('invalid', (event) => {
             event.preventDefault();
             const firstInvalid = Array.from(native.form?.elements ?? []).find((control) => control.willValidate && !control.validity.valid);
+            feedback.textContent = native.validationMessage;
+            feedback.hidden = false;
+            trigger.setAttribute('aria-describedby', [describedBy, feedback.id].filter(Boolean).join(' '));
             trigger.setAttribute('aria-invalid', 'true');
             if (firstInvalid === native) openSelect(select);
         });
         native.addEventListener('change', () => {
-            if (native.validity.valid) trigger.removeAttribute('aria-invalid');
+            if (!native.validity.valid || feedback.hidden) return;
+            feedback.hidden = true;
+            feedback.textContent = '';
+            if (describedBy) trigger.setAttribute('aria-describedby', describedBy);
+            else trigger.removeAttribute('aria-describedby');
+            trigger.removeAttribute('aria-invalid');
         });
         native.hidden = true;
         native.setAttribute('aria-hidden', 'true');

@@ -29,6 +29,7 @@
     $submittedSiblings = is_array($oldSiblings) && $oldSiblings !== [] && array_filter($oldSiblings, static fn (mixed $id): bool => ! is_scalar($id) || ! ctype_digit((string) $id)) === []
         ? array_map('intval', array_values($oldSiblings)) : $siblingIds;
     $position = $form->position();
+    $snapshotPosition = $editing ? array_search((int) $category->id, $submittedSiblings, true) : false;
     $requestedPosition = $scalar('display_position', $position);
     $displayPosition = is_numeric($requestedPosition) && (int) $requestedPosition >= 0 && (int) $requestedPosition < count($siblingIds) ? (int) $requestedPosition : $position;
     $positionOptions = [];
@@ -50,7 +51,7 @@
     data-screen-region="category-editor"
     :data-slug-impact-url="$editing ? route('central.categories.slug-impact', $category) : null"
     :data-current-slug="$editing ? $category->slug : null"
-    :data-original-position="$editing ? $position : null"
+    :data-original-position="$snapshotPosition === false ? null : $snapshotPosition"
     :data-original-parent="$editing ? (string) $form->parentId : null"
 >
     @if ($generalErrors->isNotEmpty())

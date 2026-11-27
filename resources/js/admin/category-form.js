@@ -40,7 +40,8 @@ function bindParent(form) {
         if (!position || original === null) return;
         const moved = parent.value !== original;
         if (note) note.hidden = !moved;
-        if (moved && originalPosition !== null && position.value !== originalPosition) {
+        if (moved && originalPosition !== null && position.value !== originalPosition
+            && Array.from(position.options).some((option) => option.value === originalPosition)) {
             position.value = originalPosition;
             position.dispatchEvent(new Event('change', { bubbles: true }));
         }

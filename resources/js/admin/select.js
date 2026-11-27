@@ -172,7 +172,7 @@ export function bootAdminSelects() {
         feedback.className = 'mt-1 text-xs font-medium text-admin-danger';
         feedback.setAttribute('role', 'alert');
         feedback.hidden = true;
-        select.after(feedback);
+        select.append(feedback);
         native.addEventListener('invalid', (event) => {
             event.preventDefault();
             const firstInvalid = Array.from(native.form?.elements ?? []).find((control) => control.willValidate && !control.validity.valid);

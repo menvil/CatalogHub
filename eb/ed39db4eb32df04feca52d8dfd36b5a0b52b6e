@@ -1,0 +1,9 @@
+resources/js/admin/select.js
+  ai_agent 175
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "ebed39db4eb32df04feca52d8dfd36b5a0b52b6e",
+  "prompts": {}
+}

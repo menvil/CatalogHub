@@ -114,6 +114,7 @@ final class CategorySlugImpactQueryTest extends TestCase
             }
         }
         $before = $this->snapshot();
+        DB::flushQueryLog();
         DB::enableQueryLog();
         $impact = $this->assess();
         $queries = count(DB::getQueryLog());
@@ -122,6 +123,23 @@ final class CategorySlugImpactQueryTest extends TestCase
         self::assertSame([16, CategorySlugImpactQuery::ROUTE_LIMIT, 4], [$impact->projectionCount, count($impact->routes), $impact->hiddenRouteCount]);
         // Seven reads plus at most eight override lookups for each displayed route whose Site or market has a slug override.
         self::assertLessThanOrEqual(7 + 8 * 2, $queries);
+
+        $hiddenSite = Site::factory()->withRuntimeContext(['en-US', 'de-DE'])->create([
+            'name' => 'ZZZ Hidden Store', 'code' => 'ca018-hidden', 'domain' => 'hidden-store.test', 'status' => 'active',
+        ]);
+        foreach (['en-US', 'de-DE'] as $locale) {
+            app(SiteSyncService::class)->syncCategory($hiddenSite, $this->monitors->refresh(), $locale);
+        }
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $largerImpact = $this->assess();
+        $largerQueryCount = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        self::assertSame($impact->hiddenRouteCount + 2, $largerImpact->hiddenRouteCount);
+        self::assertEquals($impact->routes, $largerImpact->routes);
+        self::assertSame($queries, $largerQueryCount);
     }
 
     private function assess(string $proposed = 'displays-monitors'): CategorySlugImpactData

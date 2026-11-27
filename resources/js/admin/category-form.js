@@ -98,6 +98,9 @@ function bindSlugImpact(form) {
     };
 
     slug.addEventListener('input', () => {
+        sequence++;
+        container.innerHTML = '';
+        container.removeAttribute('aria-busy');
         window.clearTimeout(timer);
         timer = window.setTimeout(render, PREVIEW_DELAY);
     });

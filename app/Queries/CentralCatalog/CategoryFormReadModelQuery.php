@@ -24,12 +24,14 @@ final readonly class CategoryFormReadModelQuery
 {
     public function forCreate(): CategoryFormReadModelData
     {
+        // Read revision tokens first so a concurrent mutation cannot pair an old tree with newer tokens.
+        $storedRevisions = CategoryHierarchyScope::query()->pluck('revision', 'scope_key');
         $tree = $this->tree();
 
         return new CategoryFormReadModelData(
             category: null,
             parentOptions: $this->parentOptions($tree, []),
-            scopeRevisions: $this->scopeRevisions($tree),
+            scopeRevisions: $this->scopeRevisions($tree, $storedRevisions),
             parentId: null,
             ancestors: [],
             hierarchyAvailable: true,
@@ -42,6 +44,8 @@ final readonly class CategoryFormReadModelQuery
 
     public function forEdit(CentralCategory $category): CategoryFormReadModelData
     {
+        // Read revision tokens first so a concurrent mutation cannot pair an old tree with newer tokens.
+        $storedRevisions = CategoryHierarchyScope::query()->pluck('revision', 'scope_key');
         $tree = $this->tree();
         [$ancestors, $hierarchyAvailable] = $this->ancestors($tree, $category);
         $siblings = $tree->where('parent_id', $category->parent_id)->sortBy([['position', 'asc'], ['id', 'asc']])->values();
@@ -59,7 +63,7 @@ final readonly class CategoryFormReadModelQuery
         return new CategoryFormReadModelData(
             category: $category,
             parentOptions: $parentOptions,
-            scopeRevisions: $this->scopeRevisions($tree),
+            scopeRevisions: $this->scopeRevisions($tree, $storedRevisions),
             parentId: $category->parent_id,
             ancestors: $ancestors,
             hierarchyAvailable: $hierarchyAvailable,
@@ -83,11 +87,11 @@ final readonly class CategoryFormReadModelQuery
 
     /**
      * @param  Collection<int, CentralCategory>  $tree
+     * @param  Collection<string, int>  $stored
      * @return array<string, int>
      */
-    private function scopeRevisions(Collection $tree): array
+    private function scopeRevisions(Collection $tree, Collection $stored): array
     {
-        $stored = CategoryHierarchyScope::query()->pluck('revision', 'scope_key');
         $revisions = ['' => (int) ($stored['root'] ?? 0)];
         foreach ($tree->keys() as $id) {
             $revisions[(string) $id] = (int) ($stored[CategoryHierarchyScope::keyFor((int) $id)] ?? 0);
@@ -108,10 +112,11 @@ final readonly class CategoryFormReadModelQuery
         $children = $tree->groupBy(fn (CentralCategory $category): string => (string) $category->parent_id);
         $options = [];
         $visited = [];
-        $walk = function (?int $parentId, array $path) use (&$walk, &$options, &$visited, $children, $excluded): void {
+        $excludedSet = array_fill_keys($excluded, true);
+        $walk = function (?int $parentId, array $path) use (&$walk, &$options, &$visited, $children, $excludedSet): void {
             foreach ($children->get((string) $parentId, collect())->sortBy([['position', 'asc'], ['id', 'asc']]) as $category) {
                 $id = (int) $category->id;
-                if (isset($visited[$id]) || in_array($id, $excluded, true)) {
+                if (isset($visited[$id]) || isset($excludedSet[$id])) {
                     continue;
                 }
                 $visited[$id] = true;
@@ -129,7 +134,7 @@ final readonly class CategoryFormReadModelQuery
         // Categories unreachable from a root (missing parent or cycle) stay selectable by ID; actions reject unsafe ancestry.
         foreach ($tree as $category) {
             $id = (int) $category->id;
-            if (! isset($visited[$id]) && ! in_array($id, $excluded, true)) {
+            if (! isset($visited[$id]) && ! isset($excludedSet[$id])) {
                 $options[] = ['value' => (string) $id, 'label' => $category->name.' (hierarchy unavailable)', 'search' => $category->name.' '.$category->slug.' #'.$id];
             }
         }

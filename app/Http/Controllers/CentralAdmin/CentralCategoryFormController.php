@@ -16,9 +16,9 @@ use App\Models\CentralCatalog\CentralCategory;
 use App\Models\User;
 use App\Queries\CentralCatalog\CategoryFormReadModelQuery;
 use App\Queries\CentralCatalog\CategorySlugImpactQuery;
-use App\Services\Categories\CategoryAccess;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 /** CA-018: the one canonical Category Create/Edit experience. */
@@ -39,7 +39,7 @@ final class CentralCategoryFormController extends Controller
             ->with('success', 'Category #'.$category->id.' created as Draft.');
     }
 
-    public function edit(CentralCategoryEditRequest $request, CentralCategory $category, CategoryFormReadModelQuery $query, CategorySlugImpactQuery $impacts, CategoryAccess $access): View
+    public function edit(CentralCategoryEditRequest $request, CentralCategory $category, CategoryFormReadModelQuery $query, CategorySlugImpactQuery $impacts): View
     {
         $form = $query->forEdit($category);
         $proposed = $request->slugPreview();
@@ -47,8 +47,8 @@ final class CentralCategoryFormController extends Controller
         return view('central-admin.categories.edit', [
             'form' => $form,
             'slugImpact' => $proposed !== null && $proposed !== $category->slug ? $impacts->assess($category, $category->slug, $proposed) : null,
-            'schemaUrl' => $access->allows(Permission::CatalogSchemaManage) ? CentralCategoryResource::getUrl('schema', ['record' => $category]) : null,
-            'translationUrl' => $form->translationLocaleId !== null && $access->allows(Permission::TranslationsManage)
+            'schemaUrl' => Gate::allows(Permission::CatalogSchemaManage->value) ? CentralCategoryResource::getUrl('schema', ['record' => $category]) : null,
+            'translationUrl' => $form->translationLocaleId !== null && Gate::allows(Permission::TranslationsManage->value)
                 ? route('central.categories.translations.edit', [$category, $form->translationLocaleId]) : null,
         ]);
     }

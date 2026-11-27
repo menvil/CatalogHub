@@ -423,6 +423,21 @@ final class CentralCategoryFormTest extends TestCase
         $payload = $this->categoryUpdatePayload($monitors, ['name' => 'Forged']);
         $before = $this->snapshot();
         $this->actingAs($user);
+        if ($allowed) {
+            $this->get(route('central.categories.create'))->assertOk();
+            $this->get(route('central.categories.edit', $monitors))->assertOk();
+            $this->get(route('central.categories.slug-impact', [$monitors, 'slug' => 'x']))->assertOk();
+            $this->post(route('central.categories.store'), [
+                'name' => 'Allowed Category',
+                'slug' => 'allowed-category',
+                'scope_revision' => app(CategoryHierarchy::class)->revision(null),
+            ])->assertSessionHasNoErrors()->assertRedirect(route('central.categories.show', CentralCategory::query()->where('slug', 'allowed-category')->sole()));
+            $this->patch(route('central.categories.update', $monitors), $payload)
+                ->assertSessionHasNoErrors()->assertRedirect(route('central.categories.show', $monitors));
+            self::assertSame('Forged', $monitors->refresh()->name);
+
+            return;
+        }
         $requests = [
             fn () => $this->get(route('central.categories.create')),
             fn () => $this->get(route('central.categories.edit', $monitors)),
@@ -432,19 +447,13 @@ final class CentralCategoryFormTest extends TestCase
         ];
         foreach ($requests as $request) {
             $response = $request();
-            if ($allowed) {
-                self::assertContains($response->getStatusCode(), [200, 302]);
-            } else {
-                self::assertContains($response->getStatusCode(), [302, 403]);
-                if ($response->getStatusCode() === 302) {
-                    self::assertStringContainsString('/login', (string) $response->headers->get('Location'));
-                }
+            self::assertContains($response->getStatusCode(), [302, 403]);
+            if ($response->getStatusCode() === 302) {
+                self::assertStringContainsString('/login', (string) $response->headers->get('Location'));
             }
         }
-        if (! $allowed) {
-            self::assertSame($before, $this->snapshot());
-            self::assertFalse(User::query()->whereKey($user->id)->sole()->can('catalog.categories.manage', [true]));
-        }
+        self::assertSame($before, $this->snapshot());
+        self::assertFalse(User::query()->whereKey($user->id)->sole()->can('catalog.categories.manage', [true]));
     }
 
     public function test_guests_are_redirected_to_login_without_writes(): void

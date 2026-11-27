@@ -50,6 +50,7 @@
     data-screen-region="category-editor"
     :data-slug-impact-url="$editing ? route('central.categories.slug-impact', $category) : null"
     :data-current-slug="$editing ? $category->slug : null"
+    :data-original-position="$editing ? $position : null"
     :data-original-parent="$editing ? (string) $form->parentId : null"
 >
     @if ($generalErrors->isNotEmpty())

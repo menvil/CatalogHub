@@ -165,6 +165,16 @@ export function bootAdminSelects() {
         const trigger = select.querySelector('[data-ui-select-trigger]');
         const menu = select.querySelector('[data-ui-select-menu]');
         if (!native || !trigger || !menu) return;
+        syncNativeSelect(native);
+        native.addEventListener('invalid', (event) => {
+            event.preventDefault();
+            const firstInvalid = Array.from(native.form?.elements ?? []).find((control) => control.willValidate && !control.validity.valid);
+            trigger.setAttribute('aria-invalid', 'true');
+            if (firstInvalid === native) openSelect(select);
+        });
+        native.addEventListener('change', () => {
+            if (native.validity.valid) trigger.removeAttribute('aria-invalid');
+        });
         native.hidden = true;
         native.setAttribute('aria-hidden', 'true');
         trigger.hidden = false;

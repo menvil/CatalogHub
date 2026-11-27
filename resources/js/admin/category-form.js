@@ -32,7 +32,7 @@ function bindParent(form) {
     const position = form.querySelector('select[name="display_position"]');
     const note = form.querySelector('[data-category-order-parent-note]');
     const original = form.dataset.originalParent ?? null;
-    const originalPosition = position?.value ?? null;
+    const originalPosition = form.dataset.originalPosition ?? null;
 
     parent.addEventListener('change', () => {
         // Token = the selected parent's scope revision as loaded with this page.
@@ -40,7 +40,7 @@ function bindParent(form) {
         if (!position || original === null) return;
         const moved = parent.value !== original;
         if (note) note.hidden = !moved;
-        if (moved && position.value !== originalPosition) {
+        if (moved && originalPosition !== null && position.value !== originalPosition) {
             position.value = originalPosition;
             position.dispatchEvent(new Event('change', { bubbles: true }));
         }

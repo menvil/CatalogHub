@@ -1,0 +1,23 @@
+resources/js/admin/category-form.js
+  s_09819976511085::t_6b61d5b5715aa3 35,43
+resources/views/central-admin/categories/_form.blade.php
+  s_09819976511085::t_6b61d5b5715aa3 53
+resources/js/admin/select.js
+  s_09819976511085::t_6b61d5b5715aa3 168-177
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "a618f326f71794dbafe9ef8b12e40acff59dabce",
+  "prompts": {},
+  "sessions": {
+    "s_09819976511085": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11622-dcf4-7031-a439-cb234249c9d1",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

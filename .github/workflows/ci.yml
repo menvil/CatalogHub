@@ -122,6 +122,25 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Setup PHP for theme assets
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
+        with:
+          php-version: '8.5'
+          extensions: gd, intl, mbstring
+          coverage: none
+
+      - name: Cache Composer packages
+        if: env.DEPENDENCY_CACHE_ENABLED == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.cache/composer/files
+          key: composer-${{ runner.os }}-php-8.5-${{ hashFiles('composer.lock') }}
+
+      # The themes import published Filament CSS. Publish the locked version
+      # before Vite runs so its output matches the PHP runtime in later jobs.
+      - name: Install PHP dependencies for theme assets
+        run: composer install --no-interaction --prefer-dist --no-progress
+
       - name: Setup Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
@@ -185,7 +204,7 @@ jobs:
         run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Download built assets
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: public-build
           path: public/build
@@ -297,7 +316,7 @@ jobs:
           npm ci
 
       - name: Download built assets
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: public-build
           path: public/build
@@ -360,7 +379,7 @@ jobs:
           npm ci
 
       - name: Download built assets
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: public-build
           path: public/build
@@ -442,7 +461,7 @@ jobs:
         run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Download built assets
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: public-build
           path: public/build
@@ -550,7 +569,7 @@ jobs:
         run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Download built assets
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: public-build
           path: public/build

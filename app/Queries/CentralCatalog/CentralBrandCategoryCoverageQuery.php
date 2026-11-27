@@ -46,7 +46,7 @@ final class CentralBrandCategoryCoverageQuery implements RawSqlPersistenceBounda
 
     /**
      * @param  Collection<int, CentralBrand>  $brands
-     * @return Collection<int<0, max>, int>
+     * @return Collection<int, int>
      */
     public function countsForBrands(Collection $brands): Collection
     {

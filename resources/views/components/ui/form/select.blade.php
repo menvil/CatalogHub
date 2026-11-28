@@ -22,10 +22,12 @@
         }
     }
 @endphp
-<x-ui.form.field :id="$id" :control-id="$id.'-trigger'" :label="$label" :required="$required" :help="$help" :error="$error">
+<x-ui.form.field :id="$id" :label="$label" :required="$required" :help="$help" :error="$error">
     <div class="relative" data-ui-select>
         <select id="{{ $id }}" name="{{ $name }}" @required($required) @disabled($disabled)
-            {{ $controlAttributes->class('sr-only') }} data-ui-select-native tabindex="-1" aria-hidden="true">
+            {{ $controlAttributes->class('block min-h-10 w-full rounded-admin-input border border-admin-border bg-admin-surface px-3 py-2 text-sm text-admin-text focus:border-admin-primary focus:outline-none focus:ring-2 focus:ring-admin-primary/20 disabled:cursor-not-allowed disabled:opacity-60') }} data-ui-select-native
+            @if (filled($error)) aria-invalid="true" @endif
+            @if ($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif>
             @if ($placeholder !== null)<option value="">{{ $placeholder }}</option>@endif
             @foreach ($options as $value => $option)
                 @if (is_array($option))
@@ -47,6 +49,7 @@
             @if (filled($error)) aria-invalid="true" @endif
             @if ($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
             data-ui-select-trigger
+            hidden
             @disabled($disabled)
         >
             <span class="truncate" data-ui-select-value>{{ $selectedLabel ?? 'Select an option' }}</span>

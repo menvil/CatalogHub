@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Registry version | 1.1.0 |
+| Registry version | 1.2.0 |
 | Status | Proposed; product approval required |
 | Owner | CatalogHub Product Owner |
 | Approver | `TBD — approver must be named` |
@@ -12,6 +12,8 @@
 ## Current section amendment
 
 Phase 19.0 discovers/freezes Categories / Schema CA-016…CA-026 after Brands closure PR #611. The [Phase 19 roadmap](roadmap-v2-screen-driven.md#phase-19--categories--schema-current-section) and [ADR-0003](../architecture/adr/0003-categories-schema-ownership.md) govern ownership and permissions. This registers future screen ownership only; no runtime routes or finished-screen baselines are added. CA-027…CA-032 remains the later dedicated Units / Measurements section.
+
+Proposed amendment **1.2.0**, implemented in [PR #626](https://github.com/menvil/CatalogHub/pull/626), splits the CA-018 route `/admin/central/categories/{category?}/edit` into `/admin/central/categories/create` and the numeric `/admin/central/categories/{category}/edit`, as Brands 18.6 did for CA-013. Product Owner route-contract approval remains outstanding; implementation and passing CI do not constitute that approval. This amendment does not approve other proposed or blocked registry entries.
 
 ## Registry rules
 
@@ -71,7 +73,7 @@ updates this registry and the visual manifest.
 | CA-015 | Brand Translations | Central Admin | page | `/admin/central/brands/{brand}/translations` | Central | no | `pictures/1. Central Admin/1.3. Brands/CA-015 — Brand Translations.png` | Phase 02 |
 | CA-016 | Categories List | Central Admin | page | `/admin/central/categories` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-016 — Categories List.png` | Phase 19.4 |
 | CA-017 | Category Detail | Central Admin | page | `/admin/central/categories/{category}` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-017 — Category Detail.png` | Phase 19.5 |
-| CA-018 | Category Create / Edit | Central Admin | page | `/admin/central/categories/{category?}/edit` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-018 — Category Create:Edit.png` | Phase 19.6 |
+| CA-018 | Category Create / Edit | Central Admin | page | `/admin/central/categories/create`; `/admin/central/categories/{category}/edit` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-018 — Category Create:Edit.png` | Phase 19.6 |
 | CA-019 | Category Schema Builder | Central Admin | page | `/admin/central/categories/{category}/schema` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-019 — Category Schema Builder.png` | Phase 19.7 / 19.11 |
 | CA-020 | Attribute Sections Editor | Central Admin | page | `/admin/central/categories/{category}/schema/sections` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-020 — Attribute Sections Editor.png` | Phase 19.8 |
 | CA-021 | Attribute Definitions Editor | Central Admin | page | `/admin/central/categories/{category}/schema/attributes` | Central | no | `pictures/1. Central Admin/1.4. Categories : Schema/CA-021 — Attribute Definitions Editor.png` | Phase 19.9 |
@@ -297,6 +299,10 @@ into an earlier MR after a product decision explicitly permits partial Phase 16
 acceptance.
 
 ## Changelog
+
+### 1.2.0 — 2026-11-27 — proposed; Product Owner approval pending
+
+CA-018 has separate canonical Create (`/admin/central/categories/create`) and Edit (`/admin/central/categories/{category}/edit`) routes. Numeric Category ID binding reserves `create`; the temporary Filament forms redirect to these destinations. No screen ID, name, surface, context, reference or phase changes. Approval owner: CatalogHub Product Owner; approver and approval date remain unrecorded. This records the proposed contract change without claiming retrospective approval or closing the CA-018 acceptance gate.
 
 ### 1.1.0 — 2026-10-04
 

@@ -10,7 +10,7 @@ final class ListCentralCategories extends Page
 {
     protected static string $resource = CentralCategoryResource::class;
 
-    protected string $view = 'filament.pages.category-list-redirect';
+    protected string $view = 'filament.pages.category-route-redirect';
 
     public function mount(): void
     {

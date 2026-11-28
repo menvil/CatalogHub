@@ -39,8 +39,11 @@ final class CentralCategoryListTest extends TestCase
         $items = app(CentralNavigationRegistry::class)->visibleItemsFor($actor);
         self::assertCount(1, array_filter($items, fn ($item) => $item['label'] === 'Categories'));
         self::assertFalse(CentralCategoryResource::shouldRegisterNavigation());
-        $this->get(CentralCategoryResource::getUrl('create'))->assertOk();
-        $this->get(CentralCategoryResource::getUrl('edit', ['record' => 194001]))->assertOk();
+        // CA-018 owns Create/Edit; the retired Filament URLs only redirect there.
+        $this->get(CentralCategoryResource::getUrl('create'))->assertOk()->assertSee('data-screen-id="CA-018"', false);
+        $this->get(CentralCategoryResource::getUrl('edit', ['record' => 194001]))->assertOk()->assertSee('data-screen-id="CA-018"', false);
+        $this->get('/admin/central/central-categories/create')->assertRedirect(route('central.categories.create'));
+        $this->get('/admin/central/central-categories/194001/edit')->assertRedirect(route('central.categories.edit', 194001));
         $this->get(CentralCategoryResource::getUrl('schema', ['record' => 194001]))->assertOk();
         $locale = Locale::query()->first();
         $this->get(route('central.categories.translations.edit', [194001, $locale]))->assertOk();

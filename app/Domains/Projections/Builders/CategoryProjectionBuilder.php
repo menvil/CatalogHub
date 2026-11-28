@@ -38,13 +38,7 @@ final class CategoryProjectionBuilder
             $locale,
             $this->translatedString($category, 'name', $locale, $sourceTitle),
         );
-        $slug = $this->overrideString(
-            $site,
-            $category,
-            ['slug', 'local_slug'],
-            $locale,
-            (string) $category->getAttribute('slug'),
-        );
+        $slug = $this->effectiveSlug($site, $category, $locale, (string) $category->getAttribute('slug'));
         $visibility = $this->siteOverrideResolver->resolve(
             $site,
             'category',
@@ -165,15 +159,21 @@ final class CategoryProjectionBuilder
                     (string) $category->getAttribute('name'),
                 ),
             ),
-            'slug' => $this->overrideString(
-                $site,
-                $category,
-                ['slug', 'local_slug'],
-                $locale,
-                (string) $category->getAttribute('slug'),
-            ),
+            'slug' => $this->effectiveSlug($site, $category, $locale, (string) $category->getAttribute('slug')),
             'status' => $category->status->value,
         ];
+    }
+
+    /**
+     * Public route slug a projection build uses for this Site and Locale.
+     *
+     * Site, then market, `slug` and `local_slug` overrides take precedence over the
+     * supplied canonical slug. Shared with the CA-018 routing-impact preview so the
+     * preview and the actual projection build cannot disagree. Read-only.
+     */
+    public function effectiveSlug(Site $site, CentralCategory $category, string $locale, string $canonicalSlug): string
+    {
+        return (string) $this->overrideString($site, $category, ['slug', 'local_slug'], $locale, $canonicalSlug);
     }
 
     /**

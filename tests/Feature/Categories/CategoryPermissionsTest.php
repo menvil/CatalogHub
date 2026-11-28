@@ -6,7 +6,6 @@ use App\Actions\CategorySchema\CreateAttributeSectionAction;
 use App\Actions\CategorySchema\MarkCategorySchemaReviewedAction;
 use App\Actions\CategorySchema\RestoreCategorySchemaAction;
 use App\Actions\CentralCatalog\CreateCentralCategoryAction;
-use App\Enums\CentralCategoryStatus;
 use App\Enums\UserRole;
 use App\Filament\Resources\CentralCategoryResource;
 use App\Filament\Resources\CentralCategoryResource\Pages\CategorySchemaBuilder;
@@ -15,14 +14,16 @@ use App\Filament\Resources\CentralCategoryResource\Pages\EditCentralCategory;
 use App\Models\AuditLogEntry;
 use App\Models\CentralCatalog\CentralCategory;
 use App\Models\User;
+use Filament\Resources\Pages\Page;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Tests\Support\BuildsCategorySaveData;
 use Tests\TestCase;
 
 final class CategoryPermissionsTest extends TestCase
 {
-    use RefreshDatabase;
+    use BuildsCategorySaveData, RefreshDatabase;
 
     public function test_category_only_can_use_category_resource_but_not_schema_routes_or_actions(): void
     {
@@ -111,65 +112,56 @@ final class CategoryPermissionsTest extends TestCase
         self::assertSame($before, $category->fresh()->toJson());
     }
 
-    public function test_legacy_create_edit_parent_and_lifecycle_use_authoritative_actions(): void
+    public function test_canonical_create_edit_parent_and_lifecycle_use_authoritative_actions(): void
     {
         $actor = User::factory()->centralAdmin()->create();
         $this->actingAs($actor);
-        Livewire::test(CreateCentralCategory::class)->fillForm(['name' => 'Parent', 'slug' => 'parent'])->call('create')->assertHasNoFormErrors();
+        $this->post(route('central.categories.store'), ['name' => 'Parent', 'slug' => 'parent', 'parent_id' => '', 'scope_revision' => 0])->assertSessionHasNoErrors();
         $parent = CentralCategory::query()->sole();
-        Livewire::test(CreateCentralCategory::class)->fillForm(['name' => 'Child', 'slug' => 'child', 'parent_id' => $parent->id, 'new_hierarchy_revision' => 0])->call('create')->assertHasNoFormErrors();
+        $this->post(route('central.categories.store'), ['name' => 'Child', 'slug' => 'child', 'parent_id' => $parent->id, 'scope_revision' => 0])->assertSessionHasNoErrors();
         $child = CentralCategory::query()->where('slug', 'child')->sole();
         self::assertSame($parent->id, $child->parent_id);
-        Livewire::test(EditCentralCategory::class, ['record' => $child->id])
-            ->fillForm(['name' => 'Changed', 'parent_id' => null, 'new_hierarchy_revision' => 1])->call('save')->assertHasNoFormErrors();
+        $this->patch(route('central.categories.update', $child), $this->categoryUpdatePayload($child, ['name' => 'Changed', 'parent_id' => null]))
+            ->assertSessionHasNoErrors()->assertRedirect(route('central.categories.show', $child));
         self::assertNull($child->fresh()->parent_id);
         self::assertSame('Changed', $child->fresh()->name);
         self::assertSame(1, $child->fresh()->position);
         self::assertSame(1, AuditLogEntry::query()->where('action', 'catalog.category.reparented')->count());
         self::assertSame(1, AuditLogEntry::query()->where('action', 'catalog.category.updated')->count());
-        Livewire::test(EditCentralCategory::class, ['record' => $child->id])->callAction('archive')->assertHasNoActionErrors();
+        $this->post(route('central.categories.archive', $child), ['confirmed' => '1'])->assertSessionHasNoErrors();
         self::assertSame('archived', $child->fresh()->status->value);
     }
 
-    public function test_legacy_native_reorder_and_status_payloads_cannot_bypass_actions(): void
+    public function test_canonical_form_status_schema_and_position_payloads_cannot_bypass_actions(): void
     {
         $actor = User::factory()->centralAdmin()->create();
         $this->actingAs($actor);
         $a = CentralCategory::factory()->create(['position' => 0]);
         $b = CentralCategory::factory()->create(['position' => 1]);
         $this->get('/admin/central/central-categories')->assertRedirect(route('central.categories.index'));
-        self::assertSame([0, 1], [$a->fresh()->position, $b->fresh()->position]);
-        Livewire::test(EditCentralCategory::class, ['record' => $a->id])
-            ->fillForm(['status' => 'active', 'schema_status' => 'approved'])
-            ->call('save')->assertHasNoFormErrors();
-        self::assertSame('draft', $a->fresh()->status->value);
-        self::assertSame('draft', $a->fresh()->schema_status->value);
+        $before = [$a->fresh()->getRawOriginal(), $b->fresh()->getRawOriginal()];
+        $this->from(route('central.categories.edit', $a))
+            ->patch(route('central.categories.update', $a), [...$this->categoryUpdatePayload($a), 'status' => 'active', 'schema_status' => 'approved', 'position' => 1])
+            ->assertSessionHasErrors(['status', 'schema_status', 'position']);
+        $this->post(route('central.categories.store'), ['name' => 'Forged', 'slug' => 'forged', 'scope_revision' => 0, 'status' => 'active', 'schema_status' => 'approved', 'position' => 0])
+            ->assertSessionHasErrors(['status', 'schema_status', 'position']);
+        self::assertSame($before, [$a->fresh()->getRawOriginal(), $b->fresh()->getRawOriginal()]);
+        self::assertSame(2, CentralCategory::query()->count());
         self::assertSame(0, AuditLogEntry::query()->count());
     }
 
-    public function test_lifecycle_actions_refresh_the_current_page_record_form_and_header_visibility(): void
+    public function test_retired_filament_create_and_edit_routes_only_redirect_to_the_canonical_form(): void
     {
         $this->actingAs(User::factory()->centralAdmin()->create());
         $category = CentralCategory::factory()->create();
-        $page = Livewire::test(EditCentralCategory::class, ['record' => $category->id]);
-        $page->assertSet('data.status', 'draft')->assertActionVisible('activate')
-            ->assertActionVisible('archive')->assertActionHidden('restore');
-        foreach ([['activate', CentralCategoryStatus::Active], ['archive', CentralCategoryStatus::Archived], ['restore', CentralCategoryStatus::Draft]] as [$action, $status]) {
-            $page->callAction($action)->assertHasNoActionErrors()->assertSet('data.status', $status->value);
-            $component = $page->instance();
-            self::assertInstanceOf(EditCentralCategory::class, $component);
-            $record = $component->getRecord();
-            self::assertInstanceOf(CentralCategory::class, $record);
-            self::assertSame($status, $record->status);
-            self::assertSame($status, $category->fresh()->status);
-            if ($status === CentralCategoryStatus::Draft) {
-                $page->assertActionVisible('activate')->assertActionVisible('archive')->assertActionHidden('restore');
-            } elseif ($status === CentralCategoryStatus::Active) {
-                $page->assertActionHidden('activate')->assertActionVisible('archive')->assertActionHidden('restore');
-            } else {
-                $page->assertActionHidden('activate')->assertActionHidden('archive')->assertActionVisible('restore');
-            }
-        }
+        $this->get('/admin/central/central-categories/create')->assertRedirect(route('central.categories.create'));
+        $this->get('/admin/central/central-categories/'.$category->id.'/edit')->assertRedirect(route('central.categories.edit', $category));
+        self::assertSame(route('central.categories.create'), CentralCategoryResource::getUrl('create'));
+        self::assertSame(route('central.categories.edit', $category), CentralCategoryResource::getUrl('edit', ['record' => $category]));
+        // Plain resource Pages: no CreateRecord/EditRecord form or Livewire save path remains.
+        self::assertSame(Page::class, get_parent_class(CreateCentralCategory::class));
+        self::assertSame(Page::class, get_parent_class(EditCentralCategory::class));
+        $this->get(CategorySchemaBuilder::getUrl(['record' => $category]))->assertOk();
     }
 
     public function test_concurrent_schema_restore_rejection_is_a_validation_response(): void
@@ -191,22 +183,21 @@ final class CategoryPermissionsTest extends TestCase
         $this->actingAs(User::factory()->centralAdmin()->create());
         $parent = CentralCategory::factory()->create(['position' => 0]);
         $child = CentralCategory::factory()->create(['parent_id' => $parent->id, 'position' => 0]);
-        Livewire::test(EditCentralCategory::class, ['record' => $child->id])
-            ->fillForm(['parent_id' => '', 'new_hierarchy_revision' => 0])
-            ->call('save')->assertHasNoFormErrors()->assertSet('data.parent_id', null);
+        $this->patch(route('central.categories.update', $child), [...$this->categoryUpdatePayload($child, ['parent_id' => null]), 'parent_id' => ''])
+            ->assertSessionHasNoErrors();
         self::assertNull($child->fresh()->parent_id);
         self::assertSame(1, $child->fresh()->position);
         self::assertSame(1, AuditLogEntry::query()->where('action', 'catalog.category.reparented')->count());
     }
 
-    public function test_legacy_identity_validation_failure_rolls_back_combined_reparent_and_audit(): void
+    public function test_canonical_identity_validation_failure_rolls_back_combined_reparent_and_audit(): void
     {
         $actor = User::factory()->centralAdmin()->create();
         $this->actingAs($actor);
         $parent = CentralCategory::factory()->create();
         $child = CentralCategory::factory()->create(['parent_id' => $parent->id]);
-        Livewire::test(EditCentralCategory::class, ['record' => $child->id])
-            ->fillForm(['slug' => $parent->slug, 'parent_id' => null, 'new_hierarchy_revision' => 0])->call('save')->assertHasFormErrors(['slug']);
+        $this->patch(route('central.categories.update', $child), $this->categoryUpdatePayload($child, ['slug' => $parent->slug, 'parent_id' => null]))
+            ->assertSessionHasErrors(['slug']);
         self::assertSame($parent->id, $child->fresh()->parent_id);
         self::assertSame(0, AuditLogEntry::query()->count());
     }

@@ -29,7 +29,7 @@ final class CentralCategoryDetailController extends Controller
 
         return view('central-admin.categories.show', [
             'detail' => $detail,
-            'editUrl' => $canMutate ? CentralCategoryResource::getUrl('edit', ['record' => $category]) : null,
+            'editUrl' => $canMutate ? route('central.categories.edit', $category) : null,
             'schemaUrl' => $access->allows(Permission::CatalogSchemaManage) ? CentralCategoryResource::getUrl('schema', ['record' => $category]) : null,
             'translationUrl' => $detail->translations->localeId !== null && $access->allows(Permission::TranslationsManage)
                 ? route('central.categories.translations.edit', [$category, $detail->translations->localeId]) : null,

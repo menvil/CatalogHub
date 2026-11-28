@@ -27,7 +27,7 @@ final class CentralCategoryListController extends Controller
             $category = $row->category;
             $links = [];
             if ($canMutate) {
-                $links[] = ['label' => 'Edit', 'url' => CentralCategoryResource::getUrl('edit', ['record' => $category])];
+                $links[] = ['label' => 'Edit', 'url' => route('central.categories.edit', $category)];
             }
             if ($canSchema) {
                 $links[] = ['label' => 'Schema', 'url' => CentralCategoryResource::getUrl('schema', ['record' => $category])];
@@ -54,7 +54,7 @@ final class CentralCategoryListController extends Controller
 
         return view('central-admin.categories.index', [
             'queryParameters' => $request->queryParameters(), 'list' => $list, 'filters' => $filters, 'actions' => $actions,
-            'createUrl' => $canMutate ? CentralCategoryResource::getUrl('create') : null,
+            'createUrl' => $canMutate ? route('central.categories.create') : null,
             'statusOptions' => CentralCategoryStatus::options(), 'schemaOptions' => CategorySchemaStatus::options(),
             'sortLabels' => $sortLabels, 'sortUrls' => $sortUrls,
             'clearFiltersUrl' => route('central.categories.index', $presentation),

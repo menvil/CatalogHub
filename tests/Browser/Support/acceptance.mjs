@@ -37,6 +37,15 @@ export async function signIn(page, panel, email) {
     await page.getByRole('button', { name: /sign in/i }).click()
 }
 
+export async function selectAdminOption(page, id, option) {
+    await page.locator(`#${id}-trigger`).click()
+    const menu = page.locator(`#${id}-menu`)
+    const target = typeof option === 'string'
+        ? menu.locator(`[data-ui-select-option][data-value="${option}"]`)
+        : menu.getByRole('option', { name: option.label, exact: true })
+    await target.click()
+}
+
 export async function captureAcceptanceScreenshot(page, testInfo, name) {
     await page.evaluate(() => document.fonts.ready)
     const path = testInfo.outputPath(`${name}.png`)
@@ -45,7 +54,7 @@ export async function captureAcceptanceScreenshot(page, testInfo, name) {
 }
 
 export function resetBrowserFixture(fixture = 'default') {
-    if (!['default', 'category-detail-v1'].includes(fixture)) throw new Error('Unknown browser fixture.');
+    if (!['default', 'category-detail-v1', 'category-create-edit-v1'].includes(fixture)) throw new Error('Unknown browser fixture.');
     const port = Number.parseInt(process.env.CATALOGHUB_BROWSER_PORT ?? '', 10)
 
     if (![8014, 8015].includes(port)) {

@@ -5,8 +5,10 @@ namespace Tests\Feature\Categories;
 use App\Actions\CentralCatalog\CreateCentralCategoryAction;
 use App\Actions\CentralCatalog\ReorderCentralCategoriesAction;
 use App\Actions\CentralCatalog\ReparentCentralCategoryAction;
-use App\Actions\CentralCatalog\SaveLegacyCentralCategoryAction;
+use App\Actions\CentralCatalog\SaveCentralCategoryAction;
 use App\Actions\CentralCatalog\UpdateCentralCategoryAction;
+use App\Data\CentralCatalog\CentralCategoryExpectedState;
+use App\Data\CentralCatalog\CentralCategorySaveData;
 use App\Models\AuditLogEntry;
 use App\Models\CentralCatalog\CategoryHierarchyScope;
 use App\Models\CentralCatalog\CentralCategory;
@@ -20,11 +22,12 @@ use Illuminate\Validation\ValidationException;
 use Mockery;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
+use Tests\Support\BuildsCategorySaveData;
 use Tests\TestCase;
 
 final class CategoryHierarchyActionsTest extends TestCase
 {
-    use RefreshDatabase;
+    use BuildsCategorySaveData, RefreshDatabase;
 
     private User $actor;
 
@@ -248,15 +251,15 @@ final class CategoryHierarchyActionsTest extends TestCase
         }
     }
 
-    public function test_legacy_save_identity_failure_rolls_back_an_already_executed_reparent(): void
+    public function test_composite_save_identity_failure_rolls_back_an_already_executed_reparent(): void
     {
         $a = $this->create('a');
         $b = $this->create('b', $a->id);
         try {
-            app(SaveLegacyCentralCategoryAction::class)->handle($this->actor, $b,
-                ['name' => 'Changed', 'slug' => 'a'], $a->id, null, 1, 1);
+            app(SaveCentralCategoryAction::class)->handle($this->actor, $b, $this->categorySaveData($b, ['name' => 'Changed', 'slug' => 'a', 'parent_id' => null]));
             self::fail('Duplicate slug accepted');
-        } catch (ValidationException) {
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('slug', $exception->errors());
             self::assertSame($a->id, $b->fresh()->parent_id);
             self::assertSame('b', $b->fresh()->name);
             self::assertSame(1, app(CategoryHierarchy::class)->revision(null));
@@ -265,21 +268,57 @@ final class CategoryHierarchyActionsTest extends TestCase
         }
     }
 
-    public function test_legacy_identity_edits_and_no_ops_do_not_lock_hierarchy_scopes(): void
+    public function test_composite_identity_edits_and_no_ops_do_not_lock_hierarchy_scopes(): void
     {
         $category = CentralCategory::factory()->create();
+        $rename = $this->categorySaveData($category, ['name' => 'Changed']);
         $queries = [];
         DB::listen(function (QueryExecuted $query) use (&$queries): void {
             $queries[] = $query->sql;
         });
-        foreach (['Changed', 'Changed'] as $name) {
-            app(SaveLegacyCentralCategoryAction::class)->handle($this->actor, $category,
-                ['name' => $name, 'slug' => $category->slug], null, null, 0, 0);
-            self::assertSame(1, AuditLogEntry::query()->count());
-        }
+        app(SaveCentralCategoryAction::class)->handle($this->actor, $category->fresh(), $rename);
+        $afterRename = AuditLogEntry::query()->count();
+        $repeat = new CentralCategorySaveData('Changed', $rename->slug, $rename->parentId,
+            new CentralCategoryExpectedState('Changed', $rename->slug, $rename->parentId),
+            $rename->originalScopeRevision, $rename->destinationScopeRevision, $rename->siblingIds, $rename->displayPosition);
+        app(SaveCentralCategoryAction::class)->handle($this->actor, $category->fresh(), $repeat);
+        self::assertSame([1, 1], [$afterRename, AuditLogEntry::query()->count()]);
         self::assertSame([], array_values(array_filter($queries, fn ($sql) => str_contains($sql, 'category_hierarchy_scopes'))));
         self::assertSame('Changed', $category->fresh()->name);
         self::assertSame(0, app(CategoryHierarchy::class)->revision(null));
+    }
+
+    public function test_identity_update_never_moves_or_restates_a_category_through_empty_prohibited_fields(): void
+    {
+        $parent = $this->create('parent');
+        $child = $this->create('child', $parent->id);
+        app(UpdateCentralCategoryAction::class)->handle($this->actor, $child,
+            ['name' => 'Renamed', 'slug' => 'child', 'parent_id' => null, 'position' => '', 'status' => null, 'schema_status' => '']);
+        $fresh = $child->fresh();
+        self::assertSame([$parent->id, 0, 'draft', 'draft', 'Renamed'], [$fresh->parent_id, $fresh->position, $fresh->status->value, $fresh->schema_status->value, $fresh->name]);
+        self::assertSame(['changed_fields' => ['name'], 'name' => 'Renamed'], collect(AuditLogEntry::query()->where('action', 'catalog.category.updated')->sole()->after_json)->sortKeys()->all());
+    }
+
+    public function test_identity_update_rejects_stale_expected_identity_or_parent_under_the_row_lock(): void
+    {
+        $parent = $this->create('parent');
+        $child = $this->create('child', $parent->id);
+        $cases = [
+            'category' => new CentralCategoryExpectedState('Old name', 'child', $parent->id),
+            'parent_id' => new CentralCategoryExpectedState('child', 'child', null),
+        ];
+        foreach ($cases as $key => $expected) {
+            try {
+                app(UpdateCentralCategoryAction::class)->handle($this->actor, $child, ['name' => 'Lost update', 'slug' => 'child'], $expected);
+                self::fail('Stale expected state accepted');
+            } catch (ValidationException $exception) {
+                self::assertSame([$key], array_keys($exception->errors()));
+            }
+        }
+        self::assertSame('child', $child->fresh()->name);
+        self::assertSame(0, AuditLogEntry::query()->where('action', 'catalog.category.updated')->count());
+        app(UpdateCentralCategoryAction::class)->handle($this->actor, $child, ['name' => 'Current', 'slug' => 'child'], new CentralCategoryExpectedState('child', 'child', $parent->id));
+        self::assertSame('Current', $child->fresh()->name);
     }
 
     public function test_tree_write_precedes_scope_and_sibling_reads_and_locks_are_deterministic(): void

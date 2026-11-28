@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { foundationDemo, observePageErrors, resetBrowserFixture, signIn } from '../Support/acceptance.mjs'
+import { foundationDemo, observePageErrors, resetBrowserFixture, selectAdminOption, signIn } from '../Support/acceptance.mjs'
 
 const primary = '/admin/central/categories/195003'
 test.beforeEach(() => resetBrowserFixture('category-detail-v1'))
@@ -34,7 +34,7 @@ test('CA-017 opens from CA-016 with real identity, schema, direct usage and acti
     await expect(page.locator('[data-translation-coverage]')).toHaveText('3/5 covered · 60%')
     await expect(page.locator('[data-screen-region="recent-activity"]')).toContainText('Schema approved')
     await expect(page.locator('[data-screen-region="recent-activity"]')).toContainText('Ada Catalog')
-    await expect(page.getByRole('link', { name: 'Edit Category', exact: true })).toHaveAttribute('href', /central-categories\/195003\/edit$/)
+    await expect(page.getByRole('link', { name: 'Edit Category', exact: true })).toHaveAttribute('href', /\/admin\/central\/categories\/195003\/edit$/)
     await expect(page.getByRole('link', { name: 'View Schema', exact: true })).toHaveAttribute('href', /central-categories\/195003\/schema$/)
     for (const label of ['Duplicate Category', 'Export Category', 'Comparison Sets', 'Facet Sets', 'Channels', 'View Full Activity']) await expect(page.getByText(label, { exact: true })).toHaveCount(0)
     noErrors()
@@ -44,7 +44,7 @@ test('CA-017 Locale switching preserves exact status and labels fallback, with a
     const noErrors = observePageErrors(page)
     await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (value) => { window.__categoryCopied = value } } }))
     await openDetail(page)
-    await page.locator('#category-detail-locale').selectOption({ label: 'de-DE' })
+    await selectAdminOption(page, 'category-detail-locale', { label: 'de-DE' })
     await page.getByRole('button', { name: 'Apply Locale', exact: true }).click()
     await expect(page).toHaveURL(/locale=\d+/)
     await expect(page.locator('[data-selected-translation-status]')).toHaveText('Missing')

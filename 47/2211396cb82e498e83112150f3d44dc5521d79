@@ -1,0 +1,24 @@
+docs/ui/categories-19-5-19-6-acceptance.md
+  s_09819976511085::t_507433711e7219 31,33-34,36-63
+  ai_agent 64-65
+  s_09819976511085::t_1ca0c45cec9d06 1-18,20-30,32,35
+  s_09819976511085::t_d5dd1df207dd7f 19
+docs/planning/roadmap-v2-screen-driven.md
+  s_09819976511085::t_d5dd1df207dd7f 183
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "472211396cb82e498e83112150f3d44dc5521d79",
+  "prompts": {},
+  "sessions": {
+    "s_09819976511085": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11622-dcf4-7031-a439-cb234249c9d1",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Ivan Moroz <menvil.menvil@gmail.com>"
+    }
+  }
+}

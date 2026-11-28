@@ -113,6 +113,7 @@ test('CA-016 legal lifecycle actions persist through reload and keyboard confirm
     await expect(coffee.getByRole('menuitem', { name: 'Activate', exact: true })).toHaveCount(0)
     await coffee.getByRole('menuitem', { name: 'Restore', exact: true }).click()
     await page.getByRole('dialog', { name: 'Restore Coffee Machines?' }).getByRole('button', { name: 'Restore Category' }).click()
+    await expect(coffee.locator('.category-list-status')).toHaveText('Draft')
     await page.reload()
     await expect(coffee.locator('.category-list-status')).toHaveText('Draft')
     noErrors()
